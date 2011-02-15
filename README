@@ -1,0 +1,41 @@
+README for klisp 0.1
+
+* What is klisp?
+  --------------
+  klisp is an open source interpreter for the Kernel Programming
+  Language. It aims at being comprehensive and robust as specified in
+  the "Revised(-1) Report on the Kernel Programming Language", but
+  that probably won't happen for some time. It is written in C99 under
+  the MIT license. It draws heavily from the Lua interpreter source
+  code & file structure.
+
+* What is the Kernel Programming Language?
+  ----------------------------------------
+  Kernel is a conservative, Scheme-like dialect of Lisp in which
+  everything is a first-class object. It was created by John N. Shutt.
+  You can read all about it at
+  http://web.cs.wpi.edu/~jshutt/kernel.html
+
+* Availability
+  ------------
+  klisp is freely available for both academic and commercial purposes.
+  See COPYRIGHT for details.
+  klisp can be downloaded at
+  http://www.bitbucket.org/AndresNavarro/klisp
+
+
+* Installation
+  ------------
+  klisp is implemented in C99, with some gcc extensions for packing
+  and alignment. It was developed and tested in x86 under Linux. In
+  time it will be written so as to be compiled under many different
+  platforms, but right now the author's efforts are directed towards
+  implementing functionality.
+
+* Origin
+  ------
+  klisp is developed by Andres Navarro, a Computer Science
+  undergraduate at Buenos Aires University (UBA). You can reach him at
+  <canavarro82@gmail.com>.
+
+(end of README)
