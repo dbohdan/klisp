@@ -6,7 +6,7 @@
 
 /*
 ** SOURCE NOTE: While the tagging system comes from Mozilla TraceMonkey,
-** o code from TraceMonkey was used.
+** no code from TraceMonkey was used.
 ** The general structure, names and comments of this file follow the 
 ** scheme of Lua. 
 */
@@ -52,16 +52,14 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 
 /*
 ** Tags: Types & Flags
-*/
-
-/*
-** Tagged values in 64 bits (for 32 bit systems)
-** NaN boxing: Values are encoded as double precision NaNs
-** There is one canonical NaN that is used through the interpreter
-** and all remaining NaNs are used to encode the rest of the types
-** (other than double)
-** Canonical NaN: (0)(111 1111 1111) 1000  0000 0000 0000 0000 32(0)
-** Infinities: s(111 1111 1111) 0000  0000 0000 0000 0000 32(0)
+**
+** Nan Boxing: Tagged values in 64 bits (for 32 bit systems)
+** All Values except doubles are encoded as double precision NaNs
+** There is one canonical NaN(?maybe none?) that is used through the 
+** interpreter and all remaining NaNs are used to encode the rest of 
+** the types (other than double)
+** Canonical NaN(?): (0)(111 1111 1111) 1000  0000 0000 0000 0000 32(0)
+** Infinities(?): s(111 1111 1111) 0000  0000 0000 0000 0000 32(0)
 ** Tagged values: (0)(111 1111 1111) 1111  tttt tttt tttt tttt 32(v)
 ** So all tags start with 0x7fff which leaves us 16 bits for the 
 ** tag proper.
@@ -83,6 +81,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_BASE_TYPE(t) ((t) & K_TAG_BASE_TYPE_MASK)
 
 /*
+** RATIONALE:
 ** Number types are first and ordered to allow easy switch statements
 ** in arithmetic operators. The ones marked with (?) are still in
 ** consideration for separate type tags.
@@ -119,8 +118,15 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | t)
 
-/* TODO: For now we will only use fixints */
+/*
+** TODO: 
+**
+** - decide if inexact infinities and reals with no
+**    primary values are included in K_TDOUBLE
+** - For now we will only use fixints and exact infinities 
+*/
 #define K_TAG_FIXINT	K_MAKE_VTAG(K_TFIXINT)
+#define K_TAG_EINF	K_MAKE_VTAG(K_TEINF)
 
 #define K_TAG_NIL	K_MAKE_VTAG(K_TNIL)
 #define K_TAG_IGNORE	K_MAKE_VTAG(K_TIGNORE)
@@ -137,17 +143,11 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 ** Macros to test types
 */
 
-/*
-** This is intended for use in switch statements
-** TODO: decide if inexact infinities and reals with no
-** primary values are included in K_TDOUBLE
-*/
+/* NOTE: This is intended for use in switch statements */
 #define ttype(o) ({ TValue o_ = o;			\
 	    ttisdouble(o_)? K_TDOUBLE : ttype_(o_); })
 
-/*
-** This is intended for internal use below. DON'T USE OUTSIDE THIS FILE
-*/
+/* This is intended for internal use below. DON'T USE OUTSIDE THIS FILE */
 #define ttag(o) ((o).tv.t)
 #define ttype_(o) (K_TAG_TYPE(ttag(o)))
 #define tflag_(o) (K_TAG_FLAG(ttag(o)))
@@ -175,7 +175,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 typedef union {
     bool b;
     int32_t i;
-    unsigned char ch;
+    char ch;
     GCObject *gc; 
     void *p; 
     /* ... */
@@ -206,21 +206,30 @@ typedef struct __attribute__ ((__packed__)) {
     TValue cdr;
 } Pair;
 
+/* XXX: Symbol should probably contain a String instead of a char buf */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    unsigned char b[]; // buffer
+    uint32_t size;
+    char b[];
 } Symbol;
 
+/* 
+** RATIONALE: 
+**
+** Storing size allows embedded '\0's.
+** Note, however, that there are actually size + 1 bytes allocated
+** and that b[size] = '\0'. This is useful for printing strings
+** 
+*/
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    uint32_t size; // to allow embedded '\0'
-    unsigned char b[]; // buffer
+    uint32_t size; 
+    char b[]; // buffer
 } String;
 
 /*
 ** Union of all Kernel heap-allocated values
 */
-
 /* LUA NOTE: In Lua the corresponding union is in lstate.h */
 union GCObject {
     GCheader gch;
@@ -239,22 +248,66 @@ union GCObject {
 #define KEOF_ {.tv = {.t = K_TAG_EOF, .v = { .i = 0 }}}
 #define KTRUE_ {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = true }}}
 #define KFALSE_ {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = false }}}
+#define KEPINF_ {.tv = {.t = K_TAG_EINF, .v = { .i = 1 }}}
+#define KEMINF_ {.tv = {.t = K_TAG_EINF, .v = { .i = -1 }}}
 
+/* RATIONALE: the ones above can be used in initializers */
 #define KNIL ((TValue) KNIL_)
 #define KINERT ((TValue) KINERT_)
 #define KIGNORE ((TValue) KIGNORE_)
 #define KEOF ((TValue) KEOF_)
 #define KTRUE ((TValue) KTRUE_)
 #define KFALSE ((TValue) KFALSE_)
+#define KEPINF ((TValue) KEPINF_)
+#define KEMINF ((TValue) KEMINF_)
 
-/*
-** The same constants as global const variables
-*/
-const TValue knil = KNIL_;
-const TValue kignore = KIGNORE_;
-const TValue kinert = KINERT_;
-const TValue keof = KEOF_;
-const TValue ktrue = KTRUE_;
-const TValue kfalse = KFALSE_;
+/* The same constants as global const variables */
+const TValue knil;
+const TValue kignore;
+const TValue kinert;
+const TValue keof;
+const TValue ktrue;
+const TValue kfalse;
+const TValue kepinf;
+const TValue keminf;
+
+/* Macros to create TValues of non-heap allocated types (for initializers) */
+#define ch2tv_(ch_) {.tv = {.t = K_TAG_CHAR, .v = { .ch = ch_ }}}
+#define i2tv_(i_) {.tv = {.t = K_TAG_FIXINT, .v = { .i = i_ }}}
+#define b2tv_(b_) {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = b_ }}}
+
+/* Macros to create TValues of non-heap allocated types */
+#define ch2tv(ch_) ((TValue) ch2tv_(ch_))
+#define i2tv(i_) ((TValue) i2tv_(i_))
+#define b2tv(b_) ((TValue) b2tv_(b_))
+
+/* Macros to convert a GCObject * into a tagged value */
+/* TODO: add assertions */
+/* LUA NOTE: the corresponding defines are in lstate.h */
+#define gc2tv(t_, o_) ((TValue) {.tv = {.t = t_, \
+					.v = { .gc = obj2gco(o_)}}})
+#define gc2pair(o_) (gc2tv(K_TAG_PAIR, o_))
+#define gc2str(o_) (gc2tv(K_TAG_STRING, o_))
+#define gc2sym(o_) (gc2tv(K_TAG_SYMBOL, o_))
+
+/* Macro to convert a TValue into a specific heap allocated object */
+#define tv2pair(v_) ((Pair *) gcvalue(v_))
+#define tv2str(v_) ((String *) gcvalue(v_))
+#define tv2sym(v_) ((Symbol *) gcvalue(v_))
+
+/* Macro to convert any Kernel object into a GCObject */
+#define obj2gco(v_) ((GCObject *) (v_))
+
+/* Macros to access innertv values */
+/* TODO: add assertions */
+#define ivalue(o_) ((o_).tv.v.i)
+#define bvalue(o_) ((o_).tv.v.b)
+#define chvalue(o_) ((o_).tv.v.ch)
+#define gcvalue(o_) ((o_).tv.v.gc)
+
+/* Macro to obtain a string describing the type of a TValue */#
+#define ttname(tv_) (ktv_names[ttype(tv_)])
+
+extern char *ktv_names[];
 
 #endif

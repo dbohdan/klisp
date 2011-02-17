@@ -7,7 +7,7 @@ MYCFLAGS=
 MYLDFLAGS=
 MYLIBS=
 
-CORE_O=	
+CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -23,7 +23,7 @@ all:	$(ALL_T)
 o:	$(ALL_O)
 
 $(KRN_T): $(ALL_O)
-	$(CC) -o $@ $(MYLDFLAGS) $(KRN_O) $(LIBS)
+	$(CC) -o $@ $(MYLDFLAGS) $(ALL_O) $(LIBS)
 
 clean:
 	$(RM) $(ALL_T) $(ALL_O)
@@ -31,4 +31,10 @@ clean:
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all default o clean
 
-klisp.o: klisp.c klisp.h kobject.h
+klisp.o: klisp.c klisp.h kobject.h ktoken.h
+kobject.o: kobject.c kobject.h
+ktoken.o: ktoken.c ktoken.h kobject.h kpair.h kstring.h ksymbol.h
+kpair.o: kpair.c kpair.h kobject.h
+kstring.o: kstring.c kstring.h kobject.h
+# XXX: kpair.h because of use of list as symbol table
+ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h
