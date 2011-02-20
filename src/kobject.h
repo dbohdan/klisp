@@ -185,8 +185,8 @@ typedef union {
 ** All Kernel non heap-allocated values (except doubles) tagged
 */
 typedef struct __attribute__ ((__packed__)) InnerTV {
-    uint32_t t;
     Value v;
+    uint32_t t;
 } InnerTV;
 
 /*
@@ -202,8 +202,10 @@ typedef __attribute__((aligned (8))) union {
 */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
     TValue car;
     TValue cdr;
+    TValue si; /* source code info (either () or (filename line col) */
 } Pair;
 
 /* XXX: Symbol should probably contain a String instead of a char buf */
