@@ -13,7 +13,7 @@
 /* TODO: move to global state */
 TValue ksymbol_table;
 
-/* XXX: for now all symbols are interned */
+/* TEMP: for now all symbols are interned */
 TValue ksymbol_new(const char *);
 
 #endif

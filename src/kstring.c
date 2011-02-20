@@ -14,7 +14,7 @@
 #include "kobject.h"
 
 /* TODO: Out of memory errors */
-/* XXX: for now all strings are mutable */
+/* TEMP: for now all strings are mutable */
 TValue kstring_new(const char *buf, uint32_t size)
 {
     String *new_str = malloc(sizeof(String) + size + 1);

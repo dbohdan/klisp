@@ -9,7 +9,7 @@
 
 #include "kobject.h"
 
-/* XXX: for now all strings are mutable */
+/* TEMP: for now all strings are mutable */
 TValue kstring_new(const char *, uint32_t);
 
 #endif

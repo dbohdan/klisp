@@ -12,7 +12,7 @@
 #include "kobject.h"
 
 /* TODO: Out of memory errors */
-/* XXX: for now all pairs are mutable */
+/* TEMP: for now all pairs are mutable */
 TValue kcons(TValue car, TValue cdr) 
 {
     Pair *new_pair = malloc(sizeof(Pair));

@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O2 -std=c99 -Wall -m32 $(MYCFLAGS)
+CFLAGS=-O2 -g -std=c99 -Wall -m32 $(MYCFLAGS)
 RM=rm -f
 LIBS=-lm $(MYLIBS)
 
@@ -7,7 +7,7 @@ MYCFLAGS=
 MYLDFLAGS=
 MYLIBS=
 
-CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o
+CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -38,3 +38,4 @@ kpair.o: kpair.c kpair.h kobject.h
 kstring.o: kstring.c kstring.h kobject.h
 # XXX: kpair.h because of use of list as symbol table
 ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h
+kread.o: kread.c kread.h kobject.h ktoken.h kpair.h

@@ -11,15 +11,18 @@
 
 /* TODO: add type assertions */
 /* TODO: add more kc[ad]*r combinations */
-#define kcar(p_) (((Pair *)(p_.tv.v.gc))->car)
-#define kcdr(p_) (((Pair *)(p_.tv.v.gc))->cdr)
+#define kcar(p_) (tv2pair(p_)->car)
+#define kcdr(p_) (tv2pair(p_)->cdr)
 
 #define kset_car(p_, v_) (kcar(p_) = v_)
 #define kset_cdr(p_, v_) (kcdr(p_) = v_)
 
-#define kdummy_cons (kcons(KNIL, KNIL))
+#define kdummy_cons() (kcons(KNIL, KNIL))
 
-/* XXX: for now all pairs are mutable */
+/* TEMP: for now all pairs are mutable */
 TValue kcons(TValue, TValue);
+
+#define kget_source_info(p_) (tv2pair(p_)->si)
+#define kset_source_info(p_, si_) (kget_source_info(p_) = si_)
 
 #endif

@@ -12,13 +12,15 @@
 ** - Support for complete number syntax (exactness, radix, etc)
 ** - Support for unicode (strings, char and symbols).
 ** - Error handling
-** - Source code tracking
 **
 */
 #include <stdio.h>
 /* XXX for malloc */
 #include <stdlib.h>
 /* TODO: use a generalized alloc function */
+
+/* TEMP: for out of mem errors */
+#include <assert.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -108,28 +110,34 @@ kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 ** instead of creating an otherwise useless special token type
 ** lparen, rparen and dot are represented as a pair with the corresponding 
 ** char in the car and nil in the cdr.
-** srfi-38 tokens are represented with a boolean in the indicating if it's a 
-** defining token and the number in the cdr
+** srfi-38 tokens are also represented with a char in the car indicating if 
+** it's a defining token ('=') or a referring token ('#') and the number in 
+** the cdr. This way a special token can be easily tested for (with ttispair)
+** and easily classified (with switch(chvalue(kcar(tok)))).
 **
 */
 TValue ktok_lparen, ktok_rparen, ktok_dot;
 
 /* TODO: move this to the global state */
 char *ktok_buffer;
-/* WORKAROUND: for stdin line buffering & reading of EOF */
-bool ktok_seen_eof;
 uint32_t ktok_buffer_size;
 #define KTOK_BUFFER_INITIAL_SIZE 1024
+/* WORKAROUND: for stdin line buffering & reading of EOF */
+bool ktok_seen_eof;
 
 void ktok_init()
 {
+    assert(ktok_file != NULL);
+    assert(ktok_source_info.filename != NULL);
+
     /* WORKAROUND: for stdin line buffering & reading of EOF */
     ktok_seen_eof = false;
     /* string buffer */
-    /* XXX: for now use a fixed size */
+    /* TEMP: for now use a fixed size */
     ktok_buffer_size = KTOK_BUFFER_INITIAL_SIZE;
-    /* TODO: Out of memory errors */
     ktok_buffer = malloc(KTOK_BUFFER_INITIAL_SIZE);
+    /* TEMP: while there is no error handling code */
+    assert(ktok_buffer != NULL);
 
     /* Character sets */
     kcharset_fill(ktok_alphabetic, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -154,28 +162,74 @@ void ktok_init()
 }
 
 /*
-** Underlying stream interface
+** Underlying stream interface & source code location tracking
 */
-int ktok_getc();
-int ktok_peekc();
-
 int ktok_getc() {
-    /* TODO: add location tracking */
     /* WORKAROUND: for stdin line buffering & reading of EOF */
     if (ktok_seen_eof) {
 	return EOF;
     } else {
 	int chi = getc(ktok_file);
-	ktok_seen_eof = (chi == EOF);
-	return chi;
+	if (chi == EOF) {
+	    /* NOTE: eof doesn't change source code location info */
+	    ktok_seen_eof = true;
+	    return EOF;
+	}
+	
+	/* track source code location before returning the char */
+	if (chi == '\t') {
+	    /* align column to next tab stop */
+	    ktok_source_info.col = 
+		(ktok_source_info.col + ktok_source_info.tab_width) -
+		(ktok_source_info.col % ktok_source_info.tab_width);
+	    return '\t';
+	} else if (chi == '\n') {
+	    ktok_source_info.line++;
+	    ktok_source_info.col = 0;
+	    return '\n';
+	} else {
+	    return chi;
+	}
     }
 }
 
 int ktok_peekc() {
-    int chi = ktok_getc();
-    if (chi != EOF)
-	ungetc(chi, ktok_file);
-    return chi;
+    /* WORKAROUND: for stdin line buffering & reading of EOF */
+    if (ktok_seen_eof) {
+	return EOF;
+    } else {
+	int chi = getc(ktok_file);
+	if (chi == EOF)
+	    ktok_seen_eof = true;
+	else
+	    ungetc(chi, ktok_file);
+	return chi;
+    }
+}
+
+void ktok_reset_source_info()
+{
+    /* line is 1-base and col is 0-based */
+    ktok_source_info.line = 1;
+    ktok_source_info.col = 0;
+}
+
+void ktok_save_source_info()
+{
+    ktok_source_info.saved_filename = ktok_source_info.filename;
+    ktok_source_info.saved_line = ktok_source_info.line;
+    ktok_source_info.saved_col = ktok_source_info.col;
+}
+
+TValue ktok_get_source_info()
+{
+    /* XXX: what happens on gc? (unrooted objects) */
+    /* NOTE: the filename doesn't contains embedded '\0's */
+    TValue filename_str = kstring_new(ktok_source_info.saved_filename,
+				      strlen(ktok_source_info.saved_filename));
+    /* TEMP: for now, lines and column names are fixints */
+    return kcons(filename_str, kcons(i2tv(ktok_source_info.saved_line),
+				     i2tv(ktok_source_info.saved_col)));
 }
 
 /*
@@ -184,8 +238,9 @@ int ktok_peekc() {
 TValue ktok_error(char *str)
 {
     /* TODO: Decide on error handling mechanism for reader (& tokenizer) */
+    /* TEMP: Use eof object */
     printf("TOK ERROR: %s\n", str);
-    return KNIL;
+    return KEOF;
 }
 
 
@@ -213,8 +268,8 @@ TValue ktok_read_token ()
     ** in any case we save the location of the port
     */
 
-    /* TODO: add location tracking */
-    /* SCHEME VERSION   (kport-save-loc! kport) */
+    /* save the source info of the start of the next token */
+    ktok_save_source_info();
 
     int chi = ktok_peekc();
 
@@ -316,14 +371,12 @@ int ktok_read_until_delimiter()
     int i = 0;
 
     while (!ktok_check_delimiter()) {
+	/* TODO: allow buffer to grow */
+	assert(i + 1 < ktok_buffer_size);
+
 	/* NOTE: can't be eof, because eof is a delimiter */
 	char ch = (char) ktok_getc();
 	ktok_buffer[i++] = ch;
-
-	if (i + 1 == ktok_buffer_size) {
-	    /* TODO: allow buffer to grow */
-	    break;
-	}
     }
     ktok_buffer[i] = '\0';
     return i;
@@ -331,7 +384,7 @@ int ktok_read_until_delimiter()
 
 /*
 ** Numbers
-** XXX: for now, only fixints in base 10
+** TEMP: for now, only fixints in base 10
 */
 TValue ktok_read_number(bool is_pos) 
 {
@@ -397,12 +450,10 @@ TValue ktok_read_string()
 				      "while reading a string");
 		}
 	    } 
+	    /* TODO: allow buffer to grow */
+	    assert(i+1 < ktok_buffer_size);
+
 	    ktok_buffer[i++] = ch;
-		
-	    if (i + 1 == ktok_buffer_size)
-		/* TODO: allow buffer to grow */
-		return ktok_error("Implementation restriction: "
-				  "String too long");
 	}
     }
     return kstring_new(ktok_buffer, i);
@@ -505,7 +556,7 @@ TValue ktok_read_special()
 		if (chi == EOF)
 		    return ktok_error("EOF found while reading a srfi-38 token");
 	    }
-	    return kcons(b2tv(ch == '='), i2tv(res));
+	    return kcons(ch2tv(ch), i2tv(res));
 	}
     /* TODO: add real with no primary value and undefined */
     default:
@@ -521,6 +572,9 @@ TValue ktok_read_identifier()
     int i = 0;
 
     while (!ktok_check_delimiter()) {
+	/* TODO: allow buffer to grow */
+	assert(i+1 < ktok_buffer_size);
+
 	/* NOTE: can't be eof, because eof is a delimiter */
 	char ch = (char) ktok_getc();
 
@@ -529,11 +583,6 @@ TValue ktok_read_identifier()
 	    ktok_buffer[i++] = ch;
 	else
 	    return ktok_error("Invalid char in identifier");	    
-
-	/* TODO: allow buffer to grow */
-	if (i + 1 == ktok_buffer_size) {
-	    break;
-	}
     }
     ktok_buffer[i] = '\0';
     return ksymbol_new(ktok_buffer);

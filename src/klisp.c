@@ -6,28 +6,28 @@
 
 #include <stdio.h>
 
+#include <inttypes.h>
+#include <math.h>
+
 #include "kobject.h"
-#include "ktoken.h"
+#include "kread.h"
 
 int main(int argc, char *argv[]) 
 {
     /*
-    ** Simple tokenizer loop
+    ** Simple read loop
     */
-    printf("Tokenizer Type Test\n");
-    
-    ktok_file = stdin;
-    ktok_init();
+    printf("Read Type Test\n");
 
-    TValue tok = KNIL;
+    kread_file = stdin;
+    kread_filename = "*STDIN*";
+    kread_init();
 
-    while(!ttiseof(tok)) {
-	tok = ktok_read_token();
-	if (ttisnil(tok)) {
-	    /* there was an error */
-	    break;
-	}
-	printf("\nToken Type: %s\n", ttname(tok));
+    TValue obj = KNIL;
+
+    while(!ttiseof(obj)) {
+	obj = kread();
+	printf("\nRead Object Type: %s\n", ttname(obj));
     }
 
     return 0;
