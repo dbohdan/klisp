@@ -409,6 +409,9 @@ TValue kread_fsm()
 		break;
 	    }
 	    case ST_LAST_ILIST:
+		kset_cdr(get_data(), obj);
+		/* only change the state, keep the pair in data to simplify 
+		   the close paren code (same as for ST_MIDDLE_LIST) */
 		pop_state();
 		push_state(ST_PAST_LAST_ILIST);
 		read_next_token = true;
