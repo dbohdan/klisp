@@ -116,7 +116,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TSTRING	31
 #define K_TSYMBOL	32
 
-#define K_MAKE_VTAG(t) (K_TAG_TAGGED | t)
+#define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
 /*
 ** TODO: 
@@ -144,7 +144,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 */
 
 /* NOTE: This is intended for use in switch statements */
-#define ttype(o) ({ TValue o_ = o;			\
+#define ttype(o) ({ TValue o_ = (o);			\
 	    ttisdouble(o_)? K_TDOUBLE : ttype_(o_); })
 
 /* This is intended for internal use below. DON'T USE OUTSIDE THIS FILE */
@@ -195,6 +195,7 @@ typedef struct __attribute__ ((__packed__)) InnerTV {
 typedef __attribute__((aligned (8))) union {
     double d;
     InnerTV tv;
+    int64_t raw;
 } TValue;
 
 /*
@@ -211,6 +212,7 @@ typedef struct __attribute__ ((__packed__)) {
 /* XXX: Symbol should probably contain a String instead of a char buf */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
     uint32_t size;
     char b[];
 } Symbol;
@@ -225,9 +227,18 @@ typedef struct __attribute__ ((__packed__)) {
 */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
     uint32_t size; 
     char b[]; // buffer
 } String;
+
+/*
+** Common header for markable objects
+*/
+typedef struct __attribute__ ((__packed__)) {
+  CommonHeader;
+  TValue mark;
+} MGCheader;
 
 /*
 ** Union of all Kernel heap-allocated values
@@ -235,6 +246,7 @@ typedef struct __attribute__ ((__packed__)) {
 /* LUA NOTE: In Lua the corresponding union is in lstate.h */
 union GCObject {
     GCheader gch;
+    MGCheader mgch;
     Pair pair;
     Symbol sym;
     String str;
@@ -274,9 +286,9 @@ const TValue kepinf;
 const TValue keminf;
 
 /* Macros to create TValues of non-heap allocated types (for initializers) */
-#define ch2tv_(ch_) {.tv = {.t = K_TAG_CHAR, .v = { .ch = ch_ }}}
-#define i2tv_(i_) {.tv = {.t = K_TAG_FIXINT, .v = { .i = i_ }}}
-#define b2tv_(b_) {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = b_ }}}
+#define ch2tv_(ch_) {.tv = {.t = K_TAG_CHAR, .v = { .ch = (ch_) }}}
+#define i2tv_(i_) {.tv = {.t = K_TAG_FIXINT, .v = { .i = (i_) }}}
+#define b2tv_(b_) {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = (b_) }}}
 
 /* Macros to create TValues of non-heap allocated types */
 #define ch2tv(ch_) ((TValue) ch2tv_(ch_))
@@ -286,7 +298,7 @@ const TValue keminf;
 /* Macros to convert a GCObject * into a tagged value */
 /* TODO: add assertions */
 /* LUA NOTE: the corresponding defines are in lstate.h */
-#define gc2tv(t_, o_) ((TValue) {.tv = {.t = t_, \
+#define gc2tv(t_, o_) ((TValue) {.tv = {.t = (t_),			\
 					.v = { .gc = obj2gco(o_)}}})
 #define gc2pair(o_) (gc2tv(K_TAG_PAIR, o_))
 #define gc2str(o_) (gc2tv(K_TAG_STRING, o_))
@@ -296,6 +308,8 @@ const TValue keminf;
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
 #define tv2str(v_) ((String *) gcvalue(v_))
 #define tv2sym(v_) ((Symbol *) gcvalue(v_))
+
+#define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
 
 /* Macro to convert any Kernel object into a GCObject */
 #define obj2gco(v_) ((GCObject *) (v_))
@@ -311,5 +325,18 @@ const TValue keminf;
 #define ttname(tv_) (ktv_names[ttype(tv_)])
 
 extern char *ktv_names[];
+
+/* Macros to handle marks */
+/* NOTE: this only works in markable objects */
+#define kget_mark(p_) (tv2mgch(p_)->mark) 
+#define kset_mark(p_, m_) (kget_mark(p_) = (m_))
+/* simple boolean #t mark */
+#define kmark(p_) (kset_mark(p_, KTRUE)) 
+#define kunmark(p_) (kset_mark(p_, KFALSE)) 
+#define kis_marked(p_) (!kis_unmarked(p_))
+#define kis_unmarked(p_) (tv_equal(kget_mark(p_), KFALSE))
+
+/* Macro to test the most basic equality on TValues */
+#define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)
 
 #endif

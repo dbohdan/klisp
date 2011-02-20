@@ -20,6 +20,7 @@ TValue kcons(TValue car, TValue cdr)
     new_pair->next = NULL;
     new_pair->gct = 0;
     new_pair->tt = K_TPAIR;
+    new_pair->mark = KFALSE;
     new_pair->car = car;
     new_pair->cdr = cdr;
 

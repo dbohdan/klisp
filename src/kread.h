@@ -7,6 +7,8 @@
 #ifndef kread_h
 #define kread_h
 
+#include <stdio.h>
+
 #include "kobject.h"
 
 /*

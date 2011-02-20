@@ -13,15 +13,25 @@
 #include "kstring.h"
 #include "kobject.h"
 
+/* TEMP: for now initialized in ktoken.c */
+TValue kempty_string = KINERT_;
+
 /* TODO: Out of memory errors */
 /* TEMP: for now all strings are mutable */
 TValue kstring_new(const char *buf, uint32_t size)
 {
-    String *new_str = malloc(sizeof(String) + size + 1);
+    String *new_str;
+
+    if (size == 0 && ttisstring(kempty_string)) {
+	return kempty_string;
+    }
+
+    new_str = malloc(sizeof(String) + size + 1);
 
     new_str->next = NULL;
     new_str->gct = 0;
     new_str->tt = K_TSTRING;
+    new_str->mark = KFALSE;
     new_str->size = size;
     /* NOTE: there can be embedded '\0's in a string */
     memcpy(new_str->b, buf, size);

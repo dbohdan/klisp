@@ -14,8 +14,8 @@
 #define kcar(p_) (tv2pair(p_)->car)
 #define kcdr(p_) (tv2pair(p_)->cdr)
 
-#define kset_car(p_, v_) (kcar(p_) = v_)
-#define kset_cdr(p_, v_) (kcdr(p_) = v_)
+#define kset_car(p_, v_) (kcar(p_) = (v_))
+#define kset_cdr(p_, v_) (kcdr(p_) = (v_))
 
 #define kdummy_cons() (kcons(KNIL, KNIL))
 
@@ -23,6 +23,6 @@
 TValue kcons(TValue, TValue);
 
 #define kget_source_info(p_) (tv2pair(p_)->si)
-#define kset_source_info(p_, si_) (kget_source_info(p_) = si_)
+#define kset_source_info(p_, si_) (kget_source_info(p_) = (si_))
 
 #endif

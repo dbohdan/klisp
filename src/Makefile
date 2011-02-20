@@ -7,7 +7,8 @@ MYCFLAGS=
 MYLDFLAGS=
 MYLIBS=
 
-CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o
+CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
+	kwrite.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -39,3 +40,4 @@ kstring.o: kstring.c kstring.h kobject.h
 # XXX: kpair.h because of use of list as symbol table
 ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h
 kread.o: kread.c kread.h kobject.h ktoken.h kpair.h
+kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h

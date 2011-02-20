@@ -16,4 +16,6 @@ TValue ksymbol_table;
 /* TEMP: for now all symbols are interned */
 TValue ksymbol_new(const char *);
 
+#define ksymbol_buf(tv_) (((Symbol *) ((tv_).tv.v.gc))->b)
+
 #endif

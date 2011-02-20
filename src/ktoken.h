@@ -9,6 +9,8 @@
 
 #include "kobject.h"
 
+#include <stdio.h>
+
 /*
 ** Tokenizer interface
 */

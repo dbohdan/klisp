@@ -47,15 +47,15 @@ void kcharset_empty(kcharset);
 void kcharset_fill(kcharset, char *);
 void kcharset_union(kcharset, kcharset);
 #define kcharset_contains(kch_, ch_) \
-    ({ unsigned char ch__ = (unsigned char) ch_;	\
+    ({ unsigned char ch__ = (unsigned char) (ch_);	\
 	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
     
 /*
 ** Char set contains macro interface
 */
-#define KCHS_OCTANT(ch) (ch >> 5)
-#define KCHS_BIT(ch) (1 << (ch & 0x1f))
+#define KCHS_OCTANT(ch) ((ch) >> 5)
+#define KCHS_BIT(ch) (1 << ((ch) & 0x1f))
 
 void kcharset_empty(kcharset chs)
 {
@@ -95,7 +95,7 @@ kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 /* TODO: add hex digits */
 #define ktok_digit_value(ch_) (ch_ - '0')
 #define ktok_is_whitespace(chi_) kcharset_contains(ktok_whitespace, chi_)
-#define ktok_is_delimiter(chi_) (chi == EOF || \
+#define ktok_is_delimiter(chi_) ((chi_) == EOF ||			\
 				 kcharset_contains(ktok_delimiter, chi_))
 #define ktok_is_subsequent(chi_) kcharset_contains(ktok_subsequent, chi_)
 
@@ -127,6 +127,9 @@ bool ktok_seen_eof;
 
 void ktok_init()
 {
+    /* TEMP: for now initialize empty string here */
+    kempty_string = kstring_new("", 0);
+
     assert(ktok_file != NULL);
     assert(ktok_source_info.filename != NULL);
 
