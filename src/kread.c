@@ -72,13 +72,13 @@ int dstack_i;
 #define STACK_INIT_SIZE 1024
 
 #define push_state(st_) ({ assert(sstack_i < sstack_size);	\
-	    sstack[sstack_i++] = st_; })
+	    sstack[sstack_i++] = (st_); })
 #define pop_state() (--sstack_i)
 #define get_state() (sstack[sstack_i-1])
 #define clear_state() (sstack_i = 0)
 
 #define push_data(data_) ({ assert(dstack_i < dstack_size);	\
-	    dstack[dstack_i++] = data_; })
+	    dstack[dstack_i++] = (data_); })
 #define pop_data() (--dstack_i)
 #define get_data() (dstack[dstack_i-1])
 #define clear_data() (dstack_i = 0)
@@ -332,8 +332,8 @@ TValue kread_fsm()
 			if (ttiseof(res)) {
 			    return res;
 			} else {
-			    /* token ok, process it in next iteration */
-			    obj = tok;
+			    /* ref ok, process it in next iteration */
+			    obj = res;
 			    /* NOTE: use source info of ref token */
 			    obj_si = ktok_get_source_info();
 			    read_next_token = false;
