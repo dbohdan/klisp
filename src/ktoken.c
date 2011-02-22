@@ -8,10 +8,17 @@
 /*
 ** TODO:
 **
+** From the Report:
 ** - Support other number types besides fixints and exact infinities
 ** - Support for complete number syntax (exactness, radix, etc)
-** - Support for unicode (strings, char and symbols).
 ** - Error handling
+** 
+** NOT from the Report:
+** - Support for unicode (strings, char and symbols).
+** - srfi-30 stype #| ... |# nested comments and srfi-62 style #;
+**    sexp comments.
+** - more named chars (like #\tab and in strings "\t")
+** - numeric escaped chars (like #\u0020)
 **
 */
 #include <stdio.h>
