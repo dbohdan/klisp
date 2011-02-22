@@ -18,14 +18,6 @@
 #include "kstring.h"
 #include "ksymbol.h"
 
-/*
-** TODO:
-**
-** - Write a print function for strings that works on strings
-**   with embedded '\0's
-**
-*/
-
 /* TODO: move to the global state */
 FILE *kwrite_file = NULL;
 /* TEMP: for now use fixints for shared refs */
@@ -54,6 +46,48 @@ int kw_dstack_i;
 /* macro for printing */
 #define kw_printf(...) fprintf(kwrite_file, __VA_ARGS__)
 #define kw_flush() fflush(kwrite_file)
+
+/*
+** Helper for printing strings (correcly escapes backslashes and
+** double quotes & prints embedded '\0's). It includes the surrounding
+** double quotes.
+*/
+void kw_print_string(TValue str)
+{
+    int size = kstring_size(str);
+    char *buf = kstring_buf(str);
+    char *ptr = buf;
+    int i = 0;
+
+    kw_printf("\"");
+
+    while (i < size) {
+	/* find the longest printf-able substring to avoid calling printf
+	 for every char */
+	for (ptr = buf; i < size && *ptr != '\0' 
+		 && *ptr != '\\' && *ptr != '"'; i++, ptr++)
+	    ;
+
+	/* NOTE: this work even if ptr == buf (which can only happen the 
+	 first or last time) */
+	char ch = *ptr;
+	*ptr = '\0';
+	printf("%s", buf);
+	*ptr = ch;
+
+	while(i < size && (*ptr == '\0' || *ptr == '\\' || *ptr == '"')) {
+	    if (*ptr == '\0')
+		printf("%c", '\0'); /* this may not show in the terminal */
+	    else 
+		printf("\\%c", *ptr);
+	    i++;
+	    ptr++;
+	}
+	buf = ptr;
+    }
+			
+    kw_printf("\"");
+}
 
 /*
 ** Writer initialization
@@ -243,16 +277,14 @@ void kwrite_fsm()
 		} else {
 		    TValue mark = kget_mark(obj);
 		    if (ttisboolean(mark)) { /* simple string (only once) */
-			/* XXX: this doesn't correctly print strings with '\0's */
-			kw_printf("\"%s\"", kstring_buf(obj));
+			kw_print_string(obj);
 		    } else if (ivalue(mark) < 0) { /* string with no assigned # */
 			/* TEMP: for now only fixints in shared refs */
 			assert(kw_shared_count >= 0);
 			kset_mark(obj, i2tv(kw_shared_count));
-			/* XXX: this doesn't correctly print strings with '\0's */
-			kw_printf("#%" PRId32 "=\"%s\"", kw_shared_count,
-				  kstring_buf(obj));
+			kw_printf("#%" PRId32 "=", kw_shared_count);
 			kw_shared_count++;
+			kw_print_string(obj);
 		    } else { /* string with an assigned number */
 			kw_printf("#%" PRId32 "#", ivalue(mark));
 		    }
