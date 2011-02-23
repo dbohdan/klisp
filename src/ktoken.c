@@ -4,6 +4,10 @@
 ** See Copyright Notice in klisp.h
 */
 
+/*
+** Symbols should be converted to some standard case before interning
+** (in this case downcase)
+*/
 
 /*
 ** TODO:

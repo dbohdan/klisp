@@ -4,6 +4,36 @@
 ** See Copyright Notice at the end of this file
 */
 
+#ifndef klisp_h
+#define klisp_h
+
+#include <stdlib.h>
+
+#include "kobject.h"
+
+/*
+** SOURCE NOTE: This is mostly from Lua.
+*/
+
+typedef struct klisp_State klisp_State;
+
+/*
+** prototype for memory-allocation functions
+*/
+typedef void * (*klisp_Alloc) 
+    (void *ud, void *ptr, size_t osize, size_t nsize);
+
+/*
+** prototype for callable c functions from the interpreter main loop:
+*/
+typedef void (klisp_Ifunc) (TValue *ud, TValue val);
+
+/*
+** state manipulation
+*/
+klisp_State *klisp_newstate (klisp_Alloc f, void *ud);
+void klisp_close (klisp_State *K);
+
 /******************************************************************************
 * Copyright (C) 2011 Andres Navarro.  All rights reserved.
 * Lua parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio. All rights reserved.
@@ -27,3 +57,5 @@
 * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
+
+#endif

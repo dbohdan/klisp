@@ -5,27 +5,27 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
-#include <inttypes.h>
-#include <math.h>
+#include <setjmp.h>
 
+/* turn on assertions for internal checking */
+#define klisp_assert (assert)
+#include "klimits.h"
+
+#include "klisp.h"
 #include "kobject.h"
+#include "kauxlib.h"
+#include "kstate.h"
 #include "kread.h"
 #include "kwrite.h"
 
-int main(int argc, char *argv[]) 
+/*
+** Simple read/write loop
+*/
+void main_body()
 {
-    /*
-    ** Simple read/write loop
-    */
-    printf("Read/Write Test\n");
-
-    kread_file = stdin;
-    kread_filename = "*STDIN*";
-    kwrite_file = stdout;
-    kread_init();
-    kwrite_init();
-
     TValue obj = KNIL;
 
     while(!ttiseof(obj)) {
@@ -33,6 +33,37 @@ int main(int argc, char *argv[])
 	kwrite(obj);
 	knewline();
     }
+}
 
-    return 0;
+int main(int argc, char *argv[]) 
+{
+    printf("Read/Write Test\n");
+
+    /* TEMP: old initialization */
+    kread_file = stdin;
+    kread_filename = "*STDIN*";
+    kwrite_file = stdout;
+    kread_init();
+    kwrite_init();
+
+    klisp_State *K = klispL_newstate();
+    int ret_value = 0;
+    bool done = false;
+
+    while(!done) {
+	if (setjmp(K->error_jb)) {
+	    /* error signaled */
+	    if (!K->error_can_cont) {
+		ret_value = 1;
+		done = true;
+	    }
+	} else {
+	    main_body();
+	    ret_value = 0;
+	    done = true;
+	}
+    }
+
+    klisp_close(K);
+    return ret_value;
 }

@@ -209,6 +209,13 @@ typedef struct __attribute__ ((__packed__)) {
     TValue si; /* source code info (either () or (filename line col) */
 } Pair;
 
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue name; /* cont name/type */
+    TValue si; /* source code info (either () or (filename line col) */
+    /* TODO */
+} Continuation;
+
 /* XXX: Symbol should probably contain a String instead of a char buf */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
@@ -250,6 +257,7 @@ union GCObject {
     Pair pair;
     Symbol sym;
     String str;
+    Continuation cont;
 };
 
 
