@@ -10,36 +10,28 @@
 **
 ** - Read mutable/immutable objects (cons function should be a parameter)
 **    this is needed because some functions (like load) return immutable objs
-** - Decent error handling mechanism
 **
 */
 
 #include <stdio.h>
-/* XXX for malloc */
 #include <stdlib.h>
-/* TODO: use a generalized alloc function */
-/* TEMP: for out of mem errors */
 #include <assert.h>
 
 #include "kread.h"
 #include "kobject.h"
 #include "kpair.h"
 #include "ktoken.h"
-
-/* TODO: move to the global state */
-/* TODO: replace the list with a hashtable */
-TValue shared_dict = KNIL_;
-FILE *kread_file = NULL;
-char *kread_filename = NULL;
+#include "kstate.h"
+#include "kerror.h"
 
 
 /*
-** Stacks for the read FSM
+** Stack for the read FSM
 **
-** The state stack is never empty while read is in process and
+** There is always one state in the stack while read is in process and
 ** selects the action to be performed on the next read token.
 **
-** The data saved in the data stack changes according to state:
+** The data saved in the stack is below the state and changes according to it:
 ** ST_FIRST_LIST: pair representing the first pair of the list
 **   with source info of the '(' token.
 ** ST_MIDDLE_LIST, ST_LAST_ILIST: two elements, first below, second on top:
@@ -54,70 +46,28 @@ char *kread_filename = NULL;
 ** 
 */
 
-/* TODO: move to the global state */
 typedef enum {
     ST_READ, ST_SHARED_DEF, ST_LAST_ILIST, ST_PAST_LAST_ILIST,
     ST_FIRST_LIST, ST_MIDDLE_LIST 
 } state_t;
 
-state_t *sstack;
-int sstack_size;
-int sstack_i;
+#define push_state(kst_, st_) (ks_spush(kst_, (i2tv((int32_t)(st_)))))
+#define get_state(kst_) ((state_t) ivalue(ks_sget(kst_)))
+#define pop_state(kst_) (ks_sdpop(kst_))
 
-TValue *dstack;
-int dstack_size;
-int dstack_i;
+#define push_data(kst_, st_) (ks_spush(kst_, st_))
+#define get_data(kst_) (ks_sget(kst_))
+#define pop_data(kst_) (ks_sdpop(kst_))
 
-/* TEMP: for now stacks are fixed size, use asserts to check */
-#define STACK_INIT_SIZE 1024
-
-#define push_state(st_) ({ assert(sstack_i < sstack_size);	\
-	    sstack[sstack_i++] = (st_); })
-#define pop_state() (--sstack_i)
-#define get_state() (sstack[sstack_i-1])
-#define clear_state() (sstack_i = 0)
-
-#define push_data(data_) ({ assert(dstack_i < dstack_size);	\
-	    dstack[dstack_i++] = (data_); })
-#define pop_data() (--dstack_i)
-#define get_data() (dstack[dstack_i-1])
-#define clear_data() (dstack_i = 0)
 
 /*
 ** Error management
 */
-TValue kread_error(char *str)
+void kread_error(klisp_State *K, char *str)
 {
-    /* TODO: Decide on error handling mechanism for reader (& tokenizer) */
-    printf("READ ERROR: %s\n", str);
-    return KEOF;
-}
-
-/*
-** Reader initialization
-*/
-void kread_init()
-{
-    assert(kread_file != NULL);
-    assert(kread_filename != NULL);
-
-    ktok_file = kread_file;
-    ktok_source_info.filename = kread_filename;
-    /* XXX: For now just hardcode it to 8 spaces tab-stop */
-    ktok_source_info.tab_width = 8;
-    ktok_init();
-    ktok_reset_source_info();
-
-    /* XXX: for now use a fixed size for stacks */
-    sstack_size = STACK_INIT_SIZE;
-    clear_state();
-    sstack = malloc(STACK_INIT_SIZE*sizeof(state_t));
-    assert(sstack != NULL);
-
-    dstack_size = STACK_INIT_SIZE;
-    clear_data();
-    dstack = malloc(STACK_INIT_SIZE*sizeof(TValue));
-    assert(dstack != NULL);
+    /* clear the stack */
+    ks_sclear(K);
+    klispE_throw(K, str, true);
 }
 
 /*
@@ -125,50 +75,56 @@ void kread_init()
 */
 
 /* This is called after kread to clear the shared alist */
-void clear_shared_dict() 
+void clear_shared_dict(klisp_State *K) 
 {
-    shared_dict = KNIL;
+    K->shared_dict = KNIL;
 }
 
-TValue try_shared_ref(TValue ref_token)
+TValue try_shared_ref(klisp_State *K, TValue ref_token)
 {
     /* TEMP: for now, only allow fixints in shared tokens */
     int32_t ref_num = ivalue(kcdr(ref_token));
-    TValue tail = shared_dict;
+    TValue tail = K->shared_dict;
     while (!ttisnil(tail)) {
 	TValue head = kcar(tail);
 	if (ref_num == ivalue(kcar(head)))
 	    return kcdr(head);
 	tail = kcdr(tail);
     }
-    return kread_error("undefined shared ref found");
+    
+    kread_error(K, "undefined shared ref found");
+    /* avoid warning */
+    return KINERT;
 }
 
-TValue try_shared_def(TValue def_token, TValue value)
+TValue try_shared_def(klisp_State *K, TValue def_token, TValue value)
 {
     /* TEMP: for now, only allow fixints in shared tokens */
     int32_t ref_num = ivalue(kcdr(def_token));
-    TValue tail = shared_dict;
+    TValue tail = K->shared_dict;
     while (!ttisnil(tail)) {
 	TValue head = kcar(tail);
-	if (ref_num == ivalue(kcar(head)))
-	    return kread_error("duplicate shared def found");
+	if (ref_num == ivalue(kcar(head))) {
+	    kread_error(K, "duplicate shared def found");
+	    /* avoid warning */
+	    return KINERT;
+	}
 	tail = kcdr(tail);
     }
     
-    /* XXX: what happens on out of mem? & gc?(inner cons is not rooted) */
-    shared_dict = kcons(kcons(kcdr(def_token), value), 
-			      shared_dict);
+    /* XXX: what happens on out of mem? & gc? (inner cons is not rooted) */
+    K->shared_dict = kcons(K, kcons(K, kcdr(def_token), value), 
+			   K->shared_dict);
     return KINERT;
 }
 
 /* This overwrites a previouly made def, it is used in '() */
 /* NOTE: the shared def is guaranteed to exist */
-void change_shared_def(TValue def_token, TValue value)
+void change_shared_def(klisp_State *K, TValue def_token, TValue value)
 {
     /* TEMP: for now, only allow fixints in shared tokens */
     int32_t ref_num = ivalue(kcdr(def_token));
-    TValue tail = shared_dict;
+    TValue tail = K->shared_dict;
     while (!ttisnil(tail)) {
 	TValue head = kcar(tail);
 	if (ref_num == ivalue(kcar(head))) {
@@ -185,9 +141,11 @@ void change_shared_def(TValue def_token, TValue value)
 ** Reader FSM
 */
 /* TEMP: For now we'll use just one big function */
-TValue kread_fsm()
+TValue kread_fsm(klisp_State *K)
 {
-    push_state(ST_READ);
+    assert(ks_sisempty(K));
+    assert(ttisnil(K->shared_dict));
+    push_state(K, ST_READ);
 
     /* read next token or process obj */
     bool read_next_token = true; 
@@ -196,46 +154,54 @@ TValue kread_fsm()
     /* the source code information of that obj */
     TValue obj_si; 
 
-    while (!(get_state() == ST_READ && !read_next_token)) {
+    while (!(get_state(K) == ST_READ && !read_next_token)) {
 	if (read_next_token) {
-	    TValue tok = ktok_read_token();
+	    TValue tok = ktok_read_token(K);
 	    if (ttispair(tok)) { /* special token */
 		switch (chvalue(kcar(tok))) {
 		case '(': {
-		    if (get_state() == ST_PAST_LAST_ILIST)
-			return kread_error("open paren found after "
-					   "last element of improper list");
-		    TValue np = kdummy_cons();
+		    if (get_state(K) == ST_PAST_LAST_ILIST) {
+			kread_error(K, "open paren found after "
+				    "last element of improper list");
+			/* avoid warning */
+			return KINERT;
+		    }
+		    TValue np = kdummy_cons(K);
 		    /* 
 		    ** NOTE: the source info of the '(' is temporarily saved 
 		    ** in np (later it will be replace by the source info
 		    ** of the car of the list
 		    */
-		    kset_source_info(np, ktok_get_source_info());
+		    kset_source_info(np, ktok_get_source_info(K));
 
 		    /* update the shared def to point to the new list */
-		    /* NOTE: this is necessary for self referrencing lists */
+		    /* NOTE: this is necessary for self referencing lists */
 		    /* NOTE: the shared def was already checked for errors */
-		    if (get_state() == ST_SHARED_DEF) 
-			change_shared_def(kcar(get_data()), np);
+		    if (get_state(K) == ST_SHARED_DEF) { 
+			/* take the state out of the way */
+			pop_state(K);
+			change_shared_def(K, kcar(get_data(K)), np);
+			push_state(K, ST_SHARED_DEF);
+		    }
 		    
 		    /* start reading elements of the new list */
-		    push_state(ST_FIRST_LIST);
-		    push_data(np);
+		    push_data(K, np);
+		    push_state(K, ST_FIRST_LIST);
 		    read_next_token = true;
 		    break;
 		}
 		case ')': {
-		    switch(get_state()) {
+		    switch(get_state(K)) {
 		    case ST_FIRST_LIST: { /* empty list */
 			/*
 			** Discard the pair in sdata but
 			** retain the source info
 			** Return () for processing
 			*/
-			TValue fp_with_old_si = get_data();
-			pop_data();
-			pop_state();
+			pop_state(K);
+			TValue fp_with_old_si = get_data(K);
+			pop_data(K);
+
 			obj = KNIL;
 			obj_si = kget_source_info(fp_with_old_si);
 			read_next_token = false;
@@ -243,12 +209,12 @@ TValue kread_fsm()
 		    }
 		    case ST_MIDDLE_LIST: /* end of list */
 		    case ST_PAST_LAST_ILIST: { /* end of ilist */
+			pop_state(K);
 			/* discard info on last pair */
-			pop_data();
-			pop_state();
-			TValue fp_old_si = get_data();
-			pop_data();
-			pop_state();
+			pop_data(K);
+			pop_state(K);
+			TValue fp_old_si = get_data(K);
+			pop_data(K);
 			/* list read ok, process it in next iteration */
 			obj = kcar(fp_old_si);
 			obj_si = kcdr(fp_old_si);
@@ -256,62 +222,84 @@ TValue kread_fsm()
 			break;
 		    }
 		    case ST_LAST_ILIST:
-			return kread_error("missing last element in "
-					   "improper list");
+			kread_error(K, "missing last element in "
+				    "improper list");
+			/* avoid warning */
+			return KINERT;
 		    case ST_SHARED_DEF:
-			return kread_error("unmatched closing paren found "
-					   "in shared def");
+			kread_error(K, "unmatched closing paren found "
+				    "in shared def");
+			/* avoid warning */
+			return KINERT;
 		    case ST_READ:
-			return kread_error("unmatched closing paren found");
+			kread_error(K, "unmatched closing paren found");
+			/* avoid warning */
+			return KINERT;
 		    default:
 			/* shouldn't happen */
-			assert(0);
+			kread_error(K, "Unknown read state in )");
+			/* avoid warning */
+			return KINERT;
 		    }
 		    break;
 		}
 		case '.': {
-		    switch(get_state()) {
+		    switch(get_state(K)) {
 		    case (ST_MIDDLE_LIST):
 			/* tok ok, read next obj for cdr of ilist */
-			pop_state();
-			push_state(ST_LAST_ILIST);
+			pop_state(K);
+			push_state(K, ST_LAST_ILIST);
 			read_next_token = true;
 			break;
 		    case ST_FIRST_LIST:
-			return kread_error("missing first element of "
-					   "improper list");
+			kread_error(K, "missing first element of "
+				    "improper list");
+			/* avoid warning */
+			return KINERT;
 		    case ST_LAST_ILIST:
 		    case ST_PAST_LAST_ILIST:
-			return kread_error("double dot in improper list");
+			kread_error(K, "double dot in improper list");
+			/* avoid warning */
+			return KINERT;
 		    case ST_SHARED_DEF:
-			return kread_error("dot found in shared def");
+			kread_error(K, "dot found in shared def");
+			/* avoid warning */
+			return KINERT;
 		    case ST_READ:
-			return kread_error("dot found outside list");
+			kread_error(K, "dot found outside list");
+			/* avoid warning */
+			return KINERT;
 		    default:
 			/* shouldn't happen */
-			assert(0);
+			kread_error(K, "Unknown read state in .");
+			/* avoid warning */
+			return KINERT;
 		    }
 		    break;
 		}
 		case '=': { /* srfi-38 shared def */
-		    switch (get_state()) {
+		    switch (get_state(K)) {
 		    case ST_SHARED_DEF:
-			return kread_error("shared def found in "
-					   "shared def");
+			kread_error(K, "shared def found in "
+				    "shared def");
+			/* avoid warning */
+			return KINERT;
 		    case ST_PAST_LAST_ILIST:
-			return kread_error("shared def found after "
-					   "last element of improper list");
+			kread_error(K, "shared def found after "
+				    "last element of improper list");
+			/* avoid warning */
+			return KINERT;
 		    default: {
-			TValue res = try_shared_def(tok, KNIL);
+			TValue res = try_shared_def(K, tok, KNIL);
 			/* TEMP: while error returns EOF */
 			if (ttiseof(res)) {
 			    return res;
 			} else {
 			    /* token ok, read defined object */
-			    push_state(ST_SHARED_DEF);
 			    /* NOTE: save the source info to return it 
 			     after the defined object is read */
-			    push_data(kcons(tok, ktok_get_source_info()));
+			    push_data(K, kcons(K, tok, ktok_get_source_info(K)));
+			    push_state(K, ST_SHARED_DEF);
 			    read_next_token = true;
 			}
 		    }
@@ -319,15 +307,19 @@ TValue kread_fsm()
 		    break;
 		}
 		case '#': { /* srfi-38 shared ref */
-		    switch(get_state()) {
+		    switch(get_state(K)) {
 		    case ST_SHARED_DEF:
-			return kread_error("shared ref found in "
-					   "shared def");
+			kread_error(K, "shared ref found in "
+				    "shared def");
+			/* avoid warning */
+			return KINERT;
 		    case ST_PAST_LAST_ILIST:
-			return kread_error("shared ref found after "
-					   "last element of improper list");
+			kread_error(K, "shared ref found after "
+				    "last element of improper list");
+			/* avoid warning */
+			return KINERT;
 		    default: {
-			TValue res = try_shared_ref(tok);
+			TValue res = try_shared_ref(K, tok);
 			/* TEMP: while error returns EOF */
 			if (ttiseof(res)) {
 			    return res;
@@ -335,7 +327,7 @@ TValue kread_fsm()
 			    /* ref ok, process it in next iteration */
 			    obj = res;
 			    /* NOTE: use source info of ref token */
-			    obj_si = ktok_get_source_info();
+			    obj_si = ktok_get_source_info(K);
 			    read_next_token = false;
 			}
 		    }
@@ -344,45 +336,59 @@ TValue kread_fsm()
 		}
 		default:
 		    /* shouldn't happen */
-		    assert(0);
+		    kread_error(K, "unknown special token");
+		    /* avoid warning */
+		    return KINERT;
 		}
 	    } else if (ttiseof(tok)) {
-		switch (get_state()) {
+		switch (get_state(K)) {
 		case ST_READ:
 		    /* will exit in next loop */
 		    obj = tok;
-		    obj_si = ktok_get_source_info();
+		    obj_si = ktok_get_source_info(K);
 		    read_next_token = false;
 		    break;
 		case ST_FIRST_LIST:
 		case ST_MIDDLE_LIST:
-		    return kread_error("EOF found while reading list");
+		    kread_error(K, "EOF found while reading list");
+		    /* avoid warning */
+		    return KINERT;
 		case ST_LAST_ILIST:
 		case ST_PAST_LAST_ILIST:
-		    return kread_error("EOF found while reading "
+		    kread_error(K, "EOF found while reading "
 				       "improper list");
+		    /* avoid warning */
+		    return KINERT;
 		case ST_SHARED_DEF:
-		    return kread_error("EOF found in shared def");
+		    kread_error(K, "EOF found in shared def");
+		    /* avoid warning */
+		    return KINERT;
 		default:
 		    /* shouldn't happen */
-		    assert(0);
+		    kread_error(K, "unknown read state in EOF");
+		    /* avoid warning */
+		    return KINERT;
 		}
 	    } else { /* this can only be a complete token */
-		if (get_state() == ST_PAST_LAST_ILIST) {
-		    return kread_error("Non paren found after last "
-			"element of improper list");
+		if (get_state(K) == ST_PAST_LAST_ILIST) {
+		    kread_error(K, "Non paren found after last "
+				"element of improper list");
+		    /* avoid warning */
+		    return KINERT;
 		} else {
 		    /* token ok, process it in next iteration */
 		    obj = tok;
-		    obj_si = ktok_get_source_info();
+		    obj_si = ktok_get_source_info(K);
 		    read_next_token = false;
 		}
 	    }
 	} else { /* if(read_next_token) */
 	    /* process the object just read */
-	    switch(get_state()) {
+	    switch(get_state(K)) {
 	    case ST_FIRST_LIST: {
-		TValue fp = get_data();
+		/* get the state out of the way */
+		pop_state(K);
+		TValue fp = get_data(K);
 		/* replace source info in fp with the saved one */
 		/* NOTE: the old one will be returned when list is complete */
 		TValue fp_old_si = kget_source_info(fp);
@@ -390,39 +396,43 @@ TValue kread_fsm()
 		kset_car(fp, obj);
 		
 		/* continue reading objects of list */
-		push_state(ST_MIDDLE_LIST);
-		pop_data();
 		/* save first & last pair of the (still incomplete) list */
-		push_data(kcons (fp, fp_old_si));
-		push_data(fp);
+		pop_data(K);
+		push_data(K, kcons (K, fp, fp_old_si));
+		push_state(K, ST_FIRST_LIST);
+		push_data(K, fp);
+		push_state(K, ST_MIDDLE_LIST);
 		read_next_token = true;
 		break;
 	    }
 	    case ST_MIDDLE_LIST: {
-		TValue np = kcons(obj, KNIL);
+		/* get the state out of the way */
+		pop_state(K);
+		TValue np = kcons(K, obj, KNIL);
 		kset_source_info(np, obj_si);
-		kset_cdr(get_data(), np);
+		kset_cdr(get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */
-		pop_data();
-		push_data(np);
+		pop_data(K);
+		push_data(K, np);
+		push_state(K, ST_MIDDLE_LIST);
 		read_next_token = true;
 		break;
 	    }
 	    case ST_LAST_ILIST:
-		kset_cdr(get_data(), obj);
-		/* only change the state, keep the pair in data to simplify 
+		/* only change the state, keep the pair data to simplify 
 		   the close paren code (same as for ST_MIDDLE_LIST) */
-		pop_state();
-		push_state(ST_PAST_LAST_ILIST);
+		pop_state(K);
+		kset_cdr(get_data(K), obj);
+		push_state(K, ST_PAST_LAST_ILIST);
 		read_next_token = true;
 		break;
 	    case ST_SHARED_DEF: {
 		/* shared def completed, continue processing obj */
-		TValue def_si = get_data();
-		pop_state();
-		pop_data();
+		pop_state(K);
+		TValue def_si = get_data(K);
+		pop_data(K);
 
-		change_shared_def(kcar(def_si), obj);
+		change_shared_def(K, kcar(def_si), obj);
 		
 		/* obj = obj; */
 		/* the source info returned is the one from the shared def */
@@ -432,33 +442,37 @@ TValue kread_fsm()
 	    }
 	    case ST_READ:
 		/* this shouldn't happen, should've exited the while */
-		assert(0);
+		kread_error(K, "invalid read state (read in while)");
+		/* avoid warning */
+		return KINERT;
 	    default:
 		/* shouldn't happen */
-		assert(0);
+		kread_error(K, "unknown read state in process obj");
+		/* avoid warning */
+		return KINERT;
 	    }
 	}
     }
 
+    pop_state(K);
+    assert(ks_sisempty(K));
     return obj;
 }
 
 /*
 ** Reader Main Function
 */
-TValue kread()
+TValue kread(klisp_State *K)
 {
     TValue obj;
 
     /* TEMP: for now assume we are in the repl: reset source info */
-    ktok_reset_source_info();
+    ktok_reset_source_info(K);
 
-    obj = kread_fsm();
+    obj = kread_fsm(K);
 
     /* NOTE: clear after function to allow earlier gc */
-    clear_shared_dict();
-    clear_state();
-    clear_data();
+    clear_shared_dict(K);
 
     return obj;
 }

@@ -7,19 +7,13 @@
 #ifndef kread_h
 #define kread_h
 
-#include <stdio.h>
-
 #include "kobject.h"
+#include "kstate.h"
 
 /*
 ** Reader interface
 */
-void kread_init();
-TValue kread();
-
-/* TODO: move this to the global state */
-FILE *kread_file;
-char *kread_filename;
+TValue kread(klisp_State *K);
 
 #endif
 

@@ -7,19 +7,14 @@
 #ifndef kwrite_h
 #define kwrite_h
 
-#include <stdio.h>
-
 #include "kobject.h"
+#include "kstate.h"
 
 /*
 ** Writer interface
 */
-void kwrite_init();
-void kwrite(TValue);
-void knewline();
-
-/* TODO: move this to the global state */
-FILE *kwrite_file;
+void kwrite(klisp_State *K, TValue obj);
+void knewline(klisp_State *K);
 
 #endif
 

@@ -4,18 +4,15 @@
 ** See Copyright Notice in klisp.h
 */
 
-/* XXX: for malloc */
-#include <stdlib.h>
-/* TODO: use a generalized alloc function */
-
 #include "kpair.h"
 #include "kobject.h"
+#include "kstate.h"
+#include "kmem.h"
 
-/* TODO: Out of memory errors */
 /* TEMP: for now all pairs are mutable */
-TValue kcons(TValue car, TValue cdr) 
+TValue kcons(klisp_State *K, TValue car, TValue cdr) 
 {
-    Pair *new_pair = malloc(sizeof(Pair));
+    Pair *new_pair = klispM_new(K, Pair);
 
     new_pair->next = NULL;
     new_pair->gct = 0;

@@ -8,13 +8,11 @@
 #define ksymbol_h
 
 #include "kobject.h"
-
-/* TODO: replace the list with a hashtable */
-/* TODO: move to global state */
-TValue ksymbol_table;
+#include "kstate.h"
+#include "kmem.h"
 
 /* TEMP: for now all symbols are interned */
-TValue ksymbol_new(const char *);
+TValue ksymbol_new(klisp_State *K, const char *buf);
 
 #define ksymbol_buf(tv_) (((Symbol *) ((tv_).tv.v.gc))->b)
 

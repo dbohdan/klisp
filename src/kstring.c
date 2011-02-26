@@ -4,29 +4,44 @@
 ** See Copyright Notice in klisp.h
 */
 
-/* XXX: for malloc */
-#include <stdlib.h>
-/* TODO: use a generalized alloc function */
-
 #include <string.h>
 
 #include "kstring.h"
 #include "kobject.h"
+#include "kstate.h"
+#include "kmem.h"
 
-/* TEMP: for now initialized in ktoken.c */
+/* TEMP: for now initialized in kstate.c */
 TValue kempty_string = KINERT_;
 
-/* TODO: Out of memory errors */
-/* TEMP: for now all strings are mutable */
-TValue kstring_new(const char *buf, uint32_t size)
+/* TEMP: this is for initializing the above value, for now, from ktoken.h */
+TValue kstring_new_empty(klisp_State *K)
 {
     String *new_str;
 
-    if (size == 0 && ttisstring(kempty_string)) {
+    new_str = klispM_malloc(K, sizeof(String) + 1);
+
+    new_str->next = NULL;
+    new_str->gct = 0;
+    new_str->tt = K_TSTRING;
+    new_str->mark = KFALSE;
+    new_str->size = 0;
+    new_str->b[0] = '\0';
+
+    return gc2str(new_str);
+}
+
+/* TEMP: for now all strings are mutable */
+TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
+{
+    String *new_str;
+
+    if (size == 0) {
+	assert(ttisstring(kempty_string));
 	return kempty_string;
     }
 
-    new_str = malloc(sizeof(String) + size + 1);
+    new_str = klispM_malloc(K, sizeof(String) + size + 1);
 
     new_str->next = NULL;
     new_str->gct = 0;

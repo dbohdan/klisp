@@ -35,14 +35,15 @@ clean:
 klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
 	kerror.h kauxlib.h
 kobject.o: kobject.c kobject.h
-ktoken.o: ktoken.c ktoken.h kobject.h kpair.h kstring.h ksymbol.h
-kpair.o: kpair.c kpair.h kobject.h
-kstring.o: kstring.c kstring.h kobject.h
+ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
+	kerror.h
+kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h
+kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h
 # XXX: kpair.h because of use of list as symbol table
-ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstate.h
-kread.o: kread.c kread.h kobject.h ktoken.h kpair.h
-kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h
-kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h
+ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstate.h kmem.h
+kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h
+kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h
+kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h

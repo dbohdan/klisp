@@ -5,10 +5,7 @@
 */
 
 #include <stdio.h>
-/* XXX for malloc */
 #include <stdlib.h>
-/* TODO: use a generalized alloc function */
-/* TEMP: for out of mem errors */
 #include <assert.h>
 #include <inttypes.h>
 
@@ -17,49 +14,41 @@
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
-
-/* TODO: move to the global state */
-FILE *kwrite_file = NULL;
-/* TEMP: for now use fixints for shared refs */
-int32_t kw_shared_count;
+#include "kstate.h"
+#include "kerror.h"
 
 /*
 ** Stack for the write FSM
 ** 
 */
 
-/* TODO: move to the global state */
-TValue *kw_dstack;
-int kw_dstack_size;
-int kw_dstack_i;
-
-/* TEMP: for now stacks are fixed size, use asserts to check */
-#define STACK_INIT_SIZE 1024
-
-#define push_data(data_) ({ assert(kw_dstack_i < kw_dstack_size);	\
-	    kw_dstack[kw_dstack_i++] = data_; })
-#define pop_data() (--kw_dstack_i)
-#define get_data() (kw_dstack[kw_dstack_i-1])
-#define data_is_empty() (kw_dstack_i == 0)
-#define clear_data() (kw_dstack_i = 0)
+#define push_data(ks_, data_) (ks_spush(ks_, data_))
+#define pop_data(ks_) (ks_sdpop(ks_))
+#define get_data(ks_) (ks_sget(ks_))
+#define data_is_empty(ks_) (ks_sisempty(ks_))
 
 /* macro for printing */
-#define kw_printf(...) fprintf(kwrite_file, __VA_ARGS__)
-#define kw_flush() fflush(kwrite_file)
+#define kw_printf(ks_, ...) fprintf((ks_)->curr_out, __VA_ARGS__)
+#define kw_flush(ks_) fflush((ks_)->curr_out)
+
+void kwrite_error(klisp_State *K, char *msg)
+{
+    klispE_throw(K, msg, true);
+}
 
 /*
 ** Helper for printing strings (correcly escapes backslashes and
 ** double quotes & prints embedded '\0's). It includes the surrounding
 ** double quotes.
 */
-void kw_print_string(TValue str)
+void kw_print_string(klisp_State *K, TValue str)
 {
     int size = kstring_size(str);
     char *buf = kstring_buf(str);
     char *ptr = buf;
     int i = 0;
 
-    kw_printf("\"");
+    kw_printf(K, "\"");
 
     while (i < size) {
 	/* find the longest printf-able substring to avoid calling printf
@@ -72,58 +61,47 @@ void kw_print_string(TValue str)
 	 first or last time) */
 	char ch = *ptr;
 	*ptr = '\0';
-	printf("%s", buf);
+	kw_printf(K, "%s", buf);
 	*ptr = ch;
 
 	while(i < size && (*ptr == '\0' || *ptr == '\\' || *ptr == '"')) {
 	    if (*ptr == '\0')
-		printf("%c", '\0'); /* this may not show in the terminal */
+		kw_printf(K, "%c", '\0'); /* this may not show in the terminal */
 	    else 
-		printf("\\%c", *ptr);
+		kw_printf(K, "\\%c", *ptr);
 	    i++;
 	    ptr++;
 	}
 	buf = ptr;
     }
 			
-    kw_printf("\"");
-}
-
-/*
-** Writer initialization
-*/
-void kwrite_init()
-{
-    assert(kwrite_file != NULL);
-
-    /* XXX: for now use a fixed size for stack */
-    kw_dstack_size = STACK_INIT_SIZE;
-    clear_data();
-    kw_dstack = malloc(STACK_INIT_SIZE*sizeof(TValue));
-    assert(kw_dstack != NULL);
+    kw_printf(K, "\"");
 }
 
 /*
 ** Mark initialization and clearing
 */
-void kw_clear_marks(TValue root)
+void kw_clear_marks(klisp_State *K, TValue root)
 {
-    push_data(root);
+    
+    assert(ks_sisempty(K));
+    push_data(K, root);
 
-    while(!data_is_empty()) {
-	TValue obj = get_data();
-	pop_data();
+    while(!data_is_empty(K)) {
+	TValue obj = get_data(K);
+	pop_data(K);
 	
 	if (ttispair(obj)) {
 	    if (kis_marked(obj)) {
 		kunmark(obj);
-		push_data(kcdr(obj));
-		push_data(kcar(obj));
+		push_data(K, kcdr(obj));
+		push_data(K, kcar(obj));
 	    }
 	} else if (ttisstring(obj) && (kis_marked(obj))) {
 	    kunmark(obj);
 	}
     }
+    assert(ks_sisempty(K));
 }
 
 /*
@@ -137,19 +115,20 @@ void kw_clear_marks(TValue root)
 **   find repetitions and to allow unmarking after write
 */
 
-void kw_set_initial_marks(TValue root)
+void kw_set_initial_marks(klisp_State *K, TValue root)
 {
-    push_data(root);
+    assert(ks_sisempty(K));
+    push_data(K, root);
     
-    while(!data_is_empty()) {
-	TValue obj = get_data();
-	pop_data();
+    while(!data_is_empty(K)) {
+	TValue obj = get_data(K);
+	pop_data(K);
 
 	if (ttispair(obj)) {
 	    if (kis_unmarked(obj)) {
 		kmark(obj); /* this mark just means visited */
-		push_data(kcdr(obj));
-		push_data(kcar(obj));
+		push_data(K, kcdr(obj));
+		push_data(K, kcar(obj));
 	    } else {
 		/* this mark means it will need a ref number */
 		kset_mark(obj, i2tv(-1));
@@ -164,25 +143,28 @@ void kw_set_initial_marks(TValue root)
 	}
 	/* all other types of object don't matter */
     }
+    assert(ks_sisempty(K));
 }
 
 /*
 ** Writes all values except strings and pairs
 */
-void kwrite_simple(TValue obj)
+void kwrite_simple(klisp_State *K, TValue obj)
 {
     switch(ttype(obj)) {
     case K_TSTRING:
-	/* this shouldn't happen */
-	assert(0);
+	/* shouldn't happen */
+	kwrite_error(K, "string type found in kwrite-simple");
+	/* avoid warning */
+	return;
     case K_TEINF:
-	kw_printf("#e%cinfinity", tv_equal(obj, KEPINF)? '+' : '-');
+	kw_printf(K, "#e%cinfinity", tv_equal(obj, KEPINF)? '+' : '-');
 	break;
     case K_TFIXINT:
-	kw_printf("%" PRId32, ivalue(obj));
+	kw_printf(K, "%" PRId32, ivalue(obj));
 	break;
     case K_TNIL:
-	kw_printf("()");
+	kw_printf(K, "()");
 	break;
     case K_TCHAR: {
 	char ch_buf[4];
@@ -198,53 +180,61 @@ void kwrite_simple(TValue obj)
 	    ch_buf[1] = '\0';
 	    ch_ptr = ch_buf;
 	}
-	kw_printf("#\\%s", ch_ptr);
+	kw_printf(K, "#\\%s", ch_ptr);
 	break;
     }
     case K_TBOOLEAN:
-	kw_printf("#%c", bvalue(obj)? 't' : 'f');
+	kw_printf(K, "#%c", bvalue(obj)? 't' : 'f');
 	break;
     case K_TSYMBOL:
 	/* TEMP: access symbol structure directly */
 	/* TEMP: for now assume all symbols have external representations */
-	kw_printf("%s", ksymbol_buf(obj));
+	kw_printf(K, "%s", ksymbol_buf(obj));
 	break;
     case K_TINERT:
-	kw_printf("#inert");
+	kw_printf(K, "#inert");
 	break;
     case K_TIGNORE:
-	kw_printf("#ignore");
+	kw_printf(K, "#ignore");
 	break;
     case K_TEOF:
-	kw_printf("[eof]");
+	kw_printf(K, "[eof]");
 	break;
     default:
 	/* shouldn't happen */
-	assert(0);
+	kwrite_error(K, "unknown object type");
+	/* avoid warning */
+	return;
     }
 }
 
 
-void kwrite_fsm()
+void kwrite_fsm(klisp_State *K, TValue obj)
 {
+    /* NOTE: a fixint is more than enough for output */
+    int32_t kw_shared_count = 0;
+
+    assert(ks_sisempty(K));
+    push_data(K, obj);
+
     bool middle_list = false;
-    while (!data_is_empty()) {
-	TValue obj = get_data();
-	pop_data();
+    while (!data_is_empty(K)) {
+	TValue obj = get_data(K);
+	pop_data(K);
 
 	if (middle_list) {
 	    if (ttisnil(obj)) { /* end of list */
-		kw_printf(")");
+		kw_printf(K, ")");
 		/* middle_list = true; */
 	    } else if (ttispair(obj) && ttisboolean(kget_mark(obj))) {
-		push_data(kcdr(obj));
-		push_data(kcar(obj));
-		kw_printf(" ");
+		push_data(K, kcdr(obj));
+		push_data(K, kcar(obj));
+		kw_printf(K, " ");
 		middle_list = false;
 	    } else { /* improper list is the same as shared ref */
-		kw_printf(" . ");
-		push_data(KNIL);
-		push_data(obj);
+		kw_printf(K, " . ");
+		push_data(K, KNIL);
+		push_data(K, obj);
 		middle_list = false;
 	    }
 	} else { /* if (middle_list) */
@@ -252,78 +242,70 @@ void kwrite_fsm()
 	    case K_TPAIR: {
 		TValue mark = kget_mark(obj);
 		if (ttisboolean(mark)) { /* simple pair (only once) */
-		    kw_printf("(");
-		    push_data(kcdr(obj));
-		    push_data(kcar(obj));
+		    kw_printf(K, "(");
+		    push_data(K, kcdr(obj));
+		    push_data(K, kcar(obj));
 		    middle_list = false;
 		} else if (ivalue(mark) < 0) { /* pair with no assigned # */
 		    /* TEMP: for now only fixints in shared refs */
 		    assert(kw_shared_count >= 0);
+
 		    kset_mark(obj, i2tv(kw_shared_count));
-		    kw_printf("#%" PRId32 "=(", kw_shared_count);
+		    kw_printf(K, "#%" PRId32 "=(", kw_shared_count);
 		    kw_shared_count++;
-		    push_data(kcdr(obj));
-		    push_data(kcar(obj));
+		    push_data(K, kcdr(obj));
+		    push_data(K, kcar(obj));
 		    middle_list = false;
 		} else { /* string with an assigned number */
-		    kw_printf("#%" PRId32 "#", ivalue(mark));
+		    kw_printf(K, "#%" PRId32 "#", ivalue(mark));
 		    middle_list = true;
 		}
 		break;
 	    }
 	    case K_TSTRING: {
 		if (kstring_is_empty(obj)) {
-		    kw_printf("\"\"");
+		    kw_printf(K, "\"\"");
 		} else {
 		    TValue mark = kget_mark(obj);
 		    if (ttisboolean(mark)) { /* simple string (only once) */
-			kw_print_string(obj);
+			kw_print_string(K, obj);
 		    } else if (ivalue(mark) < 0) { /* string with no assigned # */
 			/* TEMP: for now only fixints in shared refs */
 			assert(kw_shared_count >= 0);
 			kset_mark(obj, i2tv(kw_shared_count));
-			kw_printf("#%" PRId32 "=", kw_shared_count);
+			kw_printf(K, "#%" PRId32 "=", kw_shared_count);
 			kw_shared_count++;
-			kw_print_string(obj);
+			kw_print_string(K, obj);
 		    } else { /* string with an assigned number */
-			kw_printf("#%" PRId32 "#", ivalue(mark));
+			kw_printf(K, "#%" PRId32 "#", ivalue(mark));
 		    }
 		}
 		middle_list = true;
 		break;
 	    }
 	    default:
-		kwrite_simple(obj);
+		kwrite_simple(K, obj);
 		middle_list = true;
 	    }
 	}
     }
-    return;
+
+    assert(ks_sisempty(K));
 }
 
 /*
 ** Writer Main function
 */
-void kwrite(TValue obj)
+void kwrite(klisp_State *K, TValue obj)
 {
-    assert(data_is_empty());
-
-    kw_shared_count = 0;
-    kw_set_initial_marks(obj);
-
-    push_data(obj);
-    kwrite_fsm();
-    kw_flush();
-
-    kw_clear_marks(obj);
-
-    assert(data_is_empty());
-    return;
+    kw_set_initial_marks(K, obj);
+    kwrite_fsm(K, obj);
+    kw_flush(K);
+    kw_clear_marks(K, obj);
 }
 
-void knewline()
+void knewline(klisp_State *K)
 {
-    kw_printf("\n");
-    kw_flush();
-    return;
+    kw_printf(K, "\n");
+    kw_flush(K);
 }

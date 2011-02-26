@@ -24,27 +24,20 @@
 /*
 ** Simple read/write loop
 */
-void main_body()
+void main_body(klisp_State *K)
 {
     TValue obj = KNIL;
 
     while(!ttiseof(obj)) {
-	obj = kread();
-	kwrite(obj);
-	knewline();
+	obj = kread(K);
+	kwrite(K, obj);
+	knewline(K);
     }
 }
 
 int main(int argc, char *argv[]) 
 {
     printf("Read/Write Test\n");
-
-    /* TEMP: old initialization */
-    kread_file = stdin;
-    kread_filename = "*STDIN*";
-    kwrite_file = stdout;
-    kread_init();
-    kwrite_init();
 
     klisp_State *K = klispL_newstate();
     int ret_value = 0;
@@ -53,12 +46,18 @@ int main(int argc, char *argv[])
     while(!done) {
 	if (setjmp(K->error_jb)) {
 	    /* error signaled */
-	    if (!K->error_can_cont) {
+	    if (K->error_can_cont) {
+		/* XXX: clear stack and char buffer, clear shared dict */
+		/* TODO: put these in handlers for read-token, read and write */
+		ks_sclear(K);
+		ks_tbclear(K);
+		K->shared_dict = KNIL;
+	    } else {
 		ret_value = 1;
 		done = true;
 	    }
 	} else {
-	    main_body();
+	    main_body(K);
 	    ret_value = 0;
 	    done = true;
 	}

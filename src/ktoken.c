@@ -15,7 +15,6 @@
 ** From the Report:
 ** - Support other number types besides fixints and exact infinities
 ** - Support for complete number syntax (exactness, radix, etc)
-** - Error handling
 ** 
 ** NOT from the Report:
 ** - Support for unicode (strings, char and symbols).
@@ -26,13 +25,8 @@
 **
 */
 #include <stdio.h>
-/* XXX for malloc */
 #include <stdlib.h>
-/* TODO: use a generalized alloc function */
-
-/* TEMP: for out of mem errors */
 #include <assert.h>
-
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -40,9 +34,11 @@
 
 #include "ktoken.h"
 #include "kobject.h"
+#include "kstate.h"
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
+#include "kerror.h"
 
 /*
 ** Char sets for fast ASCII char classification
@@ -129,29 +125,13 @@ kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 */
 TValue ktok_lparen, ktok_rparen, ktok_dot;
 
-/* TODO: move this to the global state */
-char *ktok_buffer;
-uint32_t ktok_buffer_size;
-#define KTOK_BUFFER_INITIAL_SIZE 1024
-/* WORKAROUND: for stdin line buffering & reading of EOF */
-bool ktok_seen_eof;
-
-void ktok_init()
+void ktok_init(klisp_State *K)
 {
-    /* TEMP: for now initialize empty string here */
-    kempty_string = kstring_new("", 0);
-
-    assert(ktok_file != NULL);
-    assert(ktok_source_info.filename != NULL);
-
+    assert(K->curr_in != NULL);
+    assert(K->filename_in != NULL);
+   
     /* WORKAROUND: for stdin line buffering & reading of EOF */
-    ktok_seen_eof = false;
-    /* string buffer */
-    /* TEMP: for now use a fixed size */
-    ktok_buffer_size = KTOK_BUFFER_INITIAL_SIZE;
-    ktok_buffer = malloc(KTOK_BUFFER_INITIAL_SIZE);
-    /* TEMP: while there is no error handling code */
-    assert(ktok_buffer != NULL);
+    K->ktok_seen_eof = false;
 
     /* Character sets */
     kcharset_fill(ktok_alphabetic, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -170,36 +150,45 @@ void ktok_init()
     kcharset_union(ktok_subsequent, ktok_extended);
 
     /* Special Tokens */
-    ktok_lparen = kcons(ch2tv('('), KNIL);
-    ktok_rparen = kcons(ch2tv(')'), KNIL);
-    ktok_dot = kcons(ch2tv('.'), KNIL);
+    /* TODO: make them uncollectible */
+    if (!ttispair(ktok_lparen)) {
+	ktok_lparen = kcons(K, ch2tv('('), KNIL);
+	ktok_rparen = kcons(K, ch2tv(')'), KNIL);
+	ktok_dot = kcons(K, ch2tv('.'), KNIL);
+    }
+
+    /* Empty string */
+    /* TEMP: for now initialize empty string here */
+    /* TODO: make it uncollectible */
+    if (!ttisstring(kempty_string))
+	kempty_string = kstring_new_empty(K);
 }
 
 /*
 ** Underlying stream interface & source code location tracking
 */
-int ktok_getc() {
+int ktok_getc(klisp_State *K) {
     /* WORKAROUND: for stdin line buffering & reading of EOF */
-    if (ktok_seen_eof) {
+    if (K->ktok_seen_eof) {
 	return EOF;
     } else {
-	int chi = getc(ktok_file);
+	int chi = getc(K->curr_in);
 	if (chi == EOF) {
 	    /* NOTE: eof doesn't change source code location info */
-	    ktok_seen_eof = true;
+	    K->ktok_seen_eof = true;
 	    return EOF;
 	}
 	
 	/* track source code location before returning the char */
 	if (chi == '\t') {
 	    /* align column to next tab stop */
-	    ktok_source_info.col = 
-		(ktok_source_info.col + ktok_source_info.tab_width) -
-		(ktok_source_info.col % ktok_source_info.tab_width);
+	    K->ktok_source_info.col = 
+		(K->ktok_source_info.col + K->ktok_source_info.tab_width) -
+		(K->ktok_source_info.col % K->ktok_source_info.tab_width);
 	    return '\t';
 	} else if (chi == '\n') {
-	    ktok_source_info.line++;
-	    ktok_source_info.col = 0;
+	    K->ktok_source_info.line++;
+	    K->ktok_source_info.col = 0;
 	    return '\n';
 	} else {
 	    return chi;
@@ -207,75 +196,77 @@ int ktok_getc() {
     }
 }
 
-int ktok_peekc() {
+int ktok_peekc(klisp_State *K) {
     /* WORKAROUND: for stdin line buffering & reading of EOF */
-    if (ktok_seen_eof) {
+    if (K->ktok_seen_eof) {
 	return EOF;
     } else {
-	int chi = getc(ktok_file);
+	int chi = getc(K->curr_in);
 	if (chi == EOF)
-	    ktok_seen_eof = true;
+	    K->ktok_seen_eof = true;
 	else
-	    ungetc(chi, ktok_file);
+	    ungetc(chi, K->curr_in);
 	return chi;
     }
 }
 
-void ktok_reset_source_info()
+void ktok_reset_source_info(klisp_State *K)
 {
     /* line is 1-base and col is 0-based */
-    ktok_source_info.line = 1;
-    ktok_source_info.col = 0;
+    K->ktok_source_info.line = 1;
+    K->ktok_source_info.col = 0;
 }
 
-void ktok_save_source_info()
+void ktok_save_source_info(klisp_State *K)
 {
-    ktok_source_info.saved_filename = ktok_source_info.filename;
-    ktok_source_info.saved_line = ktok_source_info.line;
-    ktok_source_info.saved_col = ktok_source_info.col;
+    K->ktok_source_info.saved_filename = K->ktok_source_info.filename;
+    K->ktok_source_info.saved_line = K->ktok_source_info.line;
+    K->ktok_source_info.saved_col = K->ktok_source_info.col;
 }
 
-TValue ktok_get_source_info()
+TValue ktok_get_source_info(klisp_State *K)
 {
     /* XXX: what happens on gc? (unrooted objects) */
     /* NOTE: the filename doesn't contains embedded '\0's */
-    TValue filename_str = kstring_new(ktok_source_info.saved_filename,
-				      strlen(ktok_source_info.saved_filename));
+    TValue filename_str = 
+	kstring_new(K, K->ktok_source_info.saved_filename,
+		    strlen(K->ktok_source_info.saved_filename));
     /* TEMP: for now, lines and column names are fixints */
-    return kcons(filename_str, kcons(i2tv(ktok_source_info.saved_line),
-				     i2tv(ktok_source_info.saved_col)));
+    return kcons(K, filename_str, kcons(K, i2tv(K->ktok_source_info.saved_line),
+					i2tv(K->ktok_source_info.saved_col)));
 }
 
 /*
 ** Error management
 */
-TValue ktok_error(char *str)
+void ktok_error(klisp_State *K, char *str)
 {
-    /* TODO: Decide on error handling mechanism for reader (& tokenizer) */
-    /* TEMP: Use eof object */
-    printf("TOK ERROR: %s\n", str);
-    return KEOF;
+    /* clear the buffer before throwing an error */
+    ks_tbclear(K);
+    klispE_throw(K, str, true);
 }
 
 
 /*
 ** ktok_read_token() helpers
 */
-void ktok_ignore_whitespace_and_comments();
-bool ktok_check_delimiter();
-TValue ktok_read_string();
-TValue ktok_read_special();
-TValue ktok_read_number(bool);
-TValue ktok_read_maybe_signed_numeric();
-TValue ktok_read_identifier();
-int ktok_read_until_delimiter();
+void ktok_ignore_whitespace_and_comments(klisp_State *K);
+bool ktok_check_delimiter(klisp_State *K);
+TValue ktok_read_string(klisp_State *K);
+TValue ktok_read_special(klisp_State *K);
+TValue ktok_read_number(klisp_State *K, bool sign);
+TValue ktok_read_maybe_signed_numeric(klisp_State *K);
+TValue ktok_read_identifier(klisp_State *K);
+int ktok_read_until_delimiter(klisp_State *K);
 
 /*
 ** Main tokenizer function
 */
-TValue ktok_read_token ()
+TValue ktok_read_token (klisp_State *K)
 {
-    ktok_ignore_whitespace_and_comments();
+    assert(ks_tbisempty(K));
+
+    ktok_ignore_whitespace_and_comments(K);
     /*
     ** NOTE: We jumped over all whitespace
     ** so either the next token starts here or eof was reached, 
@@ -283,35 +274,38 @@ TValue ktok_read_token ()
     */
 
     /* save the source info of the start of the next token */
-    ktok_save_source_info();
+    ktok_save_source_info(K);
 
-    int chi = ktok_peekc();
+    int chi = ktok_peekc(K);
 
     switch(chi) {
     case EOF:
-	ktok_getc();
+	ktok_getc(K);
 	return KEOF;
     case '(':
-	ktok_getc();
+	ktok_getc(K);
 	return ktok_lparen;
     case ')':
-	ktok_getc();
+	ktok_getc(K);
 	return ktok_rparen;
     case '.':
-	ktok_getc();
-	if (ktok_check_delimiter())
+	ktok_getc(K);
+	if (ktok_check_delimiter(K))
 	    return ktok_dot;
-	else
-	    return ktok_error("no delimiter found after dot");
+	else {
+	    ktok_error(K, "no delimiter found after dot");
+	    /* avoid warning */
+	    return KINERT;
+	}
     case '"':
-	return ktok_read_string();
+	return ktok_read_string(K);
     case '#':
-	return ktok_read_special();
+	return ktok_read_special(K);
     case '0': case '1': case '2': case '3': case '4': 
     case '5': case '6': case '7': case '8': case '9':
-	return ktok_read_number(true); /* positive number */
+	return ktok_read_number(K, true); /* positive number */
     case '+': case '-':
-	return ktok_read_maybe_signed_numeric();
+	return ktok_read_maybe_signed_numeric(K);
     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': 
     case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': 
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': 
@@ -328,39 +322,41 @@ TValue ktok_read_token ()
 	** considered so identifier-subsequent is used instead of 
 	** identifier-first-char (in the cases above)
 	*/
-	return ktok_read_identifier();
+	return ktok_read_identifier(K);
     default:
-	ktok_getc();
-	return ktok_error("unrecognized token starting char");
+	ktok_getc(K);
+	ktok_error(K, "unrecognized token starting char");
+	/* avoid warning */
+	return KINERT;
     }
 }
 
 /*
 ** Comments and Whitespace
 */
-void ktok_ignore_comment()
+void ktok_ignore_comment(klisp_State *K)
 {
     int chi;
     do {
-	chi = ktok_getc();
+	chi = ktok_getc(K);
     } while (chi != EOF && chi != '\n');
 }
 
-void ktok_ignore_whitespace_and_comments()
+void ktok_ignore_whitespace_and_comments(klisp_State *K)
 {
     /* NOTE: if it's not a whitespace or comment do nothing (even on eof) */
     bool end = false;
     while(!end) {
-	int chi = ktok_peekc();
+	int chi = ktok_peekc(K);
 
 	if (chi == EOF) {
 	    end = true; 
 	} else {
 	    char ch = (char) chi;
 	    if (ktok_is_whitespace(ch)) {
-		ktok_getc();
+		ktok_getc(K);
 	    } else if (ch == ';') {
-		ktok_ignore_comment(); /* NOTE: this also reads again the ';' */
+		ktok_ignore_comment(K); /* NOTE: this also reads again the ';' */
 	    } else {
 		end = true;
 	    }
@@ -371,28 +367,26 @@ void ktok_ignore_whitespace_and_comments()
 /*
 ** Delimiter checking
 */
-bool ktok_check_delimiter()
+bool ktok_check_delimiter(klisp_State *K)
 {
-    int chi = ktok_peekc();
+    int chi = ktok_peekc(K);
     return (ktok_is_delimiter(chi));
 }
 
 /*
 ** Returns the number of bytes read
 */
-int ktok_read_until_delimiter()
+int ktok_read_until_delimiter(klisp_State *K)
 {
     int i = 0;
 
-    while (!ktok_check_delimiter()) {
-	/* TODO: allow buffer to grow */
-	assert(i + 1 < ktok_buffer_size);
-
+    while (!ktok_check_delimiter(K)) {
 	/* NOTE: can't be eof, because eof is a delimiter */
-	char ch = (char) ktok_getc();
-	ktok_buffer[i++] = ch;
+	char ch = (char) ktok_getc(K);
+	ks_tbadd(K, ch);
+	i++;
     }
-    ktok_buffer[i] = '\0';
+    ks_tbadd(K, '\0');
     return i;
 }
 
@@ -400,15 +394,18 @@ int ktok_read_until_delimiter()
 ** Numbers
 ** TEMP: for now, only fixints in base 10
 */
-TValue ktok_read_number(bool is_pos) 
+TValue ktok_read_number(klisp_State *K, bool is_pos) 
 {
     int32_t res = 0;
 
-    while(!ktok_check_delimiter()) {
+    while(!ktok_check_delimiter(K)) {
 	/* NOTE: can't be eof because it's a delimiter */
-	char ch = (char) ktok_getc();
-	if (!ktok_is_numeric(ch))
-	    return ktok_error("Not a digit found in number");
+	char ch = (char) ktok_getc(K);
+	if (!ktok_is_numeric(ch)) {
+	    ktok_error(K, "Not a digit found in number");
+	    /* avoid warning */
+	    return KINERT;
+	}
 	res = res * 10 + ktok_digit_value(ch);
     }
 
@@ -417,109 +414,136 @@ TValue ktok_read_number(bool is_pos)
     return i2tv(res);
 }
 
-TValue ktok_read_maybe_signed_numeric() 
+TValue ktok_read_maybe_signed_numeric(klisp_State *K) 
 {
     /* NOTE: can't be eof, it's either '+' or '-' */
-    char ch = (char) ktok_getc();
-    if (ktok_check_delimiter()) {
-	ktok_buffer[0] = ch;
-	ktok_buffer[1] = '\0';
-	return ksymbol_new(ktok_buffer);
+    char ch = (char) ktok_getc(K);
+    if (ktok_check_delimiter(K)) {
+	ks_tbadd(K, ch);
+	ks_tbadd(K, '\0');
+	TValue new_sym = ksymbol_new(K, ks_tbuf(K));
+	ks_tbclear(K);
+	return new_sym;
     } else {
-	return ktok_read_number(ch == '+');
+	return ktok_read_number(K, ch == '+');
     }
 }
 
 /*
 ** Strings
 */
-TValue ktok_read_string()
+TValue ktok_read_string(klisp_State *K)
 {
     /* discard opening quote */
-    ktok_getc();
+    ktok_getc(K);
 
     bool done = false;
     int i = 0;
 
     while(!done) {
-	int chi = ktok_getc();
+	int chi = ktok_getc(K);
 	char ch = (char) chi;
 
-	if (chi == EOF)
-	    return ktok_error("EOF found while reading a string");
+	if (chi == EOF) {
+	    ktok_error(K, "EOF found while reading a string");
+	    /* avoid warning */
+	    return KINERT;
+	}
 	if (ch == '"') {
-	    ktok_buffer[i] = '\0';
+	    ks_tbadd(K, '\0');
 	    done = true;
 	} else {
 	    if (ch == '\\') {
-		chi = ktok_getc();
+		chi = ktok_getc(K);
 	
-		if (chi == EOF)
-		    return ktok_error("EOF found while reading a string");
+		if (chi == EOF) {
+		    ktok_error(K, "EOF found while reading a string");
+		    /* avoid warning */
+		    return KINERT;
+		}
 
 		ch = (char) chi;
 
 		if (ch != '\\' && ch != '"') {
-		    return ktok_error("Invalid char after '\\' " 
-				      "while reading a string");
+		    ktok_error(K, "Invalid char after '\\' " 
+			       "while reading a string");
+		    /* avoid warning */
+		    return KINERT;
 		}
 	    } 
-	    /* TODO: allow buffer to grow */
-	    assert(i+1 < ktok_buffer_size);
-
-	    ktok_buffer[i++] = ch;
+	    ks_tbadd(K, ch);
+	    i++;
 	}
     }
-    return kstring_new(ktok_buffer, i);
+    TValue new_str = kstring_new(K, ks_tbuf(K), i);
+    ks_tbclear(K);
+    return new_str;
 }
 
 /*
 ** Special constants (starting with "#")
 ** (Special number syntax, char constants, #ignore, #inert, srfi-38 tokens) 
 */
-TValue ktok_read_special()
+TValue ktok_read_special(klisp_State *K)
 {
     /* discard the '#' */
-    ktok_getc();
+    ktok_getc(K);
     
-    int chi = ktok_getc();
+    int chi = ktok_getc(K);
     char ch = (char) chi;
 
-    if (chi == EOF)
-	return ktok_error("EOF found while reading a '#' constant");
+    if (chi == EOF) {
+	ktok_error(K, "EOF found while reading a '#' constant");
+	/* avoid warning */
+	return KINERT;
+    }
 
     switch(ch) {
-    case 'i':
+    case 'i': {
 	/* ignore or inert */
 	/* XXX: could also be an inexact number */
-	ktok_read_until_delimiter();
+	ktok_read_until_delimiter(K);
 	/* NOTE: can use strcmp even in the presence of '\0's */
-	if (strcmp(ktok_buffer, "gnore") == 0)
-	    return KIGNORE;
-	else if (strcmp(ktok_buffer, "nert") == 0)
+	TValue ret_val;
+	if (strcmp(ks_tbuf(K), "gnore") == 0)
+	    ret_val = KIGNORE;
+	else if (strcmp(ks_tbuf(K), "nert") == 0)
+	    ret_val =  KINERT;
+	else {
+	    ktok_error(K, "unexpected char in # constant");
+	    /* avoid warning */
 	    return KINERT;
-	else
-	    return ktok_error("unexpected char in # constant");
+	}
+	ks_tbclear(K);
+	return ret_val;
+    }
     case 'e':
 	/* an exact infinity */
 	/* XXX: could also be an exact number */
-	if (ktok_read_until_delimiter()) {
-	    /* NOTE: can use strcmp even in the presence of '\0's */
-	    if (strcmp(ktok_buffer, "+infinity") == 0)
-		return KEPINF;
-	    else if (strcmp(ktok_buffer, "-infinity") == 0)
-		return KEMINF;
-	    else
-		return ktok_error("unexpected char in # constant");
-	} else
-	    return ktok_error("unexpected error in # constant");
+	ktok_read_until_delimiter(K);
+	TValue ret_val;
+	/* NOTE: can use strcmp even in the presence of '\0's */
+	if (strcmp(ks_tbuf(K), "+infinity") == 0) {
+	    ret_val = KEPINF;
+	} else if (strcmp(ks_tbuf(K), "-infinity") == 0) {
+	    ret_val =  KEMINF;
+	} else {
+	    ktok_error(K, "unexpected char in # constant");
+	    /* avoid warning */
+	    return KINERT;
+	}
+	ks_tbclear(K);
+	return ret_val;
     case 't':
     case 'f':
 	/* boolean constant */
-	if (ktok_check_delimiter())
+	if (ktok_check_delimiter(K))
 	    return b2tv(ch == 't');
-	else
-	    return ktok_error("unexpected char in # constant");
+	else {
+	    ktok_error(K, "unexpected char in # constant");
+	    /* avoid warning */
+	    return KINERT;
+	}
     case '\\':
 	/* char constant */
 	/* 
@@ -530,75 +554,88 @@ TValue ktok_read_special()
 	** Kernel report (R-1RK))
 	** For now we follow the scheme report 
 	*/
-	chi = ktok_getc();
+	chi = ktok_getc(K);
 	ch = (char) chi;
 
-	if (chi == EOF)
-	    return ktok_error("EOF found while reading a char constant");
+	if (chi == EOF) {
+	    ktok_error(K, "EOF found while reading a char constant");
+	    /* avoid warning */
+	    return KINERT;
+	}
 
-	if (!ktok_is_alphabetic(ch) || ktok_check_delimiter())
+	if (!ktok_is_alphabetic(ch) || ktok_check_delimiter(K))
 	    return ch2tv(ch);
 
-	ktok_read_until_delimiter();
-	char *p = ktok_buffer;
+	ktok_read_until_delimiter(K);
+	char *p = ks_tbuf(K);
 	while (*p) {
 	    *p = tolower(*p);
 	    p++;
 	}
 	ch = tolower(ch);
 	/* NOTE: can use strcmp even in the presence of '\0's */
-	if (ch == 's' && strcmp(ktok_buffer, "pace") == 0)
-	    return ch2tv(' ');
-	else if (ch == 'n' && strcmp(ktok_buffer, "ewline") == 0)
-	    return ch2tv('\n');
-	else 
-	    return ktok_error("Unrecognized character name");
+	if (ch == 's' && strcmp(ks_tbuf(K), "pace") == 0)
+	    ch = ' ';
+	else if (ch == 'n' && strcmp(ks_tbuf(K), "ewline") == 0)
+	    ch = ('\n');
+	else {
+	    ktok_error(K, "Unrecognized character name");
+	    /* avoid warning */
+	    return KINERT;
+	}
+	ks_tbclear(K);
+	return ch2tv(ch);
     case '0': case '1': case '2': case '3': case '4': 
     case '5': case '6': case '7': case '8': case '9': {
 	/* srfi-38 type token (can be either a def or ref) */
 	/* TODO: allow bigints */
 	    int32_t res = 0;
 	    while(ch != '#' && ch != '=') {
-		if (!ktok_is_numeric(ch))
-		    return ktok_error("Invalid char found in srfi-38 token");
+		if (!ktok_is_numeric(ch)) {
+		    ktok_error(K, "Invalid char found in srfi-38 token");
+		    /* avoid warning */
+		    return KINERT;
+		}
 
 		res = res * 10 + ktok_digit_value(ch);
 
-		chi = ktok_getc();
+		chi = ktok_getc(K);
 		ch = (char) chi;
 	
-		if (chi == EOF)
-		    return ktok_error("EOF found while reading a srfi-38 token");
+		if (chi == EOF) {
+		    ktok_error(K, "EOF found while reading a srfi-38 token");
+		    /* avoid warning */
+		    return KINERT;
+		}
 	    }
-	    return kcons(ch2tv(ch), i2tv(res));
+	    return kcons(K, ch2tv(ch), i2tv(res));
 	}
     /* TODO: add real with no primary value and undefined */
     default:
-	return ktok_error("unexpected char in # constant");
+	ktok_error(K, "unexpected char in # constant");
+	/* avoid warning */
+	return KINERT;
     }
 }
 
 /*
 ** Identifiers
 */
-TValue ktok_read_identifier()
+TValue ktok_read_identifier(klisp_State *K)
 {
-    int i = 0;
-
-    while (!ktok_check_delimiter()) {
-	/* TODO: allow buffer to grow */
-	assert(i+1 < ktok_buffer_size);
-
+    while (!ktok_check_delimiter(K)) {
 	/* NOTE: can't be eof, because eof is a delimiter */
-	char ch = (char) ktok_getc();
+	char ch = (char) ktok_getc(K);
 
 	/* NOTE: is_subsequent of '\0' is false, so no embedded '\0' */
 	if (ktok_is_subsequent(ch))
-	    ktok_buffer[i++] = ch;
+	    ks_tbadd(K, ch);
 	else
-	    return ktok_error("Invalid char in identifier");	    
+	    ktok_error(K, "Invalid char in identifier");	    
     }
-    ktok_buffer[i] = '\0';
-    return ksymbol_new(ktok_buffer);
+    ks_tbadd(K, '\0');
+    TValue new_sym = ksymbol_new(K, ks_tbuf(K));
+    ks_tbclear(K);
+    return new_sym;
 }
 
