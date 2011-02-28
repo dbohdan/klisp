@@ -58,8 +58,16 @@ struct klisp_State {
     FILE *curr_out;
     char *filename_in;
     char *filename_out;
+
+    /* Strings */
+    TValue empty_string;
     
     /* tokenizer */
+    /* special tokens, see ktoken.c for rationale */
+    TValue ktok_lparen;
+    TValue ktok_rparen;
+    TValue ktok_dot;
+
     /* WORKAROUND for repl */
     bool ktok_seen_eof;
     ksource_info_t ktok_source_info;

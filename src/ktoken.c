@@ -107,10 +107,10 @@ kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 #define ktok_is_subsequent(chi_) kcharset_contains(ktok_subsequent, chi_)
 
 /*
-** Special Tokens
-*/
-
-/*
+** Special Tokens 
+**
+** TEMP: defined in kstate.h
+**
 ** RATIONALE:
 **
 ** Because a pair is not a token, they can be used to represent special tokens
@@ -123,16 +123,9 @@ kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 ** and easily classified (with switch(chvalue(kcar(tok)))).
 **
 */
-TValue ktok_lparen, ktok_rparen, ktok_dot;
 
 void ktok_init(klisp_State *K)
 {
-    assert(K->curr_in != NULL);
-    assert(K->filename_in != NULL);
-   
-    /* WORKAROUND: for stdin line buffering & reading of EOF */
-    K->ktok_seen_eof = false;
-
     /* Character sets */
     kcharset_fill(ktok_alphabetic, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		  "abcdefghijklmnopqrstuvwxyz");
@@ -148,20 +141,6 @@ void ktok_init(klisp_State *K)
     kcharset_union(ktok_subsequent, ktok_alphabetic);
     kcharset_union(ktok_subsequent, ktok_numeric);
     kcharset_union(ktok_subsequent, ktok_extended);
-
-    /* Special Tokens */
-    /* TODO: make them uncollectible */
-    if (!ttispair(ktok_lparen)) {
-	ktok_lparen = kcons(K, ch2tv('('), KNIL);
-	ktok_rparen = kcons(K, ch2tv(')'), KNIL);
-	ktok_dot = kcons(K, ch2tv('.'), KNIL);
-    }
-
-    /* Empty string */
-    /* TEMP: for now initialize empty string here */
-    /* TODO: make it uncollectible */
-    if (!ttisstring(kempty_string))
-	kempty_string = kstring_new_empty(K);
 }
 
 /*
@@ -284,14 +263,14 @@ TValue ktok_read_token (klisp_State *K)
 	return KEOF;
     case '(':
 	ktok_getc(K);
-	return ktok_lparen;
+	return K->ktok_lparen;
     case ')':
 	ktok_getc(K);
-	return ktok_rparen;
+	return K->ktok_rparen;
     case '.':
 	ktok_getc(K);
 	if (ktok_check_delimiter(K))
-	    return ktok_dot;
+	    return K->ktok_dot;
 	else {
 	    ktok_error(K, "no delimiter found after dot");
 	    /* avoid warning */

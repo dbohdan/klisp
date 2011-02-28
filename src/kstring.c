@@ -11,9 +11,6 @@
 #include "kstate.h"
 #include "kmem.h"
 
-/* TEMP: for now initialized in kstate.c */
-TValue kempty_string = KINERT_;
-
 /* TEMP: this is for initializing the above value, for now, from ktoken.h */
 TValue kstring_new_empty(klisp_State *K)
 {
@@ -37,8 +34,7 @@ TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
     String *new_str;
 
     if (size == 0) {
-	assert(ttisstring(kempty_string));
-	return kempty_string;
+	return K->empty_string;
     }
 
     new_str = klispM_malloc(K, sizeof(String) + size + 1);

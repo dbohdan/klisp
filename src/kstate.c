@@ -12,6 +12,8 @@
 
 #include "klisp.h"
 #include "kstate.h"
+#include "kstring.h"
+#include "kpair.h"
 #include "kmem.h"
 
 /*
@@ -55,16 +57,26 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
   /* TEMP: err */
   /* do nothing for now */
 
-  K->ssize = KS_ISSIZE;
-  K->stop = 0; /* stack is empty */
-  K->sbuf = (TValue *)s;
+  /* initialize strings */
+  /* Empty string */
+  /* TODO: make it uncollectible */
+  K->empty_string = kstring_new_empty(K);
 
   /* initialize tokenizer */
+
+  /* WORKAROUND: for stdin line buffering & reading of EOF */
+  K->ktok_seen_eof = false;
+
   ks_tbsize(K) = KS_ITBSIZE;
   ks_tbidx(K) = 0; /* buffer is empty */
   ks_tbuf(K) = (char *)b;
 
-  /* XXX: For now just hardcode it to 8 spaces tab-stop */
+  /* Special Tokens */
+  K->ktok_lparen = kcons(K, ch2tv('('), KNIL);
+  K->ktok_rparen = kcons(K, ch2tv(')'), KNIL);
+  K->ktok_dot = kcons(K, ch2tv('.'), KNIL);
+
+  /* TEMP: For now just hardcode it to 8 spaces tab-stop */
   K->ktok_source_info.tab_width = 8;
   K->ktok_source_info.filename = "*STDIN*";
   ktok_init(K);
@@ -74,6 +86,12 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
   K->shared_dict = KNIL;
 
   /* initialize writer */
+
+  /* initialize temp stack */
+  K->ssize = KS_ISSIZE;
+  K->stop = 0; /* stack is empty */
+  K->sbuf = (TValue *)s;
+
   return K;
 }
 
