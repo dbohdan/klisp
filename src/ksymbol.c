@@ -34,6 +34,7 @@ TValue ksymbol_new(klisp_State *K, const char *buf)
     new_sym->next = NULL;
     new_sym->gct = 0;
     new_sym->tt = K_TSYMBOL;
+    new_sym->mark = KFALSE;
     new_sym->size = size;
     memcpy(new_sym->b, buf, size);
     new_sym->b[size] = '\0';
