@@ -25,8 +25,10 @@ typedef void * (*klisp_Alloc)
 
 /*
 ** prototype for callable c functions from the interpreter main loop:
+**
+** TEMP: for now it is defined in kobject.h
 */
-typedef void (klisp_Ifunc) (TValue *ud, TValue val);
+/* typedef void (*klisp_Ifunc) (TValue *ud, TValue val); */
 
 /*
 ** state manipulation

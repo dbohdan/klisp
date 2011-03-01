@@ -105,16 +105,20 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TRWNPN        8
 #define K_TCOMPLEX      9
 
-#define K_TNIL 20
-#define K_TIGNORE 21
-#define K_TINERT 22
-#define K_TEOF 23
-#define K_TBOOLEAN 24
-#define K_TCHAR 25
+#define K_TNIL 		20
+#define K_TIGNORE 	21
+#define K_TINERT 	22
+#define K_TEOF 		23
+#define K_TBOOLEAN 	24
+#define K_TCHAR 	25
 
-#define K_TPAIR        30
+#define K_TPAIR        	30
 #define K_TSTRING	31
 #define K_TSYMBOL	32
+#define K_TENVIRONMENT  33
+#define K_TCONTINUATION 34
+#define K_TOPERATIVE    35
+#define K_TAPPLICATIVE  36
 
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
@@ -138,6 +142,13 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_PAIR K_MAKE_VTAG(K_TPAIR)
 #define K_TAG_STRING K_MAKE_VTAG(K_TSTRING)
 #define K_TAG_SYMBOL K_MAKE_VTAG(K_TSYMBOL)
+
+#define K_TAG_SYMBOL K_MAKE_VTAG(K_TSYMBOL)
+#define K_TAG_ENVIRONMENT K_MAKE_VTAG(K_TENVIRONMENT)
+#define K_TAG_CONTINUATION K_MAKE_VTAG(K_TCONTINUATION)
+#define K_TAG_OPERATIVE K_MAKE_VTAG(K_TOPERATIVE)
+#define K_TAG_APPLICATIVE K_MAKE_VTAG(K_TAPPLICATIVE)
+
 
 /*
 ** Macros to test types
@@ -209,13 +220,6 @@ typedef struct __attribute__ ((__packed__)) {
     TValue si; /* source code info (either () or (filename line col) */
 } Pair;
 
-typedef struct __attribute__ ((__packed__)) {
-    CommonHeader;
-    TValue name; /* cont name/type */
-    TValue si; /* source code info (either () or (filename line col) */
-    /* TODO */
-} Continuation;
-
 /* XXX: Symbol should probably contain a String instead of a char buf */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
@@ -223,6 +227,48 @@ typedef struct __attribute__ ((__packed__)) {
     uint32_t size;
     char b[];
 } Symbol;
+
+
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
+    TValue ancestors; /* may be (), a list, or a single env */
+    TValue alist; /* TEMP: for now alist of (binding . value) */
+} Environment;
+
+/*
+** prototype for callable c functions from the interpreter main loop:
+**
+** TEMP: Has to be here because it uses TValue type
+** ideally it should be in klisp.h
+*/
+typedef void (*klisp_Ifunc) (TValue *ud, TValue val, TValue env);
+
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue name; /* cont name/type */
+    TValue si; /* source code info (either () or (filename line col) */
+    klisp_Ifunc fn; /* the function that does the work */
+    int32_t extra_size;
+    TValue extra[];
+} Continuation;
+
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue name;
+    TValue si; /* source code info (either () or (filename line col) */
+    klisp_Ifunc fn; /* the function that does the work */
+    int32_t extra_size;
+    TValue extra[];
+} Operative;
+
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue name; 
+    TValue si; /* source code info (either () or (filename line col) */
+    TValue underlying; /* underlying operative/applicative */
+} Applicative;
+
 
 /* 
 ** RATIONALE: 
@@ -257,7 +303,10 @@ union GCObject {
     Pair pair;
     Symbol sym;
     String str;
+    Environment env;
     Continuation cont;
+    Operative op;
+    Applicative app;
 };
 
 
