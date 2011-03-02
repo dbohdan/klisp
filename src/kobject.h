@@ -232,8 +232,8 @@ typedef struct __attribute__ ((__packed__)) {
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for cycle/sharing aware algorithms */
-    TValue ancestors; /* may be (), a list, or a single env */
-    TValue alist; /* TEMP: for now alist of (binding . value) */
+    TValue parents; /* may be (), a list, or a single env */
+    TValue bindings; /* TEMP: for now alist of (binding . value) */
 } Environment;
 
 /*
@@ -360,11 +360,13 @@ const TValue keminf;
 #define gc2pair(o_) (gc2tv(K_TAG_PAIR, o_))
 #define gc2str(o_) (gc2tv(K_TAG_STRING, o_))
 #define gc2sym(o_) (gc2tv(K_TAG_SYMBOL, o_))
+#define gc2env(o_) (gc2tv(K_TAG_ENVIRONMENT, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
 #define tv2str(v_) ((String *) gcvalue(v_))
 #define tv2sym(v_) ((Symbol *) gcvalue(v_))
+#define tv2env(v_) ((Environment *) gcvalue(v_))
 
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
 

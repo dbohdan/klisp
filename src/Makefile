@@ -8,7 +8,7 @@ MYLDFLAGS=
 MYLIBS=
 
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
-	kwrite.o kstate.o kmem.o kerror.o kauxlib.o
+	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -47,3 +47,5 @@ kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h
+kenvironment.o: kenvironment.c kenvironment.h kpair.h kobject.h kerror.h \
+	kmem.h kstate.h
