@@ -15,8 +15,8 @@ TValue kmake_continuation(klisp_State *K, TValue parent, TValue name,
 			  TValue si, klisp_Ifunc fn, int32_t xcount, ...)
 {
     va_list argp;
-    Continuation *new_cont = klispM_malloc(K, sizeof(Continuation) + 
-					   sizeof(TValue) * xcount);
+    Continuation *new_cont = (Continuation *)
+	klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
     new_cont->next = NULL;
     new_cont->gct = 0;
     new_cont->tt = K_TCONTINUATION;

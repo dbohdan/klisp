@@ -364,6 +364,7 @@ const TValue keminf;
 #define gc2sym(o_) (gc2tv(K_TAG_SYMBOL, o_))
 #define gc2env(o_) (gc2tv(K_TAG_ENVIRONMENT, o_))
 #define gc2cont(o_) (gc2tv(K_TAG_CONTINUATION, o_))
+#define gc2op(o_) (gc2tv(K_TAG_OPERATIVE, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
@@ -371,6 +372,7 @@ const TValue keminf;
 #define tv2sym(v_) ((Symbol *) gcvalue(v_))
 #define tv2env(v_) ((Environment *) gcvalue(v_))
 #define tv2cont(v_) ((Continuation *) gcvalue(v_))
+#define tv2op(v_) ((Operative *) gcvalue(v_))
 
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
 

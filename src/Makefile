@@ -9,7 +9,7 @@ MYLIBS=
 
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
-	kcontinuation.o
+	kcontinuation.o koperative.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -51,3 +51,4 @@ kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h
 kenvironment.o: kenvironment.c kenvironment.h kpair.h kobject.h kerror.h \
 	kmem.h kstate.h
 kcontinuation.o: kcontinuation.c kcontinuation.h kmem.h kstate.h kobject.h
+koperative.o: koperative.c koperative.h kmem.h kstate.h kobject.h
