@@ -1,5 +1,5 @@
 /*
-** kenvironmment.c
+** kenvironment.c
 ** Kernel Environments
 ** See Copyright Notice in klisp.h
 */

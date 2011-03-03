@@ -246,8 +246,10 @@ typedef void (*klisp_Ifunc) (TValue *ud, TValue val, TValue env);
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
+    TValue mark; /* for guarding continuation */
     TValue name; /* cont name/type */
     TValue si; /* source code info (either () or (filename line col) */
+    TValue parent; /* may be () for root continuation */
     klisp_Ifunc fn; /* the function that does the work */
     int32_t extra_size;
     TValue extra[];
@@ -361,12 +363,14 @@ const TValue keminf;
 #define gc2str(o_) (gc2tv(K_TAG_STRING, o_))
 #define gc2sym(o_) (gc2tv(K_TAG_SYMBOL, o_))
 #define gc2env(o_) (gc2tv(K_TAG_ENVIRONMENT, o_))
+#define gc2cont(o_) (gc2tv(K_TAG_CONTINUATION, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
 #define tv2str(v_) ((String *) gcvalue(v_))
 #define tv2sym(v_) ((Symbol *) gcvalue(v_))
 #define tv2env(v_) ((Environment *) gcvalue(v_))
+#define tv2cont(v_) ((Continuation *) gcvalue(v_))
 
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
 
