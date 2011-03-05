@@ -236,7 +236,7 @@ inline void klispS_apply_cc(klisp_State *K, TValue val)
     K->curr_cont = cont->parent;
 }
 
-#define kapply_cc(K_, val_) (klispS_appply_cc((K_), (val_)); return;)
+#define kapply_cc(K_, val_) klispS_apply_cc((K_), (val_)); return
 
 inline TValue klispS_get_cc(klisp_State *K)
 {
@@ -263,9 +263,8 @@ inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree,
     K->next_xparams = op->extra;
 }
 
-#define ktail_call(K_, op_, p_, e_) (klispS_tail_call( \
-					       (K_), (op_), (p_), (v_)); \
-					   return;)
+#define ktail_call(K_, op_, p_, e_) \
+    klispS_tail_call((K_), (op_), (p_), (e_)); return
 
 #endif
 

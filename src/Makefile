@@ -34,7 +34,7 @@ clean:
 .PHONY: all default o clean
 
 klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
-	kerror.h kauxlib.h
+	kerror.h kauxlib.h koperative.h kenvironment.h kcontinuation.h
 kobject.o: kobject.c kobject.h
 ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
 	kerror.h
