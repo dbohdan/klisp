@@ -236,21 +236,13 @@ typedef struct __attribute__ ((__packed__)) {
     TValue bindings; /* TEMP: for now alist of (binding . value) */
 } Environment;
 
-/*
-** prototype for callable c functions from the interpreter main loop:
-**
-** TEMP: Has to be here because it uses TValue type
-** ideally it should be in klisp.h
-*/
-typedef void (*klisp_Ifunc) (TValue *ud, TValue val, TValue env);
-
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for guarding continuation */
     TValue name; /* cont name/type */
     TValue si; /* source code info (either () or (filename line col) */
     TValue parent; /* may be () for root continuation */
-    klisp_Ifunc fn; /* the function that does the work */
+    void *fn; /* the function that does the work */
     int32_t extra_size;
     TValue extra[];
 } Continuation;
@@ -259,7 +251,7 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue name;
     TValue si; /* source code info (either () or (filename line col) */
-    klisp_Ifunc fn; /* the function that does the work */
+    void *fn; /* the function that does the work */
     int32_t extra_size;
     TValue extra[];
 } Operative;

@@ -12,7 +12,7 @@
 #include "kmem.h"
 
 TValue kmake_operative(klisp_State *K, TValue name, TValue si, 
-		       klisp_Ifunc fn, int32_t xcount, ...)
+		       klisp_Ofunc fn, int32_t xcount, ...)
 {
     va_list argp;
     Operative *new_op = (Operative *) 

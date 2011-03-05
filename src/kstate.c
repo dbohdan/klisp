@@ -40,7 +40,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
   K->symbol_table = KNIL;
   /* TODO: create a continuation */
   K->curr_cont = NULL;
-  K->ret_value = KINERT;
+
+  K->next_value = KINERT;
+  K->next_value = KINERT;
 
   K->frealloc = f;
   K->ud = ud;

@@ -12,7 +12,7 @@
 #include "kmem.h"
 
 TValue kmake_continuation(klisp_State *K, TValue parent, TValue name, 
-			  TValue si, klisp_Ifunc fn, int32_t xcount, ...)
+			  TValue si, klisp_Cfunc fn, int32_t xcount, ...)
 {
     va_list argp;
     Continuation *new_cont = (Continuation *)

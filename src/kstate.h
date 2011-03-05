@@ -40,7 +40,14 @@ struct klisp_State {
     TValue symbol_table;
     Continuation *curr_cont;
 
-    TValue ret_value;     /* the value to be passed to the next function */
+    /*
+    ** If next_env is NIL, then the next_func is of type klisp_Cfunc
+    ** (from a continuation) and otherwise next_func is of type
+    ** klisp_Ofunc (from an operative)
+    */
+    void *next_func; /* the next function to call (operative or cont) */
+    TValue next_value;     /* the value to be passed to the next function */
+    TValue next_env; /* either NIL or an environment for next operative */
 
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;         /* auxiliary data to `frealloc' */
@@ -204,4 +211,14 @@ inline bool ks_tbisempty(klisp_State *K)
     return ks_tbidx(K) == 0;
 }
 
+
+/*
+** prototypes for underlying c functions of continuations &
+** operatives
+*/
+typedef void (*klisp_Cfunc) (klisp_State*K, TValue *ud, TValue val);
+typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree, 
+			     TValue env);
+
 #endif
+
