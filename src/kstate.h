@@ -50,6 +50,8 @@ struct klisp_State {
     TValue next_env; /* either NIL or an environment for next operative */
     TValue *next_xparams; 
 
+    TValue eval_op; /* the operative for evaluation */
+
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;         /* auxiliary data to `frealloc' */
 

@@ -46,6 +46,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
   K->next_env = KNIL;
   K->next_xparams = NULL;
 
+  K->eval_op = KINERT;
+
   K->frealloc = f;
   K->ud = ud;
 
