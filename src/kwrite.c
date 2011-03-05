@@ -21,7 +21,6 @@
 ** Stack for the write FSM
 ** 
 */
-
 #define push_data(ks_, data_) (ks_spush(ks_, data_))
 #define pop_data(ks_) (ks_sdpop(ks_))
 #define get_data(ks_) (ks_sget(ks_))
@@ -197,8 +196,21 @@ void kwrite_simple(klisp_State *K, TValue obj)
     case K_TIGNORE:
 	kw_printf(K, "#ignore");
 	break;
+/* unreadable objects */
     case K_TEOF:
 	kw_printf(K, "[eof]");
+	break;
+    case K_TENVIRONMENT:
+	kw_printf(K, "[environment]");
+	break;
+    case K_TCONTINUATION:
+	kw_printf(K, "[continuation]");
+	break;
+    case K_TOPERATIVE:
+	kw_printf(K, "[operative]");
+	break;
+    case K_TAPPLICATIVE:
+	kw_printf(K, "[applicative]");
 	break;
     default:
 	/* shouldn't happen */
