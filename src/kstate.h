@@ -38,7 +38,7 @@ typedef struct {
 
 struct klisp_State {
     TValue symbol_table;
-    Continuation *curr_cont;
+    TValue curr_cont;
 
     /*
     ** If next_env is NIL, then the next_func is of type klisp_Cfunc
@@ -48,6 +48,7 @@ struct klisp_State {
     void *next_func; /* the next function to call (operative or cont) */
     TValue next_value;     /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
+    TValue *next_xparams; 
 
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;         /* auxiliary data to `frealloc' */
@@ -219,6 +220,52 @@ inline bool ks_tbisempty(klisp_State *K)
 typedef void (*klisp_Cfunc) (klisp_State*K, TValue *ud, TValue val);
 typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree, 
 			     TValue env);
+
+/*
+** Functions to manipulate the current continuation and calling 
+** operatives
+*/
+inline void klispS_apply_cc(klisp_State *K, TValue val)
+{
+    Continuation *cont = tv2cont(K->curr_cont);
+    K->next_func = cont->fn;
+    K->next_value = val;
+    /* NOTE: this is needed to differentiate a return from a tail call */
+    K->next_env = KNIL;
+    K->next_xparams = cont->extra;
+    K->curr_cont = cont->parent;
+}
+
+#define kapply_cc(K_, val_) (klispS_appply_cc((K_), (val_)); return;)
+
+inline TValue klispS_get_cc(klisp_State *K)
+{
+    return K->curr_cont;
+}
+
+#define kget_cc(K_) (klispS_get_cc(K_))
+
+inline void klispS_set_cc(klisp_State *K, TValue new_cont)
+{
+    K->curr_cont = new_cont;
+}
+
+#define kset_cc(K_, c_) (klispS_set_cc(K_, c_))
+
+inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree, 
+			     TValue env)
+{
+    Operative *op = tv2op(top);
+    K->next_func = op->fn;
+    K->next_value = ptree;
+    /* NOTE: this is what differentiates a tail call from a return */
+    K->next_env = env;
+    K->next_xparams = op->extra;
+}
+
+#define ktail_call(K_, op_, p_, e_) (klispS_tail_call( \
+					       (K_), (op_), (p_), (v_)); \
+					   return;)
 
 #endif
 
