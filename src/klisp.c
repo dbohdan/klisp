@@ -41,7 +41,6 @@ void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
 void eval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
 {
     (void) xparams;
-    (void) env;
 
     switch(ttype(obj)) {
     case K_TPAIR:
@@ -49,8 +48,8 @@ void eval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
 	kapply_cc(K, obj);
 	break;
     case K_TSYMBOL:
-	/* TODO */
-	kapply_cc(K, obj);
+	/* error handling happens in kget_binding */
+	kapply_cc(K, kget_binding(K, env, obj));
 	break;
     default:
 	kapply_cc(K, obj);

@@ -71,7 +71,7 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 TValue kget_binding(klisp_State *K, TValue env, TValue sym)
 {
     while(!ttisnil(env)) {
-	TValue oldb = kfind_local_binding(K, kenv_parents(K, env), sym);
+	TValue oldb = kfind_local_binding(K, kenv_bindings(K, env), sym);
 	if (!ttisnil(oldb))
 	    return kcdr(oldb);
 	env = kenv_parents(K, env);
