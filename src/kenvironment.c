@@ -57,7 +57,7 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 {
-    TValue oldb = kfind_local_binding(K, kenv_parents(K, env), sym);
+    TValue oldb = kfind_local_binding(K, kenv_bindings(K, env), sym);
 
     if (ttisnil(oldb)) {
 	/* XXX: unrooted pair */
