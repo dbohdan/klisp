@@ -178,6 +178,10 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisstring(o)	(tbasetype_(o) == K_TAG_STRING)
 #define ttissymbol(o)	(tbasetype_(o) == K_TAG_SYMBOL)
 #define ttispair(o)	(tbasetype_(o) == K_TAG_PAIR)
+#define ttisoperative(o) (tbasetype_(o) == K_TAG_OPERATIVE)
+#define ttisapplicative(o) (tbasetype_(o) == K_TAG_APPLICATIVE)
+#define ttisenvironment(o) (tbasetype_(o) == K_TAG_ENVIRONMENT)
+#define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
 
 
 /*
@@ -357,6 +361,7 @@ const TValue keminf;
 #define gc2env(o_) (gc2tv(K_TAG_ENVIRONMENT, o_))
 #define gc2cont(o_) (gc2tv(K_TAG_CONTINUATION, o_))
 #define gc2op(o_) (gc2tv(K_TAG_OPERATIVE, o_))
+#define gc2app(o_) (gc2tv(K_TAG_APPLICATIVE, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
@@ -365,6 +370,7 @@ const TValue keminf;
 #define tv2env(v_) ((Environment *) gcvalue(v_))
 #define tv2cont(v_) ((Continuation *) gcvalue(v_))
 #define tv2op(v_) ((Operative *) gcvalue(v_))
+#define tv2app(v_) ((Applicative *) gcvalue(v_))
 
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
 

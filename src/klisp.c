@@ -24,6 +24,7 @@
 #include "kcontinuation.h"
 #include "kenvironment.h"
 #include "koperative.h"
+#include "kapplicative.h"
 #include "kpair.h"
 #include "ksymbol.h"
 #include "kerror.h"
@@ -40,24 +41,110 @@ void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
     return;
 }
 
-/* eval helper */
+/* eval helpers */
+void eval_ls_cfn(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: this argument list pair
+    ** xparams[1]: dynamic environment
+    ** xparams[2]: first-cycle-pair/NIL 
+    ** xparams[3]: combiner
+    */
+    TValue apair = xparams[0];
+    TValue rest = kcdr(apair);
+    TValue env = xparams[1];
+    TValue tail = xparams[2];
+    TValue combiner = xparams[3];
+
+    /* save the result of last evaluation and continue with next pair */
+    kset_car(apair, obj); 
+    if (ttisnil(rest)) {
+	/* argument evaluation complete */
+	/* this is necessary to recreate the cycle in operand list */
+	kset_cdr(apair, tail);
+	kapply_cc(K, combiner);
+    } else {
+	/* more arguments need to be evaluated */
+	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+					     &eval_ls_cfn, 4, rest, env, 
+					     tail, combiner);
+	kset_cc(K, new_cont);
+	ktail_call(K, K->eval_op, kcar(rest), env);
+    }
+}
+
+inline void clear_ls_marks(TValue ls)
+{
+    while (ttispair(ls) && kis_marked(ls)) {
+	kunmark(ls);
+	ls = kcdr(ls);
+    }
+}
+
+/* operands should be a pair */
+inline TValue make_arg_ls(klisp_State *K, TValue operands, TValue *tail)
+{
+    TValue arg_ls = kcons(K, kcar(operands), KNIL);
+    TValue last_pair = arg_ls;
+    kset_mark(operands, last_pair);
+    TValue rem_op = kcdr(operands);
+    
+    while(ttispair(rem_op) && kis_unmarked(rem_op)) {
+	TValue new_pair = kcons(K, kcar(rem_op), KNIL);
+	kset_mark(rem_op, new_pair);
+	kset_cdr(last_pair, new_pair);
+	last_pair = new_pair;
+	rem_op = kcdr(rem_op);
+    }
+    
+    if (ttispair(rem_op)) {
+	/* cyclical list */
+	*tail = kget_mark(rem_op);
+    } else if (ttisnil(rem_op)) {
+	*tail = KNIL;
+    } else {
+	clear_ls_marks(operands);
+	klispE_throw(K, "Not a list in applicative combination", true);
+	return KINERT;
+    }
+    clear_ls_marks(operands);
+    return arg_ls;
+}
+
 void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
-    ** tparams[0]: operand list
-    ** tparams[1]: dynamic environment
+    ** xparams[0]: operand list
+    ** xparams[1]: dynamic environment
     */
     TValue operands = xparams[0];
     TValue env = xparams[1];
 
     switch(ttype(obj)) {
-    case K_TAPPLICATIVE:
-	/* TODO */
-	kapply_cc(K, KINERT);
-	break;
+    case K_TAPPLICATIVE: {
+	if (ttisnil(operands)) {
+	    /* no arguments => no evaluation, just call the operative */
+	    /* NOTE: the while is needed because it may be multiply wrapped */
+	    while(ttisapplicative(obj))
+		obj = tv2app(obj)->underlying;
+	    ktail_call(K, obj, operands, env);
+	} else if (ttispair(operands)) {
+	    /* make a copy of the operands (for storing arguments) */
+	    TValue tail;
+	    TValue arg_ls = make_arg_ls(K, operands, &tail);
+
+	    TValue comb_cont = kmake_continuation(
+		K, kget_cc(K), KNIL, KNIL, &combine_cfn, 2, arg_ls, env);
+
+	    TValue els_cont = kmake_continuation(
+		K, comb_cont, KNIL, KNIL, &eval_ls_cfn, 
+		4, arg_ls, env, tail, tv2app(obj)->underlying);
+	    kset_cc(K, els_cont);
+	    ktail_call(K, K->eval_op, kcar(arg_ls), env);
+	}
+    }
     case K_TOPERATIVE:
 	ktail_call(K, obj, operands, env);
-	break;
     default:
 	klispE_throw(K, "Not a combiner in combiner position", true);
 	return;
@@ -141,6 +228,7 @@ void match_cfn(klisp_State *K, TValue *xparams, TValue obj)
 /* the underlying function of a simple define */
 void def_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
 {
+    (void) xparams;
     if (!ttispair(obj) || !ttispair(kcdr(obj)) || !ttisnil(kcdr(kcdr(obj)))) {
 	klispE_throw(K, "Bad syntax ($define!)", true);
 	return;
@@ -159,6 +247,19 @@ void def_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
     }
 }
 
+/* the underlying function of cons */
+void cons_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
+{
+    if (!ttispair(obj) || !ttispair(kcdr(obj)) || !ttisnil(kcdr(kcdr(obj)))) {
+	klispE_throw(K, "Bad syntax (cons)", true);
+	return;
+    }
+    TValue car = kcar(obj);
+    TValue cdr = kcar(kcdr(obj));
+    TValue new_pair = kcons(K, car, cdr);
+    kapply_cc(K, new_pair);
+}
+
 int main(int argc, char *argv[]) 
 {
     printf("Read/Write Test\n");
@@ -168,9 +269,15 @@ int main(int argc, char *argv[])
     /* set up the continuations */
     K->eval_op = kmake_operative(K, KNIL, KNIL, eval_ofn, 0);
     TValue ground_env = kmake_empty_environment(K);
+
     TValue g_define = kmake_operative(K, KNIL, KNIL, def_ofn, 0);
     TValue s_define = ksymbol_new(K, "$define!");
     kadd_binding(K, ground_env, s_define, g_define);
+
+    TValue g_cons = kwrap(K, kmake_operative(K, KNIL, KNIL, cons_ofn, 0));
+    TValue s_cons = ksymbol_new(K, "cons");
+    kadd_binding(K, ground_env, s_cons, g_cons);
+
     TValue std_env = kmake_environment(K, ground_env);
     TValue root_cont = kmake_continuation(K, KNIL, KNIL, KNIL,
 					  exit_fn, 0);

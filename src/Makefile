@@ -9,7 +9,7 @@ MYLIBS=
 
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
-	kcontinuation.o koperative.o
+	kcontinuation.o koperative.o kapplicative.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -34,7 +34,8 @@ clean:
 .PHONY: all default o clean
 
 klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
-	kerror.h kauxlib.h koperative.h kenvironment.h kcontinuation.h
+	kerror.h kauxlib.h koperative.h kenvironment.h kcontinuation.h \
+	kapplicative.h koperative.h
 kobject.o: kobject.c kobject.h
 ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
 	kerror.h
@@ -52,3 +53,4 @@ kenvironment.o: kenvironment.c kenvironment.h kpair.h kobject.h kerror.h \
 	kmem.h kstate.h
 kcontinuation.o: kcontinuation.c kcontinuation.h kmem.h kstate.h kobject.h
 koperative.o: koperative.c koperative.h kmem.h kstate.h kobject.h
+kapplicative.o: kapplicative.c kapplicative.h kmem.h kstate.h kobject.h
