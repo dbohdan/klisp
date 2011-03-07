@@ -60,6 +60,7 @@ struct klisp_State {
     void *ud;         /* auxiliary data to `frealloc' */
 
     /* TODO: gc info */
+    GCObject *root_gc; /* list of all collectable objects */
     int32_t totalbytes;
 
     /* TEMP: error handling */

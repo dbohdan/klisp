@@ -19,9 +19,14 @@ TValue kmake_environment(klisp_State *K, TValue parent)
 {
     Environment *new_env = klispM_new(K, Environment);
 
-    new_env->next = NULL;
+    
+    /* header + gc_fields */
+    new_env->next = K->root_gc;
+    K->root_gc = (GCObject *) new_env;
     new_env->gct = 0;
     new_env->tt = K_TENVIRONMENT;
+
+    /* environment specific fields */
     new_env->mark = KFALSE;    
     new_env->parents = parent;
     /* TEMP: for now the bindings are an alist */

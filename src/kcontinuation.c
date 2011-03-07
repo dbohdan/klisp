@@ -17,9 +17,14 @@ TValue kmake_continuation(klisp_State *K, TValue parent, TValue name,
     va_list argp;
     Continuation *new_cont = (Continuation *)
 	klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
-    new_cont->next = NULL;
+
+    /* header + gc_fields */
+    new_cont->next = K->root_gc;
+    K->root_gc = (GCObject *)new_cont;
     new_cont->gct = 0;
     new_cont->tt = K_TCONTINUATION;
+
+    /* continuation specific fields */
     new_cont->mark = KFALSE;    
     new_cont->name = name;
     new_cont->si = si;

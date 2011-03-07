@@ -18,9 +18,14 @@ TValue kmake_applicative(klisp_State *K, TValue name, TValue si,
 			 TValue underlying)
 {
     Applicative *new_app = klispM_new(K, Applicative);
-    new_app->next = NULL;
+
+    /* header + gc_fields */
+    new_app->next = K->root_gc;
+    K->root_gc = (GCObject *)new_app;
     new_app->gct = 0;
     new_app->tt = K_TAPPLICATIVE;
+
+    /* applicative specific fields */
     new_app->name = name;
     new_app->si = si;
     new_app->underlying = underlying;

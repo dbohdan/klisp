@@ -18,9 +18,13 @@ TValue kstring_new_empty(klisp_State *K)
 
     new_str = klispM_malloc(K, sizeof(String) + 1);
 
-    new_str->next = NULL;
+    /* header + gc_fields */
+    new_str->next = K->root_gc;
+    K->root_gc = (GCObject *)new_str;
     new_str->gct = 0;
     new_str->tt = K_TSTRING;
+
+    /* string specific fields */
     new_str->mark = KFALSE;
     new_str->size = 0;
     new_str->b[0] = '\0';
@@ -39,9 +43,13 @@ TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
 
     new_str = klispM_malloc(K, sizeof(String) + size + 1);
 
-    new_str->next = NULL;
+    /* header + gc_fields */
+    new_str->next = K->root_gc;
+    K->root_gc = (GCObject *)new_str;
     new_str->gct = 0;
     new_str->tt = K_TSTRING;
+
+    /* string specific fields */
     new_str->mark = KFALSE;
     new_str->size = size;
     /* NOTE: there can be embedded '\0's in a string */

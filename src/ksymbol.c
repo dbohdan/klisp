@@ -31,9 +31,14 @@ TValue ksymbol_new(klisp_State *K, const char *buf)
     int32_t size = strlen(buf);
     Symbol *new_sym = klispM_malloc(K, sizeof(Symbol) + size + 1);
 
-    new_sym->next = NULL;
+    
+    /* header + gc_fields */
+    new_sym->next = K->root_gc;
+    K->root_gc = (GCObject *)new_sym;
     new_sym->gct = 0;
     new_sym->tt = K_TSYMBOL;
+
+    /* symbol specific fields */
     new_sym->mark = KFALSE;
     new_sym->size = size;
     memcpy(new_sym->b, buf, size);

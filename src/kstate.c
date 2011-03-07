@@ -65,7 +65,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->filename_out = "*STDOUT*";
 
     /* TODO: more gc info */
-    K->totalbytes = KS_ISSIZE + state_size();
+    K->totalbytes = state_size() + KS_ISSIZE * sizeof(TValue) +
+	KS_ITBSIZE;
+    K->root_gc = NULL;
 
     /* TEMP: err */
     /* do nothing for now */
@@ -158,9 +160,50 @@ void klispS_run(klisp_State *K)
 
 void klisp_close (klisp_State *K)
 {
-    /* TODO: free memory for all objects */
-    klispM_freemem(K, ks_sbuf(K), ks_ssize(K));
+    /* free all collectable objects */
+    GCObject *next = K->root_gc;
+
+    while(next) {
+	GCObject *obj = next;
+	next = obj->gch.next;
+
+	switch(obj->gch.tt) {
+	case K_TPAIR:
+	    klispM_free(K, (Pair *)obj);
+	    break;
+	case K_TSYMBOL:
+	    klispM_freemem(K, obj, sizeof(Symbol)+obj->sym.size+1);
+	    break;
+	case K_TSTRING:
+	    klispM_freemem(K, obj, sizeof(String)+obj->str.size+1);
+	    break;
+	case K_TENVIRONMENT:
+	    klispM_free(K, (Environment *)obj);
+	    break;
+	case K_TCONTINUATION:
+	    klispM_freemem(K, obj, sizeof(Continuation) + 
+			   obj->cont.extra_size * sizeof(TValue));
+	    break;
+	case K_TOPERATIVE:
+	    klispM_freemem(K, obj, sizeof(Operative) + 
+			   obj->op.extra_size * sizeof(TValue));
+	    break;
+	case K_TAPPLICATIVE:
+	    klispM_free(K, (Applicative *)obj);
+	    break;
+	default:
+	    /* shouldn't happen */
+	    fprintf(stderr, "Unknown GCObject type: %d\n", obj->gch.tt);
+	    abort();
+	}
+    }
+    /* free helper buffers */
+    klispM_freemem(K, ks_sbuf(K), ks_ssize(K) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
+
+    /* only remaining mem should be of the state struct */
+    assert(K->totalbytes == state_size());
+
     /* NOTE: this needs to be done "by hand" */
     (*(K->frealloc))(K->ud, K, state_size(), 0);
 }

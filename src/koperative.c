@@ -17,9 +17,14 @@ TValue kmake_operative(klisp_State *K, TValue name, TValue si,
     va_list argp;
     Operative *new_op = (Operative *) 
 	klispM_malloc(K, sizeof(Operative) + sizeof(TValue) * xcount);
-    new_op->next = NULL;
+
+    /* header + gc_fields */
+    new_op->next = K->root_gc;
+    K->root_gc = (GCObject *)new_op;
     new_op->gct = 0;
     new_op->tt = K_TOPERATIVE;
+
+    /* operative specific fields */
     new_op->name = name;
     new_op->si = si;
     new_op->fn = fn;
