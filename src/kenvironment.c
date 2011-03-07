@@ -77,7 +77,7 @@ TValue kget_binding(klisp_State *K, TValue env, TValue sym)
 	env = kenv_parents(K, env);
     }
 
-    klispE_throw_extra(K, "Unbound symbol ", ksymbol_buf(sym), true);
+    klispE_throw_extra(K, "Unbound symbol", ksymbol_buf(sym), true);
     /* avoid warning */
     return KINERT;
 }
