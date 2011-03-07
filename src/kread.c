@@ -67,7 +67,7 @@ void kread_error(klisp_State *K, char *str)
 {
     /* clear the stack */
     ks_sclear(K);
-    klispE_throw(K, str, true);
+    klispE_throw(K, str);
 }
 
 /*

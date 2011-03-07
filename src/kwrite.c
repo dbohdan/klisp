@@ -32,7 +32,7 @@
 
 void kwrite_error(klisp_State *K, char *msg)
 {
-    klispE_throw(K, msg, true);
+    klispE_throw(K, msg);
 }
 
 /*

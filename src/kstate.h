@@ -51,6 +51,9 @@ struct klisp_State {
     TValue *next_xparams; 
 
     TValue eval_op; /* the operative for evaluation */
+    TValue ground_env; 
+    TValue root_cont; 
+    TValue error_cont;
 
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;         /* auxiliary data to `frealloc' */
@@ -58,9 +61,8 @@ struct klisp_State {
     /* TODO: gc info */
     int32_t totalbytes;
 
-    /* TEMP:error handling */
+    /* TEMP: error handling */
     jmp_buf error_jb;
-    bool error_can_cont; /* can continue after error? */
 
      /* standard input and output */
      /* TODO: eventually these should be ports */
@@ -267,6 +269,8 @@ inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree,
 
 #define ktail_call(K_, op_, p_, e_) \
     klispS_tail_call((K_), (op_), (p_), (e_)); return
+
+void kcall_cont(klisp_State *K, TValue cont, TValue obj);
 
 #endif
 

@@ -17,11 +17,11 @@
 
 #define MEMERRMSG	"not enough memory"
 
-#define klispM_freemem(L, b, s)	klispM_realloc_(L, (b), (s), 0)
-#define klispM_free(L, b)	klispM_realloc_(L, (b), sizeof(*(b)), 0)
+#define klispM_freemem(K, b, s)	klispM_realloc_(K, (b), (s), 0)
+#define klispM_free(K, b)	klispM_realloc_(K, (b), sizeof(*(b)), 0)
 
-#define klispM_malloc(L,t)	klispM_realloc_(L, NULL, 0, (t))
-#define klispM_new(L,t)		cast(t *, klispM_malloc(L, sizeof(t)))
+#define klispM_malloc(K,t)	klispM_realloc_(K, NULL, 0, (t))
+#define klispM_new(K,t)		cast(t *, klispM_malloc(K, sizeof(t)))
 
 void *klispM_realloc_ (klisp_State *K, void *block, size_t oldsize,
 		     size_t size);

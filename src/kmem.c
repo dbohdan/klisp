@@ -10,6 +10,7 @@
 */
 
 #include <stddef.h>
+#include <stdio.h>
 #include <assert.h>
 
 #include "klisp.h"
@@ -43,8 +44,11 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
   klisp_assert((osize == 0) == (block == NULL));
 
   block = (*K->frealloc)(K->ud, block, osize, nsize);
-  if (block == NULL && nsize > 0)
-      klispE_throw(K, MEMERRMSG, false);
+  if (block == NULL && nsize > 0) {
+      /* TODO: make this a catchable error */
+      fprintf(stderr, MEMERRMSG);
+      abort();
+  }
   klisp_assert((nsize == 0) == (block == NULL));
   K->totalbytes = (K->totalbytes - osize) + nsize;
   return block;

@@ -11,8 +11,6 @@
 #include "kstate.h"
 #include "kobject.h"
 
-void loop_fn(klisp_State *K, TValue *xparams, TValue obj);
-void eval_cfn(klisp_State *K, TValue *xparams, TValue obj);
-void exit_fn(klisp_State *K, TValue *xparams, TValue obj);
+void kinit_repl(klisp_State *K);
 
 #endif

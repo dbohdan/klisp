@@ -222,7 +222,7 @@ void ktok_error(klisp_State *K, char *str)
 {
     /* clear the buffer before throwing an error */
     ks_tbclear(K);
-    klispE_throw(K, str, true);
+    klispE_throw(K, str);
 }
 
 

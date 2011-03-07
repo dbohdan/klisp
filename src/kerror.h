@@ -13,9 +13,8 @@
 #include "klisp.h"
 #include "kstate.h"
 
-void klispE_throw(klisp_State *K, char *msg, bool can_cont);
+void klispE_throw(klisp_State *K, char *msg);
 /* TEMP: for throwing with extra msg info */
-void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg, 
-			bool can_cont);
+void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg);
 
 #endif

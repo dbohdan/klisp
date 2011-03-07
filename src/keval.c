@@ -78,7 +78,7 @@ inline TValue make_arg_ls(klisp_State *K, TValue operands, TValue *tail)
 	*tail = KNIL;
     } else {
 	clear_ls_marks(operands);
-	klispE_throw(K, "Not a list in applicative combination", true);
+	klispE_throw(K, "Not a list in applicative combination");
 	return KINERT;
     }
     clear_ls_marks(operands);
@@ -120,7 +120,7 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
     case K_TOPERATIVE:
 	ktail_call(K, obj, operands, env);
     default:
-	klispE_throw(K, "Not a combiner in combiner position", true);
+	klispE_throw(K, "Not a combiner in combiner position");
 	return;
     }
 }

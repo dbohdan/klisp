@@ -9,7 +9,8 @@ MYLIBS=
 
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
-	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o
+	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
+	kground.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -25,7 +26,7 @@ all:	$(ALL_T)
 o:	$(ALL_O)
 
 $(KRN_T): $(ALL_O)
-	$(CC) -o $@ $(MYLDFLAGS) $(ALL_O) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(MYLDFLAGS) $(ALL_O) $(LIBS)
 
 clean:
 	$(RM) $(ALL_T) $(ALL_O)
@@ -46,9 +47,10 @@ ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstate.h kmem.h klisp.h
 kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
 	klisp.h
-kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h
+kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
+	kground.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h
-kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h
+kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
 kenvironment.o: kenvironment.c kenvironment.h kpair.h kobject.h kerror.h \
 	kmem.h kstate.h klisp.h
@@ -61,4 +63,6 @@ kapplicative.o: kapplicative.c kapplicative.h kmem.h kstate.h kobject.h \
 keval.o: keval.c keval.h kcontinuation.h kenvironment.h kstate.h kobject.h \
 	kpair.h kerror.h klisp.h
 krepl.o: krepl.c krepl.h kcontinuation.h kstate.h kobject.h keval.h klisp.h \
-	kread.h kwrite.h
+	kread.h kwrite.h kenvironment.h
+kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
+	kpair.h kapplicative.h koperative.h ksymbol.h kerror.h 
