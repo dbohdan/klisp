@@ -20,7 +20,7 @@
 #include "keval.h"
 #include "koperative.h"
 #include "kground.h"
-
+#include "krepl.h"
 
 /*
 ** State creation and destruction
@@ -112,16 +112,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     return K;
 }
 
-void klisp_close (klisp_State *K)
-{
-    /* TODO: free memory for all objects */
-    klispM_freemem(K, ks_sbuf(K), ks_ssize(K));
-    klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
-    /* NOTE: this needs to be done "by hand" */
-    (*(K->frealloc))(K->ud, K, state_size(), 0);
-}
-
-
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 {
     /* TODO: interceptions */
@@ -135,3 +125,44 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 
     longjmp(K->error_jb, 1);
 }
+
+void klispS_init_repl(klisp_State *K)
+{
+    /* this is in repl.c */
+    kinit_repl(K);
+}
+
+void klispS_run(klisp_State *K)
+{
+    while(true) {
+	if (setjmp(K->error_jb)) {
+	    /* continuation called */
+	    /* TEMP: do nothing, the loop will call the continuation */
+	} else {
+	    /* all ok, continue with next func */
+	    while (K->next_func) {
+		if (ttisnil(K->next_env)) {
+		    /* continuation application */
+		    klisp_Cfunc fn = (klisp_Cfunc) K->next_func;
+		    (*fn)(K, K->next_xparams, K->next_value);
+		} else {
+		    /* operative calling */
+		    klisp_Ofunc fn = (klisp_Ofunc) K->next_func;
+		    (*fn)(K, K->next_xparams, K->next_value, K->next_env);
+		}
+	    }
+	    break;
+	}
+    }
+}
+
+void klisp_close (klisp_State *K)
+{
+    /* TODO: free memory for all objects */
+    klispM_freemem(K, ks_sbuf(K), ks_ssize(K));
+    klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
+    /* NOTE: this needs to be done "by hand" */
+    (*(K->frealloc))(K->ud, K, state_size(), 0);
+}
+
+

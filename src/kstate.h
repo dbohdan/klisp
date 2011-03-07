@@ -270,7 +270,10 @@ inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree,
 #define ktail_call(K_, op_, p_, e_) \
     klispS_tail_call((K_), (op_), (p_), (e_)); return
 
-void kcall_cont(klisp_State *K, TValue cont, TValue obj);
+void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
+void klispS_init_repl(klisp_State *K);
+void klispS_run(klisp_State *K);
+void klisp_close (klisp_State *K);
 
 #endif
 
