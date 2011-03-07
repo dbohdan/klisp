@@ -22,6 +22,7 @@
 #include "klimits.h"
 #include "klisp.h"
 #include "ktoken.h"
+#include "kmem.h"
 
 /* XXX: for now, lines and column names are fixints */
 /* MAYBE: this should be in tokenizer */
@@ -130,8 +131,11 @@ inline bool ks_sisempty(klisp_State *K);
 inline void ks_spush(klisp_State *K, TValue obj)
 {
     if (ks_stop(K) == ks_ssize(K)) { 
-	/* TODO: try realloc */ 
-	assert(0); 
+	size_t old_size = ks_ssize(K);
+	size_t new_size = old_size * 2;
+	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
+				     new_size*sizeof(TValue));
+	ks_ssize(K) = new_size; 
     }
     ks_selem(K, ks_stop(K)) = obj;
     ++ks_stop(K);
@@ -142,8 +146,11 @@ inline TValue ks_spop(klisp_State *K)
 {
     if (ks_ssize(K) != KS_ISSIZE && ks_stop(K) < (ks_ssize(K) / 4)) {
 	/* NOTE: shrink can't fail */
-	
-	/* TODO: do realloc */
+	size_t old_size = ks_ssize(K);
+	size_t new_size = old_size / 2;
+	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
+				     new_size*sizeof(TValue));
+	ks_ssize(K) = new_size; 
     }
     TValue obj = ks_selem(K, ks_stop(K) - 1);
     --ks_stop(K);
@@ -158,10 +165,12 @@ inline TValue ks_sget(klisp_State *K)
 inline void ks_sclear(klisp_State *K)
 {
     if (ks_ssize(K) != KS_ISSIZE) {
-	/* NOTE: shrink can't fail */
-	/* TODO do realloc */ 
+	size_t old_size = ks_ssize(K);
+	size_t new_size = KS_ISSIZE;
+	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue), 
+				     new_size*sizeof(TValue));
+	ks_ssize(K) = new_size; 
     }
-    ks_ssize(K) = KS_ISSIZE; 
     ks_stop(K) = 0;
 }
 
@@ -188,8 +197,11 @@ inline bool ks_tbisempty(klisp_State *K);
 inline void ks_tbadd(klisp_State *K, char ch)
 {
     if (ks_tbidx(K) == ks_tbsize(K)) { 
-	/* TODO: try realloc */ 
-	assert(0); 
+	size_t old_size = ks_tbsize(K);
+	size_t new_size = old_size * 2;
+	ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size,
+				 new_size);
+	ks_tbsize(K) = new_size;
     }
     ks_tbelem(K, ks_tbidx(K)) = ch;
     ++ks_tbidx(K);
@@ -204,10 +216,10 @@ inline char *ks_tbget(klisp_State *K)
 inline void ks_tbclear(klisp_State *K)
 {
     if (ks_tbsize(K) != KS_ITBSIZE) {
-	/* NOTE: shrink can't fail */
-	/* TODO do realloc */ 
+	ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), ks_tbsize(K),
+				     KS_ITBSIZE);
+	ks_tbsize(K) = KS_ITBSIZE; 
     }
-    ks_tbsize(K) = KS_ITBSIZE; 
     ks_tbidx(K) = 0;
 }
 
