@@ -111,6 +111,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TEOF 		23
 #define K_TBOOLEAN 	24
 #define K_TCHAR 	25
+/* user pointer */
+#define K_TUSER 	29
 
 #define K_TPAIR        	30
 #define K_TSTRING	31
@@ -138,6 +140,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_EOF	K_MAKE_VTAG(K_TEOF)
 #define K_TAG_BOOLEAN	K_MAKE_VTAG(K_TBOOLEAN)
 #define K_TAG_CHAR	K_MAKE_VTAG(K_TCHAR)
+
+#define K_TAG_USER	K_MAKE_VTAG(K_TUSER)
 
 #define K_TAG_PAIR K_MAKE_VTAG(K_TPAIR)
 #define K_TAG_STRING K_MAKE_VTAG(K_TSTRING)
@@ -346,11 +350,13 @@ const TValue keminf;
 #define ch2tv_(ch_) {.tv = {.t = K_TAG_CHAR, .v = { .ch = (ch_) }}}
 #define i2tv_(i_) {.tv = {.t = K_TAG_FIXINT, .v = { .i = (i_) }}}
 #define b2tv_(b_) {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = (b_) }}}
+#define p2tv_(p_) {.tv = {.t = K_TAG_USER, .v = { .p = (p_) }}}
 
 /* Macros to create TValues of non-heap allocated types */
 #define ch2tv(ch_) ((TValue) ch2tv_(ch_))
 #define i2tv(i_) ((TValue) i2tv_(i_))
 #define b2tv(b_) ((TValue) b2tv_(b_))
+#define p2tv(p_) ((TValue) b2tv_(p_))
 
 /* Macros to convert a GCObject * into a tagged value */
 /* TODO: add assertions */
@@ -385,6 +391,7 @@ const TValue keminf;
 #define bvalue(o_) ((o_).tv.v.b)
 #define chvalue(o_) ((o_).tv.v.ch)
 #define gcvalue(o_) ((o_).tv.v.gc)
+#define pvalue(o_) ((o_).tv.v.p)
 
 /* Macro to obtain a string describing the type of a TValue */#
 #define ttname(tv_) (ktv_names[ttype(tv_)])

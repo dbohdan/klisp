@@ -1,10 +1,13 @@
 /*
-** kground.h
+** kground.c
 ** Bindings in the ground environment
 ** See Copyright Notice in klisp.h
 */
 
 /* TODO: split in different files for each module */
+
+#include <assert.h>
+
 #include "kstate.h"
 #include "kobject.h"
 #include "kground.h"
@@ -281,41 +284,196 @@ void make_environment(klisp_State *K, TValue *xparams, TValue ptree,
 ** 4.9 Environment mutation
 */
 
-/* helper */
+/* helpers */
 void match(klisp_State *K, TValue *xparams, TValue obj);
+inline void ptree_clear_marks(klisp_State *K, TValue sym_ls);
+inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree);
 
 /* 4.9.1 $define! */
-/* TODO: allow general ptrees */
 void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) xparams;
-    bind_2p(K, "$define!", ptree, dptree, expr)
+    /*
+    ** xparams[0] = define symbol
+    */
+    bind_2p(K, "$define!", ptree, dptree, expr);
+    
+    TValue def_sym = xparams[0];
 
-    /* TODO: allow general ptrees */
-    if (!ttissymbol(dptree) && !ttisignore(dptree)) {
-	klispE_throw(K, "$define!: Not a symbol or ignore");
-	return;
-    } else {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     &match, 2, dptree, denv);
-	kset_cc(K, new_cont);
-	ktail_call(K, K->eval_op, expr, denv);
+    dptree = check_copy_ptree(K, "$define!", dptree);
+	
+    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+					 &match, 3, dptree, denv, 
+					 def_sym);
+    kset_cc(K, new_cont);
+    ktail_call(K, K->eval_op, expr, denv);
+}
+
+/* helpers */
+
+/*
+** This checks that ptree is a valid <ptree>: 
+**   1) <ptree> -> <symbol> | #ignore | () | (<ptree> . <ptree>)
+**   2) no symbol appears more than once in ptree
+**   3) there is no cycle
+**   NOTE: there may be diamonds, but no symbol should be reachable by more
+**   than one path, see rule number 2
+**
+** It also copies the ptree so that it can't be mutated
+** TODO: if ptree is immutable don't copy it
+*/
+inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
+{
+    /* GC: ptree is rooted because it is in the stack at all times */
+    TValue copy = ptree;
+    /* NIL terminated singly linked list of symbols 
+       (using the mark as next pointer) */
+    TValue sym_ls = KNIL;
+
+    assert(ks_sisempty(K));
+
+    /* TODO: copy */
+    ks_spush(K, ptree);
+
+    /* last operation was a push */
+    bool push = true;
+
+    while(!ks_sisempty(K)) {
+	TValue top = ks_sget(K);
+
+	if (push) {
+            /* last operation was a push */
+	    switch(ttype(top)) {
+	    case K_TIGNORE:
+	    case K_TNIL:
+		ks_sdpop(K);
+		push = false;
+		break;
+	    case K_TSYMBOL: {
+		if (kis_marked(top)) {
+		    /* TODO add symbol name */
+		    ks_sdpop(K);
+		    ptree_clear_marks(K, sym_ls);
+		    klispE_throw_extra(K, name, ": repeated symbol in ptree");
+		    /* avoid warning */
+		    return KNIL;
+		} else {
+		    /* add it to the symbol list */
+		    kset_mark(top, sym_ls);
+		    sym_ls = top;
+		    ks_sdpop(K);
+		    push = false;
+		}
+		break;
+	    }
+	    case K_TPAIR: {
+		if (kis_unmarked(top)) {
+		    kset_mark(top, i2tv(1));
+		    ks_spush(K, kcar(top)); 
+		    push = true;
+		} else {
+		    /* marked pair means a cycle was found */
+		    ptree_clear_marks(K, sym_ls);
+		    klispE_throw_extra(K, name, ": cycle detected in ptree");
+		    /* avoid warning */
+		    return KNIL;
+		}
+		break;
+	    }
+	    default:
+		ks_sdpop(K);
+		ptree_clear_marks(K, sym_ls);
+		klispE_throw_extra(K, name, ": bad object type in ptree");
+		/* avoid warning */
+		return KNIL;
+	    }
+	} else { 
+            /* last operation was a pop */
+	    /* top must be a pair with either 1 or 2 as mark */
+	    int32_t mark = ivalue(kget_mark(top));
+	    if (mark == 1) { /* only car was checked, check cdr */
+		kset_mark(top, i2tv(2));
+		ks_spush(K, kcdr(top)); 
+		push = true;
+	    } else { /* both car & cdr were checked, unmark this pair */
+		kunmark(top);
+		ks_sdpop(K);
+		push = false;
+	    }
+	}
+    }
+    
+    ptree_clear_marks(K, sym_ls);
+    /* TODO: do copy */
+    return copy;
+}
+
+/* The stack should contain only pairs, sym_ls should be
+ as above */    
+inline void ptree_clear_marks(klisp_State *K, TValue sym_ls)
+{
+    while(!ttisnil(sym_ls)) {
+	TValue first = sym_ls;
+	sym_ls = kget_mark(first);
+	kunmark(first);
+    }
+
+    while(!ks_sisempty(K)) {
+	kunmark(ks_sget(K));
+	ks_sdpop(K);
     }
 }
 
-/* helper */
 void match(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
-    ** tparams[0]: ptree
-    ** tparams[1]: dynamic environment
+    ** xparams[0]: ptree
+    ** xparams[1]: dynamic environment
+    ** xparams[2]: combiner symbol
     */
     TValue ptree = xparams[0];
     TValue env = xparams[1];
+    char *name = ksymbol_buf(xparams[2]);
 
-    /* TODO: allow general parameter trees */
-    if (!ttisignore(ptree)) {
-	kadd_binding(K, env, ptree, obj);
+    assert(ks_sisempty(K));
+    ks_spush(K, obj);
+    ks_spush(K, ptree);
+
+    while(!ks_sisempty(K)) {
+	ptree = ks_spop(K);
+	obj = ks_spop(K);
+
+	switch(ttype(ptree)) {
+	case K_TNIL:
+	    if (!ttisnil(obj)) {
+		/* TODO show ptree and arguments */
+		ks_sclear(K);
+		klispE_throw_extra(K, name, ": ptree doesn't match arguments");
+		return;
+	    }
+	    break;
+	case K_TIGNORE:
+	    /* do nothing */
+	    break;
+	case K_TSYMBOL:
+	    kadd_binding(K, env, ptree, obj);
+	    break;
+	case K_TPAIR:
+	    if (ttispair(obj)) {
+		ks_spush(K, kcdr(obj));
+		ks_spush(K, kcdr(ptree));
+		ks_spush(K, kcar(obj));
+		ks_spush(K, kcar(ptree));
+	    } else {
+		/* TODO show ptree and arguments */
+		ks_sclear(K);
+		klispE_throw_extra(K, name, ": ptree doesn't match arguments");
+		return;
+	    }
+	    break;
+	default:
+	    /* can't really happen */
+	    break;
+	}
     }
     kapply_cc(K, KINERT);
 }
@@ -497,7 +655,7 @@ TValue kmake_ground_env(klisp_State *K)
 
     /* 4.9.1 $define! */
     symbol = ksymbol_new(K, "$define!");
-    value = kmake_operative(K, KNIL, KNIL, SdefineB, 0);
+    value = kmake_operative(K, KNIL, KNIL, SdefineB, 1, symbol);
     kadd_binding(K, ground_env, symbol, value);
 
     /*
