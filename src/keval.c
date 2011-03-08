@@ -115,6 +115,9 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 		4, arg_ls, env, tail, tv2app(obj)->underlying);
 	    kset_cc(K, els_cont);
 	    ktail_call(K, K->eval_op, kcar(arg_ls), env);
+	} else {
+	    klispE_throw(K, "Not a list in applicative combination");
+	    return;
 	}
     }
     case K_TOPERATIVE:
