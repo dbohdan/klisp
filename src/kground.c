@@ -68,8 +68,8 @@
     }
 
 /* TODO: add name and source info */
-#define kmake_applicative(K_, fn_, i_, ...) \
-    kwrap(K_, kmake_operative(K_, KNIL, KNIL, fn_, i_, ##__VA_ARGS__))
+#define kmake_applicative(K_, fn_, ...) \
+    kwrap(K_, kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__))
 
 
 /*
