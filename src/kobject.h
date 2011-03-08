@@ -180,6 +180,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttispair(o)	(tbasetype_(o) == K_TAG_PAIR)
 #define ttisoperative(o) (tbasetype_(o) == K_TAG_OPERATIVE)
 #define ttisapplicative(o) (tbasetype_(o) == K_TAG_APPLICATIVE)
+#define ttiscombiner(o_) ({ int32_t t_ = tbasetype_(o_); \
+	    t_ == K_TAG_OPERATIVE || t_ == K_TAG_APPLICATIVE;})
 #define ttisenvironment(o) (tbasetype_(o) == K_TAG_ENVIRONMENT)
 #define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
 
