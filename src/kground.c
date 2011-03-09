@@ -36,13 +36,13 @@
 #define bind_1tp(K_, n_, ptree_, tstr_, t_, v_)	\
     TValue v_; \
     if (!ttispair(ptree_) || !ttisnil(kcdr(ptree_))) { \
-	klispE_throw(K_, n_ ": Bad ptree (expected one argument)"); \
+	klispE_throw_extra(K_, n_ , ": Bad ptree (expected one argument)"); \
 	return; \
     } \
     v_ = kcar(ptree_); \
     if (!t_(v_)) { \
-	klispE_throw(K_, n_ ": Bad type on first argument (expected " \
-		     tstr_ ")");				     \
+	klispE_throw_extra(K_, n_ , ": Bad type on first argument " \
+			   "(expected "	tstr_ ")");     \
 	return; \
     } 
 
@@ -55,17 +55,17 @@
     TValue v1_, v2_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
 	    !ttisnil(kcddr(ptree_))) {		\
-	klispE_throw(K_, n_ ": Bad ptree (expected two arguments)"); \
+	klispE_throw_extra(K_, n_ , ": Bad ptree (expected two arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
     v2_ = kcadr(ptree_); \
     if (!t1_(v1_)) { \
-	klispE_throw(K_, n_ ": Bad type on first argument (expected " \
+	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
 		     tstr1_ ")");				     \
 	return; \
     } else if (!t2_(v2_)) { \
-	klispE_throw(K_, n_ ": Bad type on second argument (expected " \
+	klispE_throw_extra(K_, n_, ": Bad type on second argument (expected " \
 		     tstr2_ ")");				     \
 	return; \
     }
@@ -74,7 +74,7 @@
     TValue v1_, v2_, v3_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
 	  !ttispair(kcddr (ptree_)) || !ttisnil(kcdddr(ptree_))) {  \
-	klispE_throw(K_, n_ ": Bad ptree (expected tree arguments)"); \
+	klispE_throw_extra(K_, n_, ": Bad ptree (expected tree arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
@@ -261,7 +261,58 @@ void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 4.7.2 copy-es-immutable */
-/* TODO */
+
+/* Helper (also used by $vau, $lambda, etc) */
+TValue copy_es_immutable_h(klisp_State *K, char *name, TValue ptree);
+
+void copy_es_immutable(klisp_State *K, TValue *xparams, 
+		       TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: copy-es-immutable symbol
+    */
+    char *name = ksymbol_buf(xparams[0]);
+    bind_1p(K, name, ptree, obj);
+
+    TValue copy = copy_es_immutable_h(K, name, obj);
+    kapply_cc(K, copy);
+}
+
+/*
+** This is in a helper method to use it from $lambda, $vau, etc
+**
+** We mark each seen mutable pair with the corresponding copied 
+** immutable pair to construct a structure that is isomorphic to 
+** the original.
+** All objects that aren't mutable pairs are retained without 
+** copying
+** sstack is used to keep track of pairs and tbstack is used
+** to keep track of which of car or cdr we were copying,
+** 0 means just pushed, 1 means return from car, 2 means return from cdr
+*/
+
+#define CEI_ST_PUSH ((char) 0)
+#define CEI_ST_CAR ((char) 1)
+#define CEI_ST_CDR ((char) 2)
+
+TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj)
+{
+    /* 
+    ** GC: obj is rooted because it is in the stack at all times.
+    ** The copied pair should be kept safe some other way
+    */
+    TValue copy = obj;
+
+    ks_spush(K, obj);
+    ks_tbpush(K, CEI_ST_PUSH);
+
+    while(!ks_sisempty(K)) {
+	char state = ks_tbpop(K);
+    }
+
+    return copy;
+}
+
 
 /*
 ** 4.8 Environments
