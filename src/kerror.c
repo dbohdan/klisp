@@ -39,7 +39,7 @@ void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg) {
     strcpy(msg_buf+l1, extra_msg);
 
     TValue error_msg = kstring_new(K, msg_buf, tl);
-    klispM_freemem(K, msg_buf, tl+1);
+    klispM_freemem(K, msg_buf, tl);
 
     clear_buffers(K);
 
