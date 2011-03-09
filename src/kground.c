@@ -54,12 +54,12 @@
 		 tstr2_, t2_, v2_)			\
     TValue v1_, v2_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
-	    !ttisnil(kcdr(kcdr(ptree_)))) {		\
+	    !ttisnil(kcddr(ptree_))) {		\
 	klispE_throw(K_, n_ ": Bad ptree (expected two arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
-    v2_ = kcar(kcdr(ptree_)); \
+    v2_ = kcadr(ptree_); \
     if (!t1_(v1_)) { \
 	klispE_throw(K_, n_ ": Bad type on first argument (expected " \
 		     tstr1_ ")");				     \
@@ -73,14 +73,13 @@
 #define bind_3p(K_, n_, ptree_, v1_, v2_, v3_)		\
     TValue v1_, v2_, v3_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
-	  !ttispair(kcdr (kcdr (ptree_))) ||  \
-	  !ttisnil(kcdr(kcdr(kcdr(ptree_))))) {			     \
+	  !ttispair(kcddr (ptree_)) || !ttisnil(kcdddr(ptree_))) {  \
 	klispE_throw(K_, n_ ": Bad ptree (expected tree arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
-    v2_ = kcar(kcdr(ptree_)); \
-    v3_ = kcar(kcdr(kcdr(ptree_)))
+    v2_ = kcadr(ptree_); \
+    v3_ = kcaddr(ptree_)
 
 /* TODO: add name and source info */
 #define kmake_applicative(K_, fn_, ...) \

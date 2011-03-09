@@ -408,6 +408,13 @@ extern char *ktv_names[];
 #define kis_marked(p_) (!kis_unmarked(p_))
 #define kis_unmarked(p_) (tv_equal(kget_mark(p_), KFALSE))
 
+/* Macros to access mutability flag */
+#define K_FLAG_IMMUTABLE 0x0100
+#define kget_flags(o_) (tv2mgch(o_)->tt)
+
+#define kis_mutable(o_) ((kget_flags(o_) & K_FLAG_IMMUTABLE) == 0)
+#define kis_immutable(o_) (!kis_mutable(o_))
+
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)
 
