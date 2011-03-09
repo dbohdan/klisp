@@ -450,7 +450,7 @@ void make_environment(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* helpers */
 void match(klisp_State *K, TValue *xparams, TValue obj);
-inline void ptree_clear_marks(klisp_State *K, TValue sym_ls);
+inline void ptree_clear_all(klisp_State *K, TValue sym_ls);
 inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree);
 
 /* 4.9.1 $define! */
@@ -483,8 +483,6 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 **   than one path, see rule number 2
 **
 ** It also copies the ptree so that it can't be mutated
-** TODO: if ptree is immutable don't copy it
-** TODO: replace this mechanism with the states in the token buffer
 */
 inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 {
@@ -492,6 +490,9 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
     ** GC: ptree is rooted because it is in the stack at all times.
     ** The copied pair should be kept safe some other way
     */
+
+    /* copy is only valid if the state isn't ST_PUSH */
+    /* but init anyways to avoid warning */
     TValue copy = ptree;
 
     /* 
@@ -501,52 +502,61 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
     TValue sym_ls = KNIL;
 
     assert(ks_sisempty(K));
+    assert(ks_tbisempty(K));
 
+    ks_tbpush(K, ST_PUSH);
     ks_spush(K, ptree);
-    /* last operation was a push */
-    bool push = true;
 
     while(!ks_sisempty(K)) {
-	TValue top = ks_sget(K);
+	char state = ks_tbpop(K);
+	TValue top = ks_spop(K);
 
-	if (push) {
-            /* last operation was a push */
+	if (state == ST_PUSH) {
 	    switch(ttype(top)) {
 	    case K_TIGNORE:
 	    case K_TNIL:
-		ks_sdpop(K);
-		push = false;
 		copy = top;
 		break;
 	    case K_TSYMBOL: {
 		if (kis_marked(top)) {
 		    /* TODO add symbol name */
-		    ks_sdpop(K);
-		    ptree_clear_marks(K, sym_ls);
+		    ptree_clear_all(K, sym_ls);
 		    klispE_throw_extra(K, name, ": repeated symbol in ptree");
 		    /* avoid warning */
 		    return KNIL;
 		} else {
-		    ks_sdpop(K);
-		    push = false;
 		    copy = top;
 		    /* add it to the symbol list */
 		    kset_mark(top, sym_ls);
 		    sym_ls = top;
-
 		}
 		break;
 	    }
 	    case K_TPAIR: {
 		if (kis_unmarked(top)) {
-		    kset_mark(top, i2tv(1));
-		    /* create a new pair as copy, leave it above */
-		    ks_spush(K, kdummy_cons(K));
+		    if (kis_immutable(top)) {
+			/* don't copy mutable pairs, just use them */
+			/* NOTE: immutable pairs can't have mutable
+			   car or cdr */
+			/* we have to continue thou, because there could be a 
+			   cycle */
+			kset_mark(top, top);
+		    } else {
+			/* create a new pair as copy, save it in the mark */
+			TValue new_pair = kdummy_imm_cons(K);
+			kset_mark(top, new_pair);
+		    }
+		    /* keep the old pair and continue with the car */
+		    ks_tbpush(K, ST_CAR); 
+		    ks_spush(K, top); 
+
+		    ks_tbpush(K, ST_PUSH); 
 		    ks_spush(K, kcar(top)); 
-		    push = true;
 		} else {
 		    /* marked pair means a cycle was found */
-		    ptree_clear_marks(K, sym_ls);
+		    /* NOTE: the pair should be in the stack already so
+		       it isn't necessary to push it again to clear the mark */
+		    ptree_clear_all(K, sym_ls);
 		    klispE_throw_extra(K, name, ": cycle detected in ptree");
 		    /* avoid warning */
 		    return KNIL;
@@ -555,45 +565,53 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 	    }
 	    default:
 		ks_sdpop(K);
-		ptree_clear_marks(K, sym_ls);
+		ptree_clear_all(K, sym_ls);
 		klispE_throw_extra(K, name, ": bad object type in ptree");
 		/* avoid warning */
 		return KNIL;
 	    }
 	} else { 
             /* last operation was a pop */
-	    /* top is a copied obj, below that there must be a pair 
-	       with either 1 or 2 as mark */
-	    ks_sdpop(K);
-	    TValue below = ks_sget(K);
-	    int32_t mark = ivalue(kget_mark(below));
-	    if (mark == 1) { 
+	    /* top is a marked pair, the mark is the copied obj */
+	    /* NOTE: if top is immutable the mark is also top 
+	     we could still do the set-car/set-cdr because the
+	     copy would be the same as the car/cdr, but why bother */
+	    if (state == ST_CAR) { 
 		/* only car was checked (not yet copied) */
-		kset_car(top, copy);
-		kset_mark(below, i2tv(2));
-		/* put the copied pair again */
+		if (kis_mutable(top)) {
+		    TValue copied_pair = kget_mark(top);
+		    kset_car(copied_pair, copy);
+		}
+		/* put the copied pair again, continue with the cdr */
+		ks_tbpush(K, ST_CDR);
 		ks_spush(K, top); 
-		ks_spush(K, kcdr(below)); 
-		push = true;
+
+		ks_tbpush(K, ST_PUSH);
+		ks_spush(K, kcdr(top)); 
 	    } else { 
                 /* both car & cdr were checked (cdr not yet copied) */
+		TValue copied_pair = kget_mark(top);
 		/* the unmark is needed to allow diamonds */
-		kunmark(below);
-		kset_cdr(top, copy);
-		copy = top;
-		ks_sdpop(K);
-		push = false;
+		kunmark(top);
+
+		if (kis_mutable(top)) {
+		    kset_cdr(copied_pair, copy);
+		}
+		copy = copied_pair;
 	    }
 	}
     }
     
-    ptree_clear_marks(K, sym_ls);
+    ptree_clear_all(K, sym_ls);
     return copy;
 }
 
-/* The stack should contain only pairs, sym_ls should be
- as above */    
-inline void ptree_clear_marks(klisp_State *K, TValue sym_ls)
+/*
+** Clear all the marks (symbols + pairs) & stacks.
+** The stack should contain only pairs, sym_ls should be
+** as above 
+*/    
+inline void ptree_clear_all(klisp_State *K, TValue sym_ls)
 {
     while(!ttisnil(sym_ls)) {
 	TValue first = sym_ls;
@@ -605,6 +623,8 @@ inline void ptree_clear_marks(klisp_State *K, TValue sym_ls)
 	kunmark(ks_sget(K));
 	ks_sdpop(K);
     }
+
+    ks_tbclear(K);
 }
 
 void match(klisp_State *K, TValue *xparams, TValue obj)
