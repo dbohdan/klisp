@@ -82,8 +82,25 @@
     v3_ = kcaddr(ptree_)
 
 /* TODO: add name and source info */
-#define kmake_applicative(K_, fn_, ...) \
+#define make_operative(K_, fn_, ...) \
+    kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__)
+#define make_applicative(K_, fn_, ...) \
     kwrap(K_, kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__))
+
+/*
+** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
+** "value", both of type TValue. symbol will be bound to a symbol named by
+** "n_" and can be referrenced in the var_args
+*/
+#define add_operative(K_, env_, n_, fn_, ...)	\
+    { symbol = ksymbol_new(K_, n_); \
+    value = make_operative(K_, fn_, __VA_ARGS__); \
+    kadd_binding(K_, env_, symbol, value); }
+
+#define add_applicative(K_, env_, n_, fn_, ...)	\
+    { symbol = ksymbol_new(K_, n_); \
+    value = make_applicative(K_, fn_, __VA_ARGS__); \
+    kadd_binding(K_, env_, symbol, value); }
 
 /*
 ** This states are useful for traversing trees, saving the state in the
@@ -757,18 +774,14 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 4.1.1 boolean? */
-    symbol = ksymbol_new(K, "boolean?");
-    value = kmake_applicative(K, booleanp, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "boolean?", booleanp, 0);
 
     /*
     ** 4.2 Equivalence under mutation
     */
 
     /* 4.2.1 eq? */
-    symbol = ksymbol_new(K, "eq?");
-    value = kmake_applicative(K, eqp, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "eq?", eqp, 0);
 
     /*
     ** 4.3 Equivalence up to mutation
@@ -782,119 +795,84 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 4.4.1 symbol? */
-    symbol = ksymbol_new(K, "symbol?");
-    value = kmake_applicative(K, symbolp, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "symbol?", symbolp, 0);
 
     /*
     ** 4.5 Control
     */
 
     /* 4.5.1 inert? */
-    symbol = ksymbol_new(K, "inert?");
-    value = kmake_applicative(K, inertp, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "inert?", inertp, 0);
 
     /* 4.5.2 $if */
-    symbol = ksymbol_new(K, "$if");
-    value = kmake_operative(K, KNIL, KNIL, Sif, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_operative(K, ground_env, "$if", Sif, 0);
 
     /*
     ** 4.6 Pairs and lists
     */
 
     /* 4.6.1 pair? */
-    symbol = ksymbol_new(K, "pair?");
-    value = kmake_applicative(K, pairp, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "pair?", pairp, 0);
 
     /* 4.6.2 null? */
-    symbol = ksymbol_new(K, "null?");
-    value = kmake_applicative(K, nullp, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "null?", nullp, 0);
     
     /* 4.6.3 cons */
-    symbol = ksymbol_new(K, "cons");
-    value = kmake_applicative(K, cons, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "cons", cons, 0);
 
     /*
     ** 4.7 Pair mutation
     */
 
     /* 4.7.1 set-car!, set-cdr! */
-    symbol = ksymbol_new(K, "set-car!");
-    value = kmake_applicative(K, set_carB, 0);
-    kadd_binding(K, ground_env, symbol, value);
-    symbol = ksymbol_new(K, "set-cdr!");
-    value = kmake_applicative(K, set_cdrB, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "set-car!", set_carB, 0);
+    add_applicative(K, ground_env, "set-cdr!", set_cdrB, 0);
 
     /* 4.7.2 copy-es-immutable */
-    symbol = ksymbol_new(K, "copy-es-immutable");
-    value = kmake_applicative(K, copy_es_immutable, 1, symbol);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "copy-es-immutable", copy_es_immutable, 
+		    1, symbol);
 
     /*
     ** 4.8 Environments
     */
 
     /* 4.8.1 environment? */
-    symbol = ksymbol_new(K, "environment?");
-    value = kmake_applicative(K, environmentp, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "environment?", environmentp, 0);
 
     /* 4.8.2 ignore? */
-    symbol = ksymbol_new(K, "ignore?");
-    value = kmake_applicative(K, ignorep, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "ignore?", ignorep, 0);
 
     /* 4.8.3 eval */
-    symbol = ksymbol_new(K, "eval");
-    value = kmake_applicative(K, eval, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "eval", eval, 0);
 
     /* 4.8.4 make-environment */
-    symbol = ksymbol_new(K, "make-environment");
-    value = kmake_applicative(K, make_environment, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "make-environment", make_environment, 0);
 
     /*
     ** 4.9 Environment mutation
     */
 
     /* 4.9.1 $define! */
-    symbol = ksymbol_new(K, "$define!");
-    value = kmake_operative(K, KNIL, KNIL, SdefineB, 1, symbol);
-    kadd_binding(K, ground_env, symbol, value);
+    add_operative(K, ground_env, "$define!", SdefineB, 1, symbol);
 
     /*
     ** 4.10 Combiners
     */
 
     /* 4.10.1 operative? */
-    symbol = ksymbol_new(K, "operative?");
-    value = kmake_applicative(K, operativep, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "operative?", operativep, 0);
 
     /* 4.10.2 applicative? */
-    symbol = ksymbol_new(K, "applicative?");
-    value = kmake_applicative(K, applicativep, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "applicative?", applicativep, 0);
 
     /* 4.10.3 $vau */
     /* TODO */
 
     /* 4.10.4 wrap */
-    symbol = ksymbol_new(K, "wrap");
-    value = kmake_applicative(K, wrap, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "wrap", wrap, 0);
 
     /* 4.10.5 unwrap */
-    symbol = ksymbol_new(K, "unwrap");
-    value = kmake_applicative(K, unwrap, 0);
-    kadd_binding(K, ground_env, symbol, value);
+    add_applicative(K, ground_env, "unwrap", unwrap, 0);
 
     return ground_env;
 }
