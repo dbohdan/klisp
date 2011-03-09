@@ -70,6 +70,18 @@
 	return; \
     }
 
+#define bind_3p(K_, n_, ptree_, v1_, v2_, v3_)		\
+    TValue v1_, v2_, v3_;					\
+    if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
+	  !ttispair(kcdr (kcdr (ptree_))) ||  \
+	  !ttisnil(kcdr(kcdr(kcdr(ptree_))))) {			     \
+	klispE_throw(K_, n_ ": Bad ptree (expected tree arguments)"); \
+	return; \
+    } \
+    v1_ = kcar(ptree_); \
+    v2_ = kcar(kcdr(ptree_)); \
+    v3_ = kcar(kcdr(kcdr(ptree_)))
+
 /* TODO: add name and source info */
 #define kmake_applicative(K_, fn_, ...) \
     kwrap(K_, kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__))
@@ -151,17 +163,42 @@ void inertp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 4.5.2 $if */
-/* TODO:
+
+/* helpers */
+void select_clause(klisp_State *K, TValue *xparams, TValue obj);
+
+/* TODO: both clauses should probably be copied */
 void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
     (void) xparams;
 
-    bind_3p(K, "boolean?", ptree, test, consc, altc);
-    
-    kapply_cc(K, b2tv(ttisboolean(o)));
+    bind_3p(K, "$if", ptree, test, cons_c, alt_c);
+
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, select_clause, 
+			   3, denv, cons_c, alt_c);
+
+    klispS_set_cc(K, new_cont);
+    ktail_call(K, K->eval_op, test, denv);
 }
-*/
+
+void select_clause(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: dynamic env
+    ** xparams[1]: consequent clause
+    ** xparams[2]: alternative clause
+    */
+    if (ttisboolean(obj)) {
+	TValue denv = xparams[0];
+	TValue clause = bvalue(obj)? xparams[1] : xparams[2];
+	ktail_call(K, K->eval_op, clause, denv);
+    } else {
+	klispE_throw(K, "$if: test is not a boolean");
+	return;
+    }
+}
 
 /*
 ** 4.6 Pairs and lists
@@ -310,7 +347,7 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     dptree = check_copy_ptree(K, "$define!", dptree);
 	
     TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					 &match, 3, dptree, denv, 
+					 match, 3, dptree, denv, 
 					 def_sym);
     kset_cc(K, new_cont);
     ktail_call(K, K->eval_op, expr, denv);
@@ -619,11 +656,9 @@ TValue kmake_ground_env(klisp_State *K)
     kadd_binding(K, ground_env, symbol, value);
 
     /* 4.5.2 $if */
-/* TODO:
     symbol = ksymbol_new(K, "$if");
     value = kmake_operative(K, KNIL, KNIL, Sif, 0);
     kadd_binding(K, ground_env, symbol, value);
-*/
 
     /*
     ** 4.6 Pairs and lists
