@@ -323,17 +323,21 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 */
 inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 {
-    /* GC: ptree is rooted because it is in the stack at all times */
+    /* 
+    ** GC: ptree is rooted because it is in the stack at all times.
+    ** The copied pair should be kept safe some other way
+    */
     TValue copy = ptree;
-    /* NIL terminated singly linked list of symbols 
-       (using the mark as next pointer) */
+
+    /* 
+    ** NIL terminated singly linked list of symbols 
+    ** (using the mark as next pointer) 
+    */
     TValue sym_ls = KNIL;
 
     assert(ks_sisempty(K));
 
-    /* TODO: copy */
     ks_spush(K, ptree);
-
     /* last operation was a push */
     bool push = true;
 
@@ -347,6 +351,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 	    case K_TNIL:
 		ks_sdpop(K);
 		push = false;
+		copy = top;
 		break;
 	    case K_TSYMBOL: {
 		if (kis_marked(top)) {
@@ -357,17 +362,21 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 		    /* avoid warning */
 		    return KNIL;
 		} else {
+		    ks_sdpop(K);
+		    push = false;
+		    copy = top;
 		    /* add it to the symbol list */
 		    kset_mark(top, sym_ls);
 		    sym_ls = top;
-		    ks_sdpop(K);
-		    push = false;
+
 		}
 		break;
 	    }
 	    case K_TPAIR: {
 		if (kis_unmarked(top)) {
 		    kset_mark(top, i2tv(1));
+		    /* create a new pair as copy, leave it above */
+		    ks_spush(K, kdummy_cons(K));
 		    ks_spush(K, kcar(top)); 
 		    push = true;
 		} else {
@@ -388,14 +397,25 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 	    }
 	} else { 
             /* last operation was a pop */
-	    /* top must be a pair with either 1 or 2 as mark */
-	    int32_t mark = ivalue(kget_mark(top));
-	    if (mark == 1) { /* only car was checked, check cdr */
-		kset_mark(top, i2tv(2));
-		ks_spush(K, kcdr(top)); 
+	    /* top is a copied obj, below that there must be a pair 
+	       with either 1 or 2 as mark */
+	    ks_sdpop(K);
+	    TValue below = ks_sget(K);
+	    int32_t mark = ivalue(kget_mark(below));
+	    if (mark == 1) { 
+		/* only car was checked (not yet copied) */
+		kset_car(top, copy);
+		kset_mark(below, i2tv(2));
+		/* put the copied pair again */
+		ks_spush(K, top); 
+		ks_spush(K, kcdr(below)); 
 		push = true;
-	    } else { /* both car & cdr were checked, unmark this pair */
-		kunmark(top);
+	    } else { 
+                /* both car & cdr were checked (cdr not yet copied) */
+		/* the unmark is needed to allow diamonds */
+		kunmark(below);
+		kset_cdr(top, copy);
+		copy = top;
 		ks_sdpop(K);
 		push = false;
 	    }
@@ -403,7 +423,6 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
     }
     
     ptree_clear_marks(K, sym_ls);
-    /* TODO: do copy */
     return copy;
 }
 
