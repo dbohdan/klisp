@@ -400,7 +400,7 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
     if (ktok_check_delimiter(K)) {
 	ks_tbadd(K, ch);
 	ks_tbadd(K, '\0');
-	TValue new_sym = ksymbol_new(K, ks_tbuf(K));
+	TValue new_sym = ksymbol_new(K, ks_tbget_buffer(K));
 	ks_tbclear(K);
 	return new_sym;
     } else {
@@ -454,7 +454,7 @@ TValue ktok_read_string(klisp_State *K)
 	    i++;
 	}
     }
-    TValue new_str = kstring_new(K, ks_tbuf(K), i);
+    TValue new_str = kstring_new(K, ks_tbget_buffer(K), i);
     ks_tbclear(K);
     return new_str;
 }
@@ -484,9 +484,10 @@ TValue ktok_read_special(klisp_State *K)
 	ktok_read_until_delimiter(K);
 	/* NOTE: can use strcmp even in the presence of '\0's */
 	TValue ret_val;
-	if (strcmp(ks_tbuf(K), "gnore") == 0)
+	char *buf = ks_tbget_buffer(K);
+	if (strcmp(buf, "gnore") == 0)
 	    ret_val = KIGNORE;
-	else if (strcmp(ks_tbuf(K), "nert") == 0)
+	else if (strcmp(buf, "nert") == 0)
 	    ret_val =  KINERT;
 	else {
 	    ktok_error(K, "unexpected char in # constant");
@@ -496,15 +497,16 @@ TValue ktok_read_special(klisp_State *K)
 	ks_tbclear(K);
 	return ret_val;
     }
-    case 'e':
+    case 'e': {
 	/* an exact infinity */
 	/* XXX: could also be an exact number */
 	ktok_read_until_delimiter(K);
 	TValue ret_val;
 	/* NOTE: can use strcmp even in the presence of '\0's */
-	if (strcmp(ks_tbuf(K), "+infinity") == 0) {
+	char *buf = ks_tbget_buffer(K);
+	if (strcmp(buf, "+infinity") == 0) {
 	    ret_val = KEPINF;
-	} else if (strcmp(ks_tbuf(K), "-infinity") == 0) {
+	} else if (strcmp(buf, "-infinity") == 0) {
 	    ret_val =  KEMINF;
 	} else {
 	    ktok_error(K, "unexpected char in # constant");
@@ -513,6 +515,7 @@ TValue ktok_read_special(klisp_State *K)
 	}
 	ks_tbclear(K);
 	return ret_val;
+    }
     case 't':
     case 'f':
 	/* boolean constant */
@@ -523,7 +526,7 @@ TValue ktok_read_special(klisp_State *K)
 	    /* avoid warning */
 	    return KINERT;
 	}
-    case '\\':
+    case '\\': {
 	/* char constant */
 	/* 
 	** RATIONALE: in the scheme spec (R5RS) it says that only alphabetic 
@@ -546,16 +549,17 @@ TValue ktok_read_special(klisp_State *K)
 	    return ch2tv(ch);
 
 	ktok_read_until_delimiter(K);
-	char *p = ks_tbuf(K);
+	char *p = ks_tbget_buffer(K);
 	while (*p) {
 	    *p = tolower(*p);
 	    p++;
 	}
 	ch = tolower(ch);
 	/* NOTE: can use strcmp even in the presence of '\0's */
-	if (ch == 's' && strcmp(ks_tbuf(K), "pace") == 0)
+	char *buf = ks_tbget_buffer(K);
+	if (ch == 's' && strcmp(buf, "pace") == 0)
 	    ch = ' ';
-	else if (ch == 'n' && strcmp(ks_tbuf(K), "ewline") == 0)
+	else if (ch == 'n' && strcmp(buf, "ewline") == 0)
 	    ch = ('\n');
 	else {
 	    ktok_error(K, "Unrecognized character name");
@@ -564,6 +568,7 @@ TValue ktok_read_special(klisp_State *K)
 	}
 	ks_tbclear(K);
 	return ch2tv(ch);
+    }
     case '0': case '1': case '2': case '3': case '4': 
     case '5': case '6': case '7': case '8': case '9': {
 	/* srfi-38 type token (can be either a def or ref) */
@@ -613,7 +618,7 @@ TValue ktok_read_identifier(klisp_State *K)
 	    ktok_error(K, "Invalid char in identifier");	    
     }
     ks_tbadd(K, '\0');
-    TValue new_sym = ksymbol_new(K, ks_tbuf(K));
+    TValue new_sym = ksymbol_new(K, ks_tbget_buffer(K));
     ks_tbclear(K);
     return new_sym;
 }

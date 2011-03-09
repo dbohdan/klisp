@@ -185,7 +185,13 @@ inline bool ks_sisempty(klisp_State *K)
 */
 
 inline void ks_tbadd(klisp_State *K, char ch);
-inline char *ks_tbget(klisp_State *K);
+#define ks_tbpush(K_, ch_) (ks_tbadd((K_), (ch_)))
+inline char ks_tbget(klisp_State *K);
+inline char ks_tbpop(klisp_State *K);
+/* this is for DISCARDING stack pop (value isn't used, avoid warning) */ 
+#define ks_tbdpop(st_) (UNUSED(ks_tbpop(st_)))
+
+inline char *ks_tbget_buffer(klisp_State *K);
 inline void ks_tbclear(klisp_State *K);
 inline bool ks_tbisempty(klisp_State *K);
 
@@ -208,7 +214,26 @@ inline void ks_tbadd(klisp_State *K, char ch)
     ++ks_tbidx(K);
 }
 
-inline char *ks_tbget(klisp_State *K)
+inline char ks_tbget(klisp_State *K)
+{
+    return ks_tbelem(K, ks_tbidx(K) - 1);
+}
+
+inline char ks_tbpop(klisp_State *K)
+{
+    if (ks_tbsize(K) != KS_ITBSIZE && ks_tbidx(K) < (ks_tbsize(K) / 4)) {
+	/* NOTE: shrink can't fail */
+	size_t old_size = ks_tbsize(K);
+	size_t new_size = old_size / 2;
+	ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size, new_size);
+	ks_tbsize(K) = new_size; 
+    }
+    char ch = ks_tbelem(K, ks_tbidx(K) - 1);
+    --ks_tbidx(K);
+    return ch;
+}
+
+inline char *ks_tbget_buffer(klisp_State *K)
 {
     assert(ks_tbelem(K, ks_tbidx(K) - 1) == '\0');
     return ks_tbuf(K);
