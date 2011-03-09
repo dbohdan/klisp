@@ -23,6 +23,7 @@ TValue kmake_operative(klisp_State *K, TValue name, TValue si,
     K->root_gc = (GCObject *)new_op;
     new_op->gct = 0;
     new_op->tt = K_TOPERATIVE;
+    new_op->flags = 0;
 
     /* operative specific fields */
     new_op->name = name;

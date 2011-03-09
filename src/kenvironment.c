@@ -25,6 +25,7 @@ TValue kmake_environment(klisp_State *K, TValue parent)
     K->root_gc = (GCObject *) new_env;
     new_env->gct = 0;
     new_env->tt = K_TENVIRONMENT;
+    new_env->flags = 0;
 
     /* environment specific fields */
     new_env->mark = KFALSE;    

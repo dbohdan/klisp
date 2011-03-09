@@ -24,6 +24,7 @@ TValue kmake_applicative(klisp_State *K, TValue name, TValue si,
     K->root_gc = (GCObject *)new_app;
     new_app->gct = 0;
     new_app->tt = K_TAPPLICATIVE;
+    new_app->flags = 0;
 
     /* applicative specific fields */
     new_app->name = name;

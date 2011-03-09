@@ -23,6 +23,7 @@ TValue kmake_continuation(klisp_State *K, TValue parent, TValue name,
     K->root_gc = (GCObject *)new_cont;
     new_cont->gct = 0;
     new_cont->tt = K_TCONTINUATION;
+    new_cont->flags = 0;
 
     /* continuation specific fields */
     new_cont->mark = KFALSE;    

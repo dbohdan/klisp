@@ -17,7 +17,8 @@ TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr)
     new_pair->next = K->root_gc;
     K->root_gc = (GCObject *)new_pair;
     new_pair->gct = 0;
-    new_pair->tt = K_TPAIR | (m? 0 : K_FLAG_IMMUTABLE);
+    new_pair->tt = K_TPAIR;
+    new_pair->flags = (m? 0 : K_FLAG_IMMUTABLE);
 
     /* pair specific fields */
     new_pair->si = KNIL;

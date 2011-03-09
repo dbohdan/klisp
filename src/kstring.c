@@ -23,6 +23,7 @@ TValue kstring_new_empty(klisp_State *K)
     K->root_gc = (GCObject *)new_str;
     new_str->gct = 0;
     new_str->tt = K_TSTRING;
+    new_str->flags = 0;
 
     /* string specific fields */
     new_str->mark = KFALSE;
@@ -48,6 +49,7 @@ TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
     K->root_gc = (GCObject *)new_str;
     new_str->gct = 0;
     new_str->tt = K_TSTRING;
+    new_str->flags = 0;
 
     /* string specific fields */
     new_str->mark = KFALSE;

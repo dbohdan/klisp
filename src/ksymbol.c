@@ -37,6 +37,7 @@ TValue ksymbol_new(klisp_State *K, const char *buf)
     K->root_gc = (GCObject *)new_sym;
     new_sym->gct = 0;
     new_sym->tt = K_TSYMBOL;
+    new_sym->flags = 0;
 
     /* symbol specific fields */
     new_sym->mark = KFALSE;

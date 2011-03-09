@@ -40,7 +40,7 @@ typedef union GCObject GCObject;
 ** Common Header for all collectible objects (in macro form, to be
 ** included in other objects)
 */
-#define CommonHeader GCObject *next; uint16_t tt; uint16_t gct; 
+#define CommonHeader GCObject *next; uint8_t tt; uint8_t flags; uint16_t gct; 
 
 
 /*
@@ -380,10 +380,13 @@ const TValue keminf;
 #define tv2op(v_) ((Operative *) gcvalue(v_))
 #define tv2app(v_) ((Applicative *) gcvalue(v_))
 
+#define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
 
 /* Macro to convert any Kernel object into a GCObject */
 #define obj2gco(v_) ((GCObject *) (v_))
+
+#define obj2gch(v_) ((GCheader *) (v_))
 
 /* Macros to access innertv values */
 /* TODO: add assertions */
@@ -408,11 +411,13 @@ extern char *ktv_names[];
 #define kis_marked(p_) (!kis_unmarked(p_))
 #define kis_unmarked(p_) (tv_equal(kget_mark(p_), KFALSE))
 
-/* Macros to access mutability flag */
-#define K_FLAG_IMMUTABLE 0x0100
-#define kget_flags(o_) (tv2mgch(o_)->tt)
+/* Macros to access flags & type in GCHeader */
+#define gch_get_type(o_) (obj2gch(o_)->tt)
+#define gch_get_flags(o_) (obj2gch(o_)->flags)
+#define tv_get_flags(o_) (gch_get_flags(tv2gch(o_)))
 
-#define kis_mutable(o_) ((kget_flags(o_) & K_FLAG_IMMUTABLE) == 0)
+#define K_FLAG_IMMUTABLE 0x01
+#define kis_mutable(o_) ((tv_get_flags(o_) & K_FLAG_IMMUTABLE) == 0)
 #define kis_immutable(o_) (!kis_mutable(o_))
 
 /* Macro to test the most basic equality on TValues */

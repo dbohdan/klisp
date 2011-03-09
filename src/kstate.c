@@ -166,8 +166,9 @@ void klisp_close (klisp_State *K)
     while(next) {
 	GCObject *obj = next;
 	next = obj->gch.next;
+	int type = gch_get_type(obj);
 
-	switch(obj->gch.tt) {
+	switch(type) {
 	case K_TPAIR:
 	    klispM_free(K, (Pair *)obj);
 	    break;
@@ -193,7 +194,7 @@ void klisp_close (klisp_State *K)
 	    break;
 	default:
 	    /* shouldn't happen */
-	    fprintf(stderr, "Unknown GCObject type: %d\n", obj->gch.tt);
+	    fprintf(stderr, "Unknown GCObject type: %d\n", type);
 	    abort();
 	}
     }
