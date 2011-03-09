@@ -51,7 +51,7 @@
     bind_2tp(K_, n_, ptree_, "any", anytype, v1_, "any", anytype, v2_)
 
 #define bind_2tp(K_, n_, ptree_, tstr1_, t1_, v1_, \
-		 tstr2, t2_, v2_)			\
+		 tstr2_, t2_, v2_)			\
     TValue v1_, v2_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
 	    !ttisnil(kcdr(kcdr(ptree_)))) {		\
@@ -66,7 +66,7 @@
 	return; \
     } else if (!t2_(v2_)) { \
 	klispE_throw(K_, n_ ": Bad type on second argument (expected " \
-		     tstr1_ ")");				     \
+		     tstr2_ ")");				     \
 	return; \
     }
 
@@ -250,7 +250,15 @@ void ignorep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 4.8.3 eval */
-/* TODO */
+void eval(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    (void) denv;
+    bind_2tp(K, "eval", ptree, "any", anytype, expr,
+	     "environment", ttisenvironment, env);
+
+    ktail_call(K, K->eval_op, expr, env);
+}
 
 /* 4.8.4 make-environment */
 /* TODO: let it accept any number of parameters */
@@ -551,6 +559,11 @@ TValue kmake_ground_env(klisp_State *K)
 
     TValue symbol, value;
 
+   /*
+   ** TODO: this pattern could be abstracted away with a 
+   ** non-hygienic macro (that inserted names "symbol" and "value")
+   */
+
     /*
     ** This section will roughly follow the report and will reference the
     ** section in which each symbol is defined
@@ -661,7 +674,9 @@ TValue kmake_ground_env(klisp_State *K)
     kadd_binding(K, ground_env, symbol, value);
 
     /* 4.8.3 eval */
-    /* TODO */
+    symbol = ksymbol_new(K, "eval");
+    value = kmake_applicative(K, eval, 0);
+    kadd_binding(K, ground_env, symbol, value);
 
     /* 4.8.4 make-environment */
     symbol = ksymbol_new(K, "make-environment");
