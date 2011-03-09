@@ -85,6 +85,41 @@
 #define kmake_applicative(K_, fn_, ...) \
     kwrap(K_, kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__))
 
+/*
+** This states are useful for traversing trees, saving the state in the
+** token char buffer
+*/
+#define ST_PUSH ((char) 0)
+#define ST_CAR ((char) 1)
+#define ST_CDR ((char) 2)
+
+/*
+** These two stop at the first object that is not a marked pair
+*/
+inline void unmark_list(klisp_State *K, TValue obj)
+{
+    while(ttispair(obj) && kis_marked(obj)) {
+	kunmark(obj);
+	obj = kcdr(obj);
+    }
+}
+
+inline void unmark_tree(klisp_State *K, TValue obj)
+{
+    assert(ks_sisempty(K));
+
+    ks_spush(K, obj);
+
+    while(!ks_sisempty(K)) {
+	obj = ks_spop(K);
+
+	if (ttispair(obj) && kis_marked(obj)) {
+	    kunmark(obj);
+	    ks_spush(K, kcdr(obj));
+	    ks_spush(K, kcar(obj));
+	}
+    }
+}
 
 /*
 ** This section will roughly follow the report and will reference the
@@ -291,10 +326,6 @@ void copy_es_immutable(klisp_State *K, TValue *xparams,
 ** 0 means just pushed, 1 means return from car, 2 means return from cdr
 */
 
-#define CEI_ST_PUSH ((char) 0)
-#define CEI_ST_CAR ((char) 1)
-#define CEI_ST_CDR ((char) 2)
-
 TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj)
 {
     /* 
@@ -303,13 +334,51 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj)
     */
     TValue copy = obj;
 
+    assert(ks_sisempty(K));
+    assert(ks_tbisempty(K));
+
     ks_spush(K, obj);
-    ks_tbpush(K, CEI_ST_PUSH);
+    ks_tbpush(K, ST_PUSH);
 
     while(!ks_sisempty(K)) {
 	char state = ks_tbpop(K);
-    }
+	TValue top = ks_spop(K);
 
+	if (state == ST_PUSH) {
+	    if (ttispair(top) && kis_mutable(top)) {
+		if (kis_marked(top)) {
+		    /* this pair was already seen, use the same */
+		    copy = kget_mark(top);
+		} else {
+		    TValue new_pair = kdummy_imm_cons(K);
+		    kset_mark(top, new_pair);
+		    /* leave the pair in the stack, continue with the car */
+		    ks_spush(K, top);
+		    ks_tbpush(K, ST_CAR);
+		    
+		    ks_spush(K, kcar(top));
+		    ks_tbpush(K, ST_PUSH);
+		}
+	    } else {
+		copy = top;
+	    }
+	} else { /* last action was a pop */
+	    TValue new_pair = kget_mark(top);
+	    if (state == ST_CAR) {
+		kset_car(new_pair, copy);
+		/* leave the pair on the stack, continue with the cdr */
+		ks_spush(K, top);
+		ks_tbpush(K, ST_CDR);
+
+		ks_spush(K, kcdr(top));
+		ks_tbpush(K, ST_PUSH);
+	    } else {
+		kset_cdr(new_pair, copy);
+		copy = new_pair;
+	    }
+	}
+    }
+    unmark_tree(K, obj);
     return copy;
 }
 
@@ -415,6 +484,7 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 **
 ** It also copies the ptree so that it can't be mutated
 ** TODO: if ptree is immutable don't copy it
+** TODO: replace this mechanism with the states in the token buffer
 */
 inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 {
@@ -742,7 +812,9 @@ TValue kmake_ground_env(klisp_State *K)
     kadd_binding(K, ground_env, symbol, value);
 
     /* 4.7.2 copy-es-immutable */
-    /* TODO */
+    symbol = ksymbol_new(K, "copy-es-immutable");
+    value = kmake_applicative(K, copy_es_immutable, 1, symbol);
+    kadd_binding(K, ground_env, symbol, value);
 
     /*
     ** 4.8 Environments
