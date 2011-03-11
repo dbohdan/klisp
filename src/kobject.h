@@ -189,6 +189,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisenvironment(o) (tbasetype_(o) == K_TAG_ENVIRONMENT)
 #define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
 
+/* macros to easily check boolean values */
+#define kis_true(o_) (tv_equal((o_), KTRUE))
+#define kis_false(o_) (tv_equal((o_), KFALSE))
 
 /*
 ** Union of all Kernel non heap-allocated values (except doubles)

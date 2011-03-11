@@ -5,6 +5,7 @@
 */
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "kstring.h"
 #include "kobject.h"
@@ -60,4 +61,17 @@ TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
     new_str->b[size] = '\0';
 
     return gc2str(new_str);
+}
+
+/* both obj1 and obj2 should be strings! */
+bool kstring_equalp(TValue obj1, TValue obj2)
+{
+    String *str1 = tv2str(obj1);
+    String *str2 = tv2str(obj2);
+
+    if (str1->size == str2->size) {
+	return (memcmp(str1->b, str2->b, str1->size) == 0);
+    } else {
+	return false;
+    }
 }
