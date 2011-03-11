@@ -192,6 +192,41 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
 }
 
 /*
+** This is a generic function for type predicates
+** It can only be used by types that have a unique tag
+*/
+void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) denv;
+    /*
+    ** xparams[0]: name symbol
+    ** xparams[1]: type tag (as by i2tv)
+    */
+    int32_t tag = ivalue(xparams[1]);
+
+    /* check the ptree is a list while checking the predicate.
+       Keep going even if the result is false to catch errors in 
+       ptree structure */
+    bool res = true;
+
+    TValue tail = ptree;
+    while(ttispair(tail) && kis_unmarked(tail)) {
+	kmark(tail);
+	res &= ttype(kcar(tail)) == tag;
+	tail = kcdr(tail);
+    }
+    unmark_list(K, ptree);
+
+    if (ttispair(tail) || ttisnil(tail)) {
+	kapply_cc(K, b2tv(res));
+    } else {
+	char *name = ksymbol_buf(xparams[0]);
+	klispE_throw_extra(K, name, ": expected list");
+	return;
+    }
+}
+
+/*
 ** This section will roughly follow the report and will reference the
 ** section in which each symbol is defined
 */
@@ -207,14 +242,7 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
 */
 
 /* 4.1.1 boolean? */
-/* TEMP: for now it takes a single argument */
-void booleanp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "boolean?", ptree, o);
-    kapply_cc(K, b2tv(ttisboolean(o)));
-}
+/* uses typep */
 
 /*
 ** 4.2 Equivalence under mutation
@@ -427,33 +455,21 @@ inline bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 */
 
 /* 4.4.1 symbol? */
-void symbolp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "symbol?", ptree, o);
-    kapply_cc(K, b2tv(ttissymbol(o)));
-}
+/* uses typep */
 
 /*
 ** 4.5 Control
 */
 
 /* 4.5.1 inert? */
-void inertp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "inert?", ptree, o);
-    kapply_cc(K, b2tv(ttisinert(o)));
-}
+/* uses typep */
 
 /* 4.5.2 $if */
 
 /* helpers */
 void select_clause(klisp_State *K, TValue *xparams, TValue obj);
 
-/* TODO: both clauses should probably be copied */
+/*  ASK JOHN: both clauses should probably be copied (copy-es-immutable) */
 void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
@@ -491,22 +507,10 @@ void select_clause(klisp_State *K, TValue *xparams, TValue obj)
 */
 
 /* 4.6.1 pair? */
-void pairp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "pair?", ptree, o);
-    kapply_cc(K, b2tv(ttispair(o)));
-}
+/* uses typep */
 
 /* 4.6.2 null? */
-void nullp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "null?", ptree, o);
-    kapply_cc(K, b2tv(ttisnil(o)));
-}
+/* uses typep */
     
 /* 4.6.3 cons */
 void cons(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -647,22 +651,10 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj)
 */
 
 /* 4.8.1 environment? */
-void environmentp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "environment?", ptree, o);
-    kapply_cc(K, b2tv(ttisenvironment(o)));
-}
+/* uses typep */
 
 /* 4.8.2 ignore? */
-void ignorep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "ignore?", ptree, o);
-    kapply_cc(K, b2tv(ttisignore(o)));
-}
+/* uses typep */
 
 /* 4.8.3 eval */
 void eval(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -972,22 +964,10 @@ void do_match(klisp_State *K, TValue *xparams, TValue obj)
 */
 
 /* 4.10.1 operative? */
-void operativep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "operative?", ptree, o);
-    kapply_cc(K, b2tv(ttisoperative(o)));
-}
+/* uses typep */
 
 /* 4.10.2 applicative? */
-void applicativep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-    bind_1p(K, "applicative?", ptree, o);
-    kapply_cc(K, b2tv(ttisapplicative(o)));
-}
+/* uses typep */
 
 /* 4.10.3 $vau */
 
@@ -1114,7 +1094,8 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 4.1.1 boolean? */
-    add_applicative(K, ground_env, "boolean?", booleanp, 0);
+    add_applicative(K, ground_env, "boolean?", typep, 2, symbol, 
+		    i2tv(K_TBOOLEAN));
 
     /*
     ** 4.2 Equivalence under mutation
@@ -1135,14 +1116,16 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 4.4.1 symbol? */
-    add_applicative(K, ground_env, "symbol?", symbolp, 0);
+    add_applicative(K, ground_env, "symbol?", typep, 2, symbol, 
+		    i2tv(K_TSYMBOL));
 
     /*
     ** 4.5 Control
     */
 
     /* 4.5.1 inert? */
-    add_applicative(K, ground_env, "inert?", inertp, 0);
+    add_applicative(K, ground_env, "inert?", typep, 2, symbol, 
+		    i2tv(K_TINERT));
 
     /* 4.5.2 $if */
     add_operative(K, ground_env, "$if", Sif, 0);
@@ -1152,10 +1135,12 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 4.6.1 pair? */
-    add_applicative(K, ground_env, "pair?", pairp, 0);
+    add_applicative(K, ground_env, "pair?", typep, 2, symbol, 
+		    i2tv(K_TPAIR));
 
     /* 4.6.2 null? */
-    add_applicative(K, ground_env, "null?", nullp, 0);
+    add_applicative(K, ground_env, "null?", typep, 2, symbol, 
+		    i2tv(K_TNIL));
     
     /* 4.6.3 cons */
     add_applicative(K, ground_env, "cons", cons, 0);
@@ -1177,10 +1162,12 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 4.8.1 environment? */
-    add_applicative(K, ground_env, "environment?", environmentp, 0);
+    add_applicative(K, ground_env, "environment?", typep, 2, symbol, 
+		    i2tv(K_TENVIRONMENT));
 
     /* 4.8.2 ignore? */
-    add_applicative(K, ground_env, "ignore?", ignorep, 0);
+    add_applicative(K, ground_env, "ignore?", typep, 2, symbol, 
+		    i2tv(K_TIGNORE));
 
     /* 4.8.3 eval */
     add_applicative(K, ground_env, "eval", eval, 0);
@@ -1200,10 +1187,12 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 4.10.1 operative? */
-    add_applicative(K, ground_env, "operative?", operativep, 0);
+    add_applicative(K, ground_env, "operative?", typep, 2, symbol, 
+		    i2tv(K_TOPERATIVE));
 
     /* 4.10.2 applicative? */
-    add_applicative(K, ground_env, "applicative?", applicativep, 0);
+    add_applicative(K, ground_env, "applicative?", typep, 2, symbol, 
+		    i2tv(K_TAPPLICATIVE));
 
     /* 4.10.3 $vau */
     add_operative(K, ground_env, "$vau", Svau, 0);
