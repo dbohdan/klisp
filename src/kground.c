@@ -75,7 +75,7 @@
     TValue v1_, v2_, v3_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
 	  !ttispair(kcddr (ptree_)) || !ttisnil(kcdddr(ptree_))) {  \
-	klispE_throw_extra(K_, n_, ": Bad ptree (expected tree arguments)"); \
+	klispE_throw_extra(K_, n_, ": Bad ptree (expected three arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
@@ -772,7 +772,6 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 		break;
 	    }
 	    default:
-		ks_sdpop(K);
 		ptree_clear_all(K, sym_ls);
 		klispE_throw_extra(K, name, ": bad object type in ptree");
 		/* avoid warning */
