@@ -152,17 +152,23 @@ inline void unmark_tree(klisp_State *K, TValue obj)
     }
 }
 
-/* check that obj is a list */
-inline void check_list(klisp_State *K, char *name, TValue obj)
+/* check that obj is a list, returns the number of pairs */
+inline int32_t check_list(klisp_State *K, char *name, TValue obj)
 {
-    while(!ttisnil(obj)) {
-	if (!ttispair(obj)) {
-	    klispE_throw_extra(K, name , ": expected list"); 
-	    return;
-	}
-	obj = kcdr(obj);
+    TValue tail = obj;
+    int pairs = 0;
+    while(ttispair(tail) && !kis_marked(tail)) {
+	kmark(tail);
+	tail = kcdr(tail);
+	++pairs;
     }
-    return;
+    unmark_list(K, obj);
+
+    if (!ttispair(tail) && !ttisnil(tail)) {
+	klispE_throw_extra(K, name , ": expected list"); 
+	return 0;
+    }
+    return pairs;
 }
 
 /* check that obj is a list and make a copy if it is not immutable */
@@ -172,21 +178,33 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
 	return obj;
 
     if (ttispair(obj) && kis_immutable(obj)) {
-	check_list(K, name, obj);
+	(void)check_list(K, name, obj);
 	return obj;
     } else {
 	TValue dummy = kcons(K, KINERT, KNIL);
 	TValue last = dummy;
-	while(!ttisnil(obj)) {
-	    if (!ttispair(obj)) {
-		klispE_throw_extra(K, name , ": expected list"); 
-		return KINERT;
-	    }
+	TValue tail = obj;
+    
+	while(ttispair(tail) && !kis_marked(tail)) {
 	    TValue new_pair = kcons(K, kcar(obj), KNIL);
+	    /* record the corresponding pair to simplify cycle handling */
+	    kset_mark(tail, new_pair);
 	    kset_cdr(last, new_pair);
 	    last = new_pair;
 	    obj = kcdr(obj);
 	}
+
+	if (ttispair(tail)) {
+	    /* complete the cycle */
+	    kset_cdr(last, kget_mark(tail));
+	}
+
+	unmark_list(K, obj);
+
+	if (!ttispair(tail) && !ttisnil(tail)) {
+	    klispE_throw_extra(K, name , ": expected list"); 
+	    return KINERT;
+	} 
 	return kcdr(dummy);
     }
 }
@@ -983,7 +1001,7 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$vau", vptree, vpenv);
     /* the body should be a list */
-    check_list(K, "$vau", vbody);
+    (void)check_list(K, "$vau", vbody);
     vbody = copy_es_immutable_h(K, "$vau", vbody);
 
     TValue new_op = make_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
