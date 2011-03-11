@@ -306,7 +306,11 @@ inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree,
 }
 
 #define ktail_call(K_, op_, p_, e_) \
-    klispS_tail_call((K_), (op_), (p_), (e_)); return
+    { klispS_tail_call((K_), (op_), (p_), (e_)); return; }
+
+#define ktail_eval(K_, p_, e_) \
+    { klisp_State *K__ = (K_); \
+	klispS_tail_call(K__, K__->eval_op, (p_), (e_)); return; }
 
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
 void klispS_init_repl(klisp_State *K);
