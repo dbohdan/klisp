@@ -473,14 +473,17 @@ void cons(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 */
 
 /* 4.7.1 set-car!, set-cdr! */
-/* TODO: check if pair is immutable */
 void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
     (void) xparams;
     bind_2tp(K, "set-car!", ptree, "pair", ttispair, pair, 
 	     "any", anytype, new_car);
-    
+
+    if(!kis_mutable(pair)) {
+	    klispE_throw(K, "set-car!: immutable pair");
+	    return;
+    }
     kset_car(pair, new_car);
     kapply_cc(K, KINERT);
 }
@@ -492,6 +495,10 @@ void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_2tp(K, "set-cdr!", ptree, "pair", ttispair, pair, 
 	     "any", anytype, new_cdr);
     
+    if(!kis_mutable(pair)) {
+	    klispE_throw(K, "set-cdr!: immutable pair");
+	    return;
+    }
     kset_cdr(pair, new_cdr);
     kapply_cc(K, KINERT);
 }
