@@ -82,6 +82,18 @@
     v2_ = kcadr(ptree_); \
     v3_ = kcaddr(ptree_)
 
+/* bind at least 2 parameters, like (v1_ v2_ . v3_) */
+#define bind_al2p(K_, n_, ptree_, v1_, v2_, v3_)		\
+    TValue v1_, v2_, v3_;					\
+    if (!ttispair(ptree_) || !ttispair(kcdr(ptree_))) {		       \
+	klispE_throw_extra(K_, n_, ": Bad ptree (expected at least 2 " \
+			   "arguments)");			       \
+	return; \
+    } \
+    v1_ = kcar(ptree_); \
+    v2_ = kcadr(ptree_); \
+    v3_ = kcddr(ptree_)
+
 /* TODO: add name and source info */
 #define make_operative(K_, fn_, ...) \
     kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__)
@@ -137,6 +149,45 @@ inline void unmark_tree(klisp_State *K, TValue obj)
 	    ks_spush(K, kcdr(obj));
 	    ks_spush(K, kcar(obj));
 	}
+    }
+}
+
+/* check that obj is a list */
+inline void check_list(klisp_State *K, char *name, TValue obj)
+{
+    while(!ttisnil(obj)) {
+	if (!ttispair(obj)) {
+	    klispE_throw_extra(K, name , ": expected list"); 
+	    return;
+	}
+	obj = kcdr(obj);
+    }
+    return;
+}
+
+/* check that obj is a list and make a copy if it is not immutable */
+inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
+{
+    if (ttisnil(obj))
+	return obj;
+
+    if (ttispair(obj) && kis_immutable(obj)) {
+	check_list(K, name, obj);
+	return obj;
+    } else {
+	TValue dummy = kcons(K, KINERT, KNIL);
+	TValue last = dummy;
+	while(!ttisnil(obj)) {
+	    if (!ttispair(obj)) {
+		klispE_throw_extra(K, name , ": expected list"); 
+		return KINERT;
+	    }
+	    TValue new_pair = kcons(K, kcar(obj), KNIL);
+	    kset_cdr(last, new_pair);
+	    last = new_pair;
+	    obj = kcdr(obj);
+	}
+	return kcdr(dummy);
     }
 }
 
@@ -415,7 +466,7 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 			   3, denv, cons_c, alt_c);
 
     klispS_set_cc(K, new_cont);
-    ktail_call(K, K->eval_op, test, denv);
+    ktail_eval(K, test, denv);
 }
 
 void select_clause(klisp_State *K, TValue *xparams, TValue obj)
@@ -428,7 +479,7 @@ void select_clause(klisp_State *K, TValue *xparams, TValue obj)
     if (ttisboolean(obj)) {
 	TValue denv = xparams[0];
 	TValue clause = bvalue(obj)? xparams[1] : xparams[2];
-	ktail_call(K, K->eval_op, clause, denv);
+	ktail_eval(K, clause, denv);
     } else {
 	klispE_throw(K, "$if: test is not a boolean");
 	return;
@@ -621,7 +672,7 @@ void eval(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, "eval", ptree, "any", anytype, expr,
 	     "environment", ttisenvironment, env);
 
-    ktail_call(K, K->eval_op, expr, env);
+    ktail_eval(K, expr, env);
 }
 
 /* 4.8.4 make-environment */
@@ -657,9 +708,12 @@ void make_environment(klisp_State *K, TValue *xparams, TValue ptree,
 */
 
 /* helpers */
-void match(klisp_State *K, TValue *xparams, TValue obj);
+inline void match(klisp_State *K, char *name, TValue env, TValue ptree, 
+		  TValue obj);
+void do_match(klisp_State *K, TValue *xparams, TValue obj);
 inline void ptree_clear_all(klisp_State *K, TValue sym_ls);
-inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree);
+inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree, 
+			       TValue penv);
 
 /* 4.9.1 $define! */
 void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -671,32 +725,37 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     TValue def_sym = xparams[0];
 
-    dptree = check_copy_ptree(K, "$define!", dptree);
+    dptree = check_copy_ptree(K, "$define!", dptree, KIGNORE);
 	
     TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					 match, 3, dptree, denv, 
+					 do_match, 3, dptree, denv, 
 					 def_sym);
     kset_cc(K, new_cont);
-    ktail_call(K, K->eval_op, expr, denv);
+    ktail_eval(K, expr, denv);
 }
 
 /* helpers */
 
 /*
-** This checks that ptree is a valid <ptree>: 
+** This checks that the ptree parameter is a valid ptree and checks that the 
+** environment parameter is either a symbol that is not also in ptree. or
+** #ignore. It also copies the ptree so that it can't be mutated.
+**
+** A valid ptree must comply with the following: 
 **   1) <ptree> -> <symbol> | #ignore | () | (<ptree> . <ptree>)
 **   2) no symbol appears more than once in ptree
 **   3) there is no cycle
 **   NOTE: there may be diamonds, but no symbol should be reachable by more
 **   than one path, see rule number 2
 **
-** It also copies the ptree so that it can't be mutated
 */
-inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
+inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree, 
+    TValue penv)
 {
     /* 
     ** GC: ptree is rooted because it is in the stack at all times.
     ** The copied pair should be kept safe some other way
+    ** the same for ptree
     */
 
     /* copy is only valid if the state isn't ST_PUSH */
@@ -808,7 +867,20 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree)
 	    }
 	}
     }
-    
+
+    if (ttissymbol(penv)) {
+	if (kis_marked(penv)) {
+	    /* TODO add symbol name */
+	    ptree_clear_all(K, sym_ls);
+	    klispE_throw_extra(K, name, ": same symbol in both ptree and "
+			       "environment parmameter");
+	}
+    } else if (!ttisignore(penv)) {
+	    /* TODO add symbol name */
+	    ptree_clear_all(K, sym_ls);
+	    klispE_throw_extra(K, name, ": symbol or #ignore expected as "
+			       "environment parmameter");
+    }
     ptree_clear_all(K, sym_ls);
     return copy;
 }
@@ -834,17 +906,9 @@ inline void ptree_clear_all(klisp_State *K, TValue sym_ls)
     ks_tbclear(K);
 }
 
-void match(klisp_State *K, TValue *xparams, TValue obj)
+inline void match(klisp_State *K, char *name, TValue env, TValue ptree, 
+		  TValue obj)
 {
-    /* 
-    ** xparams[0]: ptree
-    ** xparams[1]: dynamic environment
-    ** xparams[2]: combiner symbol
-    */
-    TValue ptree = xparams[0];
-    TValue env = xparams[1];
-    char *name = ksymbol_buf(xparams[2]);
-
     assert(ks_sisempty(K));
     ks_spush(K, obj);
     ks_spush(K, ptree);
@@ -886,6 +950,20 @@ void match(klisp_State *K, TValue *xparams, TValue obj)
 	    break;
 	}
     }
+}
+
+void do_match(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /* 
+    ** xparams[0]: ptree
+    ** xparams[1]: dynamic environment
+    ** xparams[2]: combiner symbol
+    */
+    TValue ptree = xparams[0];
+    TValue env = xparams[1];
+    char *name = ksymbol_buf(xparams[2]);
+
+    match(K, name, env, ptree, obj);
     kapply_cc(K, KINERT);
 }
 
@@ -912,7 +990,79 @@ void applicativep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 4.10.3 $vau */
-/* TODO */
+
+/* Helper (also used by $sequence and $lambda) */
+void do_seq(klisp_State *K, TValue *xparams, TValue obj);
+void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
+
+void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) xparams;
+    bind_al2p(K, "$vau", ptree, vptree, vpenv, vbody);
+
+    /* The ptree & body are copied to avoid mutation */
+    vptree = check_copy_ptree(K, "$vau", vptree, vpenv);
+    /* the body should be a list */
+    check_list(K, "$vau", vbody);
+    vbody = copy_es_immutable_h(K, "$vau", vbody);
+
+    TValue new_op = make_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
+    kapply_cc(K, new_op);
+}
+
+/* the ramaining list can't be null, that case is managed before */
+void do_seq(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /* 
+    ** xparams[0]: remaining list
+    ** xparams[1]: dynamic environment
+    */
+    TValue ls = xparams[0];
+    TValue first = kcar(ls);
+    TValue tail = kcdr(ls);
+    TValue denv = xparams[1];
+
+    if (ttispair(tail)) {
+	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+					     do_seq, 2, tail, denv);
+	kset_cc(K, new_cont);
+    }
+    ktail_eval(K, first, denv);
+}
+
+void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
+{
+    /*
+    ** xparams[0]: ptree
+    ** xparams[1]: penv
+    ** xparams[2]: body
+    ** xparams[3]: senv
+    */
+    TValue ptree = xparams[0];
+    TValue penv = xparams[1];
+    TValue body = xparams[2];
+    TValue senv = xparams[3];
+
+    /* bindings in an operative are in a child of the static env */
+    TValue env = kmake_environment(K, senv);
+    /* TODO use name from operative */
+    match(K, "[user-operative]", env, ptree, obj);
+    kadd_binding(K, env, penv, denv);
+    
+    if (ttisnil(body)) {
+	kapply_cc(K, KINERT);
+    } else {
+	/* this is needed because seq continuation doesn't check for 
+	   nil sequence */
+	TValue tail = kcdr(body);
+	if (ttispair(tail)) {
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+					     do_seq, 2, tail, env);
+	    kset_cc(K, new_cont);
+	} 
+	ktail_eval(K, kcar(body), env);
+    }
+}
 
 /* 4.10.4 wrap */
 void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -1056,7 +1206,7 @@ TValue kmake_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "applicative?", applicativep, 0);
 
     /* 4.10.3 $vau */
-    /* TODO */
+    add_operative(K, ground_env, "$vau", Svau, 0);
 
     /* 4.10.4 wrap */
     add_applicative(K, ground_env, "wrap", wrap, 0);

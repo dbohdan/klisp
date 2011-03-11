@@ -42,7 +42,7 @@ void eval_ls_cfn(klisp_State *K, TValue *xparams, TValue obj)
 					     &eval_ls_cfn, 4, rest, env, 
 					     tail, combiner);
 	kset_cc(K, new_cont);
-	ktail_call(K, K->eval_op, kcar(rest), env);
+	ktail_eval(K, kcar(rest), env);
     }
 }
 
@@ -114,7 +114,7 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 		K, comb_cont, KNIL, KNIL, &eval_ls_cfn, 
 		4, arg_ls, env, tail, tv2app(obj)->underlying);
 	    kset_cc(K, els_cont);
-	    ktail_call(K, K->eval_op, kcar(arg_ls), env);
+	    ktail_eval(K, kcar(arg_ls), env);
 	} else {
 	    klispE_throw(K, "Not a list in applicative combination");
 	    return;
@@ -138,7 +138,7 @@ void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
 	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
 					     &combine_cfn, 2, kcdr(obj), env);
 	kset_cc(K, new_cont);
-	ktail_call(K, K->eval_op, kcar(obj), env);
+	ktail_eval(K, kcar(obj), env);
 	break;
     }
     case K_TSYMBOL:
