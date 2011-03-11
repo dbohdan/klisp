@@ -182,21 +182,21 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
 	return obj;
     } else {
 	TValue dummy = kcons(K, KINERT, KNIL);
-	TValue last = dummy;
+	TValue last_pair = dummy;
 	TValue tail = obj;
     
 	while(ttispair(tail) && !kis_marked(tail)) {
-	    TValue new_pair = kcons(K, kcar(obj), KNIL);
+	    TValue new_pair = kcons(K, kcar(tail), KNIL);
 	    /* record the corresponding pair to simplify cycle handling */
 	    kset_mark(tail, new_pair);
-	    kset_cdr(last, new_pair);
-	    last = new_pair;
-	    obj = kcdr(obj);
+	    kset_cdr(last_pair, new_pair);
+	    last_pair = new_pair;
+	    tail = kcdr(tail);
 	}
 
 	if (ttispair(tail)) {
 	    /* complete the cycle */
-	    kset_cdr(last, kget_mark(tail));
+	    kset_cdr(last_pair, kget_mark(tail));
 	}
 
 	unmark_list(K, obj);
@@ -207,6 +207,37 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
 	} 
 	return kcdr(dummy);
     }
+}
+
+/* check that obj is a list of environments and make a copy but don't keep 
+   the cycles */
+inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
+{
+    TValue dummy = kcons(K, KINERT, KNIL);
+    TValue last_pair = dummy;
+    TValue tail = obj;
+    
+    while(ttispair(tail) && !kis_marked(tail)) {
+	TValue first = kcar(tail);
+	if (!ttisenvironment(first)) {
+	    klispE_throw_extra(K, name, ": not an environment in parent list");
+	    return KINERT;
+	}
+	TValue new_pair = kcons(K, first, KNIL);
+	kmark(tail);
+	kset_cdr(last_pair, new_pair);
+	last_pair = new_pair;
+	tail = kcdr(tail);
+    }
+
+    /* even if there was a cycle, the copy ends with nil */
+    unmark_list(K, obj);
+
+    if (!ttispair(tail) && !ttisnil(tail)) {
+	klispE_throw_extra(K, name , ": expected list"); 
+	return KINERT;
+    } 
+    return kcdr(dummy);
 }
 
 /*
@@ -697,19 +728,22 @@ void make_environment(klisp_State *K, TValue *xparams, TValue ptree,
 	new_env = kmake_empty_environment(K);
 	kapply_cc(K, new_env);
     } else if (ttispair(ptree) && ttisnil(kcdr(ptree))) {
+	/* special common case of one parent, don't keep a list */
 	TValue parent = kcar(ptree);
 	if (ttisenvironment(parent)) {
 	    new_env = kmake_environment(K, parent);
 	    kapply_cc(K, new_env);
 	} else {
-	    klispE_throw(K, "make-environment: Bad type on first "
-			 "argument (expected environment)");
+	    klispE_throw(K, "make-environment: not an environment in "
+			 "parent list");
 	    return;
 	}
     } else {
-	klispE_throw(K, "make-environment: Bad ptree (expected "
-		     "zero or one argument");
-	return;
+	/* this is the general case, copy the list but without the
+	   cycle if there is any */
+	TValue parents = check_copy_env_list(K, "make-environment", ptree);
+	new_env = kmake_environment(K, parents);
+	kapply_cc(K, new_env);
     }
 }
 

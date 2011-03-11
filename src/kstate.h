@@ -119,6 +119,7 @@ inline void ks_spush(klisp_State *K, TValue obj);
 inline TValue ks_spop(klisp_State *K);
 /* this is for DISCARDING stack pop (value isn't used, avoid warning) */ 
 #define ks_sdpop(st_) (UNUSED(ks_spop(st_)))
+inline void ks_sdiscardn(klisp_State *K, int32_t n);
 inline TValue ks_sget(klisp_State *K);
 inline void ks_sclear(klisp_State *K);
 inline bool ks_sisempty(klisp_State *K);
@@ -161,6 +162,24 @@ inline TValue ks_spop(klisp_State *K)
 inline TValue ks_sget(klisp_State *K)
 {
     return ks_selem(K, ks_stop(K) - 1);
+}
+
+inline void ks_sdiscardn(klisp_State *K, int32_t n)
+{
+    int32_t new_top = ks_stop(K) - n;
+    ks_stop(K) = new_top;
+    if (ks_ssize(K) != KS_ISSIZE && new_top < (ks_ssize(K) / 4)) {
+	/* NOTE: may shrink more than once, take it to a multiple of 
+	   KS_ISSIZE that is no smaller than (new_top * 2) */
+	size_t old_size = ks_ssize(K);
+	size_t new_size = new_top * 2;
+	new_size = new_top + KS_ISSIZE - (new_top % KS_ISSIZE);
+	/* NOTE: shrink can't fail */
+	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
+				     new_size*sizeof(TValue));
+	ks_ssize(K) = new_size;
+    }
+    return;
 }
 
 inline void ks_sclear(klisp_State *K)

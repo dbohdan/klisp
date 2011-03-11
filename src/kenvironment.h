@@ -15,5 +15,6 @@ TValue kmake_environment(klisp_State *K, TValue parent);
 #define kmake_empty_environment(kst_) (kmake_environment(kst_, KNIL))
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val);
 TValue kget_binding(klisp_State *K, TValue env, TValue sym);
+bool kbinds(klisp_State *K, TValue env, TValue sym);
 
 #endif

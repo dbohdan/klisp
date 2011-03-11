@@ -19,7 +19,6 @@ TValue kmake_environment(klisp_State *K, TValue parent)
 {
     Environment *new_env = klispM_new(K, Environment);
 
-    
     /* header + gc_fields */
     new_env->next = K->root_gc;
     K->root_gc = (GCObject *) new_env;
@@ -42,9 +41,7 @@ TValue kmake_environment(klisp_State *K, TValue parent)
 */
 TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 {
-    /* avoid warnings */
     (void) K;
-
     while(!ttisnil(bindings)) {
 	TValue first = kcar(bindings);
 	TValue first_sym = kcar(first);
@@ -74,16 +71,54 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
     }
 }
 
+/* This works no matter if parents is a list or a single environment */
+inline bool try_get_binding(klisp_State *K, TValue env, TValue sym, 
+			    TValue *value)
+{
+    /* assume the stack may be in use, keep track of pushed objs */
+    int pushed = 1;
+    ks_spush(K, env);
+
+    while(pushed) {
+	TValue obj = ks_spop(K);
+	--pushed;
+	if (ttisnil(obj)) {
+	    continue;
+	} else if (ttisenvironment(obj)) {
+	    TValue oldb = kfind_local_binding(K, kenv_bindings(K, obj), sym);
+	    if (!ttisnil(oldb)) {
+		/* remember to leave the stack as it was */
+		ks_sdiscardn(K, pushed);
+		*value = kcdr(oldb);
+		return true;
+	    }
+	    TValue parents = kenv_parents(K, obj);
+	    ks_spush(K, parents);
+	    ++pushed;
+	} else { /* parent list */
+	    ks_spush(K, kcdr(obj));
+	    ks_spush(K, kcar(obj));
+	    pushed += 2;
+	}
+    }
+    *value = KINERT;
+    return false;
+}
+
 TValue kget_binding(klisp_State *K, TValue env, TValue sym)
 {
-    while(!ttisnil(env)) {
-	TValue oldb = kfind_local_binding(K, kenv_bindings(K, env), sym);
-	if (!ttisnil(oldb))
-	    return kcdr(oldb);
-	env = kenv_parents(K, env);
+    TValue value;
+    if (try_get_binding(K, env, sym, &value)) {
+	return value;
+    } else {
+	klispE_throw_extra(K, "Unbound symbol: ", ksymbol_buf(sym));
+	/* avoid warning */
+	return KINERT;
     }
+}
 
-    klispE_throw_extra(K, "Unbound symbol: ", ksymbol_buf(sym));
-    /* avoid warning */
-    return KINERT;
+bool kbinds(klisp_State *K, TValue env, TValue sym)
+{
+    TValue value;
+    return try_get_binding(K, env, sym, &value);
 }
