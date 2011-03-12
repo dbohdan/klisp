@@ -23,7 +23,6 @@
 /*
 ** Some helper macros and functions
 */
-
 #define anytype(obj_) (true)
 
 /*
@@ -1289,6 +1288,42 @@ void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, obj);
 }
 
+
+/*
+** 5.5 Combiners
+*/
+
+/* 5.5.1 apply */
+void apply(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    (void) denv;
+    bind_al2p(K, "apply", ptree, app, obj, maybe_env);
+
+    if(!ttisapplicative(app)) {
+	klispE_throw(K, "apply: Bad type on first argument "
+		     "(expected applicative)");    
+	return;
+    }
+    TValue env;
+    /* TODO move to an inlinable function */
+    if (ttisnil(maybe_env)) {
+	env = kmake_empty_environment(K);
+    } else if (ttispair(maybe_env) && ttisnil(kcdr(maybe_env))) {
+	env = kcar(maybe_env);
+	if (!ttisenvironment(env)) {
+	    klispE_throw(K, "apply: Bad type on optional argument "
+			 "(expected environment)");    
+	}
+    } else {
+	klispE_throw(K, "apply: Bad ptree structure (in optional argument)");
+    }
+    TValue expr = kcons(K, kunwrap(K, app), obj);
+    ktail_eval(K, expr, env);
+}
+
+
+
 /*
 ** This is called once to bind all symbols in the ground environment
 */
@@ -1532,6 +1567,12 @@ TValue kmake_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "cddddr", c_ad_r, 2, symbol,
 		    C_AD_R_PARAM(4, 0x1111));
 
+    /*
+    ** 5.5 Combiners
+    */
+
+    /* 5.5.1 apply */
+    add_applicative(K, ground_env, "apply", apply, 0);
 
     return ground_env;
 }
