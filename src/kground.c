@@ -1242,6 +1242,17 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 5.4.1 car, cdr */
 /* 5.4.2 caar, cadr, ... cddddr */
+
+/* Helper macros to construct xparams[1] */
+#define C_AD_R_PARAM(len_, br_) \
+    (i2tv((C_AD_R_LEN(len_) | (C_AD_R_BRANCH(br_)))))
+#define C_AD_R_LEN(len_) ((len_) << 4)
+#define C_AD_R_BRANCH(br_) \
+    ((br_ & 0x0001? 0x1 : 0) | \
+     (br_ & 0x0010? 0x2 : 0) | \
+     (br_ & 0x0100? 0x4 : 0) | \
+     (br_ & 0x1000? 0x8 : 0))
+
 /* the name stands for the regular expression c[ad]{1,4}r */
 void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -1266,22 +1277,15 @@ void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_1p(K, name, ptree, obj);
 
-    /* TEST */
-    printf("In c[ad]{1,4}r: %s, count: %d, branches: %x\n", name, count, 
-	   branches);
-    printf("c");
-
     while(count) {
 	if (!ttispair(obj)) {
 	    klispE_throw_extra(K, name, ": non pair found while traversing"); 
 	    return;
 	}
 	obj = ((branches & 1) == 0)? kcar(obj) : kcdr(obj);
-	printf("%c", ((branches & 1) == 0)? 'a' : 'd');
 	branches >>= 1;
 	--count;
     }
-    printf("r\n");
     kapply_cc(K, obj);
 }
 
@@ -1463,11 +1467,71 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 5.4.1 car, cdr */
-    add_applicative(K, ground_env, "car", c_ad_r, 2, symbol, i2tv(0x10));
-    add_applicative(K, ground_env, "cdr", c_ad_r, 2, symbol, i2tv(0x11));
+    add_applicative(K, ground_env, "car", c_ad_r, 2, symbol, 
+		    C_AD_R_PARAM(1, 0x0000));
+    add_applicative(K, ground_env, "cdr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(1, 0x0001));
 
     /* 5.4.2 caar, cadr, ... cddddr */
-    /* TODO */
+    add_applicative(K, ground_env, "caar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0000));
+    add_applicative(K, ground_env, "cadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0001));
+    add_applicative(K, ground_env, "cdar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0010));
+    add_applicative(K, ground_env, "cddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0011));
+
+    add_applicative(K, ground_env, "caaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0000));
+    add_applicative(K, ground_env, "caadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0001));
+    add_applicative(K, ground_env, "cadar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0010));
+    add_applicative(K, ground_env, "caddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0011));
+    add_applicative(K, ground_env, "cdaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0100));
+    add_applicative(K, ground_env, "cdadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0101));
+    add_applicative(K, ground_env, "cddar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0110));
+    add_applicative(K, ground_env, "cdddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0111));
+
+    add_applicative(K, ground_env, "caaaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0000));
+    add_applicative(K, ground_env, "caaadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0001));
+    add_applicative(K, ground_env, "caadar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0010));
+    add_applicative(K, ground_env, "caaddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0011));
+    add_applicative(K, ground_env, "cadaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0100));
+    add_applicative(K, ground_env, "cadadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0101));
+    add_applicative(K, ground_env, "caddar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0110));
+    add_applicative(K, ground_env, "cadddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0111));
+    add_applicative(K, ground_env, "cdaaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1000));
+    add_applicative(K, ground_env, "cdaadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1001));
+    add_applicative(K, ground_env, "cdadar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1010));
+    add_applicative(K, ground_env, "cdaddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1011));
+    add_applicative(K, ground_env, "cddaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1100));
+    add_applicative(K, ground_env, "cddadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1101));
+    add_applicative(K, ground_env, "cdddar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1110));
+    add_applicative(K, ground_env, "cddddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1111));
+
 
     return ground_env;
 }
