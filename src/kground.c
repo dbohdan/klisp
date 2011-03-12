@@ -1236,7 +1236,54 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, new_app);
 }
 
+/*
+** 5.4 Pairs and lists
+*/
 
+/* 5.4.1 car, cdr */
+/* 5.4.2 caar, cadr, ... cddddr */
+/* the name stands for the regular expression c[ad]{1,4}r */
+void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+
+    /*
+    ** xparams[0]: name as symbol
+    ** xparams[1]: an int with the less significant 2 nibbles 
+    **             standing for the count and the branch selection.
+    **             The high nibble is the count: that is the number of
+    **             'a's and 'd's in the name, for example:
+    **             0x1? for car and cdr.
+    **             0x2? for caar, cadr, cdar and cddr.
+    **             The low nibble is the branch selection, a 0 bit means
+    **             car, a 1 bit means cdr, the first bit to be applied 
+    **             is bit 0 so: caar=0x20, cadr=0x21, cdar:0x22, cddr 0x23
+    */
+
+    char *name = ksymbol_buf(xparams[0]);
+    int p = ivalue(xparams[1]);
+    int count = (p >> 4) & 0xf;
+    int branches = p & 0xf;
+
+    bind_1p(K, name, ptree, obj);
+
+    /* TEST */
+    printf("In c[ad]{1,4}r: %s, count: %d, branches: %x\n", name, count, 
+	   branches);
+    printf("c");
+
+    while(count) {
+	if (!ttispair(obj)) {
+	    klispE_throw_extra(K, name, ": non pair found while traversing"); 
+	    return;
+	}
+	obj = ((branches & 1) == 0)? kcar(obj) : kcdr(obj);
+	printf("%c", ((branches & 1) == 0)? 'a' : 'd');
+	branches >>= 1;
+	--count;
+    }
+    printf("r\n");
+    kapply_cc(K, obj);
+}
 
 /*
 ** This is called once to bind all symbols in the ground environment
@@ -1410,6 +1457,17 @@ TValue kmake_ground_env(klisp_State *K)
 
     /* 5.3.2 $lambda */
     add_operative(K, ground_env, "$lambda", Slambda, 0);
+
+    /*
+    ** 5.4 Pairs and lists
+    */
+
+    /* 5.4.1 car, cdr */
+    add_applicative(K, ground_env, "car", c_ad_r, 2, symbol, i2tv(0x10));
+    add_applicative(K, ground_env, "cdr", c_ad_r, 2, symbol, i2tv(0x11));
+
+    /* 5.4.2 caar, cadr, ... cddddr */
+    /* TODO */
 
     return ground_env;
 }
