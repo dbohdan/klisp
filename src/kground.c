@@ -1022,6 +1022,7 @@ void do_match(klisp_State *K, TValue *xparams, TValue obj)
 /* uses typep */
 
 /* 4.10.3 $vau */
+/* 5.3.1 $vau */
 
 /* Helper (also used by $sequence and $lambda) */
 void do_seq(klisp_State *K, TValue *xparams, TValue obj);
@@ -1040,25 +1041,6 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     TValue new_op = make_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
     kapply_cc(K, new_op);
-}
-
-/*
-** 5.?? Combiners
-*/
-
-void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) xparams;
-    bind_al2p(K, "$lambda", ptree, vptree, vpenv, vbody);
-
-    /* The ptree & body are copied to avoid mutation */
-    vptree = check_copy_ptree(K, "$lambda", vptree, vpenv);
-    /* the body should be a list */
-    (void)check_list(K, "$lambda", vbody);
-    vbody = copy_es_immutable_h(K, "$lambda", vbody);
-
-    TValue new_app = make_applicative(K, do_vau, 4, vptree, vpenv, vbody, denv);
-    kapply_cc(K, new_app);
 }
 
 /* the ramaining list can't be null, that case is managed before */
@@ -1134,6 +1116,74 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue underlying = kunwrap(K, app);
     kapply_cc(K, underlying);
 }
+
+/*
+**
+** 5 Core library features (I)
+**
+*/
+
+/*
+** 5.1 Control
+*/
+
+/* 5.1.1 $sequence */
+void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) xparams;
+
+    if (ttisnil(ptree)) {
+	kapply_cc(K, KINERT);
+    } else {
+	/* the list of instructions is copied to avoid mutation */
+	/* MAYBE: copy the evaluation structure, ASK John */
+	TValue ls = check_copy_list(K, "$sequence", ptree);
+	/* this is needed because seq continuation doesn't check for 
+	   nil sequence */
+	TValue tail = kcdr(ls);
+	if (ttispair(tail)) {
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+					     do_seq, 2, tail, denv);
+	    kset_cc(K, new_cont);
+	} 
+	ktail_eval(K, kcar(ls), denv);
+    }
+}
+
+/*
+** 5.2 Pairs and lists
+*/
+
+/* 5.2.1 list */
+/* TODO */
+
+/* 5.2.2 list* */
+/* TODO */
+
+/*
+** 5.3 Combiners
+*/
+
+/* 5.3.1 $vau */
+/* DONE: above, together with 4.10.4 */
+
+/* 5.3.2 $lambda */
+void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) xparams;
+    bind_al2p(K, "$lambda", ptree, vptree, vpenv, vbody);
+
+    /* The ptree & body are copied to avoid mutation */
+    vptree = check_copy_ptree(K, "$lambda", vptree, vpenv);
+    /* the body should be a list */
+    (void)check_list(K, "$lambda", vbody);
+    vbody = copy_es_immutable_h(K, "$lambda", vbody);
+
+    TValue new_app = make_applicative(K, do_vau, 4, vptree, vpenv, vbody, denv);
+    kapply_cc(K, new_app);
+}
+
+
 
 /*
 ** This is called once to bind all symbols in the ground environment
@@ -1274,7 +1324,37 @@ TValue kmake_ground_env(klisp_State *K)
     /* 4.10.5 unwrap */
     add_applicative(K, ground_env, "unwrap", unwrap, 0);
 
-    /* 5.?? $lambda */
+    /*
+    **
+    ** 5 Core library features (I)
+    **
+    */
+
+    /*
+    ** 5.1 Control
+    */
+
+    /* 5.1.1 $sequence */
+    add_operative(K, ground_env, "$sequence", Ssequence, 0);
+
+    /*
+    ** 5.2 Pairs and lists
+    */
+
+    /* 5.2.1 list */
+    /* TODO */
+
+    /* 5.2.2 list* */
+    /* TODO */
+
+    /*
+    ** 5.3 Combiners
+    */
+
+    /* 5.3.1 $vau */
+    /* DONE: above, together with 4.10.4 */
+
+    /* 5.3.2 $lambda */
     add_operative(K, ground_env, "$lambda", Slambda, 0);
 
     return ground_env;
