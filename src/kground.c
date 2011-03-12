@@ -1042,6 +1042,25 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, new_op);
 }
 
+/*
+** 5.?? Combiners
+*/
+
+void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) xparams;
+    bind_al2p(K, "$lambda", ptree, vptree, vpenv, vbody);
+
+    /* The ptree & body are copied to avoid mutation */
+    vptree = check_copy_ptree(K, "$lambda", vptree, vpenv);
+    /* the body should be a list */
+    (void)check_list(K, "$lambda", vbody);
+    vbody = copy_es_immutable_h(K, "$lambda", vbody);
+
+    TValue new_app = make_applicative(K, do_vau, 4, vptree, vpenv, vbody, denv);
+    kapply_cc(K, new_app);
+}
+
 /* the ramaining list can't be null, that case is managed before */
 void do_seq(klisp_State *K, TValue *xparams, TValue obj)
 {
@@ -1254,6 +1273,9 @@ TValue kmake_ground_env(klisp_State *K)
 
     /* 4.10.5 unwrap */
     add_applicative(K, ground_env, "unwrap", unwrap, 0);
+
+    /* 5.?? $lambda */
+    add_operative(K, ground_env, "$lambda", Slambda, 0);
 
     return ground_env;
 }
