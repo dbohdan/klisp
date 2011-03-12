@@ -1298,6 +1298,7 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
 		      TValue denv)
 {
     (void) denv;
+    (void) xparams;
     bind_al2p(K, "apply", ptree, app, obj, maybe_env);
 
     if(!ttisapplicative(app)) {
@@ -1322,7 +1323,68 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
     ktail_eval(K, expr, env);
 }
 
+/*
+** 5.6 Control
+*/
 
+/* 5.6.1 $cond */
+/* TODO */
+
+/*
+** 5.7 Pairs and lists
+*/
+
+/* 5.7.1 get-list-metrics */
+/* TODO */
+
+/* 5.7.2 list-tail */
+void list_tail(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    (void) denv;
+    (void) xparams;
+    /* XXX: should be integer instead of fixint, but that's all
+       we have for now */
+    bind_2tp(K, "list-tail", ptree, "any", anytype, obj,
+	     "finite integer", ttisfixint, tk);
+    int k = ivalue(tk);
+    if (k < 0) {
+	klispE_throw(K, "list-tail: negative index");
+	return;
+    }
+
+    while(k) {
+	if (!ttispair(obj)) {
+	    klispE_throw(K, "list-tail: non pair found while traversing "
+			 "object");
+	    return;
+	}
+	obj = kcdr(obj);
+	--k;
+    }
+    kapply_cc(K, obj);
+}
+
+/*
+** 5.8 Pair mutation
+*/
+
+/* 5.8.1 encycle! */
+/* TODO */
+
+/*
+** 5.9 Combiners
+*/
+
+/* 5.9.1 map */
+/* TODO */
+
+/*
+** 5.10 Environments
+*/
+
+/* 5.10.1 $let */
+/* TODO */
 
 /*
 ** This is called once to bind all symbols in the ground environment
@@ -1573,6 +1635,44 @@ TValue kmake_ground_env(klisp_State *K)
 
     /* 5.5.1 apply */
     add_applicative(K, ground_env, "apply", apply, 0);
+
+    /*
+    ** 5.6 Control
+    */
+
+    /* 5.6.1 $cond */
+    /* TODO */
+
+    /*
+    ** 5.7 Pairs and lists
+    */
+
+    /* 5.7.1 get-list-metrics */
+    /* TODO */
+
+    /* 5.7.2 list-tail */
+    add_applicative(K, ground_env, "list-tail", list_tail, 0);
+
+    /*
+    ** 5.8 Pair mutation
+    */
+
+    /* 5.8.1 encycle! */
+    /* TODO */
+
+    /*
+    ** 5.9 Combiners
+    */
+
+    /* 5.9.1 map */
+    /* TODO */
+
+    /*
+    ** 5.10 Environments
+    */
+
+    /* 5.10.1 $let */
+    /* TODO */
 
     return ground_env;
 }
