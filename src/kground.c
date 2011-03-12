@@ -1155,7 +1155,14 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 */
 
 /* 5.2.1 list */
-/* TODO */
+/* the underlying combiner of list return the complete ptree, the only list
+   checking is implicit in the applicative evaluation */
+void list(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) xparams;
+    (void) denv;
+    kapply_cc(K, ptree);
+}
 
 /* 5.2.2 list* */
 /* TODO */
@@ -1342,7 +1349,7 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 5.2.1 list */
-    /* TODO */
+    add_applicative(K, ground_env, "list", list, 0);
 
     /* 5.2.2 list* */
     /* TODO */
