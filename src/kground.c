@@ -1335,7 +1335,46 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
 */
 
 /* 5.7.1 get-list-metrics */
-/* TODO */
+void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    (void) denv;
+    (void) xparams;
+
+    bind_1p(K, "get-list-metrics", ptree, obj);
+    int32_t pairs = 0;
+    TValue tail = obj;
+
+    while(ttispair(tail) && !kis_marked(tail)) {
+	/* record the pair number to simplify cycle pair counting */
+	kset_mark(tail, i2tv(pairs));
+	++pairs;
+	tail = kcdr(tail);
+    }
+    int32_t apairs, cpairs, nils;
+    if (ttisnil(tail)) {
+	/* simple (possibly empty) list */
+	apairs = pairs;
+	nils = 1;
+	cpairs = 0;
+    } else if (ttispair(tail)) {
+	/* cyclic (maybe circular) list */
+	apairs = ivalue(kget_mark(tail));
+	cpairs = pairs - apairs;
+	nils = 0;
+    } else {
+	apairs = pairs;
+	cpairs = 0;
+	nils = 0;
+    }
+
+    unmark_list(K, obj);
+
+    /* GC: root intermediate pairs */
+    TValue res = kcons(K, i2tv(apairs), kcons(K, i2tv(cpairs), KNIL));
+    res = kcons(K, i2tv(pairs), kcons(K, i2tv(nils), res));
+    kapply_cc(K, res);
+}
 
 /* 5.7.2 list-tail */
 void list_tail(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -1648,7 +1687,7 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 5.7.1 get-list-metrics */
-    /* TODO */
+    add_applicative(K, ground_env, "get-list-metrics", get_list_metrics, 0);
 
     /* 5.7.2 list-tail */
     add_applicative(K, ground_env, "list-tail", list_tail, 0);
