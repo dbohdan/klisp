@@ -1165,7 +1165,53 @@ void list(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 5.2.2 list* */
-/* TODO */
+/* TODO: 
+   OPTIMIZE: if this call is a result of a call to eval, we could get away
+   with just setting the kcdr of the next to last pair to the car of
+   the last pair, because the list of operands is fresh. Also the type
+   check wouldn't be necessary. This optimization technique could be
+   used in lots of places to avoid checks and the like. */
+void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) xparams;
+    (void) denv;
+
+    if (ttisnil(ptree)) {
+	klispE_throw(K, "list*: empty argument list"); 
+	return;
+    }
+    /* GC: should root dummy */
+    TValue dummy = kcons(K, KINERT, KNIL);
+    TValue last_pair = dummy;
+    TValue tail = ptree;
+    
+    /* First copy the list, but remembering the next to last pair */
+    while(ttispair(tail) && !kis_marked(tail)) {
+	kmark(tail);
+	/* we save the next_to last pair in the cdr to 
+	   allow the change into an improper list later */
+	TValue new_pair = kcons(K, kcar(tail), last_pair);
+	kset_cdr(last_pair, new_pair);
+	last_pair = new_pair;
+	tail = kcdr(tail);
+    }
+    unmark_list(K, ptree);
+
+    if (ttisnil(tail)) {
+	/* Now eliminate the last pair to get the correct improper list.
+	   This avoids an if in the above loop. It's inside the if because
+	   we need at least one pair for this to work. */
+	TValue next_to_last_pair = kcdr(last_pair);
+	kset_cdr(next_to_last_pair, kcar(last_pair));
+	kapply_cc(K, kcdr(dummy));
+    } else if (ttispair(tail)) { /* cyclic argument list */
+	klispE_throw(K, "list*: cyclic argument list"); 
+	return;
+    } else {
+	klispE_throw(K, "list*: argument list is improper"); 
+	return;
+    }
+}
 
 /*
 ** 5.3 Combiners
@@ -1323,6 +1369,7 @@ TValue kmake_ground_env(klisp_State *K)
 		    i2tv(K_TAPPLICATIVE));
 
     /* 4.10.3 $vau */
+    /* 5.3.1 $vau */
     add_operative(K, ground_env, "$vau", Svau, 0);
 
     /* 4.10.4 wrap */
@@ -1352,7 +1399,7 @@ TValue kmake_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "list", list, 0);
 
     /* 5.2.2 list* */
-    /* TODO */
+    add_applicative(K, ground_env, "list*", listS, 0);
 
     /*
     ** 5.3 Combiners
