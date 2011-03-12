@@ -70,16 +70,35 @@
 	return; \
     }
 
-#define bind_3p(K_, n_, ptree_, v1_, v2_, v3_)		\
-    TValue v1_, v2_, v3_;					\
-    if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
+#define bind_3p(K_, n_, ptree_, v1_, v2_, v3_)	\
+    bind_3tp(K_, n_, ptree_, "any", anytype, v1_, \
+	     "any", anytype, v2_, "any", anytype, v3_)
+
+#define bind_3tp(K_, n_, ptree_, tstr1_, t1_, v1_, \
+		 tstr2_, t2_, v2_, tstr3_, t3_, v3_)	\
+    TValue v1_, v2_, v3_;				\
+    if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) ||	    \
 	  !ttispair(kcddr (ptree_)) || !ttisnil(kcdddr(ptree_))) {  \
 	klispE_throw_extra(K_, n_, ": Bad ptree (expected three arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
     v2_ = kcadr(ptree_); \
-    v3_ = kcaddr(ptree_)
+    v3_ = kcaddr(ptree_); \
+    if (!t1_(v1_)) { \
+	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
+		     tstr1_ ")");				     \
+	return; \
+    } else if (!t2_(v2_)) { \
+	klispE_throw_extra(K_, n_, ": Bad type on second argument (expected " \
+		     tstr2_ ")");				     \
+	return; \
+    } else if (!t3_(v3_)) { \
+	klispE_throw_extra(K_, n_, ": Bad type on third argument (expected " \
+		     tstr3_ ")");				     \
+	return; \
+    }
+
 
 /* bind at least 2 parameters, like (v1_ v2_ . v3_) */
 #define bind_al2p(K_, n_, ptree_, v1_, v2_, v3_)		\
@@ -1377,6 +1396,9 @@ void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 5.7.2 list-tail */
+/* ASK John: can the object be a cyclic list? the wording of the report
+   seems to indicate that can't be the case, but it makes sense here 
+   (cf $encycle!) to allow cyclic lists, so that's what I do */
 void list_tail(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
@@ -1409,7 +1431,81 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
 */
 
 /* 5.8.1 encycle! */
-/* TODO */
+/* ASK John: can the object be a cyclic list of length less than k1+k2? 
+   the wording of the report seems to indicate that can't be the case, 
+   and here it makes sense to forbid it because otherwise the list-metrics 
+   of the result would differ with the expected ones (cf list-tail). 
+   So here an error is signaled if the improper list cyclic with less pairs
+   than needed */
+void encycleB(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    (void) denv;
+    (void) xparams;
+    /* XXX: should be integer instead of fixint, but that's all
+       we have for now */
+    bind_3tp(K, "encycle!", ptree, "any", anytype, obj,
+	     "finite integer", ttisfixint, tk1,
+	     "finite integer", ttisfixint, tk2);
+
+    int32_t k1 = ivalue(tk1);
+    int32_t k2 = ivalue(tk2);
+
+    if (k1 < 0 || k2 < 0) {
+	klispE_throw(K, "encycle!: negative index");
+	return;
+    }
+
+    TValue tail = obj;
+
+    while(k1) {
+	if (!ttispair(tail)) {
+	    unmark_list(K, obj);
+	    klispE_throw(K, "encycle!: non pair found while traversing "
+			 "object");
+	    return;
+	} else if (kis_marked(tail)) {
+	    unmark_list(K, obj);
+	    klispE_throw(K, "encycle!: too few pairs in cyclic list");
+	    return;
+	}
+	kmark(tail);
+	tail = kcdr(tail);
+	--k1;
+    }
+
+    TValue fcp = tail;
+
+    /* if k2 == 0 do nothing (but this still checks that the obj
+       has at least k1 pairs */
+    if (k2 != 0) {
+	--k2; /* to have cycle length k2 we should discard k2-1 pairs */
+	while(k2) {
+	    if (!ttispair(tail)) {
+		unmark_list(K, obj);
+		klispE_throw(K, "encycle!: non pair found while traversing "
+			     "object");
+		return;
+	    } else if (kis_marked(tail)) {
+		unmark_list(K, obj);
+		klispE_throw(K, "encycle!: too few pairs in cyclic list");
+		return;
+	    }
+	    kmark(tail);
+	    tail = kcdr(tail);
+	    --k2;
+	}
+	if (!kis_mutable(tail)) {
+	    unmark_list(K, obj);
+	    klispE_throw(K, "encycle!: immutable pair");
+	    return;
+	} else {
+	    kset_cdr(tail, fcp);
+	}
+    }
+    unmark_list(K, obj);
+    kapply_cc(K, KINERT);
+}
 
 /*
 ** 5.9 Combiners
@@ -1697,7 +1793,7 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 5.8.1 encycle! */
-    /* TODO */
+    add_applicative(K, ground_env, "encycle!", encycleB, 0);
 
     /*
     ** 5.9 Combiners
