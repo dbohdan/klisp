@@ -14,6 +14,7 @@
 #include "klisp.h"
 #include "kstate.h"
 #include "kpair.h"
+#include "kcontinuation.h"
 #include "kerror.h"
 #include "kghelpers.h"
 

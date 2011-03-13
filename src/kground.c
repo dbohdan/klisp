@@ -24,53 +24,13 @@
 
 #include "kghelpers.h"
 #include "kgbooleans.h"
+#include "kgeqp.h"
 
 /*
 ** This section will roughly follow the report and will reference the
 ** section in which each symbol is defined
 */
 /* TODO: split in different files for each module */
-
-/*
-**
-** 4 Core types and primitive features
-**
-*/
-
-/*
-** 4.1 Booleans
-*/
-
-/* 4.1.1 boolean? */
-/* uses typep */
-
-/*
-** 4.2 Equivalence under mutation
-*/
-
-/* 4.2.1 eq? */
-
-/* Helper (also used in equal?) */
-inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2);
-
-/* TEMP: for now it takes only two argument */
-void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-
-    bind_2p(K, "eq?", ptree, obj1, obj2);
-
-    bool res = eq2p(K, obj1, obj2);
-    kapply_cc(K, b2tv(res));
-}
-
-/* TEMP: for now this is the same as tv_equal,
-   later it will change with numbers and immutable objects */
-inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
-{
-    return (tv_equal(obj1, obj2));
-}
 
 /*
 ** 4.3 Equivalence up to mutation
