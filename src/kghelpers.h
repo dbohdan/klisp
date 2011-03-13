@@ -117,9 +117,6 @@
 #define make_applicative(K_, fn_, ...) \
     kwrap(K_, kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__))
 
-
-#endif
-
 /*
 ** This states are useful for traversing trees, saving the state in the
 ** token char buffer
@@ -255,3 +252,5 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 ** It can only be used by types that have a unique tag
 */
 void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+#endif
