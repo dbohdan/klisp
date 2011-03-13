@@ -26,57 +26,14 @@
 #include "kgbooleans.h"
 #include "kgeqp.h"
 #include "kgequalp.h"
+#include "kgsymbols.h"
+#include "kgcontrol.h"
 
 /*
 ** This section will roughly follow the report and will reference the
 ** section in which each symbol is defined
 */
 /* TODO: split in different files for each module */
-
-/*
-** 4.5 Control
-*/
-
-/* 4.5.1 inert? */
-/* uses typep */
-
-/* 4.5.2 $if */
-
-/* helpers */
-void select_clause(klisp_State *K, TValue *xparams, TValue obj);
-
-/*  ASK JOHN: both clauses should probably be copied (copy-es-immutable) */
-void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) denv;
-    (void) xparams;
-
-    bind_3p(K, "$if", ptree, test, cons_c, alt_c);
-
-    TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, select_clause, 
-			   3, denv, cons_c, alt_c);
-
-    klispS_set_cc(K, new_cont);
-    ktail_eval(K, test, denv);
-}
-
-void select_clause(klisp_State *K, TValue *xparams, TValue obj)
-{
-    /*
-    ** xparams[0]: dynamic env
-    ** xparams[1]: consequent clause
-    ** xparams[2]: alternative clause
-    */
-    if (ttisboolean(obj)) {
-	TValue denv = xparams[0];
-	TValue clause = bvalue(obj)? xparams[1] : xparams[2];
-	ktail_eval(K, clause, denv);
-    } else {
-	klispE_throw(K, "$if: test is not a boolean");
-	return;
-    }
-}
 
 /*
 ** 4.6 Pairs and lists
@@ -551,8 +508,7 @@ void do_match(klisp_State *K, TValue *xparams, TValue obj)
 /* 4.10.3 $vau */
 /* 5.3.1 $vau */
 
-/* Helper (also used by $sequence and $lambda) */
-void do_seq(klisp_State *K, TValue *xparams, TValue obj);
+/* Helper (also used by $lambda) */
 void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
 
 void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -568,26 +524,6 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     TValue new_op = make_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
     kapply_cc(K, new_op);
-}
-
-/* the ramaining list can't be null, that case is managed before */
-void do_seq(klisp_State *K, TValue *xparams, TValue obj)
-{
-    /* 
-    ** xparams[0]: remaining list
-    ** xparams[1]: dynamic environment
-    */
-    TValue ls = xparams[0];
-    TValue first = kcar(ls);
-    TValue tail = kcdr(ls);
-    TValue denv = xparams[1];
-
-    if (ttispair(tail)) {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     do_seq, 2, tail, denv);
-	kset_cc(K, new_cont);
-    }
-    ktail_eval(K, first, denv);
 }
 
 void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
@@ -649,33 +585,6 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 ** 5 Core library features (I)
 **
 */
-
-/*
-** 5.1 Control
-*/
-
-/* 5.1.1 $sequence */
-void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    (void) xparams;
-
-    if (ttisnil(ptree)) {
-	kapply_cc(K, KINERT);
-    } else {
-	/* the list of instructions is copied to avoid mutation */
-	/* MAYBE: copy the evaluation structure, ASK John */
-	TValue ls = check_copy_list(K, "$sequence", ptree);
-	/* this is needed because seq continuation doesn't check for 
-	   nil sequence */
-	TValue tail = kcdr(ls);
-	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     do_seq, 2, tail, denv);
-	    kset_cc(K, new_cont);
-	} 
-	ktail_eval(K, kcar(ls), denv);
-    }
-}
 
 /*
 ** 5.2 Pairs and lists
@@ -850,13 +759,6 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
     TValue expr = kcons(K, kunwrap(K, app), obj);
     ktail_eval(K, expr, env);
 }
-
-/*
-** 5.6 Control
-*/
-
-/* 5.6.1 $cond */
-/* TODO */
 
 /*
 ** 5.7 Pairs and lists
