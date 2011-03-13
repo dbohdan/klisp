@@ -12,9 +12,7 @@
 
 #include "kstate.h"
 #include "kobject.h"
-#include "kground.h"
 #include "kpair.h"
-#include "kstring.h"
 #include "kenvironment.h"
 #include "kcontinuation.h"
 #include "ksymbol.h"

@@ -30,6 +30,7 @@
 #include "kgenvironments.h"
 #include "kgenv_mut.h"
 #include "kgcombiners.h"
+#include "kgcontinuations.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -327,6 +328,63 @@ TValue kmake_ground_env(klisp_State *K)
     */
 
     /* 5.10.1 $let */
+    /* TODO */
+
+
+    /*
+    **
+    ** 6 Core library features (II)
+    **
+    */
+
+    /* ... */
+
+    /*
+    **
+    ** 7 Continuations
+    **
+    */
+
+    /* 
+    ** 7.2 Primitive features
+    */
+
+    /* 7.1.1 continuation? */
+    add_applicative(K, ground_env, "continuation?", typep, 2, symbol, 
+		    i2tv(K_TCONTINUATION));
+
+    /* 7.2.2 call/cc */
+    /* TODO */
+
+    /* 7.2.3 extend-continuation */
+    /* TODO */
+
+    /* 7.2.4 guard-continuation */
+    /* TODO */
+
+    /* 7.2.5 continuation->applicative */
+    /* TODO */
+
+    /* 7.2.6 root-continuation */
+    /* TODO */
+
+    /* 7.2.7 error-continuation */
+    /* TODO */
+
+    /* 
+    ** 7.3 Library features
+    */
+
+    /* 7.3.1 apply-continuation */
+    /* TODO */
+
+    /* 7.3.2 $let/cc */
+    /* TODO */
+
+    /* 7.3.3 guard-dynamic-extent */
+    /* TODO */
+
+    /* 7.3.4 exit */    
     /* TODO */
 
     return ground_env;
