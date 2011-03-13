@@ -96,7 +96,7 @@ void error_fn(klisp_State *K, TValue *xparams, TValue obj)
     char *str = ttisstring(obj)?
 	kstring_buf(obj) : "not a string passed to error continuation";
 
-    fprintf(stderr, "\n*ERRROR*: %s\n", str);
+    fprintf(stderr, "\n*ERROR*: %s\n", str);
 
     TValue denv = xparams[0];
     create_loop(K, denv);

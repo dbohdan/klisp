@@ -120,6 +120,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     return K;
 }
 
+/* GC: should probably save the cont to retain the objects in 
+   xparams in case of gc (Also useful for source code info)
+   probably a new field in K called active_cont */
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 {
     /* TODO: interceptions */

@@ -25,7 +25,8 @@
 void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 7.2.3 extend-continuation */
-/* TODO */
+void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
+			 TValue denv);
 
 /* 7.2.4 guard-continuation */
 /* TODO */
