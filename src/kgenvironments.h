@@ -4,8 +4,8 @@
 ** See Copyright Notice in klisp.h
 */
 
-#ifndef kgpairs_lists_h
-#define kgpairs_lists_h
+#ifndef kgenvironments_h
+#define kgenvironments_h
 
 #include <assert.h>
 #include <stdio.h>

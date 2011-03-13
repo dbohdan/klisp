@@ -1,5 +1,5 @@
 /*
-** kgenvironments.h
+** kgenvironments.c
 ** Environments features for the ground environment
 ** See Copyright Notice in klisp.h
 */
