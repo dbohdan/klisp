@@ -115,6 +115,9 @@ struct klisp_State {
 /*
 ** Stack functions 
 */
+/* TODO: move grow/shrink to non inline functions to diminish the 
+   executable size */
+
 inline void ks_spush(klisp_State *K, TValue obj);
 inline TValue ks_spop(klisp_State *K);
 /* this is for DISCARDING stack pop (value isn't used, avoid warning) */ 
