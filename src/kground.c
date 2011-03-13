@@ -23,6 +23,7 @@
 #include "kerror.h"
 
 #include "kghelpers.h"
+#include "kgbooleans.h"
 
 /*
 ** This section will roughly follow the report and will reference the

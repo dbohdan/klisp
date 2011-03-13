@@ -69,3 +69,5 @@ kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kpair.h kapplicative.h koperative.h ksymbol.h kerror.h kghelpers.h
 kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 	kapplicative.h koperative.h kerror.h kobject.h ksymbol.h
+kgbooleans.o: kgbooleans.c kgbooleans.c kghelpers.h kstate.h klisp.h \
+	kobject.h kerror.h kpair.h
