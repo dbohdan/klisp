@@ -19,6 +19,7 @@
 #include "kmem.h"
 #include "keval.h"
 #include "koperative.h"
+#include "kenvironment.h"
 #include "kground.h"
 #include "krepl.h"
 
@@ -52,8 +53,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->next_env = KNIL;
     K->next_xparams = NULL;
 
+    /* these will be properly initialized later */
     K->eval_op = KINERT;
     K->ground_env = KINERT;
+    K->root_cont = KINERT;
+    K->error_cont = KINERT;
 
     K->frealloc = f;
     K->ud = ud;
@@ -109,7 +113,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* create the ground environment and the eval operative */
     K->eval_op = kmake_operative(K, KNIL, KNIL, keval_ofn, 0);
-    K->ground_env = kmake_ground_env(K);
+    K->ground_env = kmake_empty_environment(K);
+    
+    kinit_ground_env(K);
 
     return K;
 }
@@ -130,7 +136,7 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 
 void klispS_init_repl(klisp_State *K)
 {
-    /* this is in repl.c */
+    /* this is in krepl.c */
     kinit_repl(K);
 }
 

@@ -16,6 +16,7 @@
 #include "kwrite.h"
 #include "kstring.h"
 #include "krepl.h"
+#include "ksymbol.h"
 
 /* the exit continuation, it exits the loop */
 void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
@@ -112,6 +113,14 @@ void kinit_repl(klisp_State *K)
     TValue error_cont = kmake_continuation(K, KNIL, KNIL, KNIL,
 					   error_fn, 1, std_env);
 
+    /* update the ground environment with these two conts */
+    TValue symbol;
+    symbol = ksymbol_new(K, "root-continuation");
+    kadd_binding(K, K->ground_env, symbol, root_cont);
+    symbol = ksymbol_new(K, "error-continuation");
+    kadd_binding(K, K->ground_env, symbol, error_cont);
+
+    /* and save them in the structure */
     K->root_cont = root_cont;
     K->error_cont = error_cont;
 

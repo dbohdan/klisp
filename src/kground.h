@@ -9,6 +9,6 @@
 
 #include "kstate.h"
 
-TValue kmake_ground_env(klisp_State *K);
+void kinit_ground_env(klisp_State *K);
 
 #endif

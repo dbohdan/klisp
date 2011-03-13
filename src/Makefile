@@ -66,7 +66,7 @@ kapplicative.o: kapplicative.c kapplicative.h kmem.h kstate.h kobject.h \
 keval.o: keval.c keval.h kcontinuation.h kenvironment.h kstate.h kobject.h \
 	kpair.h kerror.h klisp.h
 krepl.o: krepl.c krepl.h kcontinuation.h kstate.h kobject.h keval.h klisp.h \
-	kread.h kwrite.h kenvironment.h
+	kread.h kwrite.h kenvironment.h ksymbol.h
 kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kapplicative.h koperative.h ksymbol.h kerror.h kghelpers.h \
 	kgbooleans.h kgeqp.h kgequalp.h kgsymbols.h kgpairs_lists.h \

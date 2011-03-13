@@ -50,10 +50,9 @@
 /*
 ** This is called once to bind all symbols in the ground environment
 */
-TValue kmake_ground_env(klisp_State *K)
+void kinit_ground_env(klisp_State *K)
 {
-    TValue ground_env = kmake_empty_environment(K);
-
+    TValue ground_env = K->ground_env;
     TValue symbol, value;
 
     /*
@@ -366,10 +365,14 @@ TValue kmake_ground_env(klisp_State *K)
     /* TODO */
 
     /* 7.2.6 root-continuation */
-    /* TODO */
-
+    symbol = ksymbol_new(K, "root-continuation");
+    value = K->root_cont;
+    kadd_binding(K, ground_env, symbol, value);
+    
     /* 7.2.7 error-continuation */
-    /* TODO */
+    symbol = ksymbol_new(K, "error-continuation");
+    value = K->error_cont;
+    kadd_binding(K, ground_env, symbol, value);
 
     /* 
     ** 7.3 Library features
@@ -387,5 +390,5 @@ TValue kmake_ground_env(klisp_State *K)
     /* 7.3.4 exit */    
     /* TODO */
 
-    return ground_env;
+    return;
 }
