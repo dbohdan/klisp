@@ -362,7 +362,8 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 7.2.5 continuation->applicative */
-    /* TODO */
+    add_applicative(K, ground_env, "continuation->applicative",
+		    continuation_applicative, 0);
 
     /* 7.2.6 root-continuation */
     symbol = ksymbol_new(K, "root-continuation");

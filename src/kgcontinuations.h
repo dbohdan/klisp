@@ -31,7 +31,8 @@ void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 7.2.5 continuation->applicative */
-/* TODO */
+void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree, 
+			      TValue denv);
 
 /* 7.2.6 root-continuation */
 /* TODO */
