@@ -126,7 +126,8 @@
 #define ST_CDR ((char) 2)
 
 /*
-** Unmarking structures.
+** Unmarking structures. 
+** MAYBE: These shouldn't be inline really.
 ** These two stop at the first object that is not a marked pair
 */
 inline void unmark_list(klisp_State *K, TValue obj)
@@ -157,6 +158,7 @@ inline void unmark_tree(klisp_State *K, TValue obj)
 
 /*
 ** Structure checking and copying
+** MAYBE: These shouldn't be inline really.
 */
 
 /* check that obj is a list, returns the number of pairs */

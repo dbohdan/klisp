@@ -34,13 +34,6 @@
 /* TODO: split in different files for each module */
 
 /*
-** 4.4 Symbols
-*/
-
-/* 4.4.1 symbol? */
-/* uses typep */
-
-/*
 ** 4.5 Control
 */
 
