@@ -1,5 +1,5 @@
 /*
-** kgpairs_lists.h
+** kgpairs_lists.c
 ** Pairs and lists features for the ground environment
 ** See Copyright Notice in klisp.h
 */
