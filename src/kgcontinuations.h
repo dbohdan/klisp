@@ -22,7 +22,7 @@
 /* uses typep */
 
 /* 7.2.2 call/cc */
-/* TODO */
+void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 7.2.3 extend-continuation */
 /* TODO */

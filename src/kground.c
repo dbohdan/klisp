@@ -354,7 +354,7 @@ TValue kmake_ground_env(klisp_State *K)
 		    i2tv(K_TCONTINUATION));
 
     /* 7.2.2 call/cc */
-    /* TODO */
+    add_applicative(K, ground_env, "call/cc", call_cc, 0);
 
     /* 7.2.3 extend-continuation */
     /* TODO */
