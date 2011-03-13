@@ -113,15 +113,16 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) xparams;
-    bind_al2p(K, "$lambda", ptree, vptree, vpenv, vbody);
+    bind_al1p(K, "$lambda", ptree, vptree, vbody);
 
     /* The ptree & body are copied to avoid mutation */
-    vptree = check_copy_ptree(K, "$lambda", vptree, vpenv);
+    vptree = check_copy_ptree(K, "$lambda", vptree, KIGNORE);
     /* the body should be a list */
     (void)check_list(K, "$lambda", vbody);
     vbody = copy_es_immutable_h(K, "$lambda", vbody);
 
-    TValue new_app = make_applicative(K, do_vau, 4, vptree, vpenv, vbody, denv);
+    TValue new_app = make_applicative(K, do_vau, 4, vptree, KIGNORE, vbody, 
+				      denv);
     kapply_cc(K, new_app);
 }
 
@@ -131,26 +132,14 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
 {
     (void) denv;
     (void) xparams;
-    bind_al2p(K, "apply", ptree, app, obj, maybe_env);
+    bind_al2tp(K, "apply", ptree, 
+	       "applicative", ttisapplicative, app, 
+	       "any", anytype, obj, 
+	       maybe_env);
 
-    if(!ttisapplicative(app)) {
-	klispE_throw(K, "apply: Bad type on first argument "
-		     "(expected applicative)");    
-	return;
-    }
-    TValue env;
-    /* TODO move to an inlinable function */
-    if (ttisnil(maybe_env)) {
-	env = kmake_empty_environment(K);
-    } else if (ttispair(maybe_env) && ttisnil(kcdr(maybe_env))) {
-	env = kcar(maybe_env);
-	if (!ttisenvironment(env)) {
-	    klispE_throw(K, "apply: Bad type on optional argument "
-			 "(expected environment)");    
-	}
-    } else {
-	klispE_throw(K, "apply: Bad ptree structure (in optional argument)");
-    }
+    TValue env = (get_opt_tpar(K, "apply", K_TENVIRONMENT, &maybe_env))?
+	maybe_env : kmake_empty_environment(K);
+
     TValue expr = kcons(K, kunwrap(K, app), obj);
     ktail_eval(K, expr, env);
 }

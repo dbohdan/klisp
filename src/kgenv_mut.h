@@ -220,7 +220,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 	    /* TODO add symbol name */
 	    ptree_clear_all(K, sym_ls);
 	    klispE_throw_extra(K, name, ": same symbol in both ptree and "
-			       "environment parmameter");
+			       "environment parameter");
 	}
     } else if (!ttisignore(penv)) {
 	    /* TODO add symbol name */
