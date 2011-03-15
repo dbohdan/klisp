@@ -46,7 +46,8 @@ void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 			TValue denv);
 
 /* 7.3.2 $let/cc */
-/* TODO */
+void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree, 
+	     TValue denv);
 
 /* 7.3.3 guard-dynamic-extent */
 /* TODO */

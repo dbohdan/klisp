@@ -22,6 +22,7 @@
 
 #include "kghelpers.h"
 #include "kgcontinuations.h"
+#include "kgcontrol.h" /* for seq helpers in $let/cc */
 
 /* 7.1.1 continuation? */
 /* uses typep */
@@ -29,7 +30,7 @@
 /* 7.2.2 call/cc */
 void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) xparams;
+    UNUSED(xparams);
     bind_1tp(K, "call/cc", ptree, "combiner", ttiscombiner, comb);
 
     /* GC: root pairs */
@@ -56,8 +57,9 @@ void do_extended_cont(klisp_State *K, TValue *xparams, TValue obj)
 void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_al2tp(K, "extend-continuation", ptree, 
 	       "continuation", ttiscontinuation, cont, 
 	       "applicative", ttisapplicative, app, 
@@ -83,7 +85,7 @@ void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree, 
 			      TValue denv)
 {
-    (void) xparams;
+    UNUSED(xparams);
     bind_1tp(K, "continuation->applicative", ptree, "continuation",
 	     ttiscontinuation, cont);
 
@@ -94,7 +96,7 @@ void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree,
 /* this passes the operand tree to the continuation */
 void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) denv;
+    UNUSED(denv);
     TValue cont = xparams[0];
     /* TODO: look out for guards and dynamic variables */
     /* should be probably handled in kcall_cont() */
@@ -115,8 +117,8 @@ void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
 			TValue denv)
 {
-    (void) xparams;
-    (void) denv;
+    UNUSED(xparams);
+    UNUSED(denv);
 
     bind_2tp(K, "apply-continuation", ptree, "continuation", ttiscontinuation,
 	     cont, "any", anytype, obj);
@@ -127,7 +129,34 @@ void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 7.3.2 $let/cc */
-/* TODO */
+void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree, 
+	     TValue denv)
+{
+    UNUSED(xparams);
+    /* from the report: #ignore is not ok, only symbol */
+    bind_al1tp(K, "$let/cc", ptree, "symbol", ttissymbol, sym, objs);
+
+    if (ttisnil(objs)) {
+	/* we don't even bother creating the environment */
+	kapply_cc(K, KINERT);
+    } else {
+	TValue new_env = kmake_environment(K, denv);
+	kadd_binding(K, new_env, sym, kget_cc(K));
+	
+	/* the list of instructions is copied to avoid mutation */
+	/* MAYBE: copy the evaluation structure, ASK John */
+	TValue ls = check_copy_list(K, "$let/cc", objs);
+	/* this is needed because seq continuation doesn't check for 
+	   nil sequence */
+	TValue tail = kcdr(ls);
+	if (ttispair(tail)) {
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+					     do_seq, 2, tail, new_env);
+	    kset_cc(K, new_cont);
+	} 
+	ktail_eval(K, kcar(ls), new_env);
+    }
+}
 
 /* 7.3.3 guard-dynamic-extent */
 /* TODO */

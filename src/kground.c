@@ -384,7 +384,8 @@ void kinit_ground_env(klisp_State *K)
 		    0);
 
     /* 7.3.2 $let/cc */
-    /* TODO */
+    add_operative(K, ground_env, "$let/cc", Slet_cc, 
+		    0);
 
     /* 7.3.3 guard-dynamic-extent */
     /* TODO */
