@@ -102,17 +102,29 @@ void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 7.2.6 root-continuation */
-/* TODO */
+/* done in kground.c/krepl.c */
 
 /* 7.2.7 error-continuation */
-/* TODO */
+/* done in kground.c/krepl.c */
 
 /* 
 ** 7.3 Library features
 */
 
 /* 7.3.1 apply-continuation */
-/* TODO */
+void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
+			TValue denv)
+{
+    (void) xparams;
+    (void) denv;
+
+    bind_2tp(K, "apply-continuation", ptree, "continuation", ttiscontinuation,
+	     cont, "any", anytype, obj);
+
+    /* TODO: look out for guards and dynamic variables */
+    /* should be probably handled in kcall_cont() */
+    kcall_cont(K, cont, obj);
+}
 
 /* 7.3.2 $let/cc */
 /* TODO */

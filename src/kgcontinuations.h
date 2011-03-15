@@ -36,13 +36,14 @@ void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree,
 			      TValue denv);
 
 /* 7.2.6 root-continuation */
-/* TODO */
+/* done in kground.c/krepl.c */
 
 /* 7.2.7 error-continuation */
-/* TODO */
+/* done in kground.c/krepl.c */
 
 /* 7.3.1 apply-continuation */
-/* TODO */
+void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
+			TValue denv);
 
 /* 7.3.2 $let/cc */
 /* TODO */

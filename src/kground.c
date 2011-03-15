@@ -380,7 +380,8 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 7.3.1 apply-continuation */
-    /* TODO */
+    add_applicative(K, ground_env, "apply-continuation", apply_continuation, 
+		    0);
 
     /* 7.3.2 $let/cc */
     /* TODO */
