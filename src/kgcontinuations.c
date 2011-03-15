@@ -116,7 +116,9 @@ inline TValue check_copy_single_entry(klisp_State *K, char *name,
     }
 
     /* GC: save intermediate pair */
-    return kcons(K, cont, kcons(K, app, KNIL));
+    /* save the operative directly, don't waste space/time
+     with a list, use just a pair */
+    return kcons(K, cont, kunwrap(app)); 
 }
 
 /* the guards are probably generated on the spot so we don't check
@@ -156,7 +158,6 @@ TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
 void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
 			TValue denv)
 {
-    UNUSED(denv);
     UNUSED(xparams);
 
     bind_3tp(K, "guard-continuation", ptree, "any", anytype, entry_guards,
@@ -169,11 +170,11 @@ void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 				     exit_guards);
 
     TValue outer_cont = kmake_continuation(K, cont, KNIL, KNIL, pass_value, 
-					   1, entry_guards);
+					   2, entry_guards, denv);
     /* mark it as an outer continuation */
     kset_outer_cont(outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
-					   pass_value, 1, exit_guards);
+					   pass_value, 2, exit_guards, denv);
     /* mark it as an outer continuation */
     kset_inner_cont(inner_cont);
     kapply_cc(K, inner_cont);
