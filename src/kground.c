@@ -390,7 +390,8 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 7.3.4 exit */    
-    /* TODO */
+    add_applicative(K, ground_env, "exit", kgexit, 
+		    0);
 
     return;
 }

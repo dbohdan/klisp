@@ -31,6 +31,13 @@
 */
 
 /* XXX: add parens around macro vars!! */
+#define check_0p(K_, n_, ptree_) \
+    if (!ttisnil(ptree_)) { \
+	klispE_throw_extra((K_), (n_) , \
+			   ": Bad ptree (expected no arguments)");  \
+	return; \
+    }
+
 #define bind_1p(K_, n_, ptree_, v_) \
     bind_1tp((K_), (n_), (ptree_), "any", anytype, (v_))
 

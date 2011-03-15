@@ -52,6 +52,7 @@ void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 /* TODO */
 
 /* 7.3.4 exit */    
-/* TODO */
+void kgexit(klisp_State *K, TValue *xparams, TValue ptree, 
+	    TValue denv);
 
 #endif
