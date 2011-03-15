@@ -182,6 +182,9 @@ inline bool ks_sisempty(klisp_State *K)
 ** Tokenizer char buffer functions
 */
 
+void ks_tbshrink(klisp_State *K, int32_t new_top);
+void ks_tbgrow(klisp_State *K, int32_t new_top);
+
 inline void ks_tbadd(klisp_State *K, char ch);
 #define ks_tbpush(K_, ch_) (ks_tbadd((K_), (ch_)))
 inline char ks_tbget(klisp_State *K);
@@ -201,13 +204,8 @@ inline bool ks_tbisempty(klisp_State *K);
 
 inline void ks_tbadd(klisp_State *K, char ch)
 {
-    if (ks_tbidx(K) == ks_tbsize(K)) { 
-	size_t old_size = ks_tbsize(K);
-	size_t new_size = old_size * 2;
-	ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size,
-				 new_size);
-	ks_tbsize(K) = new_size;
-    }
+    if (ks_tbidx(K) == ks_tbsize(K)) 
+	ks_tbgrow(K, ks_tbidx(K)+1);
     ks_tbelem(K, ks_tbidx(K)) = ch;
     ++ks_tbidx(K);
 }
@@ -219,13 +217,8 @@ inline char ks_tbget(klisp_State *K)
 
 inline char ks_tbpop(klisp_State *K)
 {
-    if (ks_tbsize(K) != KS_ITBSIZE && ks_tbidx(K) < (ks_tbsize(K) / 4)) {
-	/* NOTE: shrink can't fail */
-	size_t old_size = ks_tbsize(K);
-	size_t new_size = old_size / 2;
-	ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size, new_size);
-	ks_tbsize(K) = new_size; 
-    }
+    if (ks_tbsize(K) != KS_ITBSIZE && ks_tbidx(K)-1 < (ks_tbsize(K) / 4))
+	ks_tbshrink(K, ks_tbidx(K)-1);
     char ch = ks_tbelem(K, ks_tbidx(K) - 1);
     --ks_tbidx(K);
     return ch;
@@ -239,11 +232,8 @@ inline char *ks_tbget_buffer(klisp_State *K)
 
 inline void ks_tbclear(klisp_State *K)
 {
-    if (ks_tbsize(K) != KS_ITBSIZE) {
-	ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), ks_tbsize(K),
-				     KS_ITBSIZE);
-	ks_tbsize(K) = KS_ITBSIZE; 
-    }
+    if (ks_tbsize(K) != KS_ITBSIZE)
+	ks_tbshrink(K, 0);
     ks_tbidx(K) = 0;
 }
 

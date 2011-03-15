@@ -157,6 +157,38 @@ void ks_sshrink(klisp_State *K, int32_t new_top)
 }
 
 
+/* TODO test this */
+void ks_tbgrow(klisp_State *K, int32_t new_top)
+{
+    size_t old_size = ks_tbsize(K);
+    /* should be powers of two multiple of KS_ISIZE */
+    /* TEMP: do it naively for now */
+    size_t new_size = old_size * 2;
+    while(new_top > new_size)
+	new_size *= 2;
+
+    ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size*sizeof(TValue),
+				 new_size*sizeof(TValue));
+    ks_tbsize(K) = new_size; 
+}
+
+void ks_tbshrink(klisp_State *K, int32_t new_top)
+{
+    /* NOTE: may shrink more than once, take it to a multiple of 
+       KS_ISSIZE that is a power of 2 and no smaller than (size * 4) */
+    size_t old_size = ks_tbsize(K);
+    /* TEMP: do it naively for now */
+    size_t new_size = old_size;
+    while(new_size > KS_ISSIZE && new_top * 4 < new_size)
+	new_size /= 2;
+
+    /* NOTE: shrink can't fail */
+    ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size*sizeof(TValue),
+				 new_size*sizeof(TValue));
+    ks_tbsize(K) = new_size;
+}
+
+
 /*
 **
 ** This is for handling interceptions
