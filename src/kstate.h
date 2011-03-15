@@ -115,8 +115,9 @@ struct klisp_State {
 /*
 ** Stack functions 
 */
-/* TODO: move grow/shrink to non inline functions to diminish the 
-   executable size */
+
+void ks_sshrink(klisp_State *K, int32_t new_top);
+void ks_sgrow(klisp_State *K, int32_t new_top);
 
 inline void ks_spush(klisp_State *K, TValue obj);
 inline TValue ks_spop(klisp_State *K);
@@ -135,13 +136,8 @@ inline bool ks_sisempty(klisp_State *K);
 
 inline void ks_spush(klisp_State *K, TValue obj)
 {
-    if (ks_stop(K) == ks_ssize(K)) { 
-	size_t old_size = ks_ssize(K);
-	size_t new_size = old_size * 2;
-	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
-				     new_size*sizeof(TValue));
-	ks_ssize(K) = new_size; 
-    }
+    if (ks_stop(K) == ks_ssize(K))
+	ks_sgrow(K, ks_stop(K)+1);
     ks_selem(K, ks_stop(K)) = obj;
     ++ks_stop(K);
 }
@@ -149,14 +145,8 @@ inline void ks_spush(klisp_State *K, TValue obj)
 
 inline TValue ks_spop(klisp_State *K)
 {
-    if (ks_ssize(K) != KS_ISSIZE && ks_stop(K) < (ks_ssize(K) / 4)) {
-	/* NOTE: shrink can't fail */
-	size_t old_size = ks_ssize(K);
-	size_t new_size = old_size / 2;
-	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
-				     new_size*sizeof(TValue));
-	ks_ssize(K) = new_size; 
-    }
+    if (ks_ssize(K) != KS_ISSIZE && ks_stop(K)-1 < (ks_ssize(K) / 4))
+	ks_sshrink(K, ks_stop(K)-1);
     TValue obj = ks_selem(K, ks_stop(K) - 1);
     --ks_stop(K);
     return obj;
@@ -171,29 +161,15 @@ inline void ks_sdiscardn(klisp_State *K, int32_t n)
 {
     int32_t new_top = ks_stop(K) - n;
     ks_stop(K) = new_top;
-    if (ks_ssize(K) != KS_ISSIZE && new_top < (ks_ssize(K) / 4)) {
-	/* NOTE: may shrink more than once, take it to a multiple of 
-	   KS_ISSIZE that is no smaller than (new_top * 2) */
-	size_t old_size = ks_ssize(K);
-	size_t new_size = new_top * 2;
-	new_size = new_top + KS_ISSIZE - (new_top % KS_ISSIZE);
-	/* NOTE: shrink can't fail */
-	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
-				     new_size*sizeof(TValue));
-	ks_ssize(K) = new_size;
-    }
+    if (ks_ssize(K) != KS_ISSIZE && new_top < (ks_ssize(K) / 4))
+	ks_sshrink(K, new_top);
     return;
 }
 
 inline void ks_sclear(klisp_State *K)
 {
-    if (ks_ssize(K) != KS_ISSIZE) {
-	size_t old_size = ks_ssize(K);
-	size_t new_size = KS_ISSIZE;
-	ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue), 
-				     new_size*sizeof(TValue));
-	ks_ssize(K) = new_size; 
-    }
+    if (ks_ssize(K) != KS_ISSIZE)
+	ks_sshrink(K, 0);
     ks_stop(K) = 0;
 }
 
