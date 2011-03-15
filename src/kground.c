@@ -359,7 +359,8 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "extend-continuation", extend_continuation, 0);
 
     /* 7.2.4 guard-continuation */
-    /* TODO */
+    add_applicative(K, ground_env, "guard-continuation", guard_continuation, 
+		    0);
 
     /* 7.2.5 continuation->applicative */
     add_applicative(K, ground_env, "continuation->applicative",

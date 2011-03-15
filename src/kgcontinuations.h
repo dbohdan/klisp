@@ -29,7 +29,8 @@ void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 			 TValue denv);
 
 /* 7.2.4 guard-continuation */
-/* TODO */
+void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
+			TValue denv);
 
 /* 7.2.5 continuation->applicative */
 void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree, 

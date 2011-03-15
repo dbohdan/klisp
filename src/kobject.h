@@ -419,6 +419,19 @@ extern char *ktv_names[];
 #define gch_get_flags(o_) (obj2gch(o_)->flags)
 #define tv_get_flags(o_) (gch_get_flags(tv2gch(o_)))
 
+/* Flags for marking continuations */
+#define K_FLAG_OUTER 0x01
+#define K_FLAG_INNER 0x02
+#define K_FLAG_DYNAMIC 0x04
+
+#define kset_inner_cont(c_) (tv_get_flags(c_) |= K_FLAG_INNER)
+#define kset_outer_cont(c_) (tv_get_flags(c_) |= K_FLAG_OUTER)
+#define kset_dyn_cont(c_) (tv_get_flags(c_) |= K_FLAG_DYNAMIC)
+
+#define kis_inner_cont(c_) ((tv_get_flags(c_) & K_FLAG_INNER) != 0)
+#define kis_outer_cont(c_) ((tv_get_flags(c_) & K_FLAG_OUTER) != 0)
+#define kis_dyn_cont(c_) ((tv_get_flags(c_) & K_FLAG_DYNAMIC) != 0)
+
 #define K_FLAG_IMMUTABLE 0x01
 #define kis_mutable(o_) ((tv_get_flags(o_) & K_FLAG_IMMUTABLE) == 0)
 #define kis_immutable(o_) (!kis_mutable(o_))

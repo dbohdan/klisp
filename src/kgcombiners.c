@@ -102,7 +102,7 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     (void) denv;
     (void) xparams;
     bind_1tp(K, "unwrap", ptree, "applicative", ttisapplicative, app);
-    TValue underlying = kunwrap(K, app);
+    TValue underlying = kunwrap(app);
     kapply_cc(K, underlying);
 }
 
@@ -140,7 +140,7 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
     TValue env = (get_opt_tpar(K, "apply", K_TENVIRONMENT, &maybe_env))?
 	maybe_env : kmake_empty_environment(K);
 
-    TValue expr = kcons(K, kunwrap(K, app), obj);
+    TValue expr = kcons(K, kunwrap(app), obj);
     ktail_eval(K, expr, env);
 }
 

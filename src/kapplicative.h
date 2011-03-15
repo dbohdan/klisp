@@ -13,5 +13,5 @@
 TValue kwrap(klisp_State *K, TValue underlying);
 TValue kmake_applicative(klisp_State *K, TValue name, TValue si, 
 			 TValue underlying);
-#define kunwrap(K_, app_) (tv2app(app_)->underlying)
+#define kunwrap(app_) (tv2app(app_)->underlying)
 #endif

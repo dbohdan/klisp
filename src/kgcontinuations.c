@@ -46,7 +46,7 @@ void do_extended_cont(klisp_State *K, TValue *xparams, TValue obj)
     ** xparams[1]: environment
     */
     TValue app = xparams[0];
-    TValue underlying = kunwrap(K, app);
+    TValue underlying = kunwrap(app);
     TValue env = xparams[1];
 
     TValue expr = kcons(K, underlying, obj);
@@ -73,8 +73,111 @@ void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, new_cont);
 }
 
+/* Helpers for guard-continuation (& guard-dynamic-extent) */
+
+/* this is used for inner & outer continuations, it just
+   passes the value. xparams is not actually empty, it contains
+   the entry/exit guards, but they are used only in 
+   continuation->applicative (that is during abnormal passes) */
+void pass_value(klisp_State *K, TValue *xparams, TValue obj)
+{
+    UNUSED(xparams);
+    kapply_cc(K, obj);
+}
+
+#define singly_wrapped(obj_) (ttisapplicative(obj_) && \
+			      ttisoperative(kunwrap(obj_)))
+
+/* this unmarks root before throwing any error */
+/* TODO: this isn't very clean, refactor */
+inline TValue check_copy_single_entry(klisp_State *K, char *name,
+				      TValue obj, TValue root)
+{
+    if (!ttispair(obj) || !ttispair(kcdr(obj)) || 
+	    !ttisnil(kcddr(obj))) {
+	unmark_list(K, root);
+	klispE_throw_extra(K, name , ": Bad entry (expected "
+			   "list of length 2)");
+	return KINERT;
+    } 
+    TValue cont = kcar(obj);
+    TValue app = kcadr(obj);
+
+    if (!ttiscontinuation(cont)) {
+	unmark_list(K, root);
+	klispE_throw_extra(K, name, ": Bad type on first element (expected " 
+		     "continuation)");				     
+	return KINERT;
+    } else if (!singly_wrapped(app)) { 
+	unmark_list(K, root);
+	klispE_throw_extra(K, name, ": Bad type on second element (expected " 
+		     "singly wrapped applicative)");				     
+	return KINERT; 
+    }
+
+    /* GC: save intermediate pair */
+    return kcons(K, cont, kcons(K, app, KNIL));
+}
+
+/* the guards are probably generated on the spot so we don't check
+   for immutability and copy it anyways */
+TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
+{
+    if (ttisnil(obj)) {
+	return obj;
+    } else {
+	TValue dummy = kcons(K, KINERT, KNIL);
+	TValue last_pair = dummy;
+	TValue tail = obj;
+    
+	while(ttispair(tail) && !kis_marked(tail)) {
+	    /* this will clear the marks and throw an error if the structure
+	       is incorrect */
+	    TValue entry = check_copy_single_entry(K, name, kcar(tail), obj);
+	    TValue new_pair = kcons(K, entry, KNIL);
+	    kmark(tail);
+	    kset_cdr(last_pair, new_pair);
+	    last_pair = new_pair;
+	    tail = kcdr(tail);
+	}
+
+	/* dont close the cycle (if there is one) */
+	unmark_list(K, obj);
+
+	if (!ttispair(tail) && !ttisnil(tail)) {
+	    klispE_throw_extra(K, name , ": expected list"); 
+	    return KINERT;
+	} 
+	return kcdr(dummy);
+    }
+}
+
 /* 7.2.4 guard-continuation */
-/* TODO */
+void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
+			TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_3tp(K, "guard-continuation", ptree, "any", anytype, entry_guards,
+	     "continuation", ttiscontinuation, cont,
+	     "any", anytype, exit_guards);
+
+    entry_guards = check_copy_guards(K, "guard-continuation: entry guards", 
+				     entry_guards);
+    exit_guards = check_copy_guards(K, "guard-continuation: exit guards", 
+				     exit_guards);
+
+    TValue outer_cont = kmake_continuation(K, cont, KNIL, KNIL, pass_value, 
+					   1, entry_guards);
+    /* mark it as an outer continuation */
+    kset_outer_cont(outer_cont);
+    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+					   pass_value, 1, exit_guards);
+    /* mark it as an outer continuation */
+    kset_inner_cont(inner_cont);
+    kapply_cc(K, inner_cont);
+}
 
 
 /* helper for continuation->applicative */
