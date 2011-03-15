@@ -262,7 +262,36 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 7.3.3 guard-dynamic-extent */
-/* TODO */
+void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree, 
+			  TValue denv)
+{
+    UNUSED(xparams);
+
+    bind_3tp(K, "guard-dynamic-extent", ptree, "any", anytype, entry_guards,
+	     "combiner", ttiscombiner, comb,
+	     "any", anytype, exit_guards);
+
+    entry_guards = check_copy_guards(K, "guard-dynamic-extent: entry guards", 
+				     entry_guards);
+    exit_guards = check_copy_guards(K, "guard-dynamic-extent: exit guards", 
+				     exit_guards);
+    /* GC: root continuations */
+    /* The current continuation is guarded */
+    TValue outer_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, pass_value, 
+					   1, entry_guards);
+    /* mark it as an outer continuation */
+    kset_outer_cont(outer_cont);
+    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+					   pass_value, 1, exit_guards);
+    /* mark it as an outer continuation */
+    kset_inner_cont(inner_cont);
+
+    /* call combiner with no operands in the dynamic extent of inner,
+     with the dynamic env of this call */
+    kset_cc(K, inner_cont);
+    TValue expr = kcons(K, comb, KNIL);
+    ktail_eval(K, expr, denv);
+}
 
 /* 7.3.4 exit */    
 void kgexit(klisp_State *K, TValue *xparams, TValue ptree, 

@@ -389,7 +389,8 @@ void kinit_ground_env(klisp_State *K)
 		    0);
 
     /* 7.3.3 guard-dynamic-extent */
-    /* TODO */
+    add_applicative(K, ground_env, "guard-dynamic-extent", 
+		    guard_dynamic_extent, 0);
 
     /* 7.3.4 exit */    
     add_applicative(K, ground_env, "exit", kgexit, 

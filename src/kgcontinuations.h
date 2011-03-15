@@ -51,7 +51,8 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 	     TValue denv);
 
 /* 7.3.3 guard-dynamic-extent */
-/* TODO */
+void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree, 
+			  TValue denv);
 
 /* 7.3.4 exit */    
 void kgexit(klisp_State *K, TValue *xparams, TValue ptree, 
