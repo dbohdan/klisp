@@ -110,7 +110,7 @@ void kinit_repl(klisp_State *K)
     /* set up the continuations */
     TValue root_cont = kmake_continuation(K, KNIL, KNIL, KNIL,
 					  exit_fn, 0);
-    TValue error_cont = kmake_continuation(K, KNIL, KNIL, KNIL,
+    TValue error_cont = kmake_continuation(K, root_cont, KNIL, KNIL,
 					   error_fn, 1, std_env);
 
     /* update the ground environment with these two conts */
