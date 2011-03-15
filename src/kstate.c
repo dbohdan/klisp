@@ -331,17 +331,9 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
     if (ttisnil(ls)) {
 	/* all interceptors returned normally */
 	TValue dst_cont = xparams[1];
-	/* TODO: this is the same code as the standard case of
-	   call_cont, merge */
-	Continuation *cont = tv2cont(dst_cont);
-	K->next_func = cont->fn;
-	K->next_value = obj;
-	/* NOTE: this is needed to differentiate a return from a tail call */
-	K->next_env = KNIL;
-	K->next_xparams = cont->extra;
-	K->curr_cont = cont->parent;
-
-	longjmp(K->error_jb, 1);
+	/* this is a normal pass/not subject to interception */
+	kset_cc(K, dst_cont);
+	kapply_cc(K, obj);
     } else {
 	/* call the operative with the passed obj and applicative
 	   for outer cont as ptree in the dynamic environment of 
@@ -376,14 +368,15 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 				      do_interception, 2, int_ls, dst_cont);
 
     }
-    Continuation *cont = tv2cont(new_cont);
-    K->next_func = cont->fn;
-    K->next_value = obj;
-    /* NOTE: this is needed to differentiate a return from a tail call */
-    K->next_env = KNIL;
-    K->next_xparams = cont->extra;
-    K->curr_cont = cont->parent;
 
+    /*
+    ** This may come from an error detected by the interpreter, so we can't
+    ** do just a return (like kapply_cc does), maybe we could somehow 
+    ** differentiate to avoid the longjmp when return would suffice 
+    ** TODO: do that
+    */
+    kset_cc(K, new_cont);
+    klispS_apply_cc(K, obj);
     longjmp(K->error_jb, 1);
 }
 
