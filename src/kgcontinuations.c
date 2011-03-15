@@ -181,9 +181,6 @@ void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 
-/* helper for continuation->applicative */
-void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
-
 /* 7.2.5 continuation->applicative */
 /* TODO: look out for guards and dynamic variables */
 void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -192,19 +189,9 @@ void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
     bind_1tp(K, "continuation->applicative", ptree, "continuation",
 	     ttiscontinuation, cont);
-
+    /* cont_app is from kstate */
     TValue app = make_applicative(K, cont_app, 1, cont);
     kapply_cc(K, app);
-}
-
-/* this passes the operand tree to the continuation */
-void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    UNUSED(denv);
-    TValue cont = xparams[0];
-    /* TODO: look out for guards and dynamic variables */
-    /* should be probably handled in kcall_cont() */
-    kcall_cont(K, cont, ptree);
 }
 
 /* 7.2.6 root-continuation */

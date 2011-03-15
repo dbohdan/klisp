@@ -19,6 +19,7 @@
 #include "kmem.h"
 #include "keval.h"
 #include "koperative.h"
+#include "kapplicative.h"
 #include "kcontinuation.h"
 #include "kenvironment.h"
 #include "kground.h"
@@ -311,6 +312,15 @@ TValue create_interception_list(klisp_State *K, TValue src_cont,
     return kcdr(dummy);
 }
 
+/* this passes the operand tree to the continuation */
+void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    TValue cont = xparams[0];
+    /* guards and dynamic variables are handled in kcall_cont() */
+    kcall_cont(K, cont, ptree);
+}
+
 void do_interception(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
@@ -333,16 +343,19 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
 
 	longjmp(K->error_jb, 1);
     } else {
+	/* call the operative with the passed obj and applicative
+	   for outer cont as ptree in the dynamic environment of 
+	   the corresponding call to guard-continuation in the 
+	   dynamic extent of the associated outer continuation */
 	TValue first = kcar(ls);
 	TValue op = kcar(first);
 	TValue outer = kcadr(first);
 	TValue denv = kcddr(first);
-	/* call the operative with the passed obj as ptree in 
-	   the dynamic environment of the corresponding call
-	   to guard-continuation in the dynamic extent of the
-	   associated outer continuation */
+	TValue app = kwrap(K, kmake_operative(K, KNIL, KNIL, 
+					      cont_app, 1, outer));
+	TValue ptree = kcons(K, obj, kcons(K, app, KNIL));
 	kset_cc(K, outer);
-	ktail_call(K, op, obj, denv);
+	ktail_call(K, op, ptree, denv);
     }
 }
 

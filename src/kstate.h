@@ -300,6 +300,8 @@ inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree,
     { klisp_State *K__ = (K_); \
 	klispS_tail_call(K__, K__->eval_op, (p_), (e_)); return; }
 
+/* helper for continuation->applicative & kcall_cont */
+void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
 void klispS_init_repl(klisp_State *K);
 void klispS_run(klisp_State *K);
