@@ -333,9 +333,9 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
     ** xparams[1]: dst cont
     */
     TValue ls = xparams[0];
+    TValue dst_cont = xparams[1];
     if (ttisnil(ls)) {
 	/* all interceptors returned normally */
-	TValue dst_cont = xparams[1];
 	/* this is a normal pass/not subject to interception */
 	kset_cc(K, dst_cont);
 	kapply_cc(K, obj);
@@ -343,7 +343,9 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
 	/* call the operative with the passed obj and applicative
 	   for outer cont as ptree in the dynamic environment of 
 	   the corresponding call to guard-continuation in the 
-	   dynamic extent of the associated outer continuation */
+	   dynamic extent of the associated outer continuation.
+	   If the operative normally returns a value, others
+	   interceptions should be scheduled */
 	TValue first = kcar(ls);
 	TValue op = kcar(first);
 	TValue outer = kcadr(first);
@@ -351,7 +353,10 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
 	TValue app = kwrap(K, kmake_operative(K, KNIL, KNIL, 
 					      cont_app, 1, outer));
 	TValue ptree = kcons(K, obj, kcons(K, app, KNIL));
-	kset_cc(K, outer);
+	TValue new_cont = 
+	    kmake_continuation(K, outer, KNIL, KNIL, do_interception,
+			       2, kcdr(ls), dst_cont);
+	kset_cc(K, new_cont);
 	ktail_call(K, op, ptree, denv);
     }
 }
