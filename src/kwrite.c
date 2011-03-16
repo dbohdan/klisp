@@ -212,6 +212,10 @@ void kwrite_simple(klisp_State *K, TValue obj)
     case K_TAPPLICATIVE:
 	kw_printf(K, "[applicative]");
 	break;
+    case K_TENCAPSULATION:
+	/* TODO try to get the name */
+	kw_printf(K, "[encapsulation]");
+	break;
     default:
 	/* shouldn't happen */
 	kwrite_error(K, "unknown object type");
