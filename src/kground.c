@@ -431,10 +431,10 @@ void kinit_ground_env(klisp_State *K)
 		    i2tv(K_TPROMISE));
 
     /* 9.1.2 force */
-    /* TODO */
+    add_applicative(K, ground_env, "force", force, 0); 
 
     /* 9.1.3 $lazy */
-    /* TODO */
+    add_operative(K, ground_env, "$lazy", Slazy, 0); 
 
     /* 9.1.4 memoize */
     add_applicative(K, ground_env, "memoize", memoize, 0); 

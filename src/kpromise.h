@@ -15,11 +15,7 @@ TValue kmake_promise(klisp_State *K, TValue name, TValue si,
 		     TValue exp, TValue maybe_env);
 
 #define kpromise_node(p_) (tv2prom(p_)->node)
-inline void kdetermine_promise(TValue p, TValue obj)
-{
-    TValue node = kpromise_node(p);
-    kset_car(node, obj);
-    kset_cdr(node, KNIL);
-}
+#define kpromise_exp(p_) (kcar(kpromise_node(p_)))
+#define kpromise_maybe_env(p_) (kcdr(kpromise_node(p_)))
 
 #endif

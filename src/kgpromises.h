@@ -22,10 +22,10 @@
 /* uses typep */
 
 /* 9.1.2 force */
-/* TODO */
+void force(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 9.1.3 $lazy */
-/* TODO */
+void Slazy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 9.1.4 memoize */
 void memoize(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
