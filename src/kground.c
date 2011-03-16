@@ -33,6 +33,7 @@
 #include "kgcontinuations.h"
 #include "kgencapsulations.h"
 #include "kgpromises.h"
+#include "kgkd_vars.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -413,8 +414,6 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "make-encapsulation-type", 
 		    make_encapsulation_type, 0); 
 
-
-
     /*
     **
     ** 9 Promises
@@ -424,7 +423,6 @@ void kinit_ground_env(klisp_State *K)
     /* 
     ** 9.1 Library features
     */
-
 
     /* 9.1.1 promise? */
     add_applicative(K, ground_env, "promise?", typep, 2, symbol, 
@@ -438,6 +436,20 @@ void kinit_ground_env(klisp_State *K)
 
     /* 9.1.4 memoize */
     add_applicative(K, ground_env, "memoize", memoize, 0); 
+
+    /*
+    **
+    ** 10 Keyed Dynamic Variables
+    **
+    */
+
+    /* 
+    ** 10.1 Primitive features
+    */
+
+    /* 10.1.1 make-keyed-dynamic-variable */
+    add_applicative(K, ground_env, "make-keyed-dynamic-variable", 
+		    make_keyed_dynamic_variable, 0); 
 
     return;
 
