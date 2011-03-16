@@ -216,6 +216,9 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	/* TODO try to get the name */
 	kw_printf(K, "[encapsulation]");
 	break;
+    case K_TPROMISE:
+	kw_printf(K, "[promise]");
+	break;
     default:
 	/* shouldn't happen */
 	kwrite_error(K, "unknown object type");
