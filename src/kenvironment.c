@@ -14,8 +14,16 @@
 #include "kstate.h"
 #include "kmem.h"
 
+/* keyed dynamic vars */
+#define env_keyed_parents(env_) (tv2env(env_)->keyed_parents)
+#define env_keyed_node(env_) (tv2env(env_)->keyed_node)
+#define env_keyed_key(env_) (kcar(env_keyed_node(env_)))
+#define env_keyed_val(env_) (kcdr(env_keyed_node(env_)))
+#define env_is_keyed(env_) (!ttisnil(env_keyed_node(env_)))
+/* env_ should be keyed! */
+#define env_has_key(env_, k_) (tv_equal(env_keyed_key(env_), (k_)))
 /* TEMP: for now allow only a single parent */
-TValue kmake_environment(klisp_State *K, TValue parent)
+TValue kmake_environment(klisp_State *K, TValue parents)
 {
     Environment *new_env = klispM_new(K, Environment);
 
@@ -28,9 +36,47 @@ TValue kmake_environment(klisp_State *K, TValue parent)
 
     /* environment specific fields */
     new_env->mark = KFALSE;    
-    new_env->parents = parent;
+    new_env->parents = parents;
     /* TEMP: for now the bindings are an alist */
     new_env->bindings = KNIL;
+    /* TEMP: this could be passed in by the contructor */
+    /* Contruct the list of keyed parents */
+    /* MAYBE: this could be optimized to avoid repetition of parents */
+    TValue kparents;
+    if (ttisnil(parents)) {
+	kparents = KNIL;
+    } else if (ttisenvironment(parents)) {
+	kparents = env_is_keyed(parents)? parents : env_keyed_parents(parents);
+    } else {
+	/* list of parents, for now, just append them */
+	/* GC: root intermediate objs */
+	TValue dummy = kcons(K, KNIL, KNIL);
+	TValue tail = dummy;
+	while(!ttisnil(parents)) {
+	    TValue parent = kcar(parents);
+	    TValue pkparents = env_keyed_parents(parent);
+	    while(!ttisnil(pkparents)) {
+		TValue next;
+		if (ttisenvironment(pkparents)) {
+		    next = pkparents;
+		    pkparents = KNIL;
+		} else {
+		    next = kcar(pkparents);
+		    pkparents = kcdr(pkparents);
+		}
+		TValue new_pair = kcons(K, next, KNIL);
+		kset_cdr(tail, new_pair);
+		tail = new_pair;
+	    }
+	    parents = kcdr(parents);
+	}
+	kparents = kcdr(dummy);
+	/* if it's just one env switch from (env) to env. */
+	if (ttispair(kparents) && ttisnil(kcdr(kparents)))
+	    kparents = kcar(kparents);
+    }
+    new_env->keyed_parents = kparents;
+    new_env->keyed_node = KNIL;
 
     return gc2env(new_env);
 }
@@ -121,4 +167,63 @@ bool kbinds(klisp_State *K, TValue env, TValue sym)
 {
     TValue value;
     return try_get_binding(K, env, sym, &value);
+}
+
+/* keyed dynamic vars */
+
+/* MAYBE: This could be combined with the default constructor */
+TValue kmake_keyed_static_env(klisp_State *K, TValue parent, TValue key, 
+			      TValue val)
+{
+    TValue new_env = kmake_environment(K, parent);
+    env_keyed_node(new_env) = kcons(K, key, val);
+    return new_env;
+}
+
+inline bool try_get_keyed(klisp_State *K, TValue env, TValue key, 
+			  TValue *value)
+{
+    /* MAYBE: this could be optimized to mark environments to avoid
+     repetition */
+    /* assume the stack may be in use, keep track of pushed objs */
+    int pushed = 1;
+    ks_spush(K, env);
+
+    while(pushed) {
+	TValue obj = ks_spop(K);
+	--pushed;
+	if (ttisnil(obj)) {
+	    continue;
+	} else if (ttisenvironment(obj)) {
+	    /* obj is guaranteed to be a keyed env */
+	    if (env_has_key(obj, key)) {
+		/* remember to leave the stack as it was */
+		ks_sdiscardn(K, pushed);
+		*value = env_keyed_val(obj);
+		return true;
+	    } else {
+		TValue parents = kenv_parents(K, obj);
+		ks_spush(K, parents);
+		++pushed;
+	    }
+	} else { /* parent list */
+	    ks_spush(K, kcdr(obj));
+	    ks_spush(K, kcar(obj));
+	    pushed += 2;
+	}
+    }
+    *value = KINERT;
+    return false;
+}
+
+TValue kget_keyed_static_var(klisp_State *K, TValue env, TValue key)
+{
+    TValue value;
+    if (try_get_keyed(K, env, key, &value)) {
+	return value;
+    } else {
+	klispE_throw(K, "keyed-static-get: Unbound keyed static variable");
+	/* avoid warning */
+	return KINERT;
+    }
 }

@@ -253,6 +253,11 @@ typedef struct __attribute__ ((__packed__)) {
     TValue mark; /* for cycle/sharing aware algorithms */
     TValue parents; /* may be (), a list, or a single env */
     TValue bindings; /* TEMP: for now alist of (binding . value) */
+    /* for keyed static vars */
+    TValue keyed_node; /* (key . value) pair or KNIL */
+    /* this is a different field from parents to jump over non keyed
+       envs in the search */
+    TValue keyed_parents; /* maybe (), a list, or a single env */
 } Environment;
 
 typedef struct __attribute__ ((__packed__)) {
