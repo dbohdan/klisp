@@ -10,9 +10,10 @@ MYLIBS=
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
+	kencapsulation.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
-	kgenv_mut.o kgcombiners.o kgcontinuations.o kencapsulation.o
+	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -73,7 +74,7 @@ kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kapplicative.h koperative.h ksymbol.h kerror.h kghelpers.h \
 	kgbooleans.h kgeqp.h kgequalp.h kgsymbols.h kgpairs_lists.h \
 	kgpair_mut.h kgenvironments.h kgenv_mut.h kgcombiners.h \
-	kgcontinuations.h
+	kgcontinuations.h kgencapsulations.h
 kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 	kapplicative.h koperative.h kerror.h kobject.h ksymbol.h
 kgbooleans.o: kgbooleans.c kgbooleans.c kghelpers.h kstate.h klisp.h \

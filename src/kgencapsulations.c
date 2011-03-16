@@ -1,0 +1,104 @@
+/*
+** kgencapsulations.c
+** Encapsulations features for the ground environment
+** See Copyright Notice in klisp.h
+*/
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "kstate.h"
+#include "kobject.h"
+#include "kencapsulation.h"
+#include "kapplicative.h"
+#include "koperative.h"
+#include "kerror.h"
+
+#include "kghelpers.h"
+#include "kgencapsulations.h"
+
+/* Helpers for make-encapsulation-type */
+
+/* Type predicate for encapsulations */
+void enc_typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    /*
+    ** xparams[0]: encapsulation key
+    */
+    TValue key = xparams[0];
+
+    /* check the ptree is a list while checking the predicate.
+       Keep going even if the result is false to catch errors in 
+       ptree structure */
+    bool res = true;
+
+    TValue tail = ptree;
+    while(ttispair(tail) && kis_unmarked(tail)) {
+	kmark(tail);
+	res &= kis_encapsulation_type(kcar(tail), key);
+	tail = kcdr(tail);
+    }
+    unmark_list(K, ptree);
+
+    if (ttispair(tail) || ttisnil(tail)) {
+	kapply_cc(K, b2tv(res));
+    } else {
+	/* try to get name from encapsulation */
+	klispE_throw(K, "encapsulation?: expected list");
+	return;
+    }
+}
+
+/* Constructor for encapsulations */
+void enc_wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    bind_1p(K, "encapsulate", ptree, obj);
+    UNUSED(denv);
+    /*
+    ** xparams[0]: encapsulation key
+    */
+    TValue key = xparams[0];
+    TValue enc = kmake_encapsulation(K, KNIL, KNIL, key, obj);
+    kapply_cc(K, enc);
+}
+
+/* Accessor for encapsulations */
+void enc_unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    bind_1p(K, "decapsulate", ptree, enc);
+    UNUSED(denv);
+    /*
+    ** xparams[0]: encapsulation key
+    */
+    TValue key = xparams[0];
+
+    if (!kis_encapsulation_type(enc, key)) {
+	klispE_throw(K, "decapsulate: object doesn't belong to this "
+		     "encapsulation type");
+	return;
+    }
+    TValue obj = kget_enc_val(enc);
+    kapply_cc(K, obj);
+}
+
+/* 8.1.1 make-encapsulation-type */
+void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
+			     TValue denv)
+{
+    check_0p(K, "make-encapsulation-type", ptree);
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    /* GC: root intermediate values & pairs */
+    TValue key = kmake_encapsulation_key(K);
+    TValue e = make_applicative(K, enc_wrap, 1, key);
+    TValue p = make_applicative(K, enc_typep, 1, key);
+    TValue d = make_applicative(K, enc_unwrap, 1, key);
+
+    TValue ls = kcons(K, e, kcons(K, p, kcons(K, d, KNIL)));
+    kapply_cc(K, ls);
+}

@@ -31,6 +31,7 @@
 #include "kgenv_mut.h"
 #include "kgcombiners.h"
 #include "kgcontinuations.h"
+#include "kgencapsulations.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -395,6 +396,21 @@ void kinit_ground_env(klisp_State *K)
     /* 7.3.4 exit */    
     add_applicative(K, ground_env, "exit", kgexit, 
 		    0);
+
+
+    /*
+    **
+    ** 8 Encapsulations
+    **
+    */
+
+    /* 
+    ** 8.1 Primitive features
+    */
+
+    /* 8.1.1 make-encapsulation-type */
+    add_applicative(K, ground_env, "make-encapsulation-type", 
+		    make_encapsulation_type, 0); 
 
     return;
 }

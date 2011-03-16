@@ -454,6 +454,9 @@ void klisp_close (klisp_State *K)
 	case K_TAPPLICATIVE:
 	    klispM_free(K, (Applicative *)obj);
 	    break;
+	case K_TENCAPSULATION:
+	    klispM_free(K, (Encapsulation *)obj);
+	    break;
 	default:
 	    /* shouldn't happen */
 	    fprintf(stderr, "Unknown GCObject type: %d\n", type);

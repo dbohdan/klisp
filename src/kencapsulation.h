@@ -13,9 +13,15 @@
 TValue kmake_encapsulation(klisp_State *K, TValue name, TValue si,
 			   TValue key, TValue val);
 TValue kmake_encapsulation_key(klisp_State *K);
-bool kis_encapsulation_type(klisp_State *K, TValue enc, TValue key);
+inline bool kis_encapsulation_type(TValue enc, TValue key);
 
 #define kget_enc_val(e_)(tv2enc(e_)->value)
 #define kget_enc_key(e_)(tv2enc(e_)->key)
+
+inline bool kis_encapsulation_type(TValue enc, TValue key)
+{
+    return ttisencapsulation(enc) && tv_equal(kget_enc_key(enc), key);
+}
+
 
 #endif

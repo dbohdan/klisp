@@ -35,12 +35,3 @@ TValue kmake_encapsulation_key(klisp_State *K)
 {
     return kcons(K, KINERT, KINERT);
 }
-
-bool kis_encapsulation_type(klisp_State *K, TValue enc, TValue key)
-{
-    return ttisencapsulation(enc) && tv_equal(kget_enc_key(enc), key);
-}
-
-#define kget_enc_val(e_)(tv2enc(e_)->value)
-#define kget_enc_key(e_)(tv2enc(e_)->key)
-

@@ -1,5 +1,5 @@
 /*
-** kgcontinuations.h
+** kgcontinuations.c
 ** Continuations features for the ground environment
 ** See Copyright Notice in klisp.h
 */
