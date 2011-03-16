@@ -12,7 +12,7 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
-	kgenv_mut.o kgcombiners.o kgcontinuations.o
+	kgenv_mut.o kgcombiners.o kgcontinuations.o kencapsulation.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -63,6 +63,8 @@ koperative.o: koperative.c koperative.h kmem.h kstate.h kobject.h \
 	klisp.h
 kapplicative.o: kapplicative.c kapplicative.h kmem.h kstate.h kobject.h \
 	klisp.h
+kencapsulation.o: kencapsulation.c kencapsulation.h kmem.h kstate.h kobject.h \
+	klisp.h kpair.h
 keval.o: keval.c keval.h kcontinuation.h kenvironment.h kstate.h kobject.h \
 	kpair.h kerror.h klisp.h
 krepl.o: krepl.c krepl.h kcontinuation.h kstate.h kobject.h keval.h klisp.h \

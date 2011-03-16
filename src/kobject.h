@@ -121,6 +121,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TCONTINUATION 34
 #define K_TOPERATIVE    35
 #define K_TAPPLICATIVE  36
+#define K_TENCAPSULATION 37
 
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
@@ -152,6 +153,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_CONTINUATION K_MAKE_VTAG(K_TCONTINUATION)
 #define K_TAG_OPERATIVE K_MAKE_VTAG(K_TOPERATIVE)
 #define K_TAG_APPLICATIVE K_MAKE_VTAG(K_TAPPLICATIVE)
+#define K_TAG_ENCAPSULATION K_MAKE_VTAG(K_TENCAPSULATION)
 
 
 /*
@@ -188,6 +190,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 	    t_ == K_TAG_OPERATIVE || t_ == K_TAG_APPLICATIVE;})
 #define ttisenvironment(o) (tbasetype_(o) == K_TAG_ENVIRONMENT)
 #define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
+#define ttisencapsulation(o) (tbasetype_(o) == K_TAG_ENCAPSULATION)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -276,6 +279,13 @@ typedef struct __attribute__ ((__packed__)) {
     TValue underlying; /* underlying operative/applicative */
 } Applicative;
 
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue name; 
+    TValue si; /* source code info (either () or (filename line col) */
+    TValue key; /* unique pair identifying this type of encapsulation */
+    TValue value; /* encapsulated object */
+} Encapsulation;
 
 /* 
 ** RATIONALE: 
@@ -314,6 +324,7 @@ union GCObject {
     Continuation cont;
     Operative op;
     Applicative app;
+    Encapsulation enc;
 };
 
 
@@ -373,6 +384,7 @@ const TValue keminf;
 #define gc2cont(o_) (gc2tv(K_TAG_CONTINUATION, o_))
 #define gc2op(o_) (gc2tv(K_TAG_OPERATIVE, o_))
 #define gc2app(o_) (gc2tv(K_TAG_APPLICATIVE, o_))
+#define gc2enc(o_) (gc2tv(K_TAG_ENCAPSULATION, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
@@ -382,6 +394,7 @@ const TValue keminf;
 #define tv2cont(v_) ((Continuation *) gcvalue(v_))
 #define tv2op(v_) ((Operative *) gcvalue(v_))
 #define tv2app(v_) ((Applicative *) gcvalue(v_))
+#define tv2enc(v_) ((Encapsulation *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
