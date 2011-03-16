@@ -187,6 +187,8 @@ inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
      repetition */
     /* assume the stack may be in use, keep track of pushed objs */
     int pushed = 1;
+    if (!env_is_keyed(env))
+	env = env_keyed_parents(env);
     ks_spush(K, env);
 
     while(pushed) {
@@ -202,7 +204,7 @@ inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
 		*value = env_keyed_val(obj);
 		return true;
 	    } else {
-		TValue parents = kenv_parents(K, obj);
+		TValue parents = env_keyed_parents(obj);
 		ks_spush(K, parents);
 		++pushed;
 	    }

@@ -34,6 +34,7 @@
 #include "kgencapsulations.h"
 #include "kgpromises.h"
 #include "kgkd_vars.h"
+#include "kgks_vars.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -450,6 +451,21 @@ void kinit_ground_env(klisp_State *K)
     /* 10.1.1 make-keyed-dynamic-variable */
     add_applicative(K, ground_env, "make-keyed-dynamic-variable", 
 		    make_keyed_dynamic_variable, 0); 
+
+
+    /*
+    **
+    ** 11 Keyed Static Variables
+    **
+    */
+
+    /* 
+    ** 11.1 Primitive features
+    */
+
+    /* 11.1.1 make-keyed-static-variable */
+    add_applicative(K, ground_env, "make-keyed-static-variable", 
+		    make_keyed_static_variable, 0); 
 
     return;
 
