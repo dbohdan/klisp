@@ -32,6 +32,7 @@
 #include "kgcombiners.h"
 #include "kgcontinuations.h"
 #include "kgencapsulations.h"
+#include "kgpromises.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -412,5 +413,32 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "make-encapsulation-type", 
 		    make_encapsulation_type, 0); 
 
+
+
+    /*
+    **
+    ** 9 Promises
+    **
+    */
+
+    /* 
+    ** 9.1 Library features
+    */
+
+
+    /* 9.1.1 promise? */
+    add_applicative(K, ground_env, "promise?", typep, 2, symbol, 
+		    i2tv(K_TPROMISE));
+
+    /* 9.1.2 force */
+    /* TODO */
+
+    /* 9.1.3 $lazy */
+    /* TODO */
+
+    /* 9.1.4 memoize */
+    add_applicative(K, ground_env, "memoize", memoize, 0); 
+
     return;
+
 }

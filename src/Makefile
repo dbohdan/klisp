@@ -13,7 +13,8 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kencapsulation.o kpromise.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
-	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o
+	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
+	kgpromises.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -76,7 +77,7 @@ kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kapplicative.h koperative.h ksymbol.h kerror.h kghelpers.h \
 	kgbooleans.h kgeqp.h kgequalp.h kgsymbols.h kgpairs_lists.h \
 	kgpair_mut.h kgenvironments.h kgenv_mut.h kgcombiners.h \
-	kgcontinuations.h kgencapsulations.h
+	kgcontinuations.h kgencapsulations.h kgpromises.h
 kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 	kapplicative.h koperative.h kerror.h kobject.h ksymbol.h
 kgbooleans.o: kgbooleans.c kgbooleans.c kghelpers.h kstate.h klisp.h \
@@ -105,3 +106,9 @@ kgcombiners.o: kgcombiners.c kgenvironments.h kghelpers.h kstate.h \
 kgcontinuations.o: kgcontinuations.c kgcontinuations.h kghelpers.h kstate.h \
 	klisp.h kobject.h kerror.h kpair.h ksymbol.h kcontinuation.h \
 	kenvironment.h kapplicative.h koperative.h
+kgencapsulations.o: kgencapsulations.c kgencapsulations.h kghelpers.h \
+	kstate.h klisp.h kobject.h kerror.h kapplicative.h koperative.h \
+	kencapsulation.h
+kgpromises.o: kgpromises.c kgpromises.h kghelpers.h kstate.h klisp.h \
+	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
+	kpair.h kpromise.h
