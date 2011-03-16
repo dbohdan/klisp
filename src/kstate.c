@@ -6,6 +6,11 @@
 
 /*
 ** SOURCE NOTE: this is mostly from Lua.
+** The algorithm for testing if a continuation is within the dynamic extent
+** of another continuation using marks is by John Shutt. The implementation
+** he uses (see SINK) is in scheme and is under the GPL but I think this is 
+** different enough (and the algorithm simple/small enough) to avoid any 
+** problem. ASK John.
 */
 
 #include <stddef.h>
