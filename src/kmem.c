@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include "klisp.h"
+#include "kstate.h"
 #include "klimits.h"
 #include "kmem.h"
 #include "kerror.h"
