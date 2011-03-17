@@ -217,7 +217,12 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "[encapsulation]");
 	break;
     case K_TPROMISE:
+	/* TODO try to get the name */
 	kw_printf(K, "[promise]");
+	break;
+    case K_TPORT:
+	/* TODO try to get the name/ I/O direction / filename */
+	kw_printf(K, "[port]");
 	break;
     default:
 	/* shouldn't happen */

@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /*
 ** Union of all collectible objects
@@ -123,6 +124,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAPPLICATIVE  36
 #define K_TENCAPSULATION 37
 #define K_TPROMISE      38
+#define K_TPORT         39
 
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
@@ -156,6 +158,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_APPLICATIVE K_MAKE_VTAG(K_TAPPLICATIVE)
 #define K_TAG_ENCAPSULATION K_MAKE_VTAG(K_TENCAPSULATION)
 #define K_TAG_PROMISE K_MAKE_VTAG(K_TPROMISE)
+#define K_TAG_PORT K_MAKE_VTAG(K_TPORT)
 
 
 /*
@@ -194,6 +197,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
 #define ttisencapsulation(o) (tbasetype_(o) == K_TAG_ENCAPSULATION)
 #define ttispromise(o) (tbasetype_(o) == K_TAG_PROMISE)
+#define ttisport(o) (tbasetype_(o) == K_TAG_PORT)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -307,6 +311,15 @@ typedef struct __attribute__ ((__packed__)) {
        sharing the pair */
 } Promise;
 
+/* input/output direction and open/close status are in flags */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue name;
+    TValue si; /* source code info (either () or (filename line col) */
+    TValue filename;
+    FILE *file;
+} Port;
+
 /* 
 ** RATIONALE: 
 **
@@ -346,6 +359,7 @@ union GCObject {
     Applicative app;
     Encapsulation enc;
     Promise prom;
+    Port port;
 };
 
 
@@ -407,6 +421,7 @@ const TValue keminf;
 #define gc2app(o_) (gc2tv(K_TAG_APPLICATIVE, o_))
 #define gc2enc(o_) (gc2tv(K_TAG_ENCAPSULATION, o_))
 #define gc2prom(o_) (gc2tv(K_TAG_PROMISE, o_))
+#define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
@@ -418,6 +433,7 @@ const TValue keminf;
 #define tv2app(v_) ((Applicative *) gcvalue(v_))
 #define tv2enc(v_) ((Encapsulation *) gcvalue(v_))
 #define tv2prom(v_) ((Promise *) gcvalue(v_))
+#define tv2port(v_) ((Port *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))

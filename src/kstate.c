@@ -460,6 +460,9 @@ void klisp_close (klisp_State *K)
 	case K_TPROMISE:
 	    klispM_free(K, (Promise *)obj);
 	    break;
+	case K_TPORT:
+	    klispM_free(K, (Port *)obj);
+	    break;
 	default:
 	    /* shouldn't happen */
 	    fprintf(stderr, "Unknown GCObject type: %d\n", type);
