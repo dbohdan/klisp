@@ -288,4 +288,45 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.2.3 get-module */
-/* TODO */
+void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_al1tp(K, "get-module", ptree, "string", ttisstring, filename, 
+	maybe_env);
+
+    TValue env = kmake_environment(K, K->ground_env);
+
+    if (get_opt_tpar(K, "", K_TENVIRONMENT, &maybe_env)) {
+	kadd_binding(K, env, K->module_params_sym, maybe_env);
+    }
+
+    /* the reads must be guarded to close the file if there is some error 
+     this continuation also will return inert after the evaluation of the
+     last expression is done */
+    TValue port = kmake_port(K, filename, false, KNIL, KNIL);
+    TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
+    /* this will be used later, but contruct it now to use the 
+       current continuation as parent 
+    GC: root this obj */
+    TValue ret_env_cont = make_return_value_cont(K, kget_cc(K), env);
+
+    kset_cc(K, guarded_cont);
+    TValue ls = read_all_expr(K, port); /* any error will close the port */
+
+    /* now the sequence of expresions should be evaluated in the created env
+       and the environment returned after all are done */
+    kset_cc(K, ret_env_cont);
+
+    if (ttisnil(ls)) {
+	kapply_cc(K, KINERT);
+    } else {
+	TValue tail = kcdr(ls);
+	if (ttispair(tail)) {
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+					     do_seq, 2, tail, env);
+	    kset_cc(K, new_cont);
+	} 
+	ktail_eval(K, kcar(ls), env);
+    }
+}

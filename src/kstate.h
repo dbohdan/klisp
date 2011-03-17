@@ -52,7 +52,11 @@ struct klisp_State {
     TValue *next_xparams; 
 
     TValue eval_op; /* the operative for evaluation */
-    TValue ground_env; 
+    TValue ground_env;  /* the environment with all the ground definitions */
+    /* standard environments are environments with no bindings and ground_env
+       as parent */
+    TValue module_params_sym; /* this is the symbol "module-parameters" */
+    /* it is used in get-module */
     TValue root_cont; 
     TValue error_cont;
 

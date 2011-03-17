@@ -29,6 +29,7 @@
 #include "kenvironment.h"
 #include "kground.h"
 #include "krepl.h"
+#include "ksymbol.h"
 
 /*
 ** State creation and destruction
@@ -63,6 +64,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* these will be properly initialized later */
     K->eval_op = KINERT;
     K->ground_env = KINERT;
+    K->module_params_sym = KINERT;
     K->root_cont = KINERT;
     K->error_cont = KINERT;
 
@@ -121,6 +123,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* create the ground environment and the eval operative */
     K->eval_op = kmake_operative(K, KNIL, KNIL, keval_ofn, 0);
     K->ground_env = kmake_empty_environment(K);
+    K->module_params_sym = ksymbol_new(K, "module-parameters");
     
     kinit_ground_env(K);
 

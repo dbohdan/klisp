@@ -55,6 +55,6 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.2.3 get-module */
-/* TODO */
+void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif

@@ -540,7 +540,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "load", load, 0);
 
     /* 15.2.3 get-module */
-    /* TODO */
+    add_applicative(K, ground_env, "get-module", get_module, 0);
 
     /* TODO: That's all there is in the report, but we will probably need:
        (from r5rs) char-ready?, read-char, peek-char, eof-object?, newline,
