@@ -1,5 +1,5 @@
 /*
-** kport.h
+** kport.c
 ** Kernel Ports
 ** See Copyright Notice in klisp.h
 */
@@ -17,6 +17,7 @@
 TValue kmake_port(klisp_State *K, TValue filename, bool writep, TValue name, 
 			  TValue si)
 {
+    /* for now always use text mode */
     FILE *f = fopen(kstring_buf(filename), writep? "w": "r");
     if (f == NULL) {
 	klispE_throw(K, "Create port: could't open file");

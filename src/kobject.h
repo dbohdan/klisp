@@ -501,15 +501,10 @@ extern char *ktv_names[];
 #define kport_is_output(o_) ((tv_get_flags(o_) & K_FLAG_OUTPUT_PORT) != 0)
 #define kport_is_closed(o_) ((tv_get_flags(o_) & K_FLAG_CLOSED_PORT) != 0)
 
-inline bool kis_input_port(TValue o)
-{
-    return ttisport(o) && kport_is_input(o);
-}
-
-inline bool kis_ouput_port(TValue o)
-{
-    return ttisport(o) && kport_is_output(o);
-}
+/* can't be inline because we also use pointers to them,
+ (at least gcc doesn't bother to create them and the linker fails) */
+bool kis_input_port(TValue o);
+bool kis_output_port(TValue o);
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)

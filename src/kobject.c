@@ -44,3 +44,14 @@ char *ktv_names[] = {
     [K_TSTRING] = "string", 
     [K_TSYMBOL] = "symbol"
 };
+
+bool kis_input_port(TValue o)
+{
+    return ttisport(o) && kport_is_input(o);
+}
+
+bool kis_output_port(TValue o)
+{
+    return ttisport(o) && kport_is_output(o);
+}
+

@@ -467,6 +467,69 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "make-keyed-static-variable", 
 		    make_keyed_static_variable, 0); 
 
+
+    /*
+    **
+    ** 15 Ports
+    **
+    */
+
+    /* 
+    ** 15.1 Primitive features
+    */
+
+    /* 15.1.1 port? */
+    add_applicative(K, ground_env, "port?", typep, 2, symbol, 
+		    i2tv(K_TPORT));
+
+    /* 15.1.2 input-port?, output-port? */
+    add_applicative(K, ground_env, "input-port?", ftypep, 2, symbol, 
+		    kis_input_port);
+
+    add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
+		    kis_output_port);
+
+    /* 15.1.3 with-input-from-file, with-ouput-to-file */
+    /* TODO */
+
+    /* 15.1.4 get-current-input-port, get-current-output-port */
+    /* TODO */
+
+    /* 15.1.5 open-input-file, open-output-file */
+    /* TODO */
+
+    /* ASK John: should this be called close-input-port & close-ouput-port 
+       like in r5rs? that doesn't seem consistent with open thou */
+    /* 15.1.5 close-input-file, close-output-file */
+    /* TODO */
+
+    /* 15.1.7 read */
+    /* TODO */
+
+    /* 15.1.8 write */
+    /* TODO */
+
+    /* 
+    ** 15.2 Library features
+    */
+
+    /* 15.2.1 call-with-input-file, call-with-output-file */
+    /* TODO */
+
+    /* 15.2.2 load */
+    /* TODO */
+
+    /* 15.2.3 get-module */
+    /* TODO */
+
+    /* TODO: That's all there is in the report, but we will probably need:
+       (from r5rs) char-ready?, read-char, peek-char, eof-object?, newline,
+       and write-char; (from c) file-exists?, rename-file and remove-file.
+       It would also be good to be able to select between append, truncate and
+       error if a file exists, but that would need to be an option in all three 
+       methods of opening */
+    
+
     return;
 
 }
