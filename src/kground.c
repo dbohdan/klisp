@@ -35,6 +35,7 @@
 #include "kgpromises.h"
 #include "kgkd_vars.h"
 #include "kgks_vars.h"
+#include "kgports.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -496,12 +497,20 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 15.1.5 open-input-file, open-output-file */
-    /* TODO */
+    add_applicative(K, ground_env, "open-input-file", open_file, 2, symbol, 
+		    b2tv(false));
 
+    add_applicative(K, ground_env, "open-output-file", open_file, 2, symbol, 
+		    b2tv(true));
+
+    /* 15.1.6 close-input-file, close-output-file */
     /* ASK John: should this be called close-input-port & close-ouput-port 
        like in r5rs? that doesn't seem consistent with open thou */
-    /* 15.1.5 close-input-file, close-output-file */
-    /* TODO */
+    add_applicative(K, ground_env, "close-input-file", close_file, 2, symbol, 
+		    b2tv(false));
+
+    add_applicative(K, ground_env, "close-output-file", close_file, 2, symbol, 
+		    b2tv(true));
 
     /* 15.1.7 read */
     /* TODO */
