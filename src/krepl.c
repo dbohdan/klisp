@@ -44,7 +44,7 @@ void read_fn(klisp_State *K, TValue *xparams, TValue obj)
     ktok_reset_source_info(K);
 
     obj = kread(K);
-    kapply_cc(K,obj);
+    kapply_cc(K, obj);
 }
 
 /* the underlying function of the eval cont */
@@ -55,7 +55,14 @@ void eval_cfn(klisp_State *K, TValue *xparams, TValue obj)
     */
     TValue denv = xparams[0];
     
-    ktail_call(K, K->eval_op, obj, denv);
+    if (ttiseof(obj)) {
+	/* read [EOF], should terminate the repl */
+	/* this will in turn call main_cont */
+	kset_cc(K, K->root_cont);
+	kapply_cc(K, KINERT);
+    } else {
+	ktail_call(K, K->eval_op, obj, denv);
+    }
 }
 
 void loop_fn(klisp_State *K, TValue *xparams, TValue obj);
@@ -79,18 +86,14 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
     /* 
     ** xparams[0]: dynamic environment
     */
-    if (ttiseof(obj)) {
-	/* this will in turn call main_cont */
-	kapply_cc(K, obj);
-    } else {
-	/* TEMP: for now set this by hand */
-	K->curr_out = stdout;
 
-	kwrite(K, obj);
-	knewline(K);
-	TValue denv = xparams[0];
-	create_loop(K, denv);
-    }
+    /* TEMP: for now set this by hand */
+    K->curr_out = stdout;
+
+    kwrite(K, obj);
+    knewline(K);
+    TValue denv = xparams[0];
+    create_loop(K, denv);
 } 
 
 /* the underlying function of the error cont */

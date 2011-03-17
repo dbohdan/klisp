@@ -465,6 +465,8 @@ TValue kread(klisp_State *K)
     TValue obj;
 
     assert(ttisnil(K->shared_dict));
+    /* TEMP: workaround repl problem with eofs */
+    K->ktok_seen_eof = false;
 
     obj = kread_fsm(K);
 
