@@ -38,6 +38,11 @@ void read_fn(klisp_State *K, TValue *xparams, TValue obj)
 
     /* show prompt */
     fprintf(stdout, "klisp> ");
+
+    /* TEMP: for now set this by hand */
+    K->curr_in = stdin;
+    ktok_reset_source_info(K);
+
     obj = kread(K);
     kapply_cc(K,obj);
 }
@@ -78,6 +83,9 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
 	/* this will in turn call main_cont */
 	kapply_cc(K, obj);
     } else {
+	/* TEMP: for now set this by hand */
+	K->curr_out = stdout;
+
 	kwrite(K, obj);
 	knewline(K);
 	TValue denv = xparams[0];

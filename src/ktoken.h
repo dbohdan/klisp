@@ -20,4 +20,8 @@ TValue ktok_read_token(klisp_State *K);
 void ktok_reset_source_info(klisp_State *K);
 TValue ktok_get_source_info(klisp_State *K);
 
+/* This is needed here to allow cleanup of shared dict from tokenizer */
+void clear_shared_dict(klisp_State *K);
+
+
 #endif

@@ -123,4 +123,4 @@ kgks_vars.o: kgks_vars.c kgks_vars.h kghelpers.h kstate.h klisp.h \
 	kpair.h kenvironment.h
 kgports.o: kgports.c kgports.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
-	kport.h ksymbol.h
+	kport.h ksymbol.h kread.h kwrite.h

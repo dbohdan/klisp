@@ -18,6 +18,8 @@
 #include "kcontinuation.h"
 #include "kerror.h"
 #include "ksymbol.h"
+#include "kread.h"
+#include "kwrite.h"
 
 #include "kghelpers.h"
 #include "kgports.h"
@@ -65,6 +67,57 @@ void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	klispE_throw_extra(K, name, ": wrong input/output direction");
 	return;
     }
+}
+
+/* 15.1.7 read */
+/* TEMP: the port parameter is not optional yet */
+void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, "read", ptree, "port", ttisport, port);
+    
+    if (!kport_is_input(port)) {
+	klispE_throw(K, "read: the port should be an input port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw(K, "read: the port is already closed");
+	return;
+    }
+
+    /* TEMP: for now set this by hand */
+    K->curr_in = tv2port(port)->file;
+    ktok_reset_source_info(K); /* this should be saved in the port
+				  and restored before the call to 
+				  read and saved after it */
+    TValue obj = kread(K); /* this may throw an error, that's ok */
+    kapply_cc(K, obj);
+}
+
+/* 15.1.8 write */
+/* TEMP: the port parameter is not optional yet */
+void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_2tp(K, "write", ptree, "any", anytype, obj,
+	     "port", ttisport, port);
+
+    if (!kport_is_output(port)) {
+	klispE_throw(K, "write: the port should be an output port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw(K, "write: the port is already closed");
+	return;
+    }
+    
+    /* TEMP: for now set this by hand */
+    K->curr_out = tv2port(port)->file;
+
+    kwrite(K, obj);
+    kapply_cc(K, KINERT);
 }
 
 /* 15.2.1 call-with-input-file, call-with-output-file */

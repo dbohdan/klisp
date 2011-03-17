@@ -218,10 +218,18 @@ TValue ktok_get_source_info(klisp_State *K)
 /*
 ** Error management
 */
+
+void clear_shared_dict(klisp_State *K)
+{
+    K->shared_dict = KNIL;
+}
+
 void ktok_error(klisp_State *K, char *str)
 {
-    /* clear the buffer before throwing an error */
+    /* clear up before throwing */
     ks_tbclear(K);
+    ks_sclear(K);
+    clear_shared_dict(K);
     klispE_throw(K, str);
 }
 
@@ -622,4 +630,5 @@ TValue ktok_read_identifier(klisp_State *K)
     ks_tbclear(K);
     return new_sym;
 }
+
 

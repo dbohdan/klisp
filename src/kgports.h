@@ -36,6 +36,12 @@ void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 15.1.6 close-input-file, close-output-file */
 void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 15.1.7 read */
+void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 15.1.8 write */
+void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* 15.2.1 call-with-input-file, call-with-output-file */
 /* TODO */
 

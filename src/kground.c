@@ -513,10 +513,10 @@ void kinit_ground_env(klisp_State *K)
 		    b2tv(true));
 
     /* 15.1.7 read */
-    /* TODO */
+    add_applicative(K, ground_env, "read", read, 0);
 
     /* 15.1.8 write */
-    /* TODO */
+    add_applicative(K, ground_env, "write", write, 0);
 
     /* 
     ** 15.2 Library features

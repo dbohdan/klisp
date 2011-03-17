@@ -65,8 +65,10 @@ typedef enum {
 */
 void kread_error(klisp_State *K, char *str)
 {
-    /* clear the stack */
+    /* clear up before throwing */
+    ks_tbclear(K);
     ks_sclear(K);
+    clear_shared_dict(K);
     klispE_throw(K, str);
 }
 
@@ -74,12 +76,8 @@ void kread_error(klisp_State *K, char *str)
 ** Shared Reference Management (srfi-38) 
 */
 
-/* This is called after kread to clear the shared alist */
-void clear_shared_dict(klisp_State *K) 
-{
-    K->shared_dict = KNIL;
-}
-
+/* clear_shared_dict is defined in ktoken to allow cleaning up before errors */
+/* It is called after kread to clear the shared alist */
 TValue try_shared_ref(klisp_State *K, TValue ref_token)
 {
     /* TEMP: for now, only allow fixints in shared tokens */
@@ -466,8 +464,7 @@ TValue kread(klisp_State *K)
 {
     TValue obj;
 
-    /* TEMP: for now assume we are in the repl: reset source info */
-    ktok_reset_source_info(K);
+    assert(ttisnil(K->shared_dict));
 
     obj = kread_fsm(K);
 
