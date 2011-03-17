@@ -20,7 +20,7 @@
 #include "kerror.h"
 
 #include "kghelpers.h"
-#include "kgcontinuations.h" /* for pass_value / guards */
+#include "kgcontinuations.h" /* for do_pass_value / guards */
 #include "kgkd_vars.h"
 
 /*
@@ -115,12 +115,10 @@ inline TValue make_bind_continuation(klisp_State *K, TValue key,
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     TValue outer_cont = kmake_continuation(K, unbind_cont, KNIL, KNIL, 
-					   pass_value, 2, entry_guards, env);
-    /* mark it as an outer continuation */
+					   do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
-					   pass_value, 2, exit_guards, env);
-    /* mark it as an outer continuation */
+					   do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
     return inner_cont;
 }

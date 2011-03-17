@@ -537,7 +537,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 15.2.2 load */
-    /* TODO */
+    add_applicative(K, ground_env, "load", load, 0);
 
     /* 15.2.3 get-module */
     /* TODO */

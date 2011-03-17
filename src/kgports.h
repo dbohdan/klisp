@@ -52,7 +52,7 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 15.2.2 load */
-/* TODO */
+void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.2.3 get-module */
 /* TODO */

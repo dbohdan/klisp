@@ -18,9 +18,8 @@
 #include "kstate.h"
 #include "kghelpers.h"
 
-/* Helpers (also used in keyed dynamic code */
-void pass_value(klisp_State *K, TValue *xparams, TValue obj);
-
+/* Helpers (also used in keyed dynamic code) */
+void do_pass_value(klisp_State *K, TValue *xparams, TValue obj);
 
 /* 7.1.1 continuation? */
 /* uses typep */

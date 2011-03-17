@@ -24,6 +24,7 @@
 #include "kgcontinuations.h"
 #include "kgcontrol.h" /* for seq helpers in $let/cc */
 
+
 /* 7.1.1 continuation? */
 /* uses typep */
 
@@ -79,7 +80,7 @@ void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree,
    passes the value. xparams is not actually empty, it contains
    the entry/exit guards, but they are used only in 
    continuation->applicative (that is during abnormal passes) */
-void pass_value(klisp_State *K, TValue *xparams, TValue obj)
+void do_pass_value(klisp_State *K, TValue *xparams, TValue obj)
 {
     UNUSED(xparams);
     kapply_cc(K, obj);
@@ -169,12 +170,12 @@ void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree,
     exit_guards = check_copy_guards(K, "guard-continuation: exit guards", 
 				     exit_guards);
 
-    TValue outer_cont = kmake_continuation(K, cont, KNIL, KNIL, pass_value, 
+    TValue outer_cont = kmake_continuation(K, cont, KNIL, KNIL, do_pass_value, 
 					   2, entry_guards, denv);
     /* mark it as an outer continuation */
     kset_outer_cont(outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
-					   pass_value, 2, exit_guards, denv);
+					   do_pass_value, 2, exit_guards, denv);
     /* mark it as an outer continuation */
     kset_inner_cont(inner_cont);
     kapply_cc(K, inner_cont);
@@ -265,13 +266,11 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
 				     exit_guards);
     /* GC: root continuations */
     /* The current continuation is guarded */
-    TValue outer_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, pass_value, 
+    TValue outer_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_pass_value, 
 					   1, entry_guards);
-    /* mark it as an outer continuation */
     kset_outer_cont(outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
-					   pass_value, 1, exit_guards);
-    /* mark it as an outer continuation */
+					   do_pass_value, 1, exit_guards);
     kset_inner_cont(inner_cont);
 
     /* call combiner with no operands in the dynamic extent of inner,

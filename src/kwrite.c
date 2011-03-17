@@ -35,6 +35,8 @@ void kwrite_error(klisp_State *K, char *msg)
     klispE_throw(K, msg);
 }
 
+/* TODO: check for return codes and throw error if necessary */
+
 /*
 ** Helper for printing strings (correcly escapes backslashes and
 ** double quotes & prints embedded '\0's). It includes the surrounding

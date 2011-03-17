@@ -73,6 +73,8 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	TValue ls = check_copy_list(K, "$sequence", ptree);
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
+	/* TODO this could be at least in an inlineable function to
+	   allow used from $lambda, $vau, $let family, load, etc */
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
 	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,

@@ -23,4 +23,5 @@ TValue kmake_std_port(klisp_State *K, TValue filename, bool writep,
    set the closed flag to true */
 void kclose_port(klisp_State *K, TValue port);
 
+#define kport_file(p_) (tv2port(p_)->file)
 #endif
