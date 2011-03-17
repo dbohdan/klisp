@@ -518,6 +518,17 @@ void kinit_ground_env(klisp_State *K)
     /* 15.1.8 write */
     add_applicative(K, ground_env, "write", write, 0);
 
+    /*
+    ** These are from scheme (r5rs)
+    */
+
+    /* 15.1.? eof-object? */
+    add_applicative(K, ground_env, "eof-object?", typep, 2, symbol, 
+		    i2tv(K_TEOF));
+
+    /* 15.1.? newline */
+    add_applicative(K, ground_env, "newline", newline, 0);
+
     /* 
     ** 15.2 Library features
     */

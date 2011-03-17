@@ -120,6 +120,33 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
+/* 15.1.? eof-object? */
+/* uses typep */
+
+/* 15.1.? newline */
+/* TEMP: the port parameter is not optional yet */
+void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, "newline", ptree, "port", ttisport, port);
+
+    if (!kport_is_output(port)) {
+	klispE_throw(K, "write: the port should be an output port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw(K, "write: the port is already closed");
+	return;
+    }
+    
+    /* TEMP: for now set this by hand */
+    K->curr_out = tv2port(port)->file;
+
+    knewline(K);
+    kapply_cc(K, KINERT);
+}
+
 /* 15.2.1 call-with-input-file, call-with-output-file */
 /* TODO */
 

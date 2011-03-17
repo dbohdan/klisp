@@ -42,6 +42,12 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 15.1.8 write */
 void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 15.1.? eof-object? */
+/* uses typep */
+
+/* 15.1.? newline */
+void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* 15.2.1 call-with-input-file, call-with-output-file */
 /* TODO */
 
