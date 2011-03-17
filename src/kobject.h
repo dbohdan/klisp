@@ -476,6 +476,7 @@ extern char *ktv_names[];
 #define K_FLAG_INNER 0x02
 #define K_FLAG_DYNAMIC 0x04
 
+/* evaluates c_ more than once */
 #define kset_inner_cont(c_) (tv_get_flags(c_) |= K_FLAG_INNER)
 #define kset_outer_cont(c_) (tv_get_flags(c_) |= K_FLAG_OUTER)
 #define kset_dyn_cont(c_) (tv_get_flags(c_) |= K_FLAG_DYNAMIC)
@@ -487,6 +488,28 @@ extern char *ktv_names[];
 #define K_FLAG_IMMUTABLE 0x01
 #define kis_mutable(o_) ((tv_get_flags(o_) & K_FLAG_IMMUTABLE) == 0)
 #define kis_immutable(o_) (!kis_mutable(o_))
+
+#define K_FLAG_OUTPUT_PORT 0x01
+#define K_FLAG_INPUT_PORT 0x02
+#define K_FLAG_CLOSED_PORT 0x04
+
+#define kport_set_input(o_) (tv_get_flags(o_) |= K_FLAG_INPUT_PORT)
+#define kport_set_output(o_) (tv_get_flags(o_) |= K_FLAG_INPUT_PORT)
+#define kport_set_closed(o_) (tv_get_flags(o_) |= K_FLAG_CLOSED_PORT)
+
+#define kport_is_input(o_) ((tv_get_flags(o_) & K_FLAG_INPUT_PORT) != 0)
+#define kport_is_output(o_) ((tv_get_flags(o_) & K_FLAG_OUTPUT_PORT) != 0)
+#define kport_is_closed(o_) ((tv_get_flags(o_) & K_FLAG_CLOSED_PORT) != 0)
+
+inline bool kis_input_port(TValue o)
+{
+    return ttisport(o) && kport_is_input(o);
+}
+
+inline bool kis_ouput_port(TValue o)
+{
+    return ttisport(o) && kport_is_output(o);
+}
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)

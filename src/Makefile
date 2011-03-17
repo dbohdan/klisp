@@ -10,7 +10,7 @@ MYLIBS=
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
-	kencapsulation.o kpromise.o \
+	kencapsulation.o kpromise.o kport.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
@@ -48,12 +48,13 @@ kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h klisp.h
 kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h klisp.h
 # XXX: kpair.h because of use of list as symbol table
 ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstate.h kmem.h klisp.h
-kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h
+kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h \
+	kport.h
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
-	klisp.h
+	klisp.h kport.h
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
 	kground.h kenvironment.h kpair.h keval.h koperative.h kground.h \
-	krepl.h kcontinuation.h kapplicative.h
+	krepl.h kcontinuation.h kapplicative.h kport.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
@@ -69,6 +70,7 @@ kencapsulation.o: kencapsulation.c kencapsulation.h kmem.h kstate.h kobject.h \
 	klisp.h kpair.h
 kpromise.o: kpromise.c kpromise.h kmem.h kstate.h kobject.h \
 	klisp.h kpair.h
+kport.o: kport.c kport.h kmem.h kstate.h kobject.h klisp.h kerror.h kstring.h
 keval.o: keval.c keval.h kcontinuation.h kenvironment.h kstate.h kobject.h \
 	kpair.h kerror.h klisp.h
 krepl.o: krepl.c krepl.h kcontinuation.h kstate.h kobject.h keval.h klisp.h \

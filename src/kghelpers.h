@@ -323,9 +323,15 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 }
 
 /*
-** This is a generic function for type predicates
+** Generic function for type predicates
 ** It can only be used by types that have a unique tag
 */
 void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/*
+** Generic function for type predicates
+** It takes an arbitrary function pointer of type bool (*fn)(TValue o)
+*/
+void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif
