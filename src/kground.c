@@ -471,6 +471,55 @@ void kinit_ground_env(klisp_State *K)
 
     /*
     **
+    ** 14 Characters
+    **
+    */
+
+    /*
+    ** This section is still missing from the report. The bindings here are
+    ** taken from r5rs scheme and should not be considered standard. They are
+    ** provided in the meantime to allow programs to use character features
+    ** (ASCII only). 
+    */
+
+    /* 
+    ** 14.1 Primitive features
+    */
+
+    /* 14.1.1? char? */
+    add_applicative(K, ground_env, "char?", typep, 2, symbol, 
+		    i2tv(K_TCHAR));
+
+    /* 14.1.2? char-alphabetic?, char-numeric?, char-whitespace? */
+    /* TODO */
+
+    /* 14.1.3? char-upper-case?, char-lower-case? */
+    /* TODO */
+
+    /* 14.1.4? char->integer, integer->char */
+    /* TODO */
+
+    /* 14.1.4? char-upcase, char-downcase */
+    /* TODO */
+
+    /* 
+    ** 14.2 Library features
+    */
+
+    /* 14.2.1? char=? */
+    /* TODO */
+
+    /* 14.2.2? char<?, char<=?, char>?, char>=? */
+    /* TODO */
+
+    /* 14.2.3? char-ci=? */
+    /* TODO */
+
+    /* 14.2.4? char-ci<?, char-ci<=?, char-ci>?, char-ci>=? */
+    /* TODO */
+
+    /*
+    **
     ** 15 Ports
     **
     */
