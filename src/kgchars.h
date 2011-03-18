@@ -50,15 +50,30 @@ void kchar_downcase(klisp_State *K, TValue *xparams, TValue ptree,
 		    TValue denv);
 
 /* 14.2.1? char=? */
-/* TODO */
+/* uses ftyped_bpredp */
 
 /* 14.2.2? char<?, char<=?, char>?, char>=? */
-/* TODO */
+/* use ftyped_bpredp */
 
 /* 14.2.3? char-ci=? */
-/* TODO */
+/* uses ftyped_bpredp */
 
 /* 14.2.4? char-ci<?, char-ci<=?, char-ci>?, char-ci>=? */
-/* TODO */
+/* use ftyped_bpredp */
+
+/* Helpers for typed binary predicates */
+/* XXX: this should probably be in a file kchar.h but there is no real need for 
+   that file yet */
+bool kchar_eqp(TValue ch1, TValue ch2);
+bool kchar_ltp(TValue ch1, TValue ch2);
+bool kchar_lep(TValue ch1, TValue ch2);
+bool kchar_gtp(TValue ch1, TValue ch2);
+bool kchar_gep(TValue ch1, TValue ch2);
+
+bool kchar_ci_eqp(TValue ch1, TValue ch2);
+bool kchar_ci_ltp(TValue ch1, TValue ch2);
+bool kchar_ci_lep(TValue ch1, TValue ch2);
+bool kchar_ci_gtp(TValue ch1, TValue ch2);
+bool kchar_ci_gep(TValue ch1, TValue ch2);
 
 #endif

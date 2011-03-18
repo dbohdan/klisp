@@ -523,16 +523,32 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 14.2.1? char=? */
-    /* TODO */
+    add_applicative(K, ground_env, "char=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_eqp));
 
     /* 14.2.2? char<?, char<=?, char>?, char>=? */
-    /* TODO */
+    add_applicative(K, ground_env, "char<?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ltp));
+    add_applicative(K, ground_env, "char<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp),  p2tv(kchar_lep));
+    add_applicative(K, ground_env, "char>?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_gtp));
+    add_applicative(K, ground_env, "char>=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_gep));
 
     /* 14.2.3? char-ci=? */
-    /* TODO */
+    add_applicative(K, ground_env, "char-ci=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_eqp));
 
     /* 14.2.4? char-ci<?, char-ci<=?, char-ci>?, char-ci>=? */
-    /* TODO */
+    add_applicative(K, ground_env, "char-ci<?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_ltp));
+    add_applicative(K, ground_env, "char-ci<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp),  p2tv(kchar_ci_lep));
+    add_applicative(K, ground_env, "char-ci>?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_gtp));
+    add_applicative(K, ground_env, "char-ci>=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_gep));
 
     /*
     **
