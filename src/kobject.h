@@ -405,7 +405,7 @@ const TValue keminf;
 #define ch2tv(ch_) ((TValue) ch2tv_(ch_))
 #define i2tv(i_) ((TValue) i2tv_(i_))
 #define b2tv(b_) ((TValue) b2tv_(b_))
-#define p2tv(p_) ((TValue) b2tv_(p_))
+#define p2tv(p_) ((TValue) p2tv_(p_))
 
 /* Macros to convert a GCObject * into a tagged value */
 /* TODO: add assertions */

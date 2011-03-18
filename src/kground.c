@@ -36,6 +36,7 @@
 #include "kgkd_vars.h"
 #include "kgks_vars.h"
 #include "kgports.h"
+#include "kgchars.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -493,12 +494,21 @@ void kinit_ground_env(klisp_State *K)
     /* 14.1.2? char-alphabetic?, char-numeric?, char-whitespace? */
     /* unlike in r5rs these take an arbitrary number of chars
        (even cyclical list) */
-    /* TODO */
+    add_applicative(K, ground_env, "char-alphabetic?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_alphabeticp));
+    add_applicative(K, ground_env, "char-numeric?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_numericp));
+    add_applicative(K, ground_env, "char-whitespace?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_whitespacep));
 
     /* 14.1.3? char-upper-case?, char-lower-case? */
     /* unlike in r5rs these take an arbitrary number of chars
        (even cyclical list) */
-    /* TODO */
+    add_applicative(K, ground_env, "char-upper-case?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_upper_casep));
+    add_applicative(K, ground_env, "char-lower-case?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_lower_casep));
+    
 
     /* 14.1.4? char->integer, integer->char */
     /* TODO */
@@ -538,10 +548,10 @@ void kinit_ground_env(klisp_State *K)
 
     /* 15.1.2 input-port?, output-port? */
     add_applicative(K, ground_env, "input-port?", ftypep, 2, symbol, 
-		    kis_input_port);
+		    p2tv(kis_input_port));
 
     add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
-		    kis_output_port);
+		    p2tv(kis_output_port));
 
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
     /* TODO */
