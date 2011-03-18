@@ -336,10 +336,21 @@ void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /*
 ** Generic function for typed predicates (like char-alphabetic? or finite?)
-** A type predicate is a predicate that requires its arguments to be a certain
+** A typed predicate is a predicate that requires its arguments to be a certain
 ** type. This takes a function pointer for the type & one for the predicate,
 ** both of the same type: bool (*fn)(TValue o).
+** On zero operands this return true
 */
 void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/*
+** Generic function for typed binary predicates (like =? & char<?)
+** A typed predicate is a predicate that requires its arguments to be a certain
+** type. This takes a function pointer for the type bool (*typep)(TValue o) 
+** & one for the predicate: bool (*fn)(TValue o1, TValue o2).
+** This assumes the predicate is transitive and works even in cyclic lists
+** On zero and one operand this return true
+*/
+void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif

@@ -90,7 +90,6 @@ void kchar_downcase(klisp_State *K, TValue *xparams, TValue ptree,
     ch = tolower(ch);
     kapply_cc(K, ch2tv(ch));
 }
-/* TODO */
 
 /* 14.2.1? char=? */
 /* TODO */
