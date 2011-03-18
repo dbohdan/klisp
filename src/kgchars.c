@@ -69,6 +69,27 @@ void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 14.1.4? char-upcase, char-downcase */
+void kchar_upcase(klisp_State *K, TValue *xparams, TValue ptree, 
+		  TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, "char-upcase", ptree, "character", ttischar, chtv);
+    char ch = chvalue(chtv);
+    ch = toupper(ch);
+    kapply_cc(K, ch2tv(ch));
+}
+
+void kchar_downcase(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, "char-downcase", ptree, "character", ttischar, chtv);
+    char ch = chvalue(chtv);
+    ch = tolower(ch);
+    kapply_cc(K, ch2tv(ch));
+}
 /* TODO */
 
 /* 14.2.1? char=? */

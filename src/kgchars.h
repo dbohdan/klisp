@@ -44,7 +44,10 @@ void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree,
 		      TValue denv);
 
 /* 14.1.4? char-upcase, char-downcase */
-/* TODO */
+void kchar_upcase(klisp_State *K, TValue *xparams, TValue ptree, 
+		  TValue denv);
+void kchar_downcase(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
 
 /* 14.2.1? char=? */
 /* TODO */
