@@ -169,18 +169,32 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* check the type while checking the predicate.
        Keep going even if the result is false to catch errors in 
        type */
-    /* it checks > 0 because if ptree is nil comps = -1 */
-    while(comps-- > 0) {
-	TValue first = kcar(tail);
-	tail = kcdr(tail); /* tail only advances one place per iteration */
-	TValue second = kcar(tail);
 
-	if (!(*typep)(first) && !(*typep)(second)) {
+    if (comps == -1) {
+	/* this case is here to simplify the guard of the while */
+	kapply_cc(K, b2tv(true));
+    } else if (comps == 0) {
+	/* this case has to be here because otherwise there is no check
+	   for the type of the lone operand */
+	TValue first = kcar(tail);
+	if (!(*typep)(first)) {
 	    /* TODO show expected type */
 	    klispE_throw_extra(K, name, ": bad argument type");
 	    return;
 	}
-	res &= (*predp)(first, second);
+    } else {
+	while(comps--) {
+	    TValue first = kcar(tail);
+	    tail = kcdr(tail); /* tail only advances one place per iteration */
+	    TValue second = kcar(tail);
+
+	    if (!(*typep)(first) && !(*typep)(second)) {
+		/* TODO show expected type */
+		klispE_throw_extra(K, name, ": bad argument type");
+		return;
+	    }
+	    res &= (*predp)(first, second);
+	}
+	kapply_cc(K, b2tv(res));
     }
-    kapply_cc(K, b2tv(res));
 }
