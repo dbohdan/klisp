@@ -78,3 +78,52 @@ void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
 }
+
+void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) denv;
+    /*
+    ** xparams[0]: name symbol
+    ** xparams[1]: type fn pointer (as a void * in a user TValue)
+    ** xparams[2]: fn pointer (as a void * in a user TValue)
+    */
+    char *name = ksymbol_buf(xparams[0]);
+    bool (*typep)(TValue obj) = pvalue(xparams[1]);
+    bool (*predp)(TValue obj) = pvalue(xparams[2]);
+
+    /* check the ptree is a list first to allow the structure
+       errors to take precedence over the type errors. */
+
+    TValue tail = ptree;
+    int32_t pairs = 0;
+    while(ttispair(tail) && kis_unmarked(tail)) {
+	pairs++;
+	kmark(tail);
+	tail = kcdr(tail);
+    }
+    unmark_list(K, ptree);
+
+    if (!ttispair(tail) && !ttisnil(tail)) {
+	klispE_throw_extra(K, name, ": expected list");
+	return;
+    }
+
+    tail = ptree;
+    bool res = true;
+
+    /* check the type while checking the predicate.
+       Keep going even if the result is false to catch errors in 
+       type */
+    while(pairs--) {
+	TValue first = kcar(tail);
+
+	if (!(*typep)(first)) {
+	    /* TODO show expected type */
+	    klispE_throw_extra(K, name, ": bad argument type");
+	    return;
+	}
+	res &= (*predp)(first);
+	tail = kcdr(tail);
+    }
+    kapply_cc(K, b2tv(res));
+}

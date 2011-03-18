@@ -334,4 +334,12 @@ void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 */
 void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/*
+** Generic function for typed predicates (like char-alphabetic? or finite?)
+** A type predicate is a predicate that requires its arguments to be a certain
+** type. This takes a function pointer for the type & one for the predicate,
+** both of the same type: bool (*fn)(TValue o).
+*/
+void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 #endif

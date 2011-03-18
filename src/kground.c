@@ -491,9 +491,13 @@ void kinit_ground_env(klisp_State *K)
 		    i2tv(K_TCHAR));
 
     /* 14.1.2? char-alphabetic?, char-numeric?, char-whitespace? */
+    /* unlike in r5rs these take an arbitrary number of chars
+       (even cyclical list) */
     /* TODO */
 
     /* 14.1.3? char-upper-case?, char-lower-case? */
+    /* unlike in r5rs these take an arbitrary number of chars
+       (even cyclical list) */
     /* TODO */
 
     /* 14.1.4? char->integer, integer->char */
