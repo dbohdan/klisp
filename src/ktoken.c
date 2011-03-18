@@ -436,7 +436,11 @@ TValue ktok_read_string(klisp_State *K)
 	    /* avoid warning */
 	    return KINERT;
 	}
-	if (ch == '"') {
+	if (ch < 0 || ch > 127) {
+	    ktok_error(K, "Non ASCII char found while reading a string");
+	    /* avoid warning */
+	    return KINERT;
+	} else if (ch == '"') {
 	    ks_tbadd(K, '\0');
 	    done = true;
 	} else {
@@ -545,13 +549,20 @@ TValue ktok_read_special(klisp_State *K)
 	** For now we follow the scheme report 
 	*/
 	chi = ktok_getc(K);
-	ch = (char) chi;
 
 	if (chi == EOF) {
 	    ktok_error(K, "EOF found while reading a char constant");
 	    /* avoid warning */
 	    return KINERT;
 	}
+
+	ch = (char) chi;
+
+	if (ch < 0 || ch > 127) {
+	    ktok_error(K, "Non ASCII char found as character constant");
+	    /* avoid warning */
+	    return KINERT;
+	} 
 
 	if (!ktok_is_alphabetic(ch) || ktok_check_delimiter(K))
 	    return ch2tv(ch);

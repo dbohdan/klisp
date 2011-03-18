@@ -38,7 +38,10 @@ bool kchar_upper_casep(TValue ch);
 bool kchar_lower_casep(TValue ch);
 
 /* 14.1.4? char->integer, integer->char */
-/* TODO */
+void kchar_to_integer(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
+void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
 
 /* 14.1.4? char-upcase, char-downcase */
 /* TODO */

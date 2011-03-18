@@ -511,7 +511,8 @@ void kinit_ground_env(klisp_State *K)
     
 
     /* 14.1.4? char->integer, integer->char */
-    /* TODO */
+    add_applicative(K, ground_env, "char->integer", kchar_to_integer, 0);
+    add_applicative(K, ground_env, "integer->char", kinteger_to_char, 0);
 
     /* 14.1.4? char-upcase, char-downcase */
     /* TODO */
