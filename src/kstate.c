@@ -30,6 +30,7 @@
 #include "kground.h"
 #include "krepl.h"
 #include "ksymbol.h"
+#include "kport.h"
 
 /*
 ** State creation and destruction
@@ -464,6 +465,12 @@ void klisp_close (klisp_State *K)
 	    klispM_free(K, (Promise *)obj);
 	    break;
 	case K_TPORT:
+	    /* first close the port to free the FILE structure.
+	     This works even if the port was already closed,
+	     it is important that this don't throw errors, because
+	     the mechanism used in error handling would crash at this
+	     point */
+	    kclose_port(K, gc2port(obj));
 	    klispM_free(K, (Port *)obj);
 	    break;
 	default:
