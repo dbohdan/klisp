@@ -113,5 +113,40 @@ bool knum_gep(TValue n1, TValue n2)
     }
 }
 
+/* 12.5.4 + */
+/* TEMP: for now only accept two arguments */
+void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
 
+    bind_2tp(K, "+", ptree, "number", knumberp, n1, "number", knumberp, n2);
+
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: {
+	int32_t i1 = ivalue(n1);
+	int32_t i2 = ivalue(n2);
+	/* TODO: check for overflow and create bigint */
+	kapply_cc(K, i2tv(i1+i2));
+    } 
+    case K_TEINF: {
+	if (ttiseinf(n1) && ttiseinf(n2)) {
+	    if (tv_equal(n1, n2)) {
+		kapply_cc(K, n1);
+	    } else {
+		/* TEMP: we don't have reals with no prim value yet */
+		/* also no strict arithmetic variable for now */
+		klispE_throw(K, "+: result has no primary value");
+		return;
+	    }
+	} else {
+	    kapply_cc(K, ttiseinf(n1)? n1 : n2);
+	}
+    }
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return;
+    }
+}
 

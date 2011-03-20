@@ -44,5 +44,8 @@ bool knum_lep(TValue n1, TValue n2);
 bool knum_gtp(TValue n1, TValue n2);
 bool knum_gep(TValue n1, TValue n2);
 
+/* 12.5.4 + */
+/* TEMP: for now only accept two arguments */
+void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif
