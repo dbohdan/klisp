@@ -188,7 +188,7 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    tail = kcdr(tail); /* tail only advances one place per iteration */
 	    TValue second = kcar(tail);
 
-	    if (!(*typep)(first) && !(*typep)(second)) {
+	    if (!(*typep)(first) || !(*typep)(second)) {
 		/* TODO show expected type */
 		klispE_throw_extra(K, name, ": bad argument type");
 		return;
