@@ -150,3 +150,37 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 }
 
+
+/* 12.5.5 * */
+/* TEMP: for now only accept two arguments */
+void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_2tp(K, "*", ptree, "number", knumberp, n1, "number", knumberp, n2);
+
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: {
+	int32_t i1 = ivalue(n1);
+	int32_t i2 = ivalue(n2);
+	/* TODO: check for overflow and create bigint */
+	kapply_cc(K, i2tv(i1*i2));
+    } 
+    case K_TEINF: {
+	if (kfast_zerop(n1) || kfast_zerop(n2)) {
+	    /* TEMP: we don't have reals with no prim value yet */
+	    /* also no strict arithmetic variable for now */
+	    klispE_throw(K, "*: result has no primary value");
+	    return;
+	} else {
+	    /* use the fact that infinities have ivalues 1 & -1 */
+	    kapply_cc(K, (ivalue(n1) ^ ivalue(n2)) < 0? KEMINF : KEPINF);
+	}
+    }
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return;
+    }
+}

@@ -48,4 +48,11 @@ bool knum_gep(TValue n1, TValue n2);
 /* TEMP: for now only accept two arguments */
 void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.5.5 * */
+/* TEMP: for now only accept two arguments */
+void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* Helper */
+inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
+
 #endif

@@ -509,6 +509,10 @@ void kinit_ground_env(klisp_State *K)
     /* TEMP: for now only accept two arguments */
     add_applicative(K, ground_env, "+", kplus, 0);
 
+    /* 12.5.5 * */
+    /* TEMP: for now only accept two arguments */
+    add_applicative(K, ground_env, "*", ktimes, 0);
+
     /* ... TODO */
 
     /*
