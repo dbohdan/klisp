@@ -521,6 +521,25 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "zero?", ftyped_predp, 3, symbol, 
 		    p2tv(knumberp), p2tv(kzerop));
 
+    /* 12.5.8 div, mod, div-and-mod */
+    /* TODO */
+
+    /* 12.5.9 div0, mod0, div0-and-mod0 */
+    /* TODO */
+
+    /* 12.5.10 positive?, negative? */
+    add_applicative(K, ground_env, "positive?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kpositivep));
+    add_applicative(K, ground_env, "negative?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(knegativep));
+
+    /* 12.5.11 odd?, even? */
+    add_applicative(K, ground_env, "odd?", ftyped_predp, 3, symbol, 
+		    p2tv(kintegerp), p2tv(koddp));
+    add_applicative(K, ground_env, "even?", ftyped_predp, 3, symbol, 
+		    p2tv(kintegerp), p2tv(kevenp));
+
+
     /* ... TODO */
 
     /*

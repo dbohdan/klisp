@@ -227,3 +227,21 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* Helper for zero? */
 bool kzerop(TValue n) { return kfast_zerop(n); }
+
+/* 12.5.8 div, mod, div-and-mod */
+/* TODO */
+
+/* 12.5.9 div0, mod0, div0-and-mod0 */
+/* TODO */
+
+/* 12.5.10 positive?, negative? */
+/* use ftyped_predp */
+
+/* 12.5.10 odd?, even? */
+/* use ftyped_predp */
+
+/* Helpers for positive?, negative?, odd? & even? */
+bool kpositivep(TValue n) { return ivalue(n) > 0; }
+bool knegativep(TValue n) { return ivalue(n) < 0; }
+bool koddp(TValue n) { return (ivalue(n) & 1) != 0; }
+bool kevenp(TValue n) { return (ivalue(n) & 1) == 0; }
