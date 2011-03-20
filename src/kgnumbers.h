@@ -56,6 +56,13 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TEMP: for now only accept two arguments */
 void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.5.7 zero? */
+/* uses ftyped_predp */
+
+/* Helper for zero? */
+bool kzerop(TValue n);
+
+
 /* Misc Helpers */
 inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
 /* TEMP: only exact infinties */

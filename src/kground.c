@@ -517,6 +517,10 @@ void kinit_ground_env(klisp_State *K)
     /* TEMP: for now only accept two arguments */
     add_applicative(K, ground_env, "-", kminus, 0);
 
+    /* 12.5.7 zero? */
+    add_applicative(K, ground_env, "zero?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kzerop));
+
     /* ... TODO */
 
     /*
