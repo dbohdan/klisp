@@ -483,7 +483,7 @@ void kinit_ground_env(klisp_State *K)
     ** 12.5 Number features
     */
 
-    /* 12.5.1? number?, finite?, integer? */
+    /* 12.5.1 number?, finite?, integer? */
     add_applicative(K, ground_env, "number?", ftypep, 2, symbol, 
 		    p2tv(knumberp));
     add_applicative(K, ground_env, "finite?", ftyped_predp, 3, symbol, 
@@ -491,6 +491,19 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "integer?", ftypep, 2, symbol, 
 		    p2tv(kintegerp));
 
+    /* 12.5.2 =? */
+    add_applicative(K, ground_env, "=?", ftyped_bpredp, 3,
+		    symbol, p2tv(knumberp), p2tv(knum_eqp));
+    
+    /* 12.5.3 <?, <=?, >?, >=? */
+    add_applicative(K, ground_env, "<?", ftyped_bpredp, 3,
+		    symbol, p2tv(knumberp), p2tv(knum_ltp));
+    add_applicative(K, ground_env, "<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(knumberp),  p2tv(knum_lep));
+    add_applicative(K, ground_env, ">?", ftyped_bpredp, 3,
+		    symbol, p2tv(knumberp), p2tv(knum_gtp));
+    add_applicative(K, ground_env, ">=?", ftyped_bpredp, 3,
+		    symbol, p2tv(knumberp), p2tv(knum_gep));
 
     /* ... TODO */
 

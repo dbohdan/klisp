@@ -127,7 +127,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TPORT         39
 
 /* this is used to test for numbers, as returned by ttype */
-#define K_LAST_NUMBER_TYPE K_TIINF
+#define K_LAST_NUMBER_TYPE K_TCOMPLEX
 
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
