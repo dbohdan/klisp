@@ -237,7 +237,7 @@ bool kzerop(TValue n) { return kfast_zerop(n); }
 /* 12.5.10 positive?, negative? */
 /* use ftyped_predp */
 
-/* 12.5.10 odd?, even? */
+/* 12.5.11 odd?, even? */
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
@@ -245,3 +245,25 @@ bool kpositivep(TValue n) { return ivalue(n) > 0; }
 bool knegativep(TValue n) { return ivalue(n) < 0; }
 bool koddp(TValue n) { return (ivalue(n) & 1) != 0; }
 bool kevenp(TValue n) { return (ivalue(n) & 1) == 0; }
+
+/* 12.5.12 abs */
+void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, "abs", ptree, "number", knumberp, n);
+
+    switch(ttype(n)) {
+    case K_TFIXINT: {
+	int32_t i = ivalue(n);
+	kapply_cc(K, i < 0? i2tv(-i) : n);
+    }
+    case K_TEINF:
+	kapply_cc(K, KEPINF);
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return;
+    }
+}

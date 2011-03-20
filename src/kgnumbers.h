@@ -71,7 +71,7 @@ bool kzerop(TValue n);
 /* 12.5.10 positive?, negative? */
 /* use ftyped_predp */
 
-/* 12.5.10 odd?, even? */
+/* 12.5.11 odd?, even? */
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
@@ -79,6 +79,9 @@ bool kpositivep(TValue n);
 bool knegativep(TValue n);
 bool koddp(TValue n);
 bool kevenp(TValue n);
+
+/* 12.5.12 abs */
+void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Misc Helpers */
 inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }

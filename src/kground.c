@@ -539,6 +539,8 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "even?", ftyped_predp, 3, symbol, 
 		    p2tv(kintegerp), p2tv(kevenp));
 
+    /* 12.5.12 abs */
+    add_applicative(K, ground_env, "abs", kabs, 0);
 
     /* ... TODO */
 
