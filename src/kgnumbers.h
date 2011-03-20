@@ -52,7 +52,16 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TEMP: for now only accept two arguments */
 void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
-/* Helper */
+/* 12.5.6 - */
+/* TEMP: for now only accept two arguments */
+void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* Misc Helpers */
 inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
+/* TEMP: only exact infinties */
+inline TValue kneg_inf(TValue i) 
+{ 
+    return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
+}
 
 #endif
