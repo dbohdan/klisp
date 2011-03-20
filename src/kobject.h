@@ -126,6 +126,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TPROMISE      38
 #define K_TPORT         39
 
+/* this is used to test for numbers, as returned by ttype */
+#define K_LAST_NUMBER_TYPE K_TIINF
+
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
 /*
@@ -137,6 +140,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 */
 #define K_TAG_FIXINT	K_MAKE_VTAG(K_TFIXINT)
 #define K_TAG_EINF	K_MAKE_VTAG(K_TEINF)
+#define K_TAG_IINF	K_MAKE_VTAG(K_TIINF)
 
 #define K_TAG_NIL	K_MAKE_VTAG(K_TNIL)
 #define K_TAG_IGNORE	K_MAKE_VTAG(K_TIGNORE)
@@ -177,6 +181,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 
 /* Simple types (value in TValue struct) */
 #define ttisfixint(o)	(tbasetype_(o) == K_TAG_FIXINT)
+#define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
+#define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
 #define ttisnil(o)	(tbasetype_(o) == K_TAG_NIL)
 #define ttisignore(o)	(tbasetype_(o) == K_TAG_IGNORE)
 #define ttisinert(o)	(tbasetype_(o) == K_TAG_INERT)

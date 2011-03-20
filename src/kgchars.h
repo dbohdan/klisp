@@ -1,5 +1,5 @@
 /*
-** kgchars.c
+** kgchars.h
 ** Characters features for the ground environment
 ** See Copyright Notice in klisp.h
 */

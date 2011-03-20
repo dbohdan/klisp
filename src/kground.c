@@ -37,6 +37,7 @@
 #include "kgks_vars.h"
 #include "kgports.h"
 #include "kgchars.h"
+#include "kgnumbers.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -468,6 +469,49 @@ void kinit_ground_env(klisp_State *K)
     /* 11.1.1 make-keyed-static-variable */
     add_applicative(K, ground_env, "make-keyed-static-variable", 
 		    make_keyed_static_variable, 0); 
+
+
+    /*
+    **
+    ** 12 Numbers
+    **
+    */
+
+    /* Only integers and exact infinities for now */
+
+    /* 
+    ** 12.5 Number features
+    */
+
+    /* 12.5.1? number?, finite?, integer? */
+    add_applicative(K, ground_env, "number?", ftypep, 2, symbol, 
+		    p2tv(knumberp));
+    add_applicative(K, ground_env, "finite?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kfinitep));
+    add_applicative(K, ground_env, "integer?", ftypep, 2, symbol, 
+		    p2tv(kintegerp));
+
+
+    /* ... TODO */
+
+    /*
+    **
+    ** 13 Strings
+    **
+    */
+
+    /* 
+    ** 13.1 Primitive features
+    */
+
+    /* TODO */
+
+    /* 
+    ** 13.2 Library features
+    */
+
+    /* TODO */
+    
 
 
     /*
