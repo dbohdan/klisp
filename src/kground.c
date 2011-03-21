@@ -552,7 +552,11 @@ void kinit_ground_env(klisp_State *K)
     /* 12.5.12 abs */
     add_applicative(K, ground_env, "abs", kabs, 0);
 
-    /* ... TODO */
+    /* 12.5.13 min, max */
+    add_applicative(K, ground_env, "min", kmin_max, 2, symbol, b2tv(FMIN));
+    add_applicative(K, ground_env, "max", kmin_max, 2, symbol, b2tv(FMAX));
+
+/* ... TODO */
 
     /*
     **

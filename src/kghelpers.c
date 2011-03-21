@@ -198,3 +198,34 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	kapply_cc(K, b2tv(res));
     }
 }
+
+/* typed finite list. Structure error should be throw before type errors */
+int32_t check_typed_list(klisp_State *K, char *name, char *typename,
+			 bool (*typep)(TValue), bool allow_infp, TValue obj)
+{
+    TValue tail = obj;
+    int pairs = 0;
+    bool type_errorp = false;
+
+    while(ttispair(tail) && !kis_marked(tail)) {
+	/* even if there is a type error continue checking the structure */
+	type_errorp |= !(*typep)(kcar(tail));
+	kmark(tail);
+	tail = kcdr(tail);
+	++pairs;
+    }
+    unmark_list(K, obj);
+
+    if (!ttispair(tail) && !ttisnil(tail)) {
+	klispE_throw_extra(K, name , ": expected finite list"); 
+	return 0;
+    } else if(ttispair(tail) & !allow_infp) {
+	klispE_throw_extra(K, name , ": expected finite list"); 
+	return 0;
+    } else if (type_errorp) {
+	/* TODO put type name too */
+	klispE_throw_extra(K, name , ": bad operand type"); 
+	return 0;
+    }
+    return pairs;
+}

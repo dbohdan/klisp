@@ -292,6 +292,8 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     char *name = ksymbol_buf(xparams[0]);
     int32_t flags = ivalue(xparams[1]);
 
+    UNUSED(denv);
+
     bind_2tp(K, name, ptree, "number", knumberp, tv_n,
 	     "number", knumberp, tv_d);
 
@@ -358,5 +360,57 @@ void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	assert(0);
 	return;
     }
+}
+
+/* 12.5.13 min, max */
+/* NOTE: this does two passes, one for error checking and one for doing
+ the actual work */
+void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: symbol name
+    ** xparams[1]: bool: true min, false max
+    */
+    UNUSED(denv);
+    
+    char *name = ksymbol_buf(xparams[0]);
+    bool minp = bvalue(xparams[1]);
+
+    /* cycles are allowed, loop counting pairs */
+    int32_t pairs = check_typed_list(K, name, "number", knumberp, true, ptree);
+    
+    TValue res;
+    bool one_finite = false;
+    TValue break_val;
+    if (minp) {
+	res = KEPINF;
+	break_val = KEMINF; /* min possible number */
+    } else {
+	res = KEMINF;
+	break_val = KEPINF; /* max possible number */
+    }
+
+    TValue tail = ptree;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	tail = kcdr(tail);
+
+	if (ttiseinf(first)) {
+	    if (tv_equal(first, break_val)) {
+		res = first;
+		break;
+	    }
+	} else if (!one_finite) {
+	    res = first;
+	    one_finite = true;
+	} else if (minp) {
+	    if (ivalue(first) < ivalue(res))
+		res = first;
+	} else { /* maxp */
+	    if (ivalue(first) > ivalue(res))
+		res = first;
+	}
+    }
+    kapply_cc(K, res);
 }
 

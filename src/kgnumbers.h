@@ -97,6 +97,15 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 12.5.12 abs */
 void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.5.13 min, max */
+/* use kmin_max */
+
+/* Helper */
+#define FMIN (true)
+#define FMAX (false)
+void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+
 /* Misc Helpers */
 inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
 /* TEMP: only exact infinties */
