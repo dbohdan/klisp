@@ -80,6 +80,20 @@ bool knegativep(TValue n);
 bool koddp(TValue n);
 bool kevenp(TValue n);
 
+/* 12.5.8 div, mod, div-and-mod */
+/* use div_mod */
+
+/* 12.5.9 div0, mod0, div0-and-mod0 */
+/* use div_mod */
+
+/* Helper for div and mod */
+#define FDIV_DIV 1
+#define FDIV_MOD 2
+#define FDIV_ZERO 4
+
+void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+
 /* 12.5.12 abs */
 void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 

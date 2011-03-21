@@ -128,4 +128,5 @@ kgports.o: kgports.c kgports.h kghelpers.h kstate.h klisp.h \
 kgchars.o: kgchars.c kgchars.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h
 kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
-	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h
+	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
+	ksymbol.h

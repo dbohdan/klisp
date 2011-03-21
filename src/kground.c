@@ -522,10 +522,20 @@ void kinit_ground_env(klisp_State *K)
 		    p2tv(knumberp), p2tv(kzerop));
 
     /* 12.5.8 div, mod, div-and-mod */
-    /* TODO */
+    add_applicative(K, ground_env, "div", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_DIV));
+    add_applicative(K, ground_env, "mod", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_MOD));
+    add_applicative(K, ground_env, "div-and-mod", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_DIV | FDIV_MOD));
 
     /* 12.5.9 div0, mod0, div0-and-mod0 */
-    /* TODO */
+    add_applicative(K, ground_env, "div0", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_ZERO | FDIV_DIV));
+    add_applicative(K, ground_env, "mod0", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_ZERO | FDIV_MOD));
+    add_applicative(K, ground_env, "div0-and-mod0", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_ZERO | FDIV_DIV | FDIV_MOD));
 
     /* 12.5.10 positive?, negative? */
     add_applicative(K, ground_env, "positive?", ftyped_predp, 3, symbol, 

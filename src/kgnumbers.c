@@ -16,6 +16,7 @@
 #include "koperative.h"
 #include "kcontinuation.h"
 #include "kerror.h"
+#include "ksymbol.h"
 
 #include "kghelpers.h"
 #include "kgnumbers.h"
@@ -229,10 +230,101 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 bool kzerop(TValue n) { return kfast_zerop(n); }
 
 /* 12.5.8 div, mod, div-and-mod */
-/* TODO */
+/* use div_mod */
 
 /* 12.5.9 div0, mod0, div0-and-mod0 */
-/* TODO */
+/* use div_mod */
+
+/* Helpers for div, mod, div0 and mod0 */
+
+/* zerop signals div0 and mod0 if true div and mod if false */
+inline void div_mod(bool zerop, int32_t n, int32_t d, int32_t *div, 
+		    int32_t *mod) 
+{
+    *div = n / d;
+    *mod = n % d;
+
+    if (zerop) {
+	/* div0, mod0 or div-and-mod0 */
+	/* -|d/2| <= mod0 < |d/2| */
+
+	int32_t dabs = ((d<0? -d : d) + 1) / 2;
+	
+	if (*mod < -dabs) {
+	    if (d < 0) {
+		*mod -= d;
+		++(*div);
+	    } else {
+		*mod += d;
+		--(*div);
+	    }
+	} else if (*mod >= dabs) {
+	    if (d < 0) {
+		*mod += d;
+		--(*div);
+	    } else {
+		*mod -= d;
+		++(*div);
+	    }
+	}
+    } else {
+	/* div, mod or div-and-mod */
+	/* 0 <= mod0 < |d| */
+	if (*mod < 0) {
+	    if (d < 0) {
+		*mod -= d;
+		++(*div);
+	    } else {
+		*mod += d;
+		--(*div);
+	    }
+	}
+    }
+}
+
+/* flags are FDIV_DIV, FDIV_MOD, FDIV_ZERO */
+void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: name symbol
+    ** xparams[1]: div_mod_flags
+    */
+    char *name = ksymbol_buf(xparams[0]);
+    int32_t flags = ivalue(xparams[1]);
+
+    bind_2tp(K, name, ptree, "number", knumberp, tv_n,
+	     "number", knumberp, tv_d);
+
+    /* TEMP: only fixnums */
+    TValue tv_div, tv_mod;
+
+    if (kfast_zerop(tv_d)) {
+	klispE_throw_extra(K, name, ": division by zero");
+	return;
+    } else if (ttiseinf(tv_n)) {
+	klispE_throw_extra(K, name, ": non finite dividend");
+	return;
+    } else if (ttiseinf(tv_d)) {
+	tv_div = ((ivalue(tv_n) ^ ivalue(tv_d)) < 0)? KEPINF : KEMINF;
+	tv_mod = i2tv(0);
+    } else {
+	int32_t div, mod;
+	div_mod(flags & FDIV_ZERO, ivalue(tv_n), ivalue(tv_d), &div, &mod);
+	tv_div = i2tv(div);
+	tv_mod = i2tv(mod);
+    }
+    TValue res;
+    if (flags & FDIV_DIV) {
+	if (flags & FDIV_MOD) { /* return both div and mod */
+	    res =  kcons(K, tv_div, kcons(K, tv_mod, KNIL));
+	} else {
+	    res = tv_div;
+	}
+    } else {
+	res = tv_mod;
+    }
+    kapply_cc(K, res);
+}
 
 /* 12.5.10 positive?, negative? */
 /* use ftyped_predp */
@@ -267,3 +359,4 @@ void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
 }
+
