@@ -120,35 +120,104 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(denv);
     UNUSED(xparams);
+    /* cycles are allowed, loop counting pairs */
+    int32_t cpairs; 
+    int32_t pairs = check_typed_list(K, "+", "number", knumberp, true,
+				     ptree, &cpairs);
+    int32_t apairs = pairs - cpairs;
 
-    bind_2tp(K, "+", ptree, "number", knumberp, n1, "number", knumberp, n2);
+    TValue res;
 
-    switch(max_ttype(n1, n2)) {
-    case K_TFIXINT: {
-	int32_t i1 = ivalue(n1);
-	int32_t i2 = ivalue(n2);
-	/* TODO: check for overflow and create bigint */
-	kapply_cc(K, i2tv(i1+i2));
-    } 
-    case K_TEINF: {
-	if (ttiseinf(n1) && ttiseinf(n2)) {
-	    if (tv_equal(n1, n2)) {
-		kapply_cc(K, n1);
+    /* first the acyclic part */
+    TValue ares = i2tv(0);
+    int32_t accum = 0;
+    bool seen_infinity = false;
+    TValue tail = ptree;
+
+    while(apairs--) {
+	TValue first = kcar(tail);
+	tail = kcdr(tail);
+
+	if (ttiseinf(first)) {
+	    if (seen_infinity && !tv_equal(first, ares)) {
+		/* report: #e+infinity + #e-infinity has no primary value */
+		klispE_throw(K, "+: result has no primary value");
+		return;
 	    } else {
-		/* TEMP: we don't have reals with no prim value yet */
-		/* also no strict arithmetic variable for now */
+		/* record which infinity we have seen */
+		seen_infinity = true;
+		ares = first;
+	    }
+	} else if (!seen_infinity) {
+	    accum += ivalue(first);
+	}
+    }
+
+    if (!seen_infinity)
+	ares = i2tv(accum);
+
+    /* next the acyclic part */
+    TValue cres = i2tv(0);
+
+    if (cpairs == 0) {
+	res = ares;
+    } else {
+	bool all_zero = true;
+
+	seen_infinity = false;
+	accum = 0;
+
+	while(cpairs--) {
+	    TValue first = kcar(tail);
+	    tail = kcdr(tail);
+
+	    all_zero = all_zero && kfast_zerop(first);
+
+	    if (ttiseinf(first)) {
+		if (seen_infinity && !tv_equal(first, cres)) {
+		    /* report: #e+infinity + #e-infinity has no primary value */
+		    klispE_throw(K, "+: result has no primary value");
+		    return;
+		} else {
+		    /* record which infinity we have seen */
+		    seen_infinity = true;
+		    cres = first;
+		}
+	    } else if (!seen_infinity) {
+		accum += ivalue(first);
+	    }
+	}
+
+	if (!seen_infinity) {
+	    if (accum == 0)  {
+		if (!all_zero) {
+		    /* report */
+		    klispE_throw(K, "+: result has no primary value");
+		    return;
+		} else {
+		    cres = i2tv(accum);
+		}
+	    } else {
+		cres = accum < 0? KEMINF : KEPINF;
+	    }
+	}
+
+	if (ttiseinf(ares)) {
+	    if (!ttiseinf(cres) || tv_equal(ares, cres))
+		res = ares;
+	    else {
+		/* report */
 		klispE_throw(K, "+: result has no primary value");
 		return;
 	    }
 	} else {
-	    kapply_cc(K, ttiseinf(n1)? n1 : n2);
+	    if (ttiseinf(cres))
+		res = cres;
+	    else 
+		res = i2tv(ivalue(ares) + ivalue(cres));
 	}
-    }
-    default:
-	/* shouldn't happen */
-	assert(0);
-	return;
-    }
+    } 
+    kapply_cc(K, res);
 }
 
 
