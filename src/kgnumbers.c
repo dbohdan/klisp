@@ -377,7 +377,9 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bool minp = bvalue(xparams[1]);
 
     /* cycles are allowed, loop counting pairs */
-    int32_t pairs = check_typed_list(K, name, "number", knumberp, true, ptree);
+    int32_t dummy; /* don't care about count of cycle pairs */
+    int32_t pairs = check_typed_list(K, name, "number", knumberp, true, ptree,
+	&dummy);
     
     TValue res;
     bool one_finite = false;
@@ -462,8 +464,9 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
+    int32_t dummy; /* don't care about count of cycle pairs */
     int32_t pairs = check_typed_list(K, "gcd", "number", knumberp, true,
-				     ptree);
+				     ptree, &dummy);
 
     TValue res;
 
@@ -503,8 +506,9 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
+    int32_t dummy; /* don't care about count of cycle pairs */
     int32_t pairs = check_typed_list(K, "lcm", "number", knumberp, true, 
-				     ptree);
+				     ptree, &dummy);
     /* we will need to loop again after obtaining the gcd */
     int32_t saved_pairs = pairs; 
 				 

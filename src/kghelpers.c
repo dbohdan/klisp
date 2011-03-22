@@ -201,19 +201,20 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* typed finite list. Structure error should be throw before type errors */
 int32_t check_typed_list(klisp_State *K, char *name, char *typename,
-			 bool (*typep)(TValue), bool allow_infp, TValue obj)
+			 bool (*typep)(TValue), bool allow_infp, TValue obj,
+			 int32_t *cpairs)
 {
     TValue tail = obj;
-    int pairs = 0;
+    int32_t pairs = 0;
     bool type_errorp = false;
-
     while(ttispair(tail) && !kis_marked(tail)) {
 	/* even if there is a type error continue checking the structure */
 	type_errorp |= !(*typep)(kcar(tail));
-	kmark(tail);
+	kset_mark(tail, i2tv(pairs));
 	tail = kcdr(tail);
 	++pairs;
     }
+    *cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {

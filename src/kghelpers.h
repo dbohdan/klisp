@@ -235,8 +235,8 @@ inline void unmark_tree(klisp_State *K, TValue obj)
 
 /* typed finite list. Structure error should be throw before type errors */
 int32_t check_typed_list(klisp_State *K, char *name, char *typename,
-			 bool (*typep)(TValue), bool allow_infp, TValue obj);
-
+			 bool (*typep)(TValue), bool allow_infp, TValue obj,
+			 int32_t *cpairs);
 
 /*
 ** MAYBE: These shouldn't be inline really.
