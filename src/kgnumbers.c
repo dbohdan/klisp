@@ -414,3 +414,137 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
+/* 12.5.14 gcm, lcm */
+
+/* gcd for two numbers */
+int32_t gcd2(int32_t a, int32_t b)
+{
+    /* work with positive numbers */
+    if (a < 0)
+	a = -a;
+    if (b < 0)
+	b = -b;
+
+    /* this is a vanilla binary gcd algorithm */ 
+    int32_t powerof2;
+
+    /* the easy cases first, unlike the general kernel gcd the
+     gcd2 of a number and zero is zero */
+    if (a == 0)
+	return b;
+    else if (b == 0)
+	return a;
+ 
+    for (powerof2 = 0; ((a & 1) == 0) && 
+	     ((b & 1) == 0); ++powerof2, a >>= 1, b >>= 1)
+	;
+ 
+    while(a != 0 && b!= 0) {
+	/* either a or b are odd, make them both odd */
+	for (; (a & 1) == 0; a >>= 1)
+	    ;
+	for (; (b & 1) == 0; b >>= 1)
+	    ;
+
+	/* now the difference is sure to be even */
+	if (a < b) {
+	    b = (b - a) >> 1;
+	} else {
+	    a = (a - b) >> 1;
+	}
+    }
+ 
+    return (a == 0? b : a) << powerof2;
+}
+
+void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    /* cycles are allowed, loop counting pairs */
+    int32_t pairs = check_typed_list(K, "gcd", "number", knumberp, true,
+				     ptree);
+
+    TValue res;
+
+    if (pairs) {
+	TValue tail = ptree;
+	bool seen_zero = false; 
+	bool seen_finite_non_zero = false; 
+	int32_t finite_gcd = 0;
+
+	while(pairs--) {
+	    TValue first = kcar(tail);
+	    tail = kcdr(tail);
+	    if (kfast_zerop(first)) {
+		seen_zero = true;
+	    } else if (ttisfixint(first)) {
+		seen_finite_non_zero = true;
+		finite_gcd = gcd2(finite_gcd, ivalue(first));
+	    }
+	}
+	if (seen_finite_non_zero) {
+	    res = i2tv(finite_gcd);
+	} else if (seen_zero) {
+           /* report */
+	    klispE_throw(K, "gcd: result has no primary value");
+	} else {
+	    res = KEPINF; /* report */
+	}
+    } else {
+	res = KEPINF; /* report: (gcd) = #e+infinity */
+    }
+
+    kapply_cc(K, res);
+}
+
+void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    /* cycles are allowed, loop counting pairs */
+    int32_t pairs = check_typed_list(K, "lcm", "number", knumberp, true, 
+				     ptree);
+    /* we will need to loop again after obtaining the gcd */
+    int32_t saved_pairs = pairs; 
+				 
+    TValue res = i2tv(1); /* report: (lcm) = 1 */
+    /* lcm is +infinite if there is any infinite number, must still loop 
+       to check for zero but returns #e+infinty */
+    bool seen_infinite = false; 
+    int32_t finite_gcd = 0;
+    
+    TValue tail = ptree;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	tail = kcdr(tail);
+	if (ttiseinf(first)) {
+	    seen_infinite = true;
+	    res = KEPINF; /* report */
+	} else if (kfast_zerop(first)) {
+	    klispE_throw(K, "lcm: result has no primary");
+	    return;
+	} else if (!seen_infinite) {
+	    finite_gcd = gcd2(finite_gcd, ivalue(first));
+	}
+    }
+
+    if (!seen_infinite && saved_pairs) {
+	/* now collect the lcm proper, there are no zero and no infinities,
+	   finite_gcd can't be zero because there are at least one finite,
+	   non-zero number */
+	tail = ptree;
+	pairs = saved_pairs;
+	int32_t lcm = 1;
+	while(pairs--) {
+	    TValue first = kcar(tail);
+	    tail = kcdr(tail);
+	    int32_t first_i = ivalue(first);
+            /* no remainder */
+	    lcm *= (first_i < 0? -first_i : first_i) / finite_gcd; 
+	}
+	res = i2tv(lcm);
+    }
+    kapply_cc(K, res);
+}
+
