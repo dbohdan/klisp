@@ -111,6 +111,7 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Misc Helpers */
 inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
+inline bool kfast_onep(TValue n) { return ttisfixint(n) && ivalue(n) == 1; }
 /* TEMP: only exact infinties */
 inline TValue kneg_inf(TValue i) 
 { 
