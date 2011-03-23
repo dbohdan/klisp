@@ -566,19 +566,84 @@ void kinit_ground_env(klisp_State *K)
     **
     */
 
+    /*
+    ** This section is still missing from the report. The bindings here are
+    ** taken from r5rs scheme and should not be considered standard. They are
+    ** provided in the meantime to allow programs to use string features
+    ** (ASCII only). 
+    */
+
     /* 
     ** 13.1 Primitive features
     */
 
+    /* 13.1.? string? */
+    add_applicative(K, ground_env, "string?", typep, 2, symbol, 
+		    i2tv(K_TSTRING));
+
+    /* 13.1.? make-string */
+    /* TODO */
+
+    /* 13.1.? string-length */
+    /* TODO */
+
+    /* 13.1.? string-ref */
+    /* TODO */
+
+    /* 13.1.? string-set! */
     /* TODO */
 
     /* 
     ** 13.2 Library features
     */
 
+    /* 13.2.? string */
     /* TODO */
-    
 
+    /* 13.2.? string=?, string-ci=? */
+    /* TODO */
+
+    /* 13.2.? string<?, string<=?, string>?, string>=? */
+    /* TODO */
+
+    /* 13.2.? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
+    /* TODO */
+
+    /* 13.2.? substring */
+    /* TODO */
+
+    /* 13.2.? string-append */
+    /* TODO */
+
+    /* 13.2.? string->list, list->string */
+    /* TODO */
+
+    /* 13.2.? string-copy */
+    /* TODO */
+
+    /* 13.2.? string-fill! */
+    /* TODO */
+
+    /*
+    ** 13.3 Symbol Features (this are from section symbol in r5rs)
+    */
+    
+    /* 13.3.? symbol->string */
+    /* TEMP: for now all strings are mutable, this returns a new object
+       each time */
+    /* TODO */
+
+    /* 13.3.? symbol->string */
+    /* TEMP: for now this can create symbols with no external representation
+       this includes all symbols with non identifiers characters.
+    */
+    /* NOTE:
+       Symbols with uppercase alphabetic characters will write as lowercase and
+       so, when read again will not compare as either eq? or equal?. This is ok
+       because the report only says that read objects when written and read 
+       again must be equal? which happens here 
+    */
+    /* TODO */
 
     /*
     **
