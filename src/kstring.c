@@ -35,7 +35,7 @@ TValue kstring_new_empty(klisp_State *K)
 }
 
 /* TEMP: for now all strings are mutable */
-TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
+TValue kstring_new_g(klisp_State *K, uint32_t size)
 {
     String *new_str;
 
@@ -55,12 +55,28 @@ TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
     /* string specific fields */
     new_str->mark = KFALSE;
     new_str->size = size;
-    /* NOTE: there can be embedded '\0's in a string */
-    memcpy(new_str->b, buf, size);
-    /* NOTE: they still end with a '\0' for convenience in printing */
+
+    /* the buffer is initialized elsewhere */
+
+    /* NOTE: all string end with a '\0' for convenience in printing 
+       even if they have embedded '\0's */
     new_str->b[size] = '\0';
 
     return gc2str(new_str);
+}
+
+TValue kstring_new(klisp_State *K, const char *buf, uint32_t size)
+{
+    TValue new_str = kstring_new_g(K, size);
+    memcpy(kstring_buf(new_str), buf, size);
+    return new_str;
+}
+
+TValue kstring_new_sc(klisp_State *K, uint32_t size, char fill)
+{
+    TValue new_str = kstring_new_g(K, size);
+    memset(kstring_buf(new_str), fill, size);
+    return new_str;
 }
 
 /* both obj1 and obj2 should be strings! */

@@ -177,7 +177,8 @@ inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
 	    return true;
 	}
     } else {
-	klispE_throw(K, "apply: Bad ptree structure (in optional argument)");
+	klispE_throw_extra(K, name, ": Bad ptree structure (in optional "
+			   "argument)");
 	/* avoid warning */
 	return false;
     }

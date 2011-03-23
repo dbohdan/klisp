@@ -35,9 +35,10 @@
 #include "kgpromises.h"
 #include "kgkd_vars.h"
 #include "kgks_vars.h"
-#include "kgports.h"
-#include "kgchars.h"
 #include "kgnumbers.h"
+#include "kgstrings.h"
+#include "kgchars.h"
+#include "kgports.h"
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -577,63 +578,64 @@ void kinit_ground_env(klisp_State *K)
     ** 13.1 Primitive features
     */
 
-    /* 13.1.? string? */
+    /* 13.1.1? string? */
     add_applicative(K, ground_env, "string?", typep, 2, symbol, 
 		    i2tv(K_TSTRING));
 
-    /* 13.1.? make-string */
+    /* 13.1.2? make-string */
+    add_applicative(K, ground_env, "make-string", kgmake_string, 2, symbol, 
+		    i2tv(K_TSTRING));
+
+    /* 13.1.3? string-length */
     /* TODO */
 
-    /* 13.1.? string-length */
+    /* 13.1.4? string-ref */
     /* TODO */
 
-    /* 13.1.? string-ref */
-    /* TODO */
-
-    /* 13.1.? string-set! */
+    /* 13.1.5? string-set! */
     /* TODO */
 
     /* 
     ** 13.2 Library features
     */
 
-    /* 13.2.? string */
+    /* 13.2.1? string */
     /* TODO */
 
-    /* 13.2.? string=?, string-ci=? */
+    /* 13.2.2? string=?, string-ci=? */
     /* TODO */
 
-    /* 13.2.? string<?, string<=?, string>?, string>=? */
+    /* 13.2.3? string<?, string<=?, string>?, string>=? */
     /* TODO */
 
-    /* 13.2.? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
+    /* 13.2.4? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
     /* TODO */
 
-    /* 13.2.? substring */
+    /* 13.2.5? substring */
     /* TODO */
 
-    /* 13.2.? string-append */
+    /* 13.2.6? string-append */
     /* TODO */
 
-    /* 13.2.? string->list, list->string */
+    /* 13.2.7? string->list, list->string */
     /* TODO */
 
-    /* 13.2.? string-copy */
+    /* 13.2.8? string-copy */
     /* TODO */
 
-    /* 13.2.? string-fill! */
+    /* 13.2.9? string-fill! */
     /* TODO */
 
     /*
     ** 13.3 Symbol Features (this are from section symbol in r5rs)
     */
     
-    /* 13.3.? symbol->string */
+    /* 13.3.1? symbol->string */
     /* TEMP: for now all strings are mutable, this returns a new object
        each time */
     /* TODO */
 
-    /* 13.3.? symbol->string */
+    /* 13.3.2? symbol->string */
     /* TEMP: for now this can create symbols with no external representation
        this includes all symbols with non identifiers characters.
     */

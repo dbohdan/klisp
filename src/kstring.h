@@ -16,6 +16,8 @@
 
 TValue kstring_new_empty(klisp_State *K);
 TValue kstring_new(klisp_State *K, const char *buf, uint32_t size);
+TValue kstring_new_sc(klisp_State *K, uint32_t size, char fill);
+
 #define kstring_buf(tv_) (((String *) ((tv_).tv.v.gc))->b)
 #define kstring_size(tv_) (((String *) ((tv_).tv.v.gc))->size)
 

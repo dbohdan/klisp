@@ -14,7 +14,8 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
-	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o
+	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
+	kgstrings.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -80,7 +81,7 @@ kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kgbooleans.h kgeqp.h kgequalp.h kgsymbols.h kgpairs_lists.h \
 	kgpair_mut.h kgenvironments.h kgenv_mut.h kgcombiners.h \
 	kgcontinuations.h kgencapsulations.h kgpromises.h kgkd_vars.h \
-	kgks_vars.h kgports.h kgchars.h kgnumbers.h
+	kgks_vars.h kgports.h kgchars.h kgnumbers.h kgstrings.o
 kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 	kapplicative.h koperative.h kerror.h kobject.h ksymbol.h
 kgbooleans.o: kgbooleans.c kgbooleans.c kghelpers.h kstate.h klisp.h \
@@ -128,5 +129,8 @@ kgports.o: kgports.c kgports.h kghelpers.h kstate.h klisp.h \
 kgchars.o: kgchars.c kgchars.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h
 kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
+	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
+	ksymbol.h
+kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
 	ksymbol.h
