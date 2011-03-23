@@ -59,7 +59,7 @@ void string_setS (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 13.2.9? string-fill! */
-/* TODO */
+void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.3.1? symbol->string */
 /* TEMP: for now all strings are mutable, this returns a new object

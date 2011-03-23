@@ -623,7 +623,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 13.2.9? string-fill! */
-    /* TODO */
+    add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
 
     /*
     ** 13.3 Symbol Features (this are from section symbol in r5rs)

@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -124,7 +125,17 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* TODO */
 
 /* 13.2.9? string-fill! */
-/* TODO */
+void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, "string-fill!", ptree, "string", ttisstring, str,
+	     "char", ttischar, tv_ch);
+
+    memset(kstring_buf(str), chvalue(tv_ch), kstring_size(str));
+    kapply_cc(K, KINERT);
+}
+
 
 /* 13.3.1? symbol->string */
 /* TEMP: for now all strings are mutable, this returns a new object
