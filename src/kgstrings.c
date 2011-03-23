@@ -174,6 +174,54 @@ bool kstring_ci_eqp(TValue str1, TValue str2)
     }
 }
 
+bool kstring_ltp(TValue str1, TValue str2)
+{
+    int32_t size1 = kstring_size(str1);
+    int32_t size2 = kstring_size(str2);
+
+    int32_t min_size = size1 < size2? size1 : size2;
+    /* memcmp > 0 if str1 has a bigger char in first diff position */
+    int res = memcmp(kstring_buf(str1), kstring_buf(str2), min_size);
+
+    return (res < 0 || (res == 0 && size1 < size2));
+}
+
+bool kstring_lep(TValue str1, TValue str2)
+{
+    int32_t size1 = kstring_size(str1);
+    int32_t size2 = kstring_size(str2);
+
+    int32_t min_size = size1 < size2? size1 : size2;
+    /* memcmp > 0 if str1 has a bigger char in first diff position */
+    int res = memcmp(kstring_buf(str1), kstring_buf(str2), min_size);
+
+    return (res < 0 || (res == 0 && size1 <= size2));
+}
+
+bool kstring_gtp(TValue str1, TValue str2)
+{
+    int32_t size1 = kstring_size(str1);
+    int32_t size2 = kstring_size(str2);
+
+    int32_t min_size = size1 < size2? size1 : size2;
+    /* memcmp > 0 if str1 has a bigger char in first diff position */
+    int res = memcmp(kstring_buf(str1), kstring_buf(str2), min_size);
+
+    return (res > 0 || (res == 0 && size2 < size1));
+}
+
+bool kstring_gep(TValue str1, TValue str2)
+{
+    int32_t size1 = kstring_size(str1);
+    int32_t size2 = kstring_size(str2);
+
+    int32_t min_size = size1 < size2? size1 : size2;
+    /* memcmp > 0 if str1 has a bigger char in first diff position */
+    int res = memcmp(kstring_buf(str1), kstring_buf(str2), min_size);
+
+    return (res > 0 || (res == 0 && size2 <= size1));
+}
+
 
 /* 13.2.5? substring */
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

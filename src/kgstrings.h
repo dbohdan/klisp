@@ -51,6 +51,12 @@ void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 bool kstring_eqp(TValue str1, TValue str2);
 bool kstring_ci_eqp(TValue str1, TValue str2);
 
+bool kstring_ltp(TValue str1, TValue str2);
+bool kstring_lep(TValue str1, TValue str2);
+bool kstring_gtp(TValue str1, TValue str2);
+bool kstring_gep(TValue str1, TValue str2);
+
+
 /* 13.2.5? substring */
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
