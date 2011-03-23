@@ -583,16 +583,16 @@ void kinit_ground_env(klisp_State *K)
 		    i2tv(K_TSTRING));
 
     /* 13.1.2? make-string */
-    add_applicative(K, ground_env, "make-string", kgmake_string, 0);
+    add_applicative(K, ground_env, "make-string", make_string, 0);
 
     /* 13.1.3? string-length */
-    add_applicative(K, ground_env, "string-length", kgstring_length, 0);
+    add_applicative(K, ground_env, "string-length", string_length, 0);
 
     /* 13.1.4? string-ref */
-    add_applicative(K, ground_env, "string-ref", kstring_ref, 0);
+    add_applicative(K, ground_env, "string-ref", string_ref, 0);
 
     /* 13.1.5? string-set! */
-    /* TODO */
+    add_applicative(K, ground_env, "string-set!", string_setS, 0);
 
     /* 
     ** 13.2 Library features

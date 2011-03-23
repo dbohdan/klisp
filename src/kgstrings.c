@@ -27,7 +27,7 @@
 /* uses typep */
 
 /* 13.1.2? make-string */
-void kgmake_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -48,7 +48,7 @@ void kgmake_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.1.3? string-length */
-void kgstring_length(klisp_State *K, TValue *xparams, TValue ptree, 
+void string_length(klisp_State *K, TValue *xparams, TValue ptree, 
 		     TValue denv)
 {
     UNUSED(xparams);
@@ -60,7 +60,7 @@ void kgstring_length(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 13.1.4? string-ref */
-void kstring_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -80,7 +80,24 @@ void kstring_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.1.5? string-set! */
-/* TODO */
+void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_3tp(K, "string-set!", ptree, "string", ttisstring, str,
+	     "finite integer", ttisfixint, tv_i, "char", ttischar, tv_ch);
+
+    int32_t i = ivalue(tv_i);
+    
+    if (i < 0 || i >= kstring_size(str)) {
+	/* TODO show index */
+	klispE_throw(K, "string-set!: index out of bounds");
+	return;
+    }
+
+    kstring_buf(str)[i] = chvalue(tv_ch);
+    kapply_cc(K, KINERT);
+}
 
 /* 13.2.1? string */
 /* TODO */

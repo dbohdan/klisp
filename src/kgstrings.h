@@ -22,17 +22,17 @@
 /* uses typep */
 
 /* 13.1.2? make-string */
-void kgmake_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.1.3? string-length */
-void kgstring_length(klisp_State *K, TValue *xparams, TValue ptree, 
+void string_length(klisp_State *K, TValue *xparams, TValue ptree, 
 		     TValue denv);
 
 /* 13.1.4? string-ref */
-void kstring_ref (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void string_ref (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.1.5? string-set! */
-/* TODO */
+void string_setS (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.2.1? string */
 /* TODO */
