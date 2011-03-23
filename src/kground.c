@@ -599,7 +599,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 13.2.1? string */
-    /* TODO */
+    add_applicative(K, ground_env, "string", string, 0);
 
     /* 13.2.2? string=?, string-ci=? */
     /* TODO */

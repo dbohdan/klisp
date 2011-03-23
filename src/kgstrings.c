@@ -22,6 +22,7 @@
 #include "kstring.h"
 
 #include "kghelpers.h"
+#include "kgchars.h" /* for kcharp */
 #include "kgstrings.h"
 
 /* 13.1.1? string? */
@@ -101,7 +102,31 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.2.1? string */
-/* TODO */
+void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    int32_t dummy;
+    /* don't allow cycles */
+    int32_t pairs = check_typed_list(K, "string", "char", kcharp, false,
+				     ptree, &dummy);
+
+    TValue new_str;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (pairs == 0) {
+	new_str = K->empty_string; 
+    } else {
+	new_str = kstring_new_g(K, pairs);
+	char *buf = kstring_buf(new_str);
+	TValue tail = ptree;
+	while(pairs--) {
+	    *buf++ = chvalue(kcar(tail));
+	    tail = kcdr(tail);
+	}
+    }
+    kapply_cc(K, new_str);
+}
 
 /* 13.2.2? string=?, string-ci=? */
 /* TODO */

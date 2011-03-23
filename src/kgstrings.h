@@ -35,7 +35,7 @@ void string_ref (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void string_setS (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.2.1? string */
-/* TODO */
+void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.2.2? string=?, string-ci=? */
 /* TODO */
