@@ -29,7 +29,7 @@ void kgstring_length(klisp_State *K, TValue *xparams, TValue ptree,
 		     TValue denv);
 
 /* 13.1.4? string-ref */
-/* TODO */
+void kstring_ref (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.1.5? string-set! */
 /* TODO */

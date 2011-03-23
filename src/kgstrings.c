@@ -60,7 +60,24 @@ void kgstring_length(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 13.1.4? string-ref */
-/* TODO */
+void kstring_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, "string-ref", ptree, "string", ttisstring, str,
+	     "finite integer", ttisfixint, tv_i);
+
+    int32_t i = ivalue(tv_i);
+    
+    if (i < 0 || i >= kstring_size(str)) {
+	/* TODO show index */
+	klispE_throw(K, "string-ref: index out of bounds");
+	return;
+    }
+
+    TValue res = ch2tv(kstring_buf(str)[i]);
+    kapply_cc(K, res);
+}
 
 /* 13.1.5? string-set! */
 /* TODO */

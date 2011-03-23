@@ -589,7 +589,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "string-length", kgstring_length, 0);
 
     /* 13.1.4? string-ref */
-    /* TODO */
+    add_applicative(K, ground_env, "string-ref", kstring_ref, 0);
 
     /* 13.1.5? string-set! */
     /* TODO */
