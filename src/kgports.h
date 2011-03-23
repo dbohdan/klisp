@@ -28,7 +28,8 @@
 /* TODO */
 
 /* 15.1.4 get-current-input-port, get-current-output-port */
-/* TODO */
+void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
+		      TValue denv);
 
 /* 15.1.5 open-input-file, open-output-file */
 void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

@@ -29,6 +29,7 @@
 #include "kgports.h"
 #include "kgcontinuations.h" /* for guards */
 #include "kgcontrol.h" /* for evaling in sequence */
+#include "kgkd_vars.h" /* for dynamic input/output port */
 
 /* 15.1.1 port? */
 /* uses typep */
@@ -40,7 +41,24 @@
 /* TODO */
 
 /* 15.1.4 get-current-input-port, get-current-output-port */
-/* TODO */
+void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
+		      TValue denv)
+{
+    /*
+    ** xparams[0]: symbol name
+    ** xparams[1]: dynamic key
+    */
+    UNUSED(denv);
+
+    char *name = ksymbol_buf(xparams[0]);
+    TValue key = xparams[1];
+
+    check_0p(K, name, ptree);
+
+    /* can access directly, no need to call do_access */
+    kapply_cc(K, kcdr(key));
+}
+
 
 /* 15.1.5 open-input-file, open-output-file */
 void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

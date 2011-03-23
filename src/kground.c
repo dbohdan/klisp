@@ -770,7 +770,10 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 15.1.4 get-current-input-port, get-current-output-port */
-    /* TODO */
+    add_applicative(K, ground_env, "get-current-input-port", get_current_port, 
+		    2, symbol, K->kd_in_port_key);
+    add_applicative(K, ground_env, "get-current-output-port", get_current_port, 
+		    2, symbol, K->kd_out_port_key);
 
     /* 15.1.5 open-input-file, open-output-file */
     add_applicative(K, ground_env, "open-input-file", open_file, 2, symbol, 
