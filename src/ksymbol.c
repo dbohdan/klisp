@@ -95,7 +95,7 @@ TValue ksymbol_new_check_i(klisp_State *K, TValue str)
 	    identifierp = ktok_is_subsequent(first);
 
 	while(identifierp && size--) {
-	    if (ktok_is_subsequent(*buf))
+	    if (!ktok_is_subsequent(*buf))
 		identifierp = false;
 	    else
 		buf++;
