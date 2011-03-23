@@ -38,7 +38,31 @@
 /* use ftypep */
 
 /* 15.1.3 with-input-from-file, with-ouput-to-file */
-/* TODO */
+/* helper for with-i/o-from/to-file & call-with-i/o-file */
+void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: port
+    */
+
+    TValue port = xparams[0];
+    kclose_port(K, port);
+    /* obj is the ret_val */
+    kapply_cc(K, obj);
+}
+
+void with_file(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+/*    char *name = ksymbol_buf(xparams[0]);
+    bool writep = bvalue(xparams[1]);
+    TValue key = xparams[2];
+*/
+    UNUSED(denv);
+    UNUSED(ptree);
+
+    kapply_cc(K, KINERT);
+}
 
 /* 15.1.4 get-current-input-port, get-current-output-port */
 void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
@@ -194,6 +218,11 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
     TValue empty_env = kmake_empty_environment(K);
     TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
     TValue expr = kcons(K, comb, kcons(K, new_port, KNIL));
+
+    /* make the continuation to close the file before returning */
+    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+					 do_close_file_ret, 1, new_port);
+    kset_cc(K, new_cont);
     ktail_eval(K, expr, empty_env);
 }
 
@@ -222,8 +251,8 @@ TValue read_all_expr(klisp_State *K, TValue port)
     }
 }
 
-/* interceptor for errors during reading */
-void do_close_file(klisp_State *K, TValue *xparams, TValue ptree, 
+/* interceptor for errors during reading, also for the continuat */
+void do_int_close_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		   TValue denv)
 {
     /*
@@ -266,7 +295,7 @@ inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
 TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
 {
     /* create the guard to close file after read errors */
-    TValue exit_int = kmake_operative(K, KNIL, KNIL, do_close_file, 
+    TValue exit_int = kmake_operative(K, KNIL, KNIL, do_int_close_file, 
 				      1, port);
     TValue exit_guard = kcons(K, K->error_cont, exit_int);
     TValue exit_guards = kcons(K, exit_guard, KNIL);

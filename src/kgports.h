@@ -25,7 +25,8 @@
 /* use ftypep */
 
 /* 15.1.3 with-input-from-file, with-ouput-to-file */
-/* TODO */
+void with_file(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
 
 /* 15.1.4 get-current-input-port, get-current-output-port */
 void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,

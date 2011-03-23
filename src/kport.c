@@ -14,6 +14,11 @@
 #include "kerror.h"
 #include "kstring.h"
 
+/* XXX: per the c spec, this truncates the file if it extists! */
+/* Ask John: what would be best? Probably should also include delete,
+   file-exists? and a mechanism to truncate or append to a file, or 
+   throw error if it exists.
+   Should use open, but it is non standard (fcntl.h, POSIX only) */
 TValue kmake_port(klisp_State *K, TValue filename, bool writep, TValue name, 
 			  TValue si)
 {
