@@ -136,13 +136,44 @@ void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.2.2? string=?, string-ci=? */
-/* TODO */
+/* use ftyped_bpredp */
 
 /* 13.2.3? string<?, string<=?, string>?, string>=? */
-/* TODO */
+/* use ftyped_bpredp */
 
 /* 13.2.4? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
-/* TODO */
+/* use ftyped_bpredp */
+
+/* Helpers for binary predicates */
+/* XXX: this should probably be in file kstring.h */
+bool kstring_eqp(TValue str1, TValue str2)
+{
+    int32_t size = kstring_size(str1);
+    if (kstring_size(str2) != size)
+	return false;
+    else
+	return ((size == 0) || 
+		memcmp(kstring_buf(str1), kstring_buf(str2), size) == 0);
+}
+
+bool kstring_ci_eqp(TValue str1, TValue str2)
+{
+    int32_t size = kstring_size(str1);
+    if (kstring_size(str2) != size)
+	return false;
+    else {
+	char *buf1 = kstring_buf(str1);
+	char *buf2 = kstring_buf(str2);
+
+	while(size--) {
+	    if (tolower(*buf1) != tolower(*buf2))
+		return false;
+	    buf1++, buf2++;
+	}
+	return true;
+    }
+}
+
 
 /* 13.2.5? substring */
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

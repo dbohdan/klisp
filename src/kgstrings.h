@@ -38,13 +38,18 @@ void string_setS (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.2.2? string=?, string-ci=? */
-/* TODO */
+/* use ftyped_bpredp */
 
 /* 13.2.3? string<?, string<=?, string>?, string>=? */
-/* TODO */
+/* use ftyped_bpredp */
 
 /* 13.2.4? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
-/* TODO */
+/* use ftyped_bpredp */
+
+/* Helpers for binary predicates */
+/* XXX: this should probably be in file kstring.h */
+bool kstring_eqp(TValue str1, TValue str2);
+bool kstring_ci_eqp(TValue str1, TValue str2);
 
 /* 13.2.5? substring */
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
