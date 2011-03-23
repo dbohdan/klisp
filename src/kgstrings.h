@@ -84,7 +84,8 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 13.3.1? symbol->string */
 /* TEMP: for now all strings are mutable, this returns a new object
    each time */
-/* TODO */
+void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
 
 /* 13.3.2? string->symbol */
 /* TEMP: for now this can create symbols with no external representation
