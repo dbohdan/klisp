@@ -182,7 +182,54 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.2.6? string-append */
-/* TODO */
+/* TEMP: this does 3 passes over the list */
+void string_append(klisp_State *K, TValue *xparams, TValue ptree, 
+		   TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    int32_t dummy;
+    /* don't allow cycles */
+    int32_t pairs = check_typed_list(K, "string-append", "string", kstringp, 
+				     false, ptree, &dummy);
+
+    TValue new_str;
+    int64_t total_size = 0; /* use int64 to check for overflow */
+    /* the if isn't strictly necessary but it's clearer this way */
+    int32_t saved_pairs = pairs; /* save pairs for next loop */
+    TValue tail = ptree;
+    while(pairs--) {
+	total_size += kstring_size(kcar(tail));
+	if (total_size > INT32_MAX) {
+	    klispE_throw(K, "string-append: resulting string is too big");
+	    return;
+	}
+	tail = kcdr(tail);
+    }
+    /* this is safe */
+    int32_t size = (int32_t) total_size;
+
+    if (size == 0) {
+	new_str = K->empty_string; 
+    } else {
+	new_str = kstring_new_g(K, size);
+	char *buf = kstring_buf(new_str);
+	/* loop again to copy the chars of each string */
+	tail = ptree;
+	pairs = saved_pairs;
+
+	while(pairs--) {
+	    TValue first = kcar(tail);
+	    int32_t first_size = kstring_size(first);
+	    memcpy(buf, kstring_buf(first), first_size);
+	    buf += first_size;
+	    tail = kcdr(tail);
+	}
+    }
+
+    kapply_cc(K, new_str);
+}
+
 
 /* 13.2.7? string->list, list->string */
 void string_to_list(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -265,3 +312,9 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
    again must be equal? which happens here 
 */
 /* TODO */
+
+/* Helpers */
+bool kstringp(TValue obj)
+{
+    return ttisstring(obj);
+}

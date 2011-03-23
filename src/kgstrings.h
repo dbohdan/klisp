@@ -50,7 +50,8 @@ void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.2.6? string-append */
-/* TODO */
+void string_append(klisp_State *K, TValue *xparams, TValue ptree, 
+		   TValue denv);
 
 /* 13.2.7? string->list, list->string */
 void list_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -80,5 +81,8 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
    again must be equal? which happens here 
 */
 /* TODO */
+
+/* Helpers */
+bool kstringp(TValue obj);
 
 #endif
