@@ -94,18 +94,19 @@ void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.7 read */
-/* TEMP: the port parameter is not optional yet */
 void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
     
-    bind_1tp(K, "read", ptree, "port", ttisport, port);
-    
-    if (!kport_is_input(port)) {
+    TValue port = ptree;
+    if (!get_opt_tpar(K, "read", K_TPORT, &port)) {
+	port = kcdr(K->kd_in_port_key); /* access directly */
+    } else if (!kport_is_input(port)) {
 	klispE_throw(K, "read: the port should be an input port");
 	return;
-    } else if (kport_is_closed(port)) {
+    } 
+    if (kport_is_closed(port)) {
 	klispE_throw(K, "read: the port is already closed");
 	return;
     }
@@ -120,19 +121,21 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.8 write */
-/* TEMP: the port parameter is not optional yet */
 void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
     
-    bind_2tp(K, "write", ptree, "any", anytype, obj,
-	     "port", ttisport, port);
+    bind_al1tp(K, "write", ptree, "any", anytype, obj,
+	       port);
 
-    if (!kport_is_output(port)) {
+    if (!get_opt_tpar(K, "write", K_TPORT, &port)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } else if (!kport_is_output(port)) {
 	klispE_throw(K, "write: the port should be an output port");
 	return;
-    } else if (kport_is_closed(port)) {
+    } 
+    if (kport_is_closed(port)) {
 	klispE_throw(K, "write: the port is already closed");
 	return;
     }
@@ -148,18 +151,19 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* uses typep */
 
 /* 15.1.? newline */
-/* TEMP: the port parameter is not optional yet */
 void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
     
-    bind_1tp(K, "newline", ptree, "port", ttisport, port);
-
-    if (!kport_is_output(port)) {
+    TValue port = ptree;
+    if (!get_opt_tpar(K, "newline", K_TPORT, &port)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } else if (!kport_is_output(port)) {
 	klispE_throw(K, "write: the port should be an output port");
 	return;
-    } else if (kport_is_closed(port)) {
+    }
+    if (kport_is_closed(port)) {
 	klispE_throw(K, "write: the port is already closed");
 	return;
     }
