@@ -611,7 +611,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 13.2.5? substring */
-    /* TODO */
+    add_applicative(K, ground_env, "substring", substring, 0);
 
     /* 13.2.6? string-append */
     /* TODO */

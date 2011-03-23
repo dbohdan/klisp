@@ -47,7 +47,7 @@ void string_setS (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 13.2.5? substring */
-/* TODO */
+void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.2.6? string-append */
 /* TODO */

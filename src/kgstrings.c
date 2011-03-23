@@ -113,7 +113,41 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* TODO */
 
 /* 13.2.5? substring */
-/* TODO */
+void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_3tp(K, "substring", ptree, "string", ttisstring, str,
+	     "finite integer", ttisfixint, tv_start,
+	     "finite integer", ttisfixint, tv_end);
+
+    int32_t start = ivalue(tv_start);
+    int32_t end = ivalue(tv_end);
+
+    if (start < 0 || start >= kstring_size(str)) {
+	/* TODO show index */
+	klispE_throw(K, "substring: start index out of bounds");
+	return;
+    } else if (end < 0 || end > kstring_size(str)) { /* end can be = size */
+	/* TODO show index */
+	klispE_throw(K, "substring: end index out of bounds");
+	return;
+    } else if (start > end) {
+	/* TODO show indexes */
+	klispE_throw(K, "substring: end index is greater than start index");
+	return;
+    }
+
+    int32_t size = end - start;
+    TValue new_str;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (size == 0) {
+	new_str = K->empty_string;
+    } else {
+	new_str = kstring_new(K, kstring_buf(str)+start, size);
+    }
+    kapply_cc(K, new_str);
+}
 
 /* 13.2.6? string-append */
 /* TODO */
