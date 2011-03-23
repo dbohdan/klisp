@@ -617,7 +617,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 13.2.7? string->list, list->string */
-    /* TODO */
+    add_applicative(K, ground_env, "string->list", string_to_list, 0);
     add_applicative(K, ground_env, "list->string", list_to_string, 0);
 
     /* 13.2.8? string-copy */

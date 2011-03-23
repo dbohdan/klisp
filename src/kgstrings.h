@@ -53,8 +53,9 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 13.2.7? string->list, list->string */
-/* TODO */
 void list_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
+void string_to_list(klisp_State *K, TValue *xparams, TValue ptree, 
 		    TValue denv);
 
 /* 13.2.8? string-copy */

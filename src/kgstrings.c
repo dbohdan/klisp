@@ -185,7 +185,26 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* TODO */
 
 /* 13.2.7? string->list, list->string */
-/* TODO */
+void string_to_list(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, "string->list", ptree, "string", ttisstring, str);
+    int32_t pairs = kstring_size(str);
+    char *buf = kstring_buf(str);
+    TValue dummy = kcons(K, KINERT, KNIL);
+    TValue tail = dummy;
+
+    while(pairs--) {
+	TValue new_pair = kcons(K, ch2tv(*buf), KNIL);
+	buf++;
+	kset_cdr(tail, new_pair);
+	tail = new_pair;
+    }
+    kapply_cc(K, kcdr(dummy));
+}
 
 void list_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
 		    TValue denv)
