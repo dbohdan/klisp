@@ -768,9 +768,9 @@ void kinit_ground_env(klisp_State *K)
 
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
     add_applicative(K, ground_env, "with-input-from-file", with_file, 
-		    2, symbol, b2tv(false), K->kd_in_port_key);
+		    3, symbol, b2tv(false), K->kd_in_port_key);
     add_applicative(K, ground_env, "with-output-to-file", with_file, 
-		    2, symbol, b2tv(true), K->kd_out_port_key);
+		    3, symbol, b2tv(true), K->kd_out_port_key);
 
     /* 15.1.4 get-current-input-port, get-current-output-port */
     add_applicative(K, ground_env, "get-current-input-port", get_current_port, 

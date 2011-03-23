@@ -51,17 +51,31 @@ void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj)
     kapply_cc(K, obj);
 }
 
+/* XXX: The report is incomplete here... for now use an empty environment, 
+   the dynamic environment can be captured in the construction of the combiner 
+   ASK John
+*/
 void with_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		    TValue denv)
 {
-/*    char *name = ksymbol_buf(xparams[0]);
+    char *name = ksymbol_buf(xparams[0]);
     bool writep = bvalue(xparams[1]);
     TValue key = xparams[2];
-*/
-    UNUSED(denv);
-    UNUSED(ptree);
 
-    kapply_cc(K, KINERT);
+    bind_2tp(K, name, ptree, "string", ttisstring, filename,
+	     "combiner", ttiscombiner, comb);
+
+    /* gc: root intermediate values */
+    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
+    /* make the continuation to close the file before returning */
+    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+					 do_close_file_ret, 1, new_port);
+    kset_cc(K, new_cont);
+
+    TValue op = kmake_operative(K, KNIL, KNIL, do_bind, 1, key);
+    TValue args = kcons(K, new_port, kcons(K, comb, KNIL));
+    /* even if we call with denv, do_bind calls comb in an empty env */
+    ktail_call(K, op, args, denv);
 }
 
 /* 15.1.4 get-current-input-port, get-current-output-port */
