@@ -25,7 +25,8 @@
 void kgmake_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.1.3? string-length */
-/* TODO */
+void kgstring_length(klisp_State *K, TValue *xparams, TValue ptree, 
+		     TValue denv);
 
 /* 13.1.4? string-ref */
 /* TODO */

@@ -583,11 +583,10 @@ void kinit_ground_env(klisp_State *K)
 		    i2tv(K_TSTRING));
 
     /* 13.1.2? make-string */
-    add_applicative(K, ground_env, "make-string", kgmake_string, 2, symbol, 
-		    i2tv(K_TSTRING));
+    add_applicative(K, ground_env, "make-string", kgmake_string, 0);
 
     /* 13.1.3? string-length */
-    /* TODO */
+    add_applicative(K, ground_env, "string-length", kgstring_length, 0);
 
     /* 13.1.4? string-ref */
     /* TODO */

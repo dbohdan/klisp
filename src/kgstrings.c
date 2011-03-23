@@ -48,7 +48,16 @@ void kgmake_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.1.3? string-length */
-/* TODO */
+void kgstring_length(klisp_State *K, TValue *xparams, TValue ptree, 
+		     TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, "string-length", ptree, "string", ttisstring, str);
+
+    TValue res = i2tv(kstring_size(str));
+    kapply_cc(K, res);
+}
 
 /* 13.1.4? string-ref */
 /* TODO */
