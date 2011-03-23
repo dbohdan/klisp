@@ -86,7 +86,7 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
    each time */
 /* TODO */
 
-/* 13.3.2? symbol->string */
+/* 13.3.2? string->symbol */
 /* TEMP: for now this can create symbols with no external representation
    this includes all symbols with non identifiers characters.
 */
@@ -96,7 +96,8 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
    because the report only says that read objects when written and read 
    again must be equal? which happens here 
 */
-/* TODO */
+void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
 
 /* Helpers */
 bool kstringp(TValue obj);

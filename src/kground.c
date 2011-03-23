@@ -652,7 +652,7 @@ void kinit_ground_env(klisp_State *K)
        each time */
     /* TODO */
 
-    /* 13.3.2? symbol->string */
+    /* 13.3.2? string->symbol */
     /* TEMP: for now this can create symbols with no external representation
        this includes all symbols with non identifiers characters.
     */
@@ -662,7 +662,8 @@ void kinit_ground_env(klisp_State *K)
        because the report only says that read objects when written and read 
        again must be equal? which happens here 
     */
-    /* TODO */
+    add_applicative(K, ground_env, "string->symbol", string_to_symbol, 0);
+    
 
     /*
     **
