@@ -56,7 +56,7 @@ void string_setS (klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 13.2.8? string-copy */
-/* TODO */
+void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.2.9? string-fill! */
 void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

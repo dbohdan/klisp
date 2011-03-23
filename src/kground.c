@@ -620,7 +620,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 13.2.8? string-copy */
-    /* TODO */
+    add_applicative(K, ground_env, "string-copy", string_copy, 0);
 
     /* 13.2.9? string-fill! */
     add_applicative(K, ground_env, "string-fill!", string_fillS, 0);

@@ -122,7 +122,21 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* TODO */
 
 /* 13.2.8? string-copy */
-/* TODO */
+void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, "string-copy", ptree, "string", ttisstring, str);
+
+    TValue new_str;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (tv_equal(str, K->empty_string)) {
+	new_str = str; 
+    } else {
+	new_str = kstring_new(K, kstring_buf(str), kstring_size(str));
+    }
+    kapply_cc(K, new_str);
+}
 
 /* 13.2.9? string-fill! */
 void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
