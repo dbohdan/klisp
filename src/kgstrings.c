@@ -101,30 +101,37 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
+/* Helper for string and list->string */
+inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
+{
+    int32_t dummy;
+    /* don't allow cycles */
+    int32_t pairs = check_typed_list(K, name, "char", kcharp, false,
+				     ls, &dummy);
+
+    TValue new_str;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (pairs == 0) {
+	return K->empty_string; 
+    } else {
+	new_str = kstring_new_g(K, pairs);
+	char *buf = kstring_buf(new_str);
+	TValue tail = ls;
+	while(pairs--) {
+	    *buf++ = chvalue(kcar(tail));
+	    tail = kcdr(tail);
+	}
+	return new_str;
+    }
+}
+
 /* 13.2.1? string */
 void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-
-    int32_t dummy;
-    /* don't allow cycles */
-    int32_t pairs = check_typed_list(K, "string", "char", kcharp, false,
-				     ptree, &dummy);
-
-    TValue new_str;
-    /* the if isn't strictly necessary but it's clearer this way */
-    if (pairs == 0) {
-	new_str = K->empty_string; 
-    } else {
-	new_str = kstring_new_g(K, pairs);
-	char *buf = kstring_buf(new_str);
-	TValue tail = ptree;
-	while(pairs--) {
-	    *buf++ = chvalue(kcar(tail));
-	    tail = kcdr(tail);
-	}
-    }
+    
+    TValue new_str = list_to_string_h(K, "string", ptree);
     kapply_cc(K, new_str);
 }
 
@@ -179,6 +186,19 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 13.2.7? string->list, list->string */
 /* TODO */
+
+void list_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    /* check later in list_to_string_h */
+    bind_1p(K, "list->string", ptree, ls);
+
+    TValue new_str = list_to_string_h(K, "list->string", ls);
+    kapply_cc(K, new_str);
+}
 
 /* 13.2.8? string-copy */
 void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
