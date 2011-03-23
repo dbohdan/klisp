@@ -30,6 +30,7 @@
 #include "kground.h"
 #include "krepl.h"
 #include "ksymbol.h"
+#include "kstring.h"
 #include "kport.h"
 
 /*
@@ -78,6 +79,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->filename_in = "*STDIN*";
     K->filename_out = "*STDOUT*";
 
+    /* input / output for dynamic keys */
+    /* these are init later */
+    K->kd_in_port_key = KINERT;
+    K->kd_out_port_key = KINERT;
+
     /* TODO: more gc info */
     K->totalbytes = state_size() + KS_ISSIZE * sizeof(TValue) +
 	KS_ITBSIZE;
@@ -120,6 +126,14 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ssize = KS_ISSIZE;
     K->stop = 0; /* stack is empty */
     K->sbuf = (TValue *)s;
+
+    /* the dynamic ports and the keys for the dynamic ports */
+    TValue in_port = kmake_std_port(K, kstring_new_ns(K, "*STDIN*"),
+				    false, KNIL, KNIL, stdin);
+    TValue out_port = kmake_std_port(K, kstring_new_ns(K, "*STDOUT*"),
+				     true, KNIL, KNIL, stdout);
+    K->kd_in_port_key = kcons(K, KTRUE, in_port);
+    K->kd_out_port_key = kcons(K, KTRUE, out_port);
 
     /* create the ground environment and the eval operative */
     K->eval_op = kmake_operative(K, KNIL, KNIL, keval_ofn, 0);

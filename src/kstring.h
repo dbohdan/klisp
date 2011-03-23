@@ -16,6 +16,8 @@
 
 TValue kstring_new_empty(klisp_State *K);
 TValue kstring_new(klisp_State *K, const char *buf, uint32_t size);
+/* with no size, no embedded '\0's */
+TValue kstring_new_ns(klisp_State *K, const char *buf);
 TValue kstring_new_g(klisp_State *K, uint32_t size);
 TValue kstring_new_sc(klisp_State *K, uint32_t size, char fill);
 

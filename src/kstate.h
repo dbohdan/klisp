@@ -77,6 +77,10 @@ struct klisp_State {
     char *filename_in;
     char *filename_out;
 
+    /* for current-input-port, current-output-port */
+    TValue kd_in_port_key;
+    TValue kd_out_port_key;
+
     /* Strings */
     TValue empty_string;
     
