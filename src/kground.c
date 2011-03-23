@@ -618,7 +618,14 @@ void kinit_ground_env(klisp_State *K)
 		    symbol, p2tv(kstringp), p2tv(kstring_gep));
 
     /* 13.2.4? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
-    /* TODO */
+    add_applicative(K, ground_env, "string-ci<?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_ltp));
+    add_applicative(K, ground_env, "string-ci<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_lep));
+    add_applicative(K, ground_env, "string-ci>?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_gtp));
+    add_applicative(K, ground_env, "string-ci>=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_gep));
 
     /* 13.2.5? substring */
     add_applicative(K, ground_env, "substring", substring, 0);

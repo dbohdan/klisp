@@ -56,6 +56,11 @@ bool kstring_lep(TValue str1, TValue str2);
 bool kstring_gtp(TValue str1, TValue str2);
 bool kstring_gep(TValue str1, TValue str2);
 
+bool kstring_ci_ltp(TValue str1, TValue str2);
+bool kstring_ci_lep(TValue str1, TValue str2);
+bool kstring_ci_gtp(TValue str1, TValue str2);
+bool kstring_ci_gep(TValue str1, TValue str2);
+
 
 /* 13.2.5? substring */
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
