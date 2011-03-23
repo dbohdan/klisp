@@ -813,7 +813,10 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 15.2.1 call-with-input-file, call-with-output-file */
-    /* TODO */
+    add_applicative(K, ground_env, "call-with-input-file", call_with_file, 
+		    2, symbol, b2tv(false));
+    add_applicative(K, ground_env, "call-with-output-file", call_with_file, 
+		    2, symbol, b2tv(true));
 
     /* 15.2.2 load */
     add_applicative(K, ground_env, "load", load, 0);

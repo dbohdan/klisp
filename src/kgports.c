@@ -176,8 +176,26 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.2.1 call-with-input-file, call-with-output-file */
-/* TODO */
+/* XXX: The report is incomplete here... for now use an empty environment, 
+   the dynamic environment can be captured in the construction of the combiner 
+   ASK John
+*/
+void call_with_file(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    char *name = ksymbol_buf(xparams[0]);
+    bool writep = bvalue(xparams[1]);
+    UNUSED(denv);
 
+    bind_2tp(K, name, ptree, "string", ttisstring, filename,
+	     "combiner", ttiscombiner, comb);
+
+    /* gc: root intermediate values */
+    TValue empty_env = kmake_empty_environment(K);
+    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
+    TValue expr = kcons(K, comb, kcons(K, new_port, KNIL));
+    ktail_eval(K, expr, empty_env);
+}
 
 /* helpers for load */
 

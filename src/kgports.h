@@ -50,7 +50,8 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.2.1 call-with-input-file, call-with-output-file */
-/* TODO */
+void call_with_file(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
 
 /* 15.2.2 load */
 void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
