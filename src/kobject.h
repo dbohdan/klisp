@@ -249,14 +249,11 @@ typedef struct __attribute__ ((__packed__)) {
     TValue si; /* source code info (either () or (filename line col) */
 } Pair;
 
-/* XXX: Symbol should probably contain a String instead of a char buf */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for cycle/sharing aware algorithms */
-    uint32_t size;
-    char b[];
+    TValue str; /* could use String * here, but for now... */
 } Symbol;
-
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
@@ -476,6 +473,11 @@ extern char *ktv_names[];
 #define gch_get_type(o_) (obj2gch(o_)->tt)
 #define gch_get_flags(o_) (obj2gch(o_)->flags)
 #define tv_get_flags(o_) (gch_get_flags(tv2gch(o_)))
+
+/* Flags for symbols */
+/* has external representation (identifiers) */
+#define K_FLAG_EXT_REP 0x01
+#define khas_ext_rep(s_) ((tv_get_flags(s_) & K_FLAG_EXT_REP) != 0)
 
 /* Flags for marking continuations */
 #define K_FLAG_OUTER 0x01

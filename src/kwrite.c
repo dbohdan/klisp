@@ -188,9 +188,12 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "#%c", bvalue(obj)? 't' : 'f');
 	break;
     case K_TSYMBOL:
-	/* TEMP: access symbol structure directly */
-	/* TEMP: for now assume all symbols have external representations */
-	kw_printf(K, "%s", ksymbol_buf(obj));
+	if (khas_ext_rep(obj)) {
+	    /* TEMP: access symbol structure directly */
+	    kw_printf(K, "%s", ksymbol_buf(obj));
+	} else {
+	    kw_printf(K, "#[symbol]");
+	}
 	break;
     case K_TINERT:
 	kw_printf(K, "#inert");

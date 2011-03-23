@@ -439,7 +439,8 @@ void klisp_close (klisp_State *K)
 	    klispM_free(K, (Pair *)obj);
 	    break;
 	case K_TSYMBOL:
-	    klispM_freemem(K, obj, sizeof(Symbol)+obj->sym.size+1);
+	    /* The string will be freed before/after */
+	    klispM_free(K, (Symbol *)obj);
 	    break;
 	case K_TSTRING:
 	    klispM_freemem(K, obj, sizeof(String)+obj->str.size+1);

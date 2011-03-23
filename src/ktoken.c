@@ -44,26 +44,14 @@
 ** Char sets for fast ASCII char classification
 */
 
-/* Each bit correspond to a char in the 0-255 range */
-typedef uint32_t kcharset[8];
-
 /*
 ** Char set function/macro interface
 */
 void kcharset_empty(kcharset);
 void kcharset_fill(kcharset, char *);
 void kcharset_union(kcharset, kcharset);
-#define kcharset_contains(kch_, ch_) \
-    ({ unsigned char ch__ = (unsigned char) (ch_);	\
-	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
-
+/* contains in .h */
     
-/*
-** Char set contains macro interface
-*/
-#define KCHS_OCTANT(ch) ((ch) >> 5)
-#define KCHS_BIT(ch) (1 << ((ch) & 0x1f))
-
 void kcharset_empty(kcharset chs)
 {
     for (int i = 0; i < 8; i++) {
@@ -95,16 +83,6 @@ void kcharset_union(kcharset chs, kcharset chs2)
 */
 kcharset ktok_alphabetic, ktok_numeric, ktok_whitespace;
 kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
-
-#define ktok_is_alphabetic(chi_) kcharset_contains(ktok_alphabetic, chi_)
-/* TODO: add is_digit, that takes the base as parameter */
-#define ktok_is_numeric(chi_) kcharset_contains(ktok_numeric, chi_)
-/* TODO: add hex digits */
-#define ktok_digit_value(ch_) (ch_ - '0')
-#define ktok_is_whitespace(chi_) kcharset_contains(ktok_whitespace, chi_)
-#define ktok_is_delimiter(chi_) ((chi_) == EOF ||			\
-				 kcharset_contains(ktok_delimiter, chi_))
-#define ktok_is_subsequent(chi_) kcharset_contains(ktok_subsequent, chi_)
 
 /*
 ** Special Tokens 
@@ -408,7 +386,7 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
     if (ktok_check_delimiter(K)) {
 	ks_tbadd(K, ch);
 	ks_tbadd(K, '\0');
-	TValue new_sym = ksymbol_new(K, ks_tbget_buffer(K));
+	TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), 1);
 	ks_tbclear(K);
 	return new_sym;
     } else {
@@ -626,18 +604,20 @@ TValue ktok_read_special(klisp_State *K)
 */
 TValue ktok_read_identifier(klisp_State *K)
 {
+    int32_t i = 1;
     while (!ktok_check_delimiter(K)) {
 	/* NOTE: can't be eof, because eof is a delimiter */
 	char ch = (char) ktok_getc(K);
 
 	/* NOTE: is_subsequent of '\0' is false, so no embedded '\0' */
-	if (ktok_is_subsequent(ch))
+	if (ktok_is_subsequent(ch)) {
 	    ks_tbadd(K, ch);
-	else
+	    i++;
+	} else
 	    ktok_error(K, "Invalid char in identifier");	    
     }
     ks_tbadd(K, '\0');
-    TValue new_sym = ksymbol_new(K, ks_tbget_buffer(K));
+    TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), i-1);
     ks_tbclear(K);
     return new_sym;
 }

@@ -48,7 +48,8 @@ ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
 kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h klisp.h
 kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h klisp.h
 # XXX: kpair.h because of use of list as symbol table
-ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstate.h kmem.h klisp.h
+ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstring.h kstate.h kmem.h \
+	klisp.h
 kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h \
 	kport.h
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
