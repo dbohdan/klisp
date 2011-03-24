@@ -24,4 +24,19 @@
 /* 6.1.1 not? */
 void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 6.1.2 and? */
+void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 6.1.3 or? */
+/* TODO */
+
+/* 6.1.4 $and? */
+/* TODO */
+
+/* 6.1.5 $or? */
+/* TODO */
+
+/* Helper */
+bool kbooleanp(TValue obj);
+
 #endif

@@ -32,3 +32,36 @@ void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue res = kis_true(tv_b)? KFALSE : KTRUE;
     kapply_cc(K, res);
 }
+
+/* Helper for type checking booleans */
+bool kbooleanp(TValue obj) { return ttisboolean(obj); }
+
+/* 6.1.2 and? */
+void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    int32_t dummy; /* don't care about cycle pairs */
+    int32_t pairs = check_typed_list(K, "andp", "boolean", kbooleanp,
+				     true, ptree, &dummy);
+    TValue res = KTRUE;
+    TValue tail = ptree;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	tail = kcdr(tail);
+	if (kis_false(first)) {
+	    res = KFALSE;
+	    break;
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* 6.1.3 or? */
+/* TODO */
+
+/* 6.1.4 $and? */
+/* TODO */
+
+/* 6.1.5 $or? */
+/* TODO */
