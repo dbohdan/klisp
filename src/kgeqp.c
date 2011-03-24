@@ -20,14 +20,31 @@
 #include "kgeqp.h"
 
 /* 4.2.1 eq? */
-/* TEMP: for now it takes only two argument */
+/* 6.5.1 eq? */
 void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
     (void) xparams;
 
-    bind_2p(K, "eq?", ptree, obj1, obj2);
+    int32_t cpairs;
+    int32_t pairs = check_list(K, "eq?", true, ptree, &cpairs);
 
-    bool res = eq2p(K, obj1, obj2);
-    kapply_cc(K, b2tv(res));
+    /* In this case we can get away without comparing the
+       first and last element on a cycle because eq? is
+       symetric, (cf: ftyped_bpred) */
+    int32_t comps = pairs - 1;
+    TValue tail = ptree;
+    TValue res = KTRUE;
+    while(comps-- > 0) {  /* comps could be -1 if ptree is nil */
+	TValue first = kcar(tail);
+	tail = kcdr(tail); /* tail only advances one place per iteration */
+	TValue second = kcar(tail);
+
+	if (!eq2p(K, first, second)) {
+	    res = KFALSE;
+	    break;
+	}
+    }
+
+    kapply_cc(K, res);
 }

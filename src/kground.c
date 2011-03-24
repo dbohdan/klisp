@@ -87,6 +87,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 4.2.1 eq? */
+    /* 6.5.1 eq? */
     add_applicative(K, ground_env, "eq?", eqp, 0);
 
     /*
@@ -426,7 +427,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.5.1 eq? */
-    /* TODO */
+    /* DONE: above, together with 4.2.1 */
 
     /*
     ** 6.6 Equivalance up to mutation

@@ -19,7 +19,7 @@
 #include "kghelpers.h"
 
 /* 4.2.1 eq? */
-/* TEMP: for now it takes only two argument */
+/* 6.5.1 eq? */
 void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper (also used in equal?) */
