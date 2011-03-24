@@ -344,7 +344,151 @@ void kinit_ground_env(klisp_State *K)
     **
     */
 
-    /* ... */
+    /*
+    ** 6.1 Booleans
+    */
+
+    /* 6.1.1 not? */
+    /* TODO */
+
+    /* 6.1.2 and? */
+    /* TODO */
+
+    /* 6.1.3 or? */
+    /* TODO */
+
+    /* 6.1.4 $and? */
+    /* TODO */
+
+    /* 6.1.5 $or? */
+    /* TODO */
+
+    /*
+    ** 6.2 Combiners
+    */
+
+    /* 6.2.1 combiner? */
+    /* TODO */
+
+    /*
+    ** 6.3 Pairs and lists
+    */
+
+    /* 6.3.1 length */
+    /* TODO */
+
+    /* 6.3.2 list-ref */
+    /* TODO */
+
+    /* 6.3.3 append */
+    /* TODO */
+
+    /* 6.3.4 list-neighbors */
+    /* TODO */
+
+    /* 6.3.5 filter */
+    /* TODO */
+
+    /* 6.3.6 assoc */
+    /* TODO */
+
+    /* 6.3.7 member? */
+    /* TODO */
+
+    /* 6.3.8 finite-list? */
+    /* TODO */
+
+    /* 6.3.9 countable-list? */
+    /* TODO */
+
+    /* 6.3.10 reduce */
+    /* TODO */
+
+    /*
+    ** 6.4 Pair mutation
+    */
+
+    /* 6.4.1 append! */
+    /* TODO */
+
+    /* 6.4.2 copy-es */
+    /* TODO */
+
+    /* 6.4.3 assq */
+    /* TODO */
+
+    /* 6.4.3 memq */
+    /* TODO */
+
+    /*
+    ** 6.5 Equivalance under mutation
+    */
+
+    /* 6.5.1 eq? */
+    /* TODO */
+
+    /*
+    ** 6.6 Equivalance up to mutation
+    */
+
+    /* 6.6.1 equal? */
+    /* TODO */
+
+    /*
+    ** 6.7 Environments
+    */
+
+    /* 6.7.1 $binds? */
+    /* TODO */
+
+    /* 6.7.2 get-current-environment */
+    /* TODO */
+
+    /* 6.7.3 make-kernel-standard-environment */
+    /* TODO */
+
+    /* 6.7.4 $let* */
+    /* TODO */
+
+    /* 6.7.5 $letrec */
+    /* TODO */
+
+    /* 6.7.6 $letrec* */
+    /* TODO */
+
+    /* 6.7.7 $let-redirect */
+    /* TODO */
+
+    /* 6.7.8 $let-safe */
+    /* TODO */
+
+    /* 6.7.9 $remote-eval */
+    /* TODO */
+
+    /* 6.7.10 $bindings->environment */
+    /* TODO */
+
+    /*
+    ** 6.8 Environment mutation
+    */
+
+    /* 6.8.1 $set! */
+    /* TODO */
+
+    /* 6.8.2 $provide! */
+    /* TODO */
+
+    /* 6.8.3 $import! */
+    /* TODO */
+
+    /*
+    ** 6.9 Control
+    */
+
+    /* 6.9.1 for-each */
+    /* TODO */
+
+
 
     /*
     **
