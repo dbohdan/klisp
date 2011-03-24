@@ -21,4 +21,7 @@
 /* 4.1.1 boolean? */
 /* uses typep */
 
+/* 6.1.1 not? */
+void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 #endif

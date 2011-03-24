@@ -349,7 +349,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.1.1 not? */
-    /* TODO */
+    add_applicative(K, ground_env, "not?", notp, 0);
 
     /* 6.1.2 and? */
     /* TODO */

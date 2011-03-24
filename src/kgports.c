@@ -337,6 +337,7 @@ TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
    any error during reading, close the file and return that error.
    This is consistent with the report description of the load-module
    applicative.
+   ASK John: maybe we should return the result of the last expression. 
 */
 void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
