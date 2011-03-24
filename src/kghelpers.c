@@ -93,22 +93,10 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* check the ptree is a list first to allow the structure
        errors to take precedence over the type errors. */
+    int32_t cpairs;
+    int32_t pairs = check_list(K, name, true, ptree, &cpairs);
 
     TValue tail = ptree;
-    int32_t pairs = 0;
-    while(ttispair(tail) && kis_unmarked(tail)) {
-	pairs++;
-	kmark(tail);
-	tail = kcdr(tail);
-    }
-    unmark_list(K, ptree);
-
-    if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name, ": expected list");
-	return;
-    }
-
-    tail = ptree;
     bool res = true;
 
     /* check the type while checking the predicate.
