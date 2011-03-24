@@ -79,7 +79,8 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.9 countable-list? */
-/* TODO */
+void countable_listp(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
 
 /* 6.3.10 reduce */
 /* TODO */

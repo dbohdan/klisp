@@ -282,12 +282,13 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* TODO */
 
 /* 6.3.8 finite-list? */
+/* NOTE: can't use ftypep because the predicate marks pairs too */
 void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
 
-    int32_t pairs = check_list(K, "finite-list", ptree);
+    int32_t pairs = check_list(K, "finite-list?", ptree);
 
     TValue res = KTRUE;
     TValue tail = ptree;
@@ -310,7 +311,34 @@ void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.3.9 countable-list? */
-/* TODO */
+/* NOTE: can't use ftypep because the predicate marks pairs too */
+void countable_listp(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    int32_t pairs = check_list(K, "countable-list?", ptree);
+
+    TValue res = KTRUE;
+    TValue tail = ptree;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	tail = kcdr(tail);
+	TValue itail = first;
+	while(ttispair(itail) && !kis_marked(itail)) {
+	    kmark(itail);
+	    itail = kcdr(itail);
+	}
+	unmark_list(K, first);
+	
+	if (!ttisnil(itail) && !ttispair(itail)) {
+	    res = KFALSE;
+	    break;
+	}
+    }
+    kapply_cc(K, res);
+}
 
 /* 6.3.10 reduce */
 /* TODO */

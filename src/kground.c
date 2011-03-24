@@ -400,7 +400,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "finite-list?", finite_listp, 0);
 
     /* 6.3.9 countable-list? */
-    /* TODO */
+    add_applicative(K, ground_env, "countable-list?", countable_listp, 0);
 
     /* 6.3.10 reduce */
     /* TODO */
