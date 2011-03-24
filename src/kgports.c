@@ -154,6 +154,7 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ktok_reset_source_info(K); /* this should be saved in the port
 				  and restored before the call to 
 				  read and saved after it */
+    K->read_cons_flag = true; /* read mutable pairs */
     TValue obj = kread(K); /* this may throw an error, that's ok */
     kapply_cc(K, obj);
 }
@@ -242,14 +243,16 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* helpers for load */
 
-/* read all expressions in a file */
+/* read all expressions in a file, as immutable pairs */
 TValue read_all_expr(klisp_State *K, TValue port)
 {
     /* TEMP: for now set this by hand */
     K->curr_in = kport_file(port);
     ktok_reset_source_info(K);
+    K->read_cons_flag = false; /* read immutable pairs */
+
     /* GC: root dummy and obj */
-    TValue dummy = kcons(K, KNIL, KNIL);
+    TValue dummy = kimm_cons(K, KNIL, KNIL);
     TValue tail = dummy;
     TValue obj = KINERT;
 
@@ -258,7 +261,7 @@ TValue read_all_expr(klisp_State *K, TValue port)
 	if (ttiseof(obj)) {
 	    return kcdr(dummy);
 	} else {
-	    TValue new_pair = kcons(K, obj, KNIL);
+	    TValue new_pair = kimm_cons(K, obj, KNIL);
 	    kset_cdr(tail, new_pair);
 	    tail = new_pair;
 	}

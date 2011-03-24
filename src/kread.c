@@ -164,7 +164,8 @@ TValue kread_fsm(klisp_State *K)
 			/* avoid warning */
 			return KINERT;
 		    }
-		    TValue np = kdummy_cons(K);
+		    /* construct the list with the correct type of pair */
+		    TValue np = kcons_g(K, K->read_cons_flag, KINERT, KNIL);
 		    /* 
 		    ** NOTE: the source info of the '(' is temporarily saved 
 		    ** in np (later it will be replace by the source info
@@ -406,7 +407,8 @@ TValue kread_fsm(klisp_State *K)
 	    case ST_MIDDLE_LIST: {
 		/* get the state out of the way */
 		pop_state(K);
-		TValue np = kcons(K, obj, KNIL);
+		/* construct the list with the correct type of pair */
+		TValue np = kcons_g(K, K->read_cons_flag, obj, KNIL);
 		kset_source_info(np, obj_si);
 		kset_cdr(get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */
