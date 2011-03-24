@@ -146,3 +146,9 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* 5.9.1 map */
 /* TODO */
+
+/* 6.2.1 combiner? */
+/* uses ftypedp */
+
+/* Helper for combiner? */
+bool kcombinerp(TValue obj) { return ttiscombiner(obj); }

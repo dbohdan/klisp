@@ -368,7 +368,8 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.2.1 combiner? */
-    /* TODO */
+    add_applicative(K, ground_env, "combiner?", ftypep, 2, symbol, 
+		    p2tv(kcombinerp));
 
     /*
     ** 6.3 Pairs and lists
