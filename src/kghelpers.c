@@ -130,28 +130,14 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* check the ptree is a list first to allow the structure
        errors to take precedence over the type errors. */
+    int32_t cpairs;
+    int32_t pairs = check_list(K, name, true, ptree, &cpairs);
+
+    /* cyclical list require an extra comparison of the last
+       & first element of the cycle */
+    int32_t comps = cpairs? pairs : pairs - 1;
+
     TValue tail = ptree;
-    int32_t pairs = 0;
-
-    while(ttispair(tail) && kis_unmarked(tail)) {
-	pairs++;
-	kmark(tail);
-	tail = kcdr(tail);
-    }
-    unmark_list(K, ptree);
-    int32_t comps;
-    if (ttisnil(tail)) {
-	comps = pairs - 1;
-    } else if (ttispair(tail)) {
-	/* cyclical list require an extra comparison of the last
-	  & first element of the cycle */
-	comps = pairs;
-    } else {
-	klispE_throw_extra(K, name, ": expected list");
-	return;
-    }
-
-    tail = ptree;
     bool res = true;
 
     /* check the type while checking the predicate.
@@ -169,7 +155,7 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	}
     }
 
-    while(comps-- > 0) {
+    while(comps-- > 0) { /* comps could be -1 if ptree is () */
 	TValue first = kcar(tail);
 	tail = kcdr(tail); /* tail only advances one place per iteration */
 	TValue second = kcar(tail);
