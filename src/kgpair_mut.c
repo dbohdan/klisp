@@ -209,3 +209,72 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
     unmark_list(K, obj);
     kapply_cc(K, KINERT);
 }
+
+
+/* 6.4.1 append! */
+/* TODO */
+
+/* 6.4.2 copy-es */
+void copy_es(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /* 
+    ** GC: obj is rooted because it is in the stack at all times.
+    ** The copied pair should be kept safe some other way
+    */
+    bind_1p(K, "copy-es", ptree, obj);
+
+    TValue copy = obj;
+
+    assert(ks_sisempty(K));
+    assert(ks_tbisempty(K));
+
+    ks_spush(K, obj);
+    ks_tbpush(K, ST_PUSH);
+
+    while(!ks_sisempty(K)) {
+	char state = ks_tbpop(K);
+	TValue top = ks_spop(K);
+
+	if (state == ST_PUSH) {
+	    if (ttispair(top)) {
+		if (kis_marked(top)) {
+		    /* this pair was already seen, use the same */
+		    copy = kget_mark(top);
+		} else {
+		    TValue new_pair = kdummy_cons(K);
+		    kset_mark(top, new_pair);
+		    /* leave the pair in the stack, continue with the car */
+		    ks_spush(K, top);
+		    ks_tbpush(K, ST_CAR);
+		    
+		    ks_spush(K, kcar(top));
+		    ks_tbpush(K, ST_PUSH);
+		}
+	    } else {
+		copy = top;
+	    }
+	} else { /* last action was a pop */
+	    TValue new_pair = kget_mark(top);
+	    if (state == ST_CAR) {
+		kset_car(new_pair, copy);
+		/* leave the pair on the stack, continue with the cdr */
+		ks_spush(K, top);
+		ks_tbpush(K, ST_CDR);
+
+		ks_spush(K, kcdr(top));
+		ks_tbpush(K, ST_PUSH);
+	    } else {
+		kset_cdr(new_pair, copy);
+		copy = new_pair;
+	    }
+	}
+    }
+    unmark_tree(K, obj);
+    kapply_cc(K, copy);
+}
+
+/* 6.4.3 assq */
+/* TODO */
+
+/* 6.4.3 memq */
+/* TODO */

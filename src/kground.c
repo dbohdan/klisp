@@ -413,7 +413,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.4.2 copy-es */
-    /* TODO */
+    add_applicative(K, ground_env, "copy-es", copy_es, 0);
 
     /* 6.4.3 assq */
     /* TODO */

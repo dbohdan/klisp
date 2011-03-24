@@ -34,4 +34,16 @@ void copy_es_immutable(klisp_State *K, TValue *xparams,
 void encycleB(klisp_State *K, TValue *xparams, TValue ptree, 
 	      TValue denv);
 
+/* 6.4.1 append! */
+/* TODO */
+
+/* 6.4.2 copy-es */
+void copy_es(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 6.4.3 assq */
+/* TODO */
+
+/* 6.4.3 memq */
+/* TODO */
+
 #endif
