@@ -42,7 +42,7 @@ void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     int32_t dummy; /* don't care about cycle pairs */
-    int32_t pairs = check_typed_list(K, "andp", "boolean", kbooleanp,
+    int32_t pairs = check_typed_list(K, "and?", "boolean", kbooleanp,
 				     true, ptree, &dummy);
     TValue res = KTRUE;
     TValue tail = ptree;
@@ -58,7 +58,25 @@ void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.1.3 or? */
-/* TODO */
+void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    int32_t dummy; /* don't care about cycle pairs */
+    int32_t pairs = check_typed_list(K, "or?", "boolean", kbooleanp,
+				     true, ptree, &dummy);
+    TValue res = KFALSE;
+    TValue tail = ptree;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	tail = kcdr(tail);
+	if (kis_true(first)) {
+	    res = KTRUE;
+	    break;
+	}
+    }
+    kapply_cc(K, res);
+}
 
 /* 6.1.4 $and? */
 /* TODO */

@@ -28,7 +28,7 @@ void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.1.3 or? */
-/* TODO */
+void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.1.4 $and? */
 /* TODO */

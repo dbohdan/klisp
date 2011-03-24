@@ -355,7 +355,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "and?", andp, 0);
 
     /* 6.1.3 or? */
-    /* TODO */
+    add_applicative(K, ground_env, "or?", orp, 0);
 
     /* 6.1.4 $and? */
     /* TODO */
