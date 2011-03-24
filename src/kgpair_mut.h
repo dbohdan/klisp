@@ -19,16 +19,20 @@
 #include "kghelpers.h"
 
 /* Helper (also used by $vau, $lambda, etc) */
-TValue copy_es_immutable_h(klisp_State *K, char *name, TValue ptree);
+TValue copy_es_immutable_h(klisp_State *K, char *name, TValue ptree, 
+			   bool mut_flag);
 
 /* 4.7.1 set-car!, set-cdr! */
 void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* Helper for copy-es & copy-es-immutable */
+void copy_es(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* 4.7.2 copy-es-immutable */
-void copy_es_immutable(klisp_State *K, TValue *xparams, 
-		       TValue ptree, TValue denv);
+/* uses copy_es helper */
+
 
 /* 5.8.1 encycle! */
 void encycleB(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -38,7 +42,7 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 /* TODO */
 
 /* 6.4.2 copy-es */
-void copy_es(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+/* uses copy_es helper */
 
 /* 6.4.3 assq */
 /* TODO */

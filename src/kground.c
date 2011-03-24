@@ -139,8 +139,8 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "set-cdr!", set_cdrB, 0);
 
     /* 4.7.2 copy-es-immutable */
-    add_applicative(K, ground_env, "copy-es-immutable", copy_es_immutable, 
-		    1, symbol);
+    add_applicative(K, ground_env, "copy-es-immutable", copy_es, 2, symbol, 
+		    b2tv(false));
 
     /*
     ** 4.8 Environments
@@ -413,7 +413,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.4.2 copy-es */
-    add_applicative(K, ground_env, "copy-es", copy_es, 0);
+    add_applicative(K, ground_env, "copy-es", copy_es, 2, symbol, b2tv(true));
 
     /* 6.4.3 assq */
     /* TODO */

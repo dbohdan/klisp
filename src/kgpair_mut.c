@@ -51,19 +51,24 @@ void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
-/* 4.7.2 copy-es-immutable */
-void copy_es_immutable(klisp_State *K, TValue *xparams, 
-		       TValue ptree, TValue denv)
+/* Helper for copy-es-immutable & copy-es */
+void copy_es(klisp_State *K, TValue *xparams, 
+	     TValue ptree, TValue denv)
 {
     /*
     ** xparams[0]: copy-es-immutable symbol
+    ** xparams[1]: boolean (#t: use mutable pairs, #f: use immutable pairs)
     */
     char *name = ksymbol_buf(xparams[0]);
+    bool mut_flag = bvalue(xparams[1]);
     bind_1p(K, name, ptree, obj);
 
-    TValue copy = copy_es_immutable_h(K, name, obj);
+    TValue copy = copy_es_immutable_h(K, name, obj, mut_flag);
     kapply_cc(K, copy);
 }
+
+/* 4.7.2 copy-es-immutable */
+/* uses copy_es */
 
 /*
 ** This is in a helper method to use it from $lambda, $vau, etc
@@ -77,7 +82,8 @@ void copy_es_immutable(klisp_State *K, TValue *xparams,
 ** to keep track of which of car or cdr we were copying,
 ** 0 means just pushed, 1 means return from car, 2 means return from cdr
 */
-TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj)
+TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj, 
+			   bool mut_flag)
 {
     /* 
     ** GC: obj is rooted because it is in the stack at all times.
@@ -96,12 +102,14 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj)
 	TValue top = ks_spop(K);
 
 	if (state == ST_PUSH) {
-	    if (ttispair(top) && kis_mutable(top)) {
+	    /* if the pair is immutable & we are constructing immutable
+	       pairs there is no need to copy */
+	    if (ttispair(top) && (mut_flag || kis_mutable(top))) {
 		if (kis_marked(top)) {
 		    /* this pair was already seen, use the same */
 		    copy = kget_mark(top);
 		} else {
-		    TValue new_pair = kdummy_imm_cons(K);
+		    TValue new_pair = kcons_g(K, mut_flag, KINERT, KINERT);
 		    kset_mark(top, new_pair);
 		    /* leave the pair in the stack, continue with the car */
 		    ks_spush(K, top);
@@ -215,63 +223,7 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 /* TODO */
 
 /* 6.4.2 copy-es */
-void copy_es(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
-{
-    /* 
-    ** GC: obj is rooted because it is in the stack at all times.
-    ** The copied pair should be kept safe some other way
-    */
-    bind_1p(K, "copy-es", ptree, obj);
-
-    TValue copy = obj;
-
-    assert(ks_sisempty(K));
-    assert(ks_tbisempty(K));
-
-    ks_spush(K, obj);
-    ks_tbpush(K, ST_PUSH);
-
-    while(!ks_sisempty(K)) {
-	char state = ks_tbpop(K);
-	TValue top = ks_spop(K);
-
-	if (state == ST_PUSH) {
-	    if (ttispair(top)) {
-		if (kis_marked(top)) {
-		    /* this pair was already seen, use the same */
-		    copy = kget_mark(top);
-		} else {
-		    TValue new_pair = kdummy_cons(K);
-		    kset_mark(top, new_pair);
-		    /* leave the pair in the stack, continue with the car */
-		    ks_spush(K, top);
-		    ks_tbpush(K, ST_CAR);
-		    
-		    ks_spush(K, kcar(top));
-		    ks_tbpush(K, ST_PUSH);
-		}
-	    } else {
-		copy = top;
-	    }
-	} else { /* last action was a pop */
-	    TValue new_pair = kget_mark(top);
-	    if (state == ST_CAR) {
-		kset_car(new_pair, copy);
-		/* leave the pair on the stack, continue with the cdr */
-		ks_spush(K, top);
-		ks_tbpush(K, ST_CDR);
-
-		ks_spush(K, kcdr(top));
-		ks_tbpush(K, ST_PUSH);
-	    } else {
-		kset_cdr(new_pair, copy);
-		copy = new_pair;
-	    }
-	}
-    }
-    unmark_tree(K, obj);
-    kapply_cc(K, copy);
-}
+/* uses copy_es helper (above copy-es-immutable) */
 
 /* 6.4.3 assq */
 /* TODO */
