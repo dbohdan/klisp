@@ -58,7 +58,7 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.2 list-ref */
-/* TODO */
+void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.3 append */
 /* TODO */

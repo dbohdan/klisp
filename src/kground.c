@@ -379,7 +379,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "length", length, 0);
 
     /* 6.3.2 list-ref */
-    /* TODO */
+    add_applicative(K, ground_env, "list-ref", list_ref, 0);
 
     /* 6.3.3 append */
     /* TODO */

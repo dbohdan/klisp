@@ -231,7 +231,40 @@ void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.3.2 list-ref */
-/* TODO */
+void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+/* ASK John: can the object be an improper list? the wording of the report
+   seems to indicate that can't be the case, but it makes sense 
+   (cf list-tail) For now we allow it. */
+    (void) denv;
+    (void) xparams;
+    /* XXX: should be integer instead of fixint, but that's all
+       we have for now */
+    bind_2tp(K, "list-ref", ptree, "any", anytype, obj,
+	     "finite integer", ttisfixint, tk);
+    int k = ivalue(tk);
+    if (k < 0) {
+	klispE_throw(K, "list-ref: negative index");
+	return;
+    }
+
+    while(k) {
+	if (!ttispair(obj)) {
+	    klispE_throw(K, "list-ref: non pair found while traversing "
+			 "object");
+	    return;
+	}
+	obj = kcdr(obj);
+	--k;
+    }
+    if (!ttispair(obj)) {
+	klispE_throw(K, "list-ref: non pair found while traversing "
+		     "object");
+	return;
+    }
+    TValue res = kcar(obj);
+    kapply_cc(K, res);
+}
 
 /* 6.3.3 append */
 /* TODO */
