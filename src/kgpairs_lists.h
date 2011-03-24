@@ -52,7 +52,36 @@ void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree,
 		      TValue denv);
 
 /* 5.7.2 list-tail */
-void list_tail(klisp_State *K, TValue *xparams, TValue ptree, 
-	       TValue denv);
+void list_tail(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 6.3.1 length */
+void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 6.3.2 list-ref */
+/* TODO */
+
+/* 6.3.3 append */
+/* TODO */
+
+/* 6.3.4 list-neighbors */
+/* TODO */
+
+/* 6.3.5 filter */
+/* TODO */
+
+/* 6.3.6 assoc */
+/* TODO */
+
+/* 6.3.7 member? */
+/* TODO */
+
+/* 6.3.8 finite-list? */
+/* TODO */
+
+/* 6.3.9 countable-list? */
+/* TODO */
+
+/* 6.3.10 reduce */
+/* TODO */
 
 #endif

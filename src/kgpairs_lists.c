@@ -208,3 +208,51 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
     }
     kapply_cc(K, obj);
 }
+
+/* 6.3.1 length */
+void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1p(K, "length", ptree, obj);
+
+    TValue tail = obj;
+    int pairs = 0;
+    while(ttispair(tail) && !kis_marked(tail)) {
+	kmark(tail);
+	tail = kcdr(tail);
+	++pairs;
+    }
+    unmark_list(K, obj);
+
+    TValue res = ttispair(tail)? KEPINF : i2tv(pairs);
+    kapply_cc(K, res);
+}
+
+/* 6.3.2 list-ref */
+/* TODO */
+
+/* 6.3.3 append */
+/* TODO */
+
+/* 6.3.4 list-neighbors */
+/* TODO */
+
+/* 6.3.5 filter */
+/* TODO */
+
+/* 6.3.6 assoc */
+/* TODO */
+
+/* 6.3.7 member? */
+/* TODO */
+
+/* 6.3.8 finite-list? */
+/* TODO */
+
+/* 6.3.9 countable-list? */
+/* TODO */
+
+/* 6.3.10 reduce */
+/* TODO */
