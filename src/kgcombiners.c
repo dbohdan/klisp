@@ -45,7 +45,8 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$vau", vptree, vpenv);
     /* the body should be a list */
-    (void)check_list(K, "$vau", vbody);
+    int32_t dummy;
+    (void)check_list(K, "$vau", true, vbody, &dummy);
     vbody = copy_es_immutable_h(K, "$vau", vbody, false);
 
     TValue new_op = make_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
@@ -118,7 +119,8 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$lambda", vptree, KIGNORE);
     /* the body should be a list */
-    (void)check_list(K, "$lambda", vbody);
+    int32_t dummy;
+    (void)check_list(K, "$lambda", true, vbody, &dummy);
     vbody = copy_es_immutable_h(K, "$lambda", vbody, false);
 
     TValue new_app = make_applicative(K, do_vau, 4, vptree, KIGNORE, vbody, 

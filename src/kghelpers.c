@@ -204,6 +204,7 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
     TValue tail = obj;
     int32_t pairs = 0;
     bool type_errorp = false;
+
     while(ttispair(tail) && !kis_marked(tail)) {
 	/* even if there is a type error continue checking the structure */
 	type_errorp |= !(*typep)(kcar(tail));
@@ -226,4 +227,28 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 	return 0;
     }
     return pairs;
+}
+
+int32_t check_list(klisp_State *K, char *name, bool allow_infp,
+			  TValue obj, int32_t *cpairs)
+{
+    TValue tail = obj;
+    int pairs = 0;
+    while(ttispair(tail) && !kis_marked(tail)) {
+	kset_mark(tail, i2tv(pairs));
+	tail = kcdr(tail);
+	++pairs;
+    }
+    *cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+    unmark_list(K, obj);
+
+    if (!ttispair(tail) && !ttisnil(tail)) {
+	klispE_throw_extra(K, name , ": expected finite list"); 
+	return 0;
+    } else if(ttispair(tail) & !allow_infp) {
+	klispE_throw_extra(K, name , ": expected finite list"); 
+	return 0;
+    } else {
+	return pairs;
+    }
 }

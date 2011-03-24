@@ -239,28 +239,14 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 			 bool (*typep)(TValue), bool allow_infp, TValue obj,
 			 int32_t *cpairs);
 
+/* check that obj is a list, returns the number of pairs */
+int32_t check_list(klisp_State *K, char *name, bool allow_infp,
+			  TValue obj, int32_t *cpairs);
+
 /*
 ** MAYBE: These shouldn't be inline really.
 */
 
-/* check that obj is a list, returns the number of pairs */
-inline int32_t check_list(klisp_State *K, char *name, TValue obj)
-{
-    TValue tail = obj;
-    int pairs = 0;
-    while(ttispair(tail) && !kis_marked(tail)) {
-	kmark(tail);
-	tail = kcdr(tail);
-	++pairs;
-    }
-    unmark_list(K, obj);
-
-    if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name , ": expected list"); 
-	return 0;
-    }
-    return pairs;
-}
 
 /* check that obj is a list and make a copy if it is not immutable */
 inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
@@ -269,7 +255,8 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
 	return obj;
 
     if (ttispair(obj) && kis_immutable(obj)) {
-	(void)check_list(K, name, obj);
+	int32_t dummy;
+	(void)check_list(K, name, true, obj, &dummy);
 	return obj;
     } else {
 	TValue dummy = kcons(K, KINERT, KNIL);

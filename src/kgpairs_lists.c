@@ -287,8 +287,8 @@ void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-
-    int32_t pairs = check_list(K, "finite-list?", ptree);
+    int32_t dummy;
+    int32_t pairs = check_list(K, "finite-list?", true, ptree, &dummy);
 
     TValue res = KTRUE;
     TValue tail = ptree;
@@ -317,8 +317,8 @@ void countable_listp(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-
-    int32_t pairs = check_list(K, "countable-list?", ptree);
+    int32_t dummy;
+    int32_t pairs = check_list(K, "countable-list?", true, ptree, &dummy);
 
     TValue res = KTRUE;
     TValue tail = ptree;
