@@ -70,3 +70,39 @@ void make_environment(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* 5.10.1 $let */
 /* TODO */
+
+/* 6.7.1 $binds? */
+/* TODO */
+
+/* 6.7.2 get-current-environment */
+void get_current_environment(klisp_State *K, TValue *xparams, TValue ptree, 
+			     TValue denv)
+{
+    UNUSED(xparams);
+    check_0p(K, "get-current-environment", ptree);
+    kapply_cc(K, denv);
+}
+
+/* 6.7.3 make-kernel-standard-environment */
+/* TODO */
+
+/* 6.7.4 $let* */
+/* TODO */
+
+/* 6.7.5 $letrec */
+/* TODO */
+
+/* 6.7.6 $letrec* */
+/* TODO */
+
+/* 6.7.7 $let-redirect */
+/* TODO */
+
+/* 6.7.8 $let-safe */
+/* TODO */
+
+/* 6.7.9 $remote-eval */
+/* TODO */
+
+/* 6.7.10 $bindings->environment */
+/* TODO */

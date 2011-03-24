@@ -443,7 +443,8 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.7.2 get-current-environment */
-    /* TODO */
+    add_applicative(K, ground_env, "get-current-environment", 
+		    get_current_environment, 0);
 
     /* 6.7.3 make-kernel-standard-environment */
     /* TODO */
