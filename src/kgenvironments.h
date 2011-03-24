@@ -43,7 +43,8 @@ void get_current_environment(klisp_State *K, TValue *xparams, TValue ptree,
 			     TValue denv);
 
 /* 6.7.3 make-kernel-standard-environment */
-/* TODO */
+void make_kernel_standard_environment(klisp_State *K, TValue *xparams, 
+				      TValue ptree, TValue denv);
 
 /* 6.7.4 $let* */
 /* TODO */

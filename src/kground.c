@@ -447,7 +447,8 @@ void kinit_ground_env(klisp_State *K)
 		    get_current_environment, 0);
 
     /* 6.7.3 make-kernel-standard-environment */
-    /* TODO */
+    add_applicative(K, ground_env, "make-kernel-standard-environment", 
+		    make_kernel_standard_environment, 0);
 
     /* 6.7.4 $let* */
     /* TODO */

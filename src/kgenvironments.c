@@ -84,7 +84,16 @@ void get_current_environment(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 6.7.3 make-kernel-standard-environment */
-/* TODO */
+void make_kernel_standard_environment(klisp_State *K, TValue *xparams, 
+				      TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    check_0p(K, "make-kernel-standard-environment", ptree);
+    
+    TValue new_env = kmake_environment(K, K->ground_env);
+    kapply_cc(K, new_env);
+}
 
 /* 6.7.4 $let* */
 /* TODO */
