@@ -23,6 +23,7 @@
 #include "kgequalp.h"
 
 /* 4.3.1 equal? */
+/* 6.6.1 equal? */
 
 /*
 ** equal? is O(n) where n is the number of pairs.
@@ -33,12 +34,32 @@
 ** Idea to look up these papers from srfi 85: 
 ** "Recursive Equivalence Predicates" by William D. Clinger
 */
-void equalp(klisp_State *K, TValue *xparas, TValue ptree, TValue denv)
+void equalp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
-    bind_2p(K, "equal?", ptree, obj1, obj2);
-    bool res = equal2p(K, obj1, obj2);
-    kapply_cc(K, b2tv(res));
+    (void) xparams;
+
+    int32_t cpairs;
+    int32_t pairs = check_list(K, "equal?", true, ptree, &cpairs);
+
+    /* In this case we can get away without comparing the
+       first and last element on a cycle because equal? is
+       symetric, (cf: ftyped_bpred) */
+    int32_t comps = pairs - 1;
+    TValue tail = ptree;
+    TValue res = KTRUE;
+    while(comps-- > 0) {  /* comps could be -1 if ptree is nil */
+	TValue first = kcar(tail);
+	tail = kcdr(tail); /* tail only advances one place per iteration */
+	TValue second = kcar(tail);
+
+	if (!equal2p(K, first, second)) {
+	    res = KFALSE;
+	    break;
+	}
+    }
+
+    kapply_cc(K, res);
 }
 
 

@@ -21,6 +21,7 @@
 
 /* 4.2.1 eq? */
 /* 6.5.1 eq? */
+/* NOTE: this does 2 passes but could do it in one */
 void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;

@@ -95,6 +95,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 4.3.1 equal? */
+    /* 6.6.1 equal? */
     add_applicative(K, ground_env, "equal?", equalp, 0);
 
     /*
@@ -434,7 +435,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.6.1 equal? */
-    /* TODO */
+    /* DONE: above, together with 4.3.1 */
 
     /*
     ** 6.7 Environments
