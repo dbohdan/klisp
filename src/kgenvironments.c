@@ -111,7 +111,32 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 /* TODO */
 
 /* 6.7.9 $remote-eval */
-/* TODO */
+void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_2p(K, "$remote-eval", ptree, obj, env_exp);
+
+    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+					 do_remote_eval, 1, obj);
+    kset_cc(K, new_cont);
+
+    ktail_eval(K, env_exp, denv);
+}
+
+/* Helper for $remote-eval */
+void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj)
+{
+    if (!ttisenvironment(obj)) {
+	klispE_throw(K, "$remote-eval: bad type from second operand "
+		     "evaluation (expected environment)");
+	return;
+    } else {
+	TValue eval_exp = xparams[0];
+	ktail_eval(K, eval_exp, obj);
+    }
+}
 
 /* 6.7.10 $bindings->environment */
 /* TODO */

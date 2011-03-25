@@ -62,7 +62,10 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 /* TODO */
 
 /* 6.7.9 $remote-eval */
-/* TODO */
+void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* Helper for $remote-eval */
+void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj);
 
 /* 6.7.10 $bindings->environment */
 /* TODO */

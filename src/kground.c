@@ -468,7 +468,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.7.9 $remote-eval */
-    /* TODO */
+    add_operative(K, ground_env, "$remote-eval", Sremote_eval, 0);
 
     /* 6.7.10 $bindings->environment */
     /* TODO */
