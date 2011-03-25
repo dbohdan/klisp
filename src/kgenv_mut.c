@@ -55,3 +55,50 @@ void do_match(klisp_State *K, TValue *xparams, TValue obj)
     match(K, name, env, ptree, obj);
     kapply_cc(K, KINERT);
 }
+
+/* 6.8.1 $set! */
+void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+
+    TValue sname = xparams[0];
+
+    bind_3p(K, "$set!", ptree, env_exp, raw_formals, eval_exp);
+
+    TValue formals = check_copy_ptree(K, "$set!", raw_formals, KIGNORE);
+
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_set_eval_obj, 4, 
+			   sname, formals, eval_exp, denv);
+    kset_cc(K, new_cont);
+    ktail_eval(K, env_exp, denv);
+}
+
+/* Helpers for $set! */
+void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj)
+{
+    TValue sname = xparams[0];
+    TValue formals = xparams[1];
+    TValue eval_exp = xparams[2];
+    TValue denv = xparams[3];
+    
+    if (!ttisenvironment(obj)) {
+	klispE_throw_extra(K, ksymbol_buf(sname), ": bad type from first "
+			   "operand evaluation (expected environment)");
+	return;
+    } else {
+	TValue env = obj;
+
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_match, 3, 
+			       formals, env, sname);
+	kset_cc(K, new_cont);
+	ktail_eval(K, eval_exp, denv);
+    }
+}
+
+/* 6.8.2 $provide! */
+/* TODO */
+
+/* 6.8.3 $import! */
+/* TODO */

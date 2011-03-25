@@ -232,4 +232,16 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
     return copy;
 }
 
+/* 6.8.1 $set! */
+void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* Helper for $set! */
+void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj);
+
+/* 6.8.2 $provide! */
+/* TODO */
+
+/* 6.8.3 $import! */
+/* TODO */
+
 #endif

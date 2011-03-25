@@ -478,7 +478,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.8.1 $set! */
-    /* TODO */
+    add_operative(K, ground_env, "$set!", SsetB, 1, symbol);
 
     /* 6.8.2 $provide! */
     /* TODO */
