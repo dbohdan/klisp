@@ -165,7 +165,6 @@ inline bool equal_find2_mergep(klisp_State *K, TValue obj1, TValue obj2)
 bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 {
     assert(ks_sisempty(K));
-    kcheck_mark_balance();
 
     /* the stack has the elements to be compaired, always in pairs.
        So the top should be compared with the one below, the third with
@@ -175,6 +174,8 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 
     /* if the stacks becomes empty, all pairs of elements were equal */
     bool result = true;
+    TValue saved_obj1 = obj1;
+    TValue saved_obj2 = obj2;
 
     while(!ks_sisempty(K)) {
 	obj2 = ks_spop(K);
@@ -205,9 +206,8 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
     /* if result is false, the stack may not be empty */
     ks_sclear(K);
 
-    unmark_tree(K, obj1);
-    unmark_tree(K, obj2);
+    unmark_tree(K, saved_obj1);
+    unmark_tree(K, saved_obj2);
     
-    kcheck_mark_balance();
     return result;
 }

@@ -33,7 +33,9 @@
 #include <stdio.h>
 
 /* This should be in a configuration .h */
+/*
 #define KTRACK_MARKS (true)
+*/
 
 /*
 ** Union of all collectible objects
