@@ -45,7 +45,7 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 /* uses copy_es helper */
 
 /* 6.4.3 assq */
-/* TODO */
+void assq(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.4.3 memq? */
 void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

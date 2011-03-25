@@ -28,3 +28,5 @@ TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr)
 
     return gc2pair(new_pair);
 }
+
+bool kpairp(TValue obj) { return ttispair(obj); }

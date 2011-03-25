@@ -61,4 +61,6 @@ TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr);
 #define kget_source_info(p_) (tv2pair(p_)->si)
 #define kset_source_info(p_, si_) (kget_source_info(p_) = (si_))
 
+bool kpairp(TValue obj);
+
 #endif

@@ -418,7 +418,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "copy-es", copy_es, 2, symbol, b2tv(true));
 
     /* 6.4.3 assq */
-    /* TODO */
+    add_applicative(K, ground_env, "assq", assq, 0);
 
     /* 6.4.3 memq? */
     add_applicative(K, ground_env, "memq?", memqp, 0);

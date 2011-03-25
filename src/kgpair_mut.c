@@ -227,7 +227,29 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 /* uses copy_es helper (above copy-es-immutable) */
 
 /* 6.4.3 assq */
-/* TODO */
+void assq(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_2p(K, "memq", ptree, obj, ls);
+    /* first pass, check structure */
+    int32_t dummy;
+    int32_t pairs = check_typed_list(K, "assq", "pair", kpairp,
+				     true, ls, &dummy);
+    TValue tail = ls;
+    TValue res = KNIL;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	if (eq2p(K, kcar(first), obj)) {
+	    res = first;
+	    break;
+	}
+	tail = kcdr(tail);
+    }
+
+    kapply_cc(K, res);
+}
 
 /* 6.4.3 memq? */
 /* REFACTOR: do just one pass, maybe use generalized accum function */
