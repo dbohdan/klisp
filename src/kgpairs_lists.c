@@ -271,7 +271,51 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* TODO */
 
 /* 6.3.4 list-neighbors */
-/* TODO */
+void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    /* GC: root intermediate pairs */
+    bind_1p(K, "list_neighbors", ptree, ls);
+
+    int32_t cpairs;
+    int32_t pairs = check_list(K, "list_neighbors", true, ls, &cpairs);
+
+    TValue tail = ls;
+    int32_t count = cpairs? pairs - cpairs : pairs - 1;
+    TValue dummy = kcons(K, KINERT, KNIL);
+    TValue last_pair = dummy;
+    TValue last_apair = dummy; /* set after first loop */
+    bool doing_cycle = false;
+
+    while(count > 0 || !doing_cycle) {
+	while(count-- > 0) { /* can be -1 if ls is nil */
+	    TValue first = kcar(tail);
+	    tail = kcdr(tail); /* tail advances one place per iter */
+	    TValue new_car = kcons(K, first, kcons(K, kcar(tail), KNIL));
+	    TValue new_pair = kcons(K, new_car, KNIL);
+	    kset_cdr(last_pair, new_pair);
+	    last_pair = new_pair;
+	}
+
+	if (doing_cycle) {
+	    TValue first_cpair = kcdr(last_apair);
+	    kset_cdr(last_pair, first_cpair);
+	} else { /* this is done even if cpairs is 0 to terminate the loop */
+	    doing_cycle = true;
+	    /* must remember first cycle pair to reconstruct the cycle,
+	       we can save the last outside of the cycle and then check 
+	       its cdr */
+	    last_apair = last_pair;
+	    count = cpairs; /* this contains the sublist that has the last
+			       and first element of the cycle */
+	    /* this will loop once more */
+	}
+    }
+    /* discard dummy pair to obtain the constructed list */
+    kapply_cc(K, kcdr(dummy));
+}
 
 /* 6.3.5 filter */
 /* TODO */

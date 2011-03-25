@@ -64,7 +64,8 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 6.3.4 list-neighbors */
-/* TODO */
+void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
 
 /* 6.3.5 filter */
 /* TODO */
