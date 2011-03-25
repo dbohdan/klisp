@@ -302,7 +302,28 @@ void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.3.7 member? */
-/* TODO */
+void memberp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_2p(K, "member?", ptree, obj, ls);
+    /* first pass, check structure */
+    int32_t dummy;
+    int32_t pairs = check_list(K, "member?", true, ls, &dummy);
+    TValue tail = ls;
+    TValue res = KFALSE;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	if (equal2p(K, first, obj)) {
+	    res = KTRUE;
+	    break;
+	}
+	tail = kcdr(tail);
+    }
+
+    kapply_cc(K, res);
+}
 
 /* 6.3.8 finite-list? */
 /* NOTE: can't use ftypep because the predicate marks pairs too */

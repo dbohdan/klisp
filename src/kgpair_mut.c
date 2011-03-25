@@ -259,7 +259,7 @@ void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, "memq", ptree, obj, ls);
+    bind_2p(K, "memq?", ptree, obj, ls);
     /* first pass, check structure */
     int32_t dummy;
     int32_t pairs = check_list(K, "memq?", true, ls, &dummy);

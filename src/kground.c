@@ -396,7 +396,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "assoc", assoc, 0);
 
     /* 6.3.7 member? */
-    /* TODO */
+    add_applicative(K, ground_env, "member?", memberp, 0);
 
     /* 6.3.8 finite-list? */
     add_applicative(K, ground_env, "finite-list?", finite_listp, 0);

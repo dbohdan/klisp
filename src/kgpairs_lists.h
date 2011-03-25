@@ -73,7 +73,7 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.7 member? */
-/* TODO */
+void memberp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.8 finite-list? */
 void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
