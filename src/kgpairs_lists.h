@@ -70,7 +70,7 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* TODO */
 
 /* 6.3.6 assoc */
-/* TODO */
+void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.7 member? */
 /* TODO */

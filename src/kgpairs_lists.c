@@ -19,6 +19,7 @@
 #include "kerror.h"
 
 #include "kghelpers.h"
+#include "kgequalp.h"
 #include "kgpairs_lists.h"
 
 /* 4.6.1 pair? */
@@ -276,7 +277,29 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* TODO */
 
 /* 6.3.6 assoc */
-/* TODO */
+void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_2p(K, "assoc", ptree, obj, ls);
+    /* first pass, check structure */
+    int32_t dummy;
+    int32_t pairs = check_typed_list(K, "assoc", "pair", kpairp,
+				     true, ls, &dummy);
+    TValue tail = ls;
+    TValue res = KNIL;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	if (equal2p(K, kcar(first), obj)) {
+	    res = first;
+	    break;
+	}
+	tail = kcdr(tail);
+    }
+
+    kapply_cc(K, res);
+}
 
 /* 6.3.7 member? */
 /* TODO */
