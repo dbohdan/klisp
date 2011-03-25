@@ -19,6 +19,7 @@
 
 #include "kghelpers.h"
 #include "kgpair_mut.h"
+#include "kgeqp.h" /* eq? checking in memq and assq */
 
 /* 4.7.1 set-car!, set-cdr! */
 void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -228,5 +229,27 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 /* 6.4.3 assq */
 /* TODO */
 
-/* 6.4.3 memq */
-/* TODO */
+/* 6.4.3 memq? */
+/* REFACTOR: do just one pass, maybe use generalized accum function */
+void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_2p(K, "memq", ptree, obj, ls);
+    /* first pass, check structure */
+    int32_t dummy;
+    int32_t pairs = check_list(K, "memq?", true, ls, &dummy);
+    TValue tail = ls;
+    TValue res = KFALSE;
+    while(pairs--) {
+	TValue first = kcar(tail);
+	if (eq2p(K, first, obj)) {
+	    res = KTRUE;
+	    break;
+	}
+	tail = kcdr(tail);
+    }
+
+    kapply_cc(K, res);
+}

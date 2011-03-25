@@ -420,8 +420,8 @@ void kinit_ground_env(klisp_State *K)
     /* 6.4.3 assq */
     /* TODO */
 
-    /* 6.4.3 memq */
-    /* TODO */
+    /* 6.4.3 memq? */
+    add_applicative(K, ground_env, "memq?", memqp, 0);
 
     /*
     ** 6.5 Equivalance under mutation

@@ -47,7 +47,7 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 /* 6.4.3 assq */
 /* TODO */
 
-/* 6.4.3 memq */
-/* TODO */
+/* 6.4.3 memq? */
+void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif
