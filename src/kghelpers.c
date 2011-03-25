@@ -79,6 +79,9 @@ void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 }
 
+/*
+** REFACTOR: Change this to make it a single pass
+*/
 void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
@@ -116,6 +119,9 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, b2tv(res));
 }
 
+/*
+** REFACTOR: Change this to make it a single pass
+*/
 void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
@@ -190,9 +196,10 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name , ": expected finite list"); 
+	klispE_throw_extra(K, name , allow_infp? ": expected list": 
+			   "expected finite list"); 
 	return 0;
-    } else if(ttispair(tail) & !allow_infp) {
+    } else if(ttispair(tail) && !allow_infp) {
 	klispE_throw_extra(K, name , ": expected finite list"); 
 	return 0;
     } else if (type_errorp) {
@@ -217,9 +224,10 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name , ": expected finite list"); 
+	klispE_throw_extra(K, name, allow_infp? ": expected list": 
+			   "expected finite list"); 
 	return 0;
-    } else if(ttispair(tail) & !allow_infp) {
+    } else if(ttispair(tail) && !allow_infp) {
 	klispE_throw_extra(K, name , ": expected finite list"); 
 	return 0;
     } else {
