@@ -32,6 +32,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
+/* This should be in a configuration .h */
+#define KTRACK_MARKS (true)
+
 /*
 ** Union of all collectible objects
 */
@@ -462,10 +465,27 @@ extern char *ktv_names[];
 /* Macros to handle marks */
 /* NOTE: this only works in markable objects */
 #define kget_mark(p_) (tv2mgch(p_)->mark) 
+
+#ifdef KTRACK_MARKS
+int32_t kmark_count;
+#define kset_mark(p_, m_) ({ TValue new_mark_ = (m_); \
+	TValue obj_ = (p_); \
+	TValue old_mark_ = kget_mark(p_);	\
+	if (kis_false(old_mark_) && !kis_false(new_mark_)) \
+	    ++kmark_count; \
+	else if (kis_false(new_mark_) && !kis_false(old_mark_)) \
+	    --kmark_count; \
+	kget_mark(obj_) = new_mark_; })
+#define kcheck_mark_balance() (assert(kmark_count == 0))
+#else
 #define kset_mark(p_, m_) (kget_mark(p_) = (m_))
+#define kcheck_mark_balance() 
+#endif
+
 /* simple boolean #t mark */
 #define kmark(p_) (kset_mark(p_, KTRUE)) 
 #define kunmark(p_) (kset_mark(p_, KFALSE)) 
+
 #define kis_marked(p_) (!kis_unmarked(p_))
 #define kis_unmarked(p_) (tv_equal(kget_mark(p_), KFALSE))
 

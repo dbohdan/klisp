@@ -6,6 +6,9 @@
 
 #include "kobject.h"
 
+#ifdef KTRACK_MARKS
+int32_t kmark_count = 0;
+#endif
 /*
 ** The global const variables
 */
