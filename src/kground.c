@@ -337,8 +337,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 5.10.1 $let */
-    /* TODO */
-
+    add_operative(K, ground_env, "$let", Slet, 1, symbol);
 
     /*
     **

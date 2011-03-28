@@ -32,8 +32,11 @@ void eval(klisp_State *K, TValue *xparams, TValue ptree,
 void make_environment(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv);
 
+/* Helpers for all $let family */
+TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings, 
+				TValue *exprs, bool starp);
 /* 5.10.1 $let */
-/* TODO */
+void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.7.1 $binds? */
 /* TODO */
