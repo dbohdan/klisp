@@ -22,6 +22,7 @@
 #include "kgenvironments.h"
 #include "kgenv_mut.h" /* for check_ptree */ 
 #include "kgpair_mut.h" /* for copy_es_immutable_h */
+#include "kgcontrol.h" /* for do_seq */
 /* MAYBE: move the above to kghelpers.h */
 
 /* 4.8.1 environment? */
@@ -145,27 +146,77 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
     }
 }
 
+/*
+** Continuation function for all the let family
+** it expects the result of the last evaluation to be matched to 
+** this-ptree
+*/
+void do_let(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: symbol name
+    ** xparams[1]: this ptree
+    ** xparams[2]: remaining bindings
+    ** xparams[3]: remaining exprs
+    ** xparams[4]: match environment
+    ** xparams[5]: rec/not rec flag
+    ** xparams[6]: body
+    */
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
+    TValue ptree = xparams[1];
+    TValue bindings = xparams[2];
+    TValue exprs = xparams[3];
+    TValue env = xparams[4];
+    bool recp = bvalue(xparams[5]);
+    TValue body = xparams[6];
+    
+    /* XXX */
+    UNUSED(recp);
+    UNUSED(bindings);
+    UNUSED(exprs);
+
+    match(K, name, env, ptree, obj);
+    
+    /* TODO: check bindings */
+    if (ttisnil(body)) {
+	kapply_cc(K, KINERT);
+    } else {
+	/* this is needed because seq continuation doesn't check for 
+	   nil sequence */
+	TValue tail = kcdr(body);
+	if (ttispair(tail)) {
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+						 do_seq, 2, tail, env);
+	    kset_cc(K, new_cont);
+	} 
+	ktail_eval(K, kcar(body), env);
+    }
+}
+
 /* 5.10.1 $let */
-/* TEMP: for now this only checks the parameters and makes copies */
-/* XXX: it doesn't do any evaluation or env creation */
+/* REFACTOR: reuse code in other members of the $let family */
 void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     /*
     ** xparams[0]: symbol name
     */
-    UNUSED(denv);
-    char *name = ksymbol_buf(xparams[0]);
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
     bind_al1p(K, name, ptree, bindings, body);
 
     TValue exprs;
-    TValue btree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
     int32_t dummy;
     UNUSED(check_list(K, name, true, body, &dummy));
     body = copy_es_immutable_h(K, name, body, false);
 
-    /* XXX */
-    TValue res = kcons(K, btree, kcons(K, exprs, body));
-    kapply_cc(K, res);
+    TValue new_env = kmake_environment(K, denv);
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
+    kset_cc(K, new_cont);
+    ktail_eval(K, kcons(K, K->list_app, exprs), denv);
 }
 
 /* 6.7.1 $binds? */

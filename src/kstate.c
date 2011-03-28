@@ -33,6 +33,8 @@
 #include "kstring.h"
 #include "kport.h"
 
+#include "kgpairs_lists.h" /* for creating list_app */
+
 /*
 ** State creation and destruction
 */
@@ -65,6 +67,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* these will be properly initialized later */
     K->eval_op = KINERT;
+    K->list_app = KINERT;
     K->ground_env = KINERT;
     K->module_params_sym = KINERT;
     K->root_cont = KINERT;
@@ -138,6 +141,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* create the ground environment and the eval operative */
     K->eval_op = kmake_operative(K, KNIL, KNIL, keval_ofn, 0);
+    K->list_app = kwrap(K, kmake_operative(K, KNIL, KNIL, list, 0));
     K->ground_env = kmake_empty_environment(K);
     K->module_params_sym = ksymbol_new(K, "module-parameters");
     
