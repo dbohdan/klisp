@@ -256,7 +256,30 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 /* TODO */
 
 /* 6.7.8 $let-safe */
-/* TODO */
+void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: symbol name
+    */
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
+    bind_al1p(K, name, ptree, bindings, body);
+
+    TValue exprs;
+    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    int32_t dummy;
+    UNUSED(check_list(K, name, true, body, &dummy));
+    body = copy_es_immutable_h(K, name, body, false);
+/* according to the definition of the report it should be a child
+   of a child of the ground environment, but since this is a fresh
+   environment, the semantics are the same */
+    TValue new_env = kmake_environment(K, K->ground_env);
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
+    kset_cc(K, new_cont);
+    ktail_eval(K, kcons(K, K->list_app, exprs), denv);
+}
 
 /* 6.7.9 $remote-eval */
 void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

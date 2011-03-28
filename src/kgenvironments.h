@@ -62,7 +62,7 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 /* TODO */
 
 /* 6.7.8 $let-safe */
-/* TODO */
+void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.7.9 $remote-eval */
 void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

@@ -464,7 +464,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.7.8 $let-safe */
-    /* TODO */
+    add_operative(K, ground_env, "$let-safe", Slet_safe, 1, symbol);
 
     /* 6.7.9 $remote-eval */
     add_operative(K, ground_env, "$remote-eval", Sremote_eval, 0);
