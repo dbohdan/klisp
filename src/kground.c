@@ -452,7 +452,7 @@ void kinit_ground_env(klisp_State *K)
 		    make_kernel_standard_environment, 0);
 
     /* 6.7.4 $let* */
-    /* TODO */
+    add_operative(K, ground_env, "$let*", SletS, 1, symbol);
 
     /* 6.7.5 $letrec */
     add_operative(K, ground_env, "$letrec", Sletrec, 1, symbol);

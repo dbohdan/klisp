@@ -50,7 +50,7 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 				      TValue ptree, TValue denv);
 
 /* 6.7.4 $let* */
-/* TODO */
+void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.7.5 $letrec */
 void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

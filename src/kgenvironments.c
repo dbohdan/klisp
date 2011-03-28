@@ -173,24 +173,31 @@ void do_let(klisp_State *K, TValue *xparams, TValue obj)
     
     /* XXX */
     UNUSED(recp);
-    UNUSED(bindings);
-    UNUSED(exprs);
 
     match(K, name, env, ptree, obj);
     
-    /* TODO: check bindings */
-    if (ttisnil(body)) {
-	kapply_cc(K, KINERT);
+    if (ttisnil(bindings)) {
+	if (ttisnil(body)) {
+	    kapply_cc(K, KINERT);
+	} else {
+	    /* this is needed because seq continuation doesn't check for 
+	       nil sequence */
+	    TValue tail = kcdr(body);
+	    if (ttispair(tail)) {
+		TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+						     do_seq, 2, tail, env);
+		kset_cc(K, new_cont);
+	    } 
+	    ktail_eval(K, kcar(body), env);
+	}
     } else {
-	/* this is needed because seq continuation doesn't check for 
-	   nil sequence */
-	TValue tail = kcdr(body);
-	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-						 do_seq, 2, tail, env);
-	    kset_cc(K, new_cont);
-	} 
-	ktail_eval(K, kcar(body), env);
+	TValue new_env = kmake_environment(K, env);
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			       kcar(bindings), kcdr(bindings), kcdr(exprs), 
+			       new_env, b2tv(false), body);
+	kset_cc(K, new_cont);
+	ktail_eval(K, kcar(exprs), recp? new_env : env);
     }
 }
 
@@ -244,7 +251,38 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 }
 
 /* 6.7.4 $let* */
-/* TODO */
+void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: symbol name
+    */
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
+    bind_al1p(K, name, ptree, bindings, body);
+
+    TValue exprs;
+    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    int32_t dummy;
+    UNUSED(check_list(K, name, true, body, &dummy));
+    body = copy_es_immutable_h(K, name, body, false);
+
+    TValue new_env = kmake_environment(K, denv);
+    if (ttisnil(bptree)) {
+	/* same as $let */
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			       bptree, KNIL, KNIL, new_env, b2tv(false), body);
+	kset_cc(K, new_cont);
+	ktail_eval(K, kcons(K, K->list_app, exprs), denv);
+    } else {
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			       kcar(bptree), kcdr(bptree), kcdr(exprs), 
+			       new_env, b2tv(false), body);
+	kset_cc(K, new_cont);
+	ktail_eval(K, kcar(exprs), denv);
+    }
+}
 
 /* 6.7.5 $letrec */
 /* TODO */
