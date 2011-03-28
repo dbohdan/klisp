@@ -261,7 +261,7 @@ void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1p(K, name, ptree, bindings, body);
 
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, true);
     int32_t dummy;
     UNUSED(check_list(K, name, true, body, &dummy));
     body = copy_es_immutable_h(K, name, body, false);
@@ -285,9 +285,6 @@ void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.7.5 $letrec */
-/* TODO */
-
-/* 6.7.6 $letrec* */
 void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     /*
@@ -310,6 +307,9 @@ void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kset_cc(K, new_cont);
     ktail_eval(K, kcons(K, K->list_app, exprs), new_env);
 }
+
+/* 6.7.6 $letrec* */
+/* TODO */
 
 /* Helper for $let-redirect */
 void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj)
