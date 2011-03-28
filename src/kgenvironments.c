@@ -252,8 +252,58 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 /* 6.7.6 $letrec* */
 /* TODO */
 
+/* Helper for $let-redirect */
+void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: symbol name
+    ** xparams[1]: ptree
+    ** xparams[2]: list expr to be eval'ed
+    ** xparams[3]: denv
+    ** xparams[4]: body
+    */
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
+    TValue bptree = xparams[1];
+    TValue lexpr = xparams[2];
+    TValue denv = xparams[3];
+    TValue body = xparams[4];
+    
+    if (!ttisenvironment(obj)) {
+	klispE_throw_extra(K, name , ": expected environment"); 
+	return;
+    }
+    TValue new_env = kmake_environment(K, obj);
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
+    kset_cc(K, new_cont);
+    ktail_eval(K, lexpr, denv);
+}
+
 /* 6.7.7 $let-redirect */
-/* TODO */
+void Slet_redirect(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: symbol name
+    */
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
+    bind_al2p(K, name, ptree, env_exp, bindings, body);
+
+    TValue exprs;
+    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    int32_t dummy;
+    UNUSED(check_list(K, name, true, body, &dummy));
+    body = copy_es_immutable_h(K, name, body, false);
+
+    TValue eexpr = kcons(K, K->list_app, exprs);
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let_redirect, 5, sname, 
+			   bptree, eexpr, denv, body);
+    kset_cc(K, new_cont);
+    ktail_eval(K, env_exp, denv);
+}
 
 /* 6.7.8 $let-safe */
 void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

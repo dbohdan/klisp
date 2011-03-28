@@ -461,7 +461,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.7.7 $let-redirect */
-    /* TODO */
+    add_operative(K, ground_env, "$let-redirect", Slet_redirect, 1, symbol);
 
     /* 6.7.8 $let-safe */
     add_operative(K, ground_env, "$let-safe", Slet_safe, 1, symbol);

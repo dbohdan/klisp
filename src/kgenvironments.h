@@ -58,8 +58,11 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 /* 6.7.6 $letrec* */
 /* TODO */
 
+/* Helper for $let-redirect */
+void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj);
+
 /* 6.7.7 $let-redirect */
-/* TODO */
+void Slet_redirect(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.7.8 $let-safe */
 void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
