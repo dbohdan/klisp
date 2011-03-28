@@ -455,7 +455,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.7.5 $letrec */
-    /* TODO */
+    add_operative(K, ground_env, "$letrec", Sletrec, 1, symbol);
 
     /* 6.7.6 $letrec* */
     /* TODO */
