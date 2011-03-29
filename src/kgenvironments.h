@@ -73,7 +73,11 @@ void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* Helper for $remote-eval */
 void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj);
 
+/* Helper for $bindings->environment */
+void do_b_to_env(klisp_State *K, TValue *xparams, TValue obj);
+
 /* 6.7.10 $bindings->environment */
-/* TODO */
+void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree, 
+			      TValue denv);
 
 #endif

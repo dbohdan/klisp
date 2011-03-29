@@ -171,9 +171,6 @@ void do_let(klisp_State *K, TValue *xparams, TValue obj)
     bool recp = bvalue(xparams[5]);
     TValue body = xparams[6];
     
-    /* XXX */
-    UNUSED(recp);
-
     match(K, name, env, ptree, obj);
     
     if (ttisnil(bindings)) {
@@ -449,5 +446,31 @@ void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
+/* Helper for $bindings->environment */
+void do_b_to_env(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: ptree
+    ** xparams[1]: created env
+    */
+    TValue ptree = xparams[0];
+    TValue env = xparams[1];
+    
+    match(K, "$bindings->environment", env, ptree, obj);
+    kapply_cc(K, env);
+}
+
 /* 6.7.10 $bindings->environment */
-/* TODO */
+void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree, 
+			      TValue denv)
+{
+    UNUSED(xparams);
+    TValue exprs;
+    TValue bptree = split_check_let_bindings(K, "$bindings->environment", 
+					     ptree, &exprs, false);
+    TValue new_env = kmake_environment(K, KNIL);
+    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+					 do_b_to_env, 2, bptree, new_env);
+    kset_cc(K, new_cont);
+    ktail_eval(K, kcons(K, K->list_app, exprs), denv);
+}

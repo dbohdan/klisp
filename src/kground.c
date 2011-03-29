@@ -470,7 +470,8 @@ void kinit_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$remote-eval", Sremote_eval, 0);
 
     /* 6.7.10 $bindings->environment */
-    /* TODO */
+    add_operative(K, ground_env, "$bindings->environment", 
+		  Sbindings_to_environment, 1, symbol);
 
     /*
     ** 6.8 Environment mutation
