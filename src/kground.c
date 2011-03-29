@@ -458,7 +458,7 @@ void kinit_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$letrec", Sletrec, 1, symbol);
 
     /* 6.7.6 $letrec* */
-    /* TODO */
+    add_operative(K, ground_env, "$letrec*", SletrecS, 1, symbol);
 
     /* 6.7.7 $let-redirect */
     add_operative(K, ground_env, "$let-redirect", Slet_redirect, 1, symbol);

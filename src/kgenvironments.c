@@ -303,13 +303,44 @@ void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue new_env = kmake_environment(K, denv);
     TValue new_cont = 
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
-			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
+			   bptree, KNIL, KNIL, new_env, b2tv(true), body);
     kset_cc(K, new_cont);
     ktail_eval(K, kcons(K, K->list_app, exprs), new_env);
 }
 
 /* 6.7.6 $letrec* */
-/* TODO */
+void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: symbol name
+    */
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
+    bind_al1p(K, name, ptree, bindings, body);
+
+    TValue exprs;
+    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, true);
+    int32_t dummy;
+    UNUSED(check_list(K, name, true, body, &dummy));
+    body = copy_es_immutable_h(K, name, body, false);
+
+    TValue new_env = kmake_environment(K, denv);
+    if (ttisnil(bptree)) {
+	/* same as $letrec */
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			       bptree, KNIL, KNIL, new_env, b2tv(true), body);
+	kset_cc(K, new_cont);
+	ktail_eval(K, kcons(K, K->list_app, exprs), new_env);
+    } else {
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+			       kcar(bptree), kcdr(bptree), kcdr(exprs), 
+			       new_env, b2tv(true), body);
+	kset_cc(K, new_cont);
+	ktail_eval(K, kcar(exprs), new_env);
+    }
+}
 
 /* Helper for $let-redirect */
 void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj)

@@ -56,7 +56,7 @@ void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.7.6 $letrec* */
-/* TODO */
+void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper for $let-redirect */
 void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj);
