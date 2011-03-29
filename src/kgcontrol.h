@@ -31,7 +31,13 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 5.1.1 $sequence */
 void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* Helpers for $cond */
+TValue split_check_cond_clauses(klisp_State *K, TValue clauses, 
+				TValue *bodies);
+
+void do_cond(klisp_State *K, TValue *xparams, TValue obj);
+
 /* 5.6.1 $cond */
-/* TODO */
+void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif

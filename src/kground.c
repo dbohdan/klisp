@@ -306,7 +306,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 5.6.1 $cond */
-    /* TODO */
+    add_operative(K, ground_env, "$cond", Scond, 0);
 
     /*
     ** 5.7 Pairs and lists
