@@ -106,3 +106,5 @@ TValue ksymbol_new_check_i(klisp_State *K, TValue str)
     buf = kstring_buf(str);
     return ksymbol_new_g(K, buf, size, identifierp);
 }
+
+bool ksymbolp(TValue obj) { return ttissymbol(obj); }

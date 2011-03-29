@@ -223,8 +223,53 @@ void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ktail_eval(K, kcons(K, K->list_app, exprs), denv);
 }
 
+/* Helper for $binds? */
+void do_bindsp(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: symbol list (may contain cycles)
+    ** xparams[1]: symbol list count
+    */
+    TValue symbols = xparams[0];
+    int32_t count = ivalue(xparams[1]);
+    
+    if (!ttisenvironment(obj)) {
+	klispE_throw(K, "$binds?: expected environment as first argument");
+	return;
+    }
+    TValue env = obj;
+    TValue res = KTRUE;
+
+    while(count--) {
+	TValue first = kcar(symbols);
+	symbols = kcdr(symbols);
+
+	if (!kbinds(K, env, first)) {
+	    res = KFALSE;
+	    break;
+	}
+    }
+
+    kapply_cc(K, res);
+}
+
 /* 6.7.1 $binds? */
-/* TODO */
+void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    bind_al1p(K, "binds?", ptree, env_expr, symbols);
+
+    /* REFACTOR replace with single function check_copy_typed_list */
+    int32_t dummy;
+    int32_t count = check_typed_list(K, "$binds?", "symbol", ksymbolp, 
+				     true, symbols, &dummy);
+    symbols = check_copy_list(K, "$binds?", symbols);
+
+    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_bindsp, 
+					 2, symbols, i2tv(count));
+    kset_cc(K, new_cont);
+    ktail_eval(K, env_expr, denv);
+}
 
 /* 6.7.2 get-current-environment */
 void get_current_environment(klisp_State *K, TValue *xparams, TValue ptree, 

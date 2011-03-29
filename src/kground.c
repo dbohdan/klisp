@@ -441,7 +441,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.7.1 $binds? */
-    /* TODO */
+    add_operative(K, ground_env, "$binds?", Sbindsp, 0);
 
     /* 6.7.2 get-current-environment */
     add_applicative(K, ground_env, "get-current-environment", 

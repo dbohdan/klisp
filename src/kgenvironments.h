@@ -38,8 +38,11 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 /* 5.10.1 $let */
 void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* Helper for $binds? */
+void do_bindsp(klisp_State *K, TValue *xparams, TValue obj);
+
 /* 6.7.1 $binds? */
-/* TODO */
+void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.7.2 get-current-environment */
 void get_current_environment(klisp_State *K, TValue *xparams, TValue ptree, 

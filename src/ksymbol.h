@@ -23,4 +23,6 @@ TValue ksymbol_new_check_i(klisp_State *K, TValue str);
 #define ksymbol_buf(tv_) (kstring_buf(tv2sym(tv_)->str))
 #define ksymbol_size(tv_) (kstring_size(tv2sym(tv_)->str))
 
+bool ksymbolp(TValue obj);
+
 #endif

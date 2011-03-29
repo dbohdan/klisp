@@ -176,6 +176,7 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, b2tv(res));
 }
 
+/* TODO: allow NULL as argument to cpairs and avoid writing it in that case */
 /* typed finite list. Structure error should be throw before type errors */
 int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 			 bool (*typep)(TValue), bool allow_infp, TValue obj,
