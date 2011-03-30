@@ -481,7 +481,7 @@ void kinit_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$set!", SsetB, 1, symbol);
 
     /* 6.8.2 $provide! */
-    /* TODO */
+    add_operative(K, ground_env, "$provide!", SprovideB, 1, symbol);
 
     /* 6.8.3 $import! */
     add_operative(K, ground_env, "$import!", SimportB, 1, symbol);

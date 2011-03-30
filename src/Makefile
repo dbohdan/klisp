@@ -106,7 +106,7 @@ kgenvironments.o: kgenvironments.c kgenvironments.h kghelpers.h kstate.h \
 	kenvironment.h kgenv_mut.h kgpair_mut.h kgcontrol.h
 kgenv_mut.o: kgenv_mut.c kgenv_mut.h kghelpers.h kstate.h \
 	klisp.h kobject.h kerror.h kpair.h ksymbol.h kcontinuation.h \
-	kenvironment.h
+	kenvironment.h kgcontrol.h
 kgcombiners.o: kgcombiners.c kgenvironments.h kghelpers.h kstate.h \
 	klisp.h kobject.h kerror.h kpair.h ksymbol.h kcontinuation.h \
 	kenvironment.h kapplicative.h koperative.h kgpair_mut.h

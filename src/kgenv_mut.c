@@ -20,6 +20,7 @@
 
 #include "kghelpers.h"
 #include "kgenv_mut.h"
+#include "kgcontrol.h" /* for do_seq */
 
 /* 4.9.1 $define! */
 void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -132,7 +133,7 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
     while(ttispair(tail) && !kis_marked(tail)) {
 	/* even if there is a type error continue checking the structure */
 	TValue first = kcar(tail);
-	if (ksymbolp(first)) {
+	if (ttissymbol(first)) {
 	    repeated_errorp |= kis_marked(first);
 	    kmark(first);
 	} else {
@@ -188,8 +189,45 @@ void do_import(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 6.8.2 $provide! */
-/* TODO */
+void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /* 
+    ** xparams[0]: name as symbol
+    */
+    TValue sname = xparams[0];
+    char *name = ksymbol_buf(sname);
 
+    bind_al1p(K, name, ptree, symbols, body);
+
+    symbols = check_copy_symbol_list(K, name, symbols);
+    body = check_copy_list(K, name, body);
+    
+    TValue new_env = kmake_environment(K, denv);
+    /* this will copy the bindings from new_env to denv */
+    TValue import_cont =
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_import, 3, 
+			   sname, symbols, denv);
+    /* this will ignore the last value and pass the env to the 
+       above continuation */
+    TValue ret_exp_cont = 
+	kmake_continuation(K, import_cont, KNIL, KNIL, do_return_value, 
+			   1, new_env);
+    kset_cc(K, ret_exp_cont);
+
+    if (ttisnil(body)) {
+	kapply_cc(K, KINERT);
+    } else {
+	/* this is needed because seq continuation doesn't check for 
+	   nil sequence */
+	TValue tail = kcdr(body);
+	if (ttispair(tail)) {
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+						 do_seq, 2, tail, new_env);
+	    kset_cc(K, new_cont);
+	} 
+	ktail_eval(K, kcar(body), new_env);
+    }
+}
 
 /* 6.8.3 $import! */
 void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

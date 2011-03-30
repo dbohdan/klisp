@@ -238,11 +238,12 @@ void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* Helper for $set! */
 void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj);
 
-/* 6.8.2 $provide! */
-/* TODO */
-
-/* Helper for $import! */
+/* Helpers for $provide & $import! */
+TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj);
 void do_import(klisp_State *K, TValue *xparams, TValue obj);
+
+/* 6.8.2 $provide! */
+void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.8.3 $import! */
 void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
