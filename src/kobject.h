@@ -469,6 +469,8 @@ extern char *ktv_names[];
 #define kget_mark(p_) (tv2mgch(p_)->mark) 
 
 #ifdef KTRACK_MARKS
+/* XXX: marking macros should take a klisp_State parameter and
+   keep track of marks in the klisp_State */
 int32_t kmark_count;
 #define kset_mark(p_, m_) ({ TValue new_mark_ = (m_); \
 	TValue obj_ = (p_); \

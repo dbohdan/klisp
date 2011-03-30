@@ -484,7 +484,7 @@ void kinit_ground_env(klisp_State *K)
     /* TODO */
 
     /* 6.8.3 $import! */
-    /* TODO */
+    add_operative(K, ground_env, "$import!", SimportB, 1, symbol);
 
     /*
     ** 6.9 Control

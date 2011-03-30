@@ -198,7 +198,7 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 
     if (!ttispair(tail) && !ttisnil(tail)) {
 	klispE_throw_extra(K, name , allow_infp? ": expected list": 
-			   "expected finite list"); 
+			   ": expected finite list"); 
 	return 0;
     } else if(ttispair(tail) && !allow_infp) {
 	klispE_throw_extra(K, name , ": expected finite list"); 
@@ -226,7 +226,7 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 
     if (!ttispair(tail) && !ttisnil(tail)) {
 	klispE_throw_extra(K, name, allow_infp? ": expected list": 
-			   "expected finite list"); 
+			   ": expected finite list"); 
 	return 0;
     } else if(ttispair(tail) && !allow_infp) {
 	klispE_throw_extra(K, name , ": expected finite list"); 

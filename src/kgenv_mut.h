@@ -241,7 +241,10 @@ void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj);
 /* 6.8.2 $provide! */
 /* TODO */
 
+/* Helper for $import! */
+void do_import(klisp_State *K, TValue *xparams, TValue obj);
+
 /* 6.8.3 $import! */
-/* TODO */
+void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif
