@@ -235,3 +235,18 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 	return pairs;
     }
 }
+
+
+/* 
+** Continuation that ignores the value received and instead returns
+** a previously computed value.
+*/
+void do_return_value(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: saved_obj
+    */
+    UNUSED(obj);
+    TValue ret_obj = xparams[0];
+    kapply_cc(K, ret_obj);
+}

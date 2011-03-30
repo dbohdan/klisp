@@ -20,6 +20,7 @@
 #include "kpair.h"
 #include "kapplicative.h"
 #include "koperative.h"
+#include "kcontinuation.h"
 
 /* to use in type checking binds when no check is needed */
 #define anytype(obj_) (true)
@@ -348,5 +349,17 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 ** On zero and one operand this return true
 */
 void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+
+/* 
+** Continuation that ignores the value received and instead returns
+** a previously computed value.
+*/
+void do_return_value(klisp_State *K, TValue *xparams, TValue obj);
+
+inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
+{
+    return kmake_continuation(K, parent, KNIL, KNIL, do_return_value, 1, obj);
+}
 
 #endif

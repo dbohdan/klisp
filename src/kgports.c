@@ -285,26 +285,6 @@ void do_int_close_file(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, error_obj);
 }
 
-/* 
-** helpers for load and get-module it discards the passed obj
-** and instead returns a previously saved object 
-** this feature is used by load to return #inert and by
-** get-module to return the created environment
-*/
-void do_return_value(klisp_State *K, TValue *xparams, TValue obj)
-{
-    /*
-    ** xparams[0]: port
-    */
-    UNUSED(obj);
-    TValue ret_obj = xparams[0];
-    kapply_cc(K, ret_obj);
-}
-
-inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
-{
-    return kmake_continuation(K, parent, KNIL, KNIL, do_return_value, 1, obj);
-}
 
 /*
 ** guarded continuation making for read seq
