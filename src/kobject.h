@@ -507,15 +507,18 @@ int32_t kmark_count;
 #define K_FLAG_OUTER 0x01
 #define K_FLAG_INNER 0x02
 #define K_FLAG_DYNAMIC 0x04
+#define K_FLAG_BOOL_CHECK 0x08
 
-/* evaluates c_ more than once */
+/* evaluate c_ more than once */
 #define kset_inner_cont(c_) (tv_get_flags(c_) |= K_FLAG_INNER)
 #define kset_outer_cont(c_) (tv_get_flags(c_) |= K_FLAG_OUTER)
 #define kset_dyn_cont(c_) (tv_get_flags(c_) |= K_FLAG_DYNAMIC)
+#define kset_bool_check_cont(c_) (tv_get_flags(c_) |= K_FLAG_BOOL_CHECK)
 
 #define kis_inner_cont(c_) ((tv_get_flags(c_) & K_FLAG_INNER) != 0)
 #define kis_outer_cont(c_) ((tv_get_flags(c_) & K_FLAG_OUTER) != 0)
 #define kis_dyn_cont(c_) ((tv_get_flags(c_) & K_FLAG_DYNAMIC) != 0)
+#define kis_bool_check_cont(c_) ((tv_get_flags(c_) & K_FLAG_BOOL_CHECK) != 0)
 
 #define K_FLAG_IMMUTABLE 0x01
 #define kis_mutable(o_) ((tv_get_flags(o_) & K_FLAG_IMMUTABLE) == 0)
