@@ -213,6 +213,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
 #define kis_false(o_) (tv_equal((o_), KFALSE))
+/* unsafe, doesn't check type */
+#define knegp(o_) (kis_true(o_)? KFALSE : KTRUE)
 
 /*
 ** Union of all Kernel non heap-allocated values (except doubles)

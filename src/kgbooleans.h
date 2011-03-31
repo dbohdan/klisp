@@ -30,11 +30,15 @@ void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 6.1.3 or? */
 void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* Helpers for $and? & $or? */
+void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj);
+void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* 6.1.4 $and? */
-/* TODO */
+/* uses Sandp_Sorp */
 
 /* 6.1.5 $or? */
-/* TODO */
+/* uses Sandp_Sorp */
 
 /* Helper */
 bool kbooleanp(TValue obj);

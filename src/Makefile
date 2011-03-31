@@ -88,7 +88,7 @@ kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 	kapplicative.h koperative.h kerror.h kobject.h ksymbol.h \
 	kcontinuation.h
 kgbooleans.o: kgbooleans.c kgbooleans.c kghelpers.h kstate.h klisp.h \
-	kobject.h kerror.h kpair.h kcontinuation.h
+	kobject.h kerror.h kpair.h kcontinuation.h ksymbol.h
 kgeqp.o: kgeqp.c kgeqp.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h
 kgequalp.o: kgequalp.c kgequalp.c kghelpers.h kstate.h klisp.h \

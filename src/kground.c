@@ -359,10 +359,10 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "or?", orp, 0);
 
     /* 6.1.4 $and? */
-    /* TODO */
+    add_operative(K, ground_env, "$and?", Sandp_Sorp, 2, symbol, KFALSE);
 
     /* 6.1.5 $or? */
-    /* TODO */
+    add_operative(K, ground_env, "$or?", Sandp_Sorp, 2, symbol, KTRUE);
 
     /*
     ** 6.2 Combiners
