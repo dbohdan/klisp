@@ -38,7 +38,11 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue new_cont = 
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, select_clause, 
 			   3, denv, cons_c, alt_c);
-
+    /* 
+    ** Mark as a bool checking cont, not necessary but avoids a continuation
+    ** in the last evaluation in the common use of ($if ($or?/$and? ...) ...) 
+    */
+    kset_bool_check_cont(new_cont);
     klispS_set_cc(K, new_cont);
     ktail_eval(K, test, denv);
 }
@@ -218,6 +222,12 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 		kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_cond, 4,
 				   kcar(bodies), kcdr(tests), kcdr(bodies), 
 				   denv);
+	    /* 
+	    ** Mark as a bool checking cont, not necessary but avoids a 
+	    ** continuation in the last evaluation in the common use of 
+	    ** ($cond ... (($or?/$and? ...) ...) ...) 
+	    */
+	    kset_bool_check_cont(new_cont);
 	    kset_cc(K, new_cont);
 	    ktail_eval(K, kcar(tests), denv);
 	}
@@ -241,6 +251,9 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_cond, 4, 
 			       KNIL, tests, bodies, denv);
+	/* there is no need to mark this continuation with bool check
+	   because it is just a dummy, no evaluation happens in its
+	   dynamic extent */
 	kset_cc(K, new_cont);
 	obj = KFALSE; 
     }
