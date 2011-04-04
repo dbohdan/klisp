@@ -249,6 +249,10 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 */
 
 
+/* REFACTOR: return the number of pairs and cycle pairs in two extra params */
+/* TODO: add check_copy_typed_list */
+/* TODO: remove inline */
+
 /* check that obj is a list and make a copy if it is not immutable */
 inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
 {

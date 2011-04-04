@@ -15,6 +15,7 @@
 #include "kpair.h"
 #include "kstring.h"
 #include "kcontinuation.h"
+#include "kenvironment.h"
 #include "ksymbol.h"
 #include "kerror.h"
 
@@ -317,8 +318,147 @@ void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, kcdr(dummy));
 }
 
+/* Helpers for filter */
+
+/* For acyclic input lists: Return the filtered list */
+void do_ret_cdr(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: (dummy . complete-ls)
+    */
+    UNUSED(obj);
+    kapply_cc(K, kcdr(xparams[0]));
+}
+
+/* For cyclic input list: If the result cycle is non empty, 
+   close it and return filtered list */
+void do_filter_encycle(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: (dummy . complete-ls)
+    ** xparams[1]: last non-cycle pair
+    */
+    /* obj: ((last-evaled . rem-ls) . last-pair) */
+    TValue last_pair = kcdr(obj);
+    TValue last_non_cycle_pair = xparams[1];
+
+    if (tv_equal(last_pair, last_non_cycle_pair)) {
+	/* no cycle in result, so put the nil at the end.
+	   this is necessary because it is now pointing
+	   to the first cycle pair */
+	kset_cdr(last_non_cycle_pair, KNIL);
+    } else {
+	/* There are pairs in the cycle, so close it */
+	TValue first_cycle_pair = kcdr(last_non_cycle_pair);
+	TValue last_cycle_pair = last_pair;
+	kset_cdr(last_cycle_pair, first_cycle_pair);
+    }
+
+    kapply_cc(K, kcdr(xparams[0]));
+}
+
+void do_filter(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: app
+    ** xparams[1]: (last-evaled . rem-ls)
+    ** xparams[2]: last-pair in result list
+    ** xparams[3]: n
+    */
+    TValue app = xparams[0];
+    TValue ls = xparams[1];
+    TValue last_pair = xparams[2];
+    int32_t n = ivalue(xparams[3]);
+
+    if (!ttisboolean(obj)) {
+	klispE_throw(K, "filter: expected boolean result");
+	return;
+    } 
+    
+    if (kis_false(obj)) {
+	kset_cdr(last_pair, kcdr(ls));
+    } else {
+	last_pair = ls;
+    }
+
+    if (n == 0) {
+        /* pass the rest of the list and last pair for cycle handling */
+	kapply_cc(K, kcons(K, ls, last_pair)); 
+    } else {
+	TValue new_n = i2tv(n-1);
+/* The car of ls here contains the last evaluated object. So the next
+   obj to be tested is actually the cadr of ls. */
+	TValue first = kcadr(ls);
+	ls = kcdr(ls);
+	TValue new_env = kmake_empty_environment(K);
+	/* have to unwrap the applicative to extra evaluation of first */
+	TValue new_expr = kcons(K, kunwrap(app), kcons(K, first, KNIL));
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter, 4, app, 
+			       ls, last_pair, new_n);
+	kset_cc(K, new_cont);
+	ktail_eval(K, new_expr, new_env);
+    }
+}
+
+void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: (dummy . complete-ls)
+    ** xparams[1]: app
+    ** xparams[2]: cpairs
+    */ 
+
+    TValue dummy = xparams[0];
+    TValue app = xparams[1];
+    TValue cpairs = xparams[2];
+
+    /* obj: ((last-acyclic obj . cycle) . last-result-pair) */
+    TValue ls = kcar(obj);
+    TValue last_pair = kcdr(obj);
+
+    /* this continuation will close the cycle and return the list */
+    TValue encycle_cont =
+ 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter_encycle, 2, 
+			   dummy, last_pair);
+
+    /* schedule the filtering of the elements of the cycle */
+    TValue new_cont = 
+	kmake_continuation(K, encycle_cont, KNIL, KNIL, do_filter, 4, app, 
+			   ls, last_pair, cpairs);
+    kset_cc(K, new_cont);
+    /* this will be like a nop (the cdr of last-pair will be setted, but it
+       will get rewritten later), and will continue with do_filter */
+    kapply_cc(K, KFALSE);
+}
+
 /* 6.3.5 filter */
-/* TODO */
+void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    bind_2tp(K, "filter", ptree, "applicative", ttisapplicative, app,
+	     "any", anytype, ls);
+    /* copy the list to allow filtering by mutating pairs and
+       to avoid changes made by the applicative to alter the 
+       structure of ls */
+    /* REFACTOR: do this in a single pass */
+    int32_t cpairs;
+    int32_t pairs = check_list(K, "filter", true, ls, &cpairs);
+    ls = check_copy_list(K, "filter", ls);
+    /* add dummy pair to allow set-cdr! to filter out any pair */
+    ls = kcons(K, KINERT, ls);
+    
+    TValue ret_cont = (cpairs == 0)?
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_ret_cdr, 1, ls)
+	: kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter_cycle, 3, 
+			     ls, app, i2tv(cpairs));
+    TValue new_cont = 
+	kmake_continuation(K, ret_cont, KNIL, KNIL, do_filter, 4, app, 
+			   ls, ls, i2tv(pairs-cpairs));
+    kset_cc(K, new_cont);
+    /* this will be a nop, and will continue with do_filter */
+    kapply_cc(K, KFALSE);
+}
 
 /* 6.3.6 assoc */
 void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

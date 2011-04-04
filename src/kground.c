@@ -389,7 +389,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "list-neighbors", list_neighbors, 0);
 
     /* 6.3.5 filter */
-    /* TODO */
+    add_applicative(K, ground_env, "filter", filter, 0);
 
     /* 6.3.6 assoc */
     add_applicative(K, ground_env, "assoc", assoc, 0);
