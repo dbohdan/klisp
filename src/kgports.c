@@ -245,6 +245,62 @@ void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 }
 
+/* Helper for read-char and peek-char */
+void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    /* 
+    ** xparams[0]: symbol name
+    ** xparams[1]: ret-char-after-readp
+    */
+    UNUSED(denv);
+    
+    char *name = ksymbol_buf(xparams[0]);
+    bool ret_charp = bvalue(xparams[1]);
+
+    TValue port = ptree;
+    if (!get_opt_tpar(K, name, K_TPORT, &port)) {
+	port = kcdr(K->kd_in_port_key); /* access directly */
+    } else if (!kport_is_input(port)) {
+	klispE_throw_extra(K, name, ": the port should be an input port");
+	return;
+    } 
+    if (kport_is_closed(port)) {
+	klispE_throw_extra(K, name, ": the port is already closed");
+	return;
+    }
+
+    /* TODO update source info on the port */
+    FILE *f = K->curr_in = kport_file(port);
+    int ch = fgetc(f);
+    TValue obj;
+    if (ch == EOF) {
+	if (ferror(f) != 0) {
+	    /* clear error marker to allow retries later */
+	    clearerr(f);
+	    klispE_throw_extra(K, name, ": reading error");
+	    return;
+	} else { /* if (feof(f) != 0) */
+	    /* let the eof marker set */
+	    obj = KEOF;
+	}
+    } else {
+	obj = ch2tv((char) ch);
+	/* check to see if this was a peek-char call */
+	if (ret_charp) {
+	    if (ungetc(ch, f) == EOF)  {
+		/* shouldn't happen, but better be safe than sorry */
+		/* clear error marker to allow retries later */
+		clearerr(f);
+		klispE_throw_extra(K, name, ": error ungetting char");
+		return;
+	    }
+	}
+    }
+    kapply_cc(K, obj);
+}
+
+
 /* 15.1.? read-char */
 /* TODO */
 

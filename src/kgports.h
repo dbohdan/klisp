@@ -53,11 +53,15 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 15.1.? write-char */
 void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* Helper for read-char and peek-char */
+void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
+
 /* 15.1.? read-char */
-/* TODO */
+/* uses read_peek_char */
 
 /* 15.1.? peek-char */
-/* TODO */
+/* uses read_peek_char */
 
 /* 15.1.? char-ready? */
 /* TODO */

@@ -964,10 +964,12 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "write-char", write_char, 0);
     
     /* 15.1.? read-char */
-    /* TODO */
+    add_applicative(K, ground_env, "read-char", read_peek_char, 2, symbol, 
+		    b2tv(false));
     
     /* 15.1.? peek-char */
-    /* TODO */
+    add_applicative(K, ground_env, "peek-char", read_peek_char, 2, symbol, 
+		    b2tv(true));
 
     /* 15.1.? char-ready? */
     /* TODO */
