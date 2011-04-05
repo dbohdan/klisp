@@ -237,7 +237,7 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 	
 	/* the list of instructions is copied to avoid mutation */
 	/* MAYBE: copy the evaluation structure, ASK John */
-	TValue ls = check_copy_list(K, "$let/cc", objs);
+	TValue ls = check_copy_list(K, "$let/cc", objs, false);
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
 	TValue tail = kcdr(ls);

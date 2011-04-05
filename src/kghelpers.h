@@ -235,6 +235,9 @@ inline void unmark_tree(klisp_State *K, TValue obj)
 ** Structure checking and copying
 */
 
+/* TODO: move all bools to a flag parameter (with constants like
+   KCHK_LS_FORCE_COPY, KCHK_ALLOW_CYCLE, KCHK_AVOID_ENCYCLE, etc) */
+
 /* typed finite list. Structure error should be throw before type errors */
 int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 			 bool (*typep)(TValue), bool allow_infp, TValue obj,
@@ -252,14 +255,16 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 /* REFACTOR: return the number of pairs and cycle pairs in two extra params */
 /* TODO: add check_copy_typed_list */
 /* TODO: remove inline */
+/* check that obj is a list and make a copy if it is not immutable or
+ force_copy is true */
 
-/* check that obj is a list and make a copy if it is not immutable */
-inline TValue check_copy_list(klisp_State *K, char *name, TValue obj)
+inline TValue check_copy_list(klisp_State *K, char *name, TValue obj, 
+			      bool force_copy)
 {
     if (ttisnil(obj))
 	return obj;
 
-    if (ttispair(obj) && kis_immutable(obj)) {
+    if (ttispair(obj) && kis_immutable(obj) && !force_copy) {
 	int32_t dummy;
 	(void)check_list(K, name, true, obj, &dummy);
 	return obj;

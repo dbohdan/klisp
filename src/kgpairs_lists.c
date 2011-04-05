@@ -538,7 +538,9 @@ void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* REFACTOR: do this in a single pass */
     int32_t cpairs;
     int32_t pairs = check_list(K, "filter", true, ls, &cpairs);
-    ls = check_copy_list(K, "filter", ls);
+    /* force copy even if immutable to allow use of mutation 
+     to filter */
+    ls = check_copy_list(K, "filter", ls, true);
     /* add dummy pair to allow set-cdr! to filter out any pair */
     ls = kcons(K, KINERT, ls);
     

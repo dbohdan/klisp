@@ -263,7 +263,7 @@ void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     int32_t dummy;
     int32_t count = check_typed_list(K, "$binds?", "symbol", ksymbolp, 
 				     true, symbols, &dummy);
-    symbols = check_copy_list(K, "$binds?", symbols);
+    symbols = check_copy_list(K, "$binds?", symbols, false);
 
     TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_bindsp, 
 					 2, symbols, i2tv(count));

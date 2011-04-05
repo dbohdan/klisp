@@ -200,7 +200,7 @@ void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1p(K, name, ptree, symbols, body);
 
     symbols = check_copy_symbol_list(K, name, symbols);
-    body = check_copy_list(K, name, body);
+    body = check_copy_list(K, name, body, false);
     
     TValue new_env = kmake_environment(K, denv);
     /* this will copy the bindings from new_env to denv */

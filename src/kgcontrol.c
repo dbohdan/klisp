@@ -74,7 +74,7 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     } else {
 	/* the list of instructions is copied to avoid mutation */
 	/* MAYBE: copy the evaluation structure, ASK John */
-	TValue ls = check_copy_list(K, "$sequence", ptree);
+	TValue ls = check_copy_list(K, "$sequence", ptree, false);
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
 	/* TODO this could be at least in an inlineable function to
@@ -175,7 +175,7 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
 	*/
 	while(count--) {
 	    TValue first = kcar(tail);
-	    TValue copy = check_copy_list(K, "$cond", first);
+	    TValue copy = check_copy_list(K, "$cond", first, false);
 	    kset_car(tail, copy);
 	    tail = kcdr(tail);
 	}

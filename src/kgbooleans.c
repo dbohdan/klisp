@@ -145,7 +145,7 @@ void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue sname = xparams[0];
     TValue term_bool = xparams[1];
     
-    TValue ls = check_copy_list(K, ksymbol_buf(sname), ptree);
+    TValue ls = check_copy_list(K, ksymbol_buf(sname), ptree, false);
     /* This will work even if ls is empty */
     TValue new_cont = 
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_Sandp_Sorp, 
