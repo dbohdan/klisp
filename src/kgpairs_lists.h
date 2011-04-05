@@ -84,6 +84,6 @@ void countable_listp(klisp_State *K, TValue *xparams, TValue ptree,
 		    TValue denv);
 
 /* 6.3.10 reduce */
-/* TODO */
+void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif

@@ -666,5 +666,246 @@ void countable_listp(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
+/* Helpers for reduce */
+
+/* NOTE: This is used from both do_reduce_cycle and reduce */
+void do_reduce(klisp_State *K, TValue *xparams, TValue obj);
+
+void do_reduce_prec(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: first-pair
+    ** xparams[1]: (old-obj . rem-ls)
+    ** xparams[2]: cpairs
+    ** xparams[3]: prec
+    ** xparams[4]: denv
+    */ 
+
+    TValue first_pair = xparams[0];
+    TValue last_pair = xparams[1];
+    TValue ls = kcdr(last_pair);
+    int32_t cpairs = ivalue(xparams[2]);
+    TValue prec = xparams[3];
+    TValue denv = xparams[4];
+
+    /* save the last result of precycle */
+    kset_car(last_pair, obj);
+
+    if (cpairs == 0) {
+	/* pass the first element to the do_reduce_inc continuation */
+	kapply_cc(K, kcar(first_pair));
+    } else {
+	TValue expr = kcons(K, kunwrap(prec), kcons(K, kcar(ls), KNIL));
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_prec,
+			   5, first_pair, ls, i2tv(cpairs-1), prec, denv);
+	kset_cc(K, new_cont);
+	ktail_eval(K, expr, denv);
+    }
+}
+
+void do_reduce_postc(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: postc
+    ** xparams[1]: denv
+    */
+    TValue postc = xparams[0];
+    TValue denv = xparams[1];
+
+    TValue expr = kcons(K, kunwrap(postc), kcons(K, obj, KNIL));
+    ktail_eval(K, expr, denv);
+}
+
+/* This could be avoided by contructing a list and calling
+   do_reduce, but the order would be backwards if the cycle
+   is processed after the acyclic part */
+void do_reduce_combine(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: acyclic result
+    ** xparams[1]: bin
+    ** xparams[2]: denv
+    */
+
+    TValue acyclic_res = xparams[0];
+    TValue bin = xparams[1];
+    TValue denv = xparams[2];
+
+    /* obj: cyclic_res */
+    TValue cyclic_res = obj;
+    TValue params = kcons(K, acyclic_res, kcons(K, cyclic_res, KNIL));
+    TValue expr = kcons(K, kunwrap(bin), params);
+    ktail_eval(K, expr, denv);
+}
+
+void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: first-cpair
+    ** xparams[1]: cpairs
+    ** xparams[2]: acyclic binary applicative
+    ** xparams[3]: prec applicative
+    ** xparams[4]: inc applicative
+    ** xparams[5]: postc applicative
+    ** xparams[6]: denv
+    ** xparams[7]: has-acyclic-part?
+    */ 
+
+    TValue ls = xparams[0];
+    int32_t cpairs = ivalue(xparams[1]);
+    TValue bin = xparams[2];
+    TValue prec = xparams[3];
+    TValue inc = xparams[4];
+    TValue postc = xparams[5];
+    TValue denv = xparams[6];
+    bool has_acyclic_partp = bvalue(xparams[7]);
+
+    /* 
+    ** Schedule actions in reverse order 
+    */
+
+    if (has_acyclic_partp) {
+	TValue acyclic_obj = obj;
+	TValue combine_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_combine,
+			       3, acyclic_obj, bin, denv);
+	kset_cc(K, combine_cont);
+    } /* if there is no acyclic part, just let the result pass through */
+
+    TValue post_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_postc,
+			   2, postc, denv);
+    kset_cc(K, post_cont);
+    
+    /* pass one less so that pre_cont can pass the first argument
+       to the continuation */
+    TValue in_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce,
+			   4, kcdr(ls), i2tv(cpairs - 1), inc, denv);
+    kset_cc(K, in_cont);
+
+    /* add dummy to allow passing inert to pre_cont */
+    TValue dummy = kcons(K, KINERT, ls);
+    /* pass ls as the first pair to be passed to the do_reduce
+       continuation */
+    TValue pre_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_prec,
+			   5, ls, dummy, i2tv(cpairs), prec, denv);
+    kset_cc(K, pre_cont);
+    /* this will overwrite dummy, but that's ok */
+    kapply_cc(K, KINERT);
+}
+
+/* NOTE: This is used from both do_reduce_cycle and reduce */
+void do_reduce(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: remaining list
+    ** xparams[1]: remaining pairs
+    ** xparams[2]: binary applicative (either bin or inc)
+    ** xparams[3]: denv
+    */ 
+    
+    TValue ls = xparams[0];
+    int32_t pairs = ivalue(xparams[1]);
+    TValue bin = xparams[2];
+    TValue denv = xparams[3];
+
+    if (pairs == 0) {
+	/* NOTE: this continuation could have been avoided (made a
+	   tail context) but since it isn't a requirement having
+	   this will help with error signaling and backtraces */
+	kapply_cc(K, obj);
+    } else {
+	/* GC: root intermediate objs */
+	TValue next = kcar(ls);
+	TValue params = kcons(K, obj, kcons(K, next, KNIL));
+	TValue expr = kcons(K, kunwrap(bin), params);
+
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce, 4, 
+			       kcdr(ls), i2tv(pairs-1), bin, denv);
+	kset_cc(K, new_cont);
+	/* use the dynamic environment of the call to reduce */
+	ktail_eval(K, expr, denv);
+    }
+}
+
 /* 6.3.10 reduce */
-/* TODO */
+void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    
+    bind_al3tp(K, "reduce", ptree, "any", anytype, ls, "applicative",
+	       ttisapplicative, bin, "any", anytype, id, rest);
+
+    TValue prec, inc, postc;
+    bool extended_form = !ttisnil(rest);
+
+    if (extended_form) {
+	/* the variables are an artifact of the way bind_3tp macro works,
+	 XXX: this will also send wrong error msgs (bad number of arg) */
+	bind_3tp(K, "reduce (extended)", rest, 
+		 "applicative", ttisapplicative, prec_h, 
+		 "applicative", ttisapplicative, inc_h, 
+		 "applicative", ttisapplicative, postc_h);
+	prec = prec_h;
+	inc = inc_h;
+	postc = postc_h;
+    } else {
+	/* dummy init */
+	prec = inc = postc = KINERT;
+    }
+
+    /* the easy case first */
+    if (ttisnil(ls)) {
+	kapply_cc(K, id);
+    } 
+
+    /* TODO all of these in one procedure */
+    int32_t cpairs;
+    int32_t pairs = check_list(K, "reduce", true, ls, &cpairs);
+    int32_t apairs = pairs - cpairs;
+    /* force copy to be able to do all precycles and replace
+       the corresponding objs in ls */
+    ls = check_copy_list(K, "reduce", ls, true);
+    TValue first_cycle_pair = ls;
+    int32_t dapairs = apairs;
+    /* REFACTOR: add an extra return value to check_copy_list to output
+       the last pair of the list */
+    while(dapairs--)
+	first_cycle_pair = kcdr(first_cycle_pair);
+
+    TValue res;
+
+    if (cpairs != 0) {
+	if (!extended_form) {
+	    klispE_throw(K, "reduce: no cyclic handling applicatives");
+	    return;
+	}
+	/* make cycle reducing cont */
+	TValue cyc_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_cycle, 8, 
+			       first_cycle_pair, i2tv(cpairs), bin, prec, 
+			       inc, postc, denv, b2tv(apairs != 0));
+	kset_cc(K, cyc_cont);
+    }
+
+    if (apairs == 0) {
+	/* this will be ignore by cyc_cont */
+	res = KINERT;
+    } else {
+	/* this will pass the parent continuation either
+	   a list of (rem-ls result) if there is a cycle or
+	   result if there is no cycle, this should be a list
+	   and not a regular pair to allow the above case of 
+	   a one element list to signal no acyclic part */
+	TValue acyc_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce, 4, 
+			       kcdr(ls), i2tv(apairs-1), bin, denv);
+	kset_cc(K, acyc_cont);
+	res = kcar(ls);
+    }
+    kapply_cc(K, res);
+}
