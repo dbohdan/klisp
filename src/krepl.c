@@ -42,7 +42,7 @@ void read_fn(klisp_State *K, TValue *xparams, TValue obj)
     /* TEMP: for now set this by hand */
     K->curr_in = stdin;
     ktok_reset_source_info(K);
-    K->read_cons_flag = true; /* read mutable pairs */
+    K->read_mconsp = true; /* read mutable pairs */
 
     obj = kread(K);
     kapply_cc(K, obj);
@@ -90,7 +90,7 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
 
     /* TEMP: for now set this by hand */
     K->curr_out = stdout;
-
+    K->write_displayp = false;
     kwrite(K, obj);
     knewline(K);
     TValue denv = xparams[0];

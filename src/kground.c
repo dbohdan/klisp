@@ -995,7 +995,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "get-module", get_module, 0);
 
     /* 15.2.? display */
-    /* TODO */
+    add_applicative(K, ground_env, "display", display, 0);
 
     /* MAYBE: That's all there is in the report combined with r5rs scheme, 
        but we will probably need: file-exists?, rename-file and remove-file.

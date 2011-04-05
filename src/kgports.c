@@ -154,7 +154,7 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ktok_reset_source_info(K); /* this should be saved in the port
 				  and restored before the call to 
 				  read and saved after it */
-    K->read_cons_flag = true; /* read mutable pairs */
+    K->read_mconsp = true; /* read mutable pairs */
     TValue obj = kread(K); /* this may throw an error, that's ok */
     kapply_cc(K, obj);
 }
@@ -181,6 +181,7 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     /* TEMP: for now set this by hand */
     K->curr_out = kport_file(port);
+    K->write_displayp = false;
 
     kwrite(K, obj);
     kapply_cc(K, KINERT);
@@ -369,7 +370,7 @@ TValue read_all_expr(klisp_State *K, TValue port)
     /* TEMP: for now set this by hand */
     K->curr_in = kport_file(port);
     ktok_reset_source_info(K);
-    K->read_cons_flag = false; /* read immutable pairs */
+    K->read_mconsp = false; /* read immutable pairs */
 
     /* GC: root dummy and obj */
     TValue dummy = kimm_cons(K, KNIL, KNIL);
@@ -519,4 +520,29 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.2.? display */
-/* TODO */
+void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, "display", ptree, "any", anytype, obj,
+	       port);
+
+    if (!get_opt_tpar(K, "display", K_TPORT, &port)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } else if (!kport_is_output(port)) {
+	klispE_throw(K, "display: the port should be an output port");
+	return;
+    } 
+    if (kport_is_closed(port)) {
+	klispE_throw(K, "display: the port is already closed");
+	return;
+    }
+    
+    /* TEMP: for now set this by hand */
+    K->curr_out = kport_file(port);
+    K->write_displayp = true;
+
+    kwrite(K, obj);
+    kapply_cc(K, KINERT);
+}

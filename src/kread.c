@@ -165,7 +165,7 @@ TValue kread_fsm(klisp_State *K)
 			return KINERT;
 		    }
 		    /* construct the list with the correct type of pair */
-		    TValue np = kcons_g(K, K->read_cons_flag, KINERT, KNIL);
+		    TValue np = kcons_g(K, K->read_mconsp, KINERT, KNIL);
 		    /* 
 		    ** NOTE: the source info of the '(' is temporarily saved 
 		    ** in np (later it will be replace by the source info
@@ -408,7 +408,7 @@ TValue kread_fsm(klisp_State *K)
 		/* get the state out of the way */
 		pop_state(K);
 		/* construct the list with the correct type of pair */
-		TValue np = kcons_g(K, K->read_cons_flag, obj, KNIL);
+		TValue np = kcons_g(K, K->read_mconsp, obj, KNIL);
 		kset_source_info(np, obj_si);
 		kset_cdr(get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */

@@ -122,9 +122,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* initialize reader */
     K->shared_dict = KNIL;
-    K->read_cons_flag = false; /* should be set before calling read */
+    K->read_mconsp = false; /* should be set before calling read */
 
     /* initialize writer */
+    K->write_displayp = false; /* should be set before calling write */
 
     /* initialize temp stack */
     K->ssize = KS_ISSIZE;

@@ -102,7 +102,10 @@ struct klisp_State {
     /* reader */
     /* TODO: replace the list with a hashtable */
     TValue shared_dict;
-    bool read_cons_flag;
+    bool read_mconsp;
+
+    /* writer */
+    bool write_displayp;
 
     /* auxiliary stack */
     int32_t ssize; /* total size of array */

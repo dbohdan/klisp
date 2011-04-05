@@ -81,6 +81,6 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.2.? display */
-/* TODO */
+void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 #endif

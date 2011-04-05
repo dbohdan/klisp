@@ -49,7 +49,8 @@ void kw_print_string(klisp_State *K, TValue str)
     char *ptr = buf;
     int i = 0;
 
-    kw_printf(K, "\"");
+    if (!K->write_displayp)
+	kw_printf(K, "\"");
 
     while (i < size) {
 	/* find the longest printf-able substring to avoid calling printf
@@ -76,7 +77,8 @@ void kw_print_string(klisp_State *K, TValue str)
 	buf = ptr;
     }
 			
-    kw_printf(K, "\"");
+    if (!K->write_displayp)
+	kw_printf(K, "\"");
 }
 
 /*
@@ -168,20 +170,24 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "()");
 	break;
     case K_TCHAR: {
-	char ch_buf[4];
-	char ch = chvalue(obj);
-	char *ch_ptr;
-
-	if (ch == '\n') {
-	    ch_ptr = "newline";
-	} else if (ch == ' ') {
-	    ch_ptr = "space";
+	if (K->write_displayp) {
+	    kw_printf(K, "%c", chvalue(obj));
 	} else {
-	    ch_buf[0] = ch;
-	    ch_buf[1] = '\0';
-	    ch_ptr = ch_buf;
+	    char ch_buf[4];
+	    char ch = chvalue(obj);
+	    char *ch_ptr;
+
+	    if (ch == '\n') {
+		ch_ptr = "newline";
+	    } else if (ch == ' ') {
+		ch_ptr = "space";
+	    } else {
+		ch_buf[0] = ch;
+		ch_buf[1] = '\0';
+		ch_ptr = ch_buf;
+	    }
+	    kw_printf(K, "#\\%s", ch_ptr);
 	}
-	kw_printf(K, "#\\%s", ch_ptr);
 	break;
     }
     case K_TBOOLEAN:
@@ -285,7 +291,7 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 		    push_data(K, kcdr(obj));
 		    push_data(K, kcar(obj));
 		    middle_list = false;
-		} else { /* string with an assigned number */
+		} else { /* pair with an assigned number */
 		    kw_printf(K, "#%" PRId32 "#", ivalue(mark));
 		    middle_list = true;
 		}
@@ -296,7 +302,9 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 		    kw_printf(K, "\"\"");
 		} else {
 		    TValue mark = kget_mark(obj);
-		    if (ttisboolean(mark)) { /* simple string (only once) */
+		    if (K->write_displayp || ttisboolean(mark)) { 
+                        /* simple string (only once) or in display
+			   (show all strings) */
 			kw_print_string(K, obj);
 		    } else if (ivalue(mark) < 0) { /* string with no assigned # */
 			/* TEMP: for now only fixints in shared refs */
