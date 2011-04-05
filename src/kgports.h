@@ -64,11 +64,11 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
 /* uses read_peek_char */
 
 /* 15.1.? char-ready? */
-/* TODO */
 /* XXX: this always return #t, proper behaviour requires platform 
    specific code (probably select for posix, a thread for windows
    (at least for files & consoles), I think pipes and sockets may
    have something */
+void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.2.1 call-with-input-file, call-with-output-file */
 void call_with_file(klisp_State *K, TValue *xparams, TValue ptree, 

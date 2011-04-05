@@ -302,17 +302,37 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
 
 
 /* 15.1.? read-char */
-/* TODO */
+/* uses read_peek_char */
 
 /* 15.1.? peek-char */
-/* TODO */
+/* uses read_peek_char */
 
 /* 15.1.? char-ready? */
-/* TODO */
 /* XXX: this always return #t, proper behaviour requires platform 
-   specific code (probably select for posix, a thread for windows
-   (at least for files & consoles), I think pipes and sockets may
-   have something */
+   specific code (probably select for posix & a thread for windows
+   (at least for files & consoles, I think pipes and sockets may
+   have something) */
+void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue port = ptree;
+    if (!get_opt_tpar(K, "char-ready?", K_TPORT, &port)) {
+	port = kcdr(K->kd_in_port_key); /* access directly */
+    } else if (!kport_is_input(port)) {
+	klispE_throw(K, "char-ready?: the port should be an input port");
+	return;
+    } 
+    if (kport_is_closed(port)) {
+	klispE_throw(K, "char-ready?: the port is already closed");
+	return;
+    }
+
+    /* TODO: check if there are pending chars */
+    kapply_cc(K, KTRUE);
+}
+
 
 /* 15.2.1 call-with-input-file, call-with-output-file */
 /* XXX: The report is incomplete here... for now use an empty environment, 

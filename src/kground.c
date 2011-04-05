@@ -972,11 +972,11 @@ void kinit_ground_env(klisp_State *K)
 		    b2tv(true));
 
     /* 15.1.? char-ready? */
-    /* TODO */
     /* XXX: this always return #t, proper behaviour requires platform 
        specific code (probably select for posix, a thread for windows
        (at least for files & consoles), I think pipes and sockets may
        have something */
+    add_applicative(K, ground_env, "char-ready?", char_readyp, 0);
 
     /* 
     ** 15.2 Library features
