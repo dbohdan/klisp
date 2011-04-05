@@ -39,7 +39,8 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 	      TValue denv);
 
 /* 6.4.1 append! */
-/* TODO */
+void appendB(klisp_State *K, TValue *xparams, TValue ptree, 
+	      TValue denv);
 
 /* 6.4.2 copy-es */
 /* uses copy_es helper */

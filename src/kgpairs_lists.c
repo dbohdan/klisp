@@ -358,6 +358,8 @@ void append(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    cpairs = 0;
 	    TValue first_cpair = kcdr(last_apair);
 	    TValue last_cpair = last_pair;
+	    /* this works even if there is no cycle to be formed
+	       (kcdr(last_apair) == ()) */
 	    kset_cdr(last_cpair, first_cpair); /* encycle! */
 	}
     }

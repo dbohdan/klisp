@@ -411,7 +411,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.4.1 append! */
-    /* TODO */
+    add_applicative(K, ground_env, "append!", appendB, 0);
 
     /* 6.4.2 copy-es */
     add_applicative(K, ground_env, "copy-es", copy_es, 2, symbol, b2tv(true));

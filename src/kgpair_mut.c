@@ -219,9 +219,189 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, KINERT);
 }
 
+/* Helpers for append! */
+
+
+inline void appendB_clear_last_pairs(klisp_State *K, TValue ls)
+{
+    UNUSED(K);
+    while(ttispair(ls) && kis_marked(ls)) {
+	TValue first = ls;
+	ls = kget_mark(ls);
+	kunmark(first);
+    }
+}
+
+/* Check that all lists (except last) are acyclic lists with non repeated mutable 
+   last pair (if not nil), return a list of objects so that the cdr of the odd
+   objects (1 based) should be set to the next object in the list (this will
+   encycle! the result if necessary) */
+TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs, 
+				 int32_t cpairs)
+{
+    TValue dummy = kcons(K, KINERT, KNIL);
+    TValue last_pair = dummy;
+    TValue tail = lss;
+    /* this is a list of last pairs using the marks to link the pairs) */
+    TValue last_pairs = KNIL;
+    TValue last_apair;
+
+    while(apairs != 0 || cpairs != 0) {
+	int32_t pairs;
+	
+	if (apairs == 0) {
+	    /* this is the first run of the loop (if there is no acyclic part) 
+	       or the second run of the loop (the cyclic part), 
+	       must remember the last acyclic pair to encycle! the result */
+	    last_apair = last_pair;
+	    pairs = cpairs;
+	} else {
+	    /* this is the first (maybe only) run of the loop 
+	       (the acyclic part) */
+	    pairs = apairs;
+	}
+
+	while(pairs--) {
+	    TValue first = kcar(tail);
+	    tail = kcdr(tail);
+
+	    /* skip over nils */
+	    if (ttisnil(first))
+		continue; 
+
+	    TValue ftail = first;
+	    TValue flastp = first;
+
+	    /* find the last pair to check the object */
+	    while(ttispair(ftail) && !kis_marked(ftail)) {
+		kmark(ftail);
+		flastp = ftail; /* remember last pair */
+		ftail = kcdr(ftail);
+	    }
+	
+	    /* can't unmark the list till the errors are checked,
+	       otherwise the unmarking may be incorrect */
+	    if (ttisnil(tail)) {
+		/* last argument has special treatment */
+		if (ttispair(ftail) && ttisnil(kcdr(ftail))) {
+		    /* repeated last pair, this is the only check
+		       that is done on the last argument */
+		    appendB_clear_last_pairs(K, last_pairs);
+		    unmark_list(K, first);
+		    klispE_throw(K, "append!: repeated last pairs");
+		    return KINERT;
+		} else {
+		    unmark_list(K, first);
+		    /* add last object to the endpoints list, don't add
+		       its last pair */
+		    kset_cdr(last_pair, kcons(K, first, KNIL));
+		}
+	    } else { /* non final argument, must be an acyclic list 
+			with unique, mutable last pair */
+		if (ttisnil(ftail)) {
+		    /* acyclic list with non repeated last pair,
+		       check mutability */
+		    unmark_list(K, first);
+		    if (kis_immutable(flastp)) {
+			appendB_clear_last_pairs(K, last_pairs);
+			klispE_throw(K, "append!: immutable pair found");
+		    }
+		    /* add the last pair to the list of last pairs */
+		    kset_mark(flastp, last_pairs);
+		    last_pairs = flastp;
+		
+		    /* add both the first and last pair to the endpoints 
+		       list */
+		    TValue new_pair = kcons(K, first, KNIL);
+		    kset_cdr(last_pair, new_pair);
+		    last_pair = new_pair;
+		    new_pair = kcons(K, flastp, KNIL);
+		    kset_cdr(last_pair, new_pair);
+		    last_pair = new_pair;
+		} else {
+		    /* impoper list or repeated last pair or cyclic list */
+		    appendB_clear_last_pairs(K, last_pairs);
+		    unmark_list(K, first);
+
+		    if (ttispair(ftail)) {
+			if (ttisnil(kcdr(ftail))) {
+			    klispE_throw(K, "append!: repeated last pairs");
+			} else {
+			    klispE_throw(K, "append!: cyclic list as non last "
+					 "argument");
+			}  
+		    } else {
+			klispE_throw(K, "append!: improper list as non last "
+				     "argument");
+		    }
+		    return KINERT;
+		}
+	    }
+	}
+	if (apairs != 0) {
+	    /* acyclic part done */
+	    apairs = 0;
+	} else {
+	    /* cyclic part done, program encycle if necessary */
+	    cpairs = 0;
+	    if (!tv_equal(last_apair, last_pair)) {
+		TValue first_cpair = kcadr(last_apair);
+		kset_cdr(last_pair, kcons(K, first_cpair, KNIL));
+	    } else {
+		/* all elements of the cycle are (), add extra
+		   nil to simplify the code setting the cdrs */
+		kset_cdr(last_pair, kcons(K, KNIL, KNIL));
+	    }
+	}
+    }
+
+    appendB_clear_last_pairs(K, last_pairs);
+
+    /* discard the first element (there is always one) because it
+     isn't necessary, the list is used to set the last pairs of
+     the objects to the correspoding next first pair */
+    return kcddr(dummy);
+}
 
 /* 6.4.1 append! */
-/* TODO */
+void appendB(klisp_State *K, TValue *xparams, TValue ptree, 
+	      TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    if (ttisnil(ptree)) {
+	klispE_throw(K, "append!: no lists");
+	return;
+    } else if (!ttispair(ptree)) {
+	klispE_throw(K, "append!: bad ptree");
+	return;
+    } else if (ttisnil(kcar(ptree))) {
+	klispE_throw(K, "append!: empty first list");
+	return;
+    }
+    TValue lss = ptree;
+    TValue first_ls = kcar(lss);
+    int32_t cpairs;
+    /* ASK John: if encycle! has only one argument, can't it be cyclic? 
+     the report says no, but the wording is poor */
+    int32_t pairs = check_list(K, "append!", false, first_ls, &cpairs);
+    
+    pairs = check_list(K, "append!", true, lss, &cpairs);
+    int32_t apairs = pairs - cpairs;
+
+    TValue endpoints = 
+	appendB_get_lss_endpoints(K, lss, apairs, cpairs);
+    /* connect all the last pairs to the corresponding next first pair,
+     endpoints is even */
+    while(!ttisnil(endpoints)) {
+	TValue first = kcar(endpoints);
+	endpoints = kcdr(endpoints);
+	TValue second = kcar(endpoints);
+	endpoints = kcdr(endpoints);
+	kset_cdr(first, second);
+    }
+    kapply_cc(K, KINERT);
+}
 
 /* 6.4.2 copy-es */
 /* uses copy_es helper (above copy-es-immutable) */
