@@ -157,6 +157,39 @@
 	return; \
     }
 
+/* bind at least 3 parameters, like (v1_ v2_ v3_ . v4_) */
+#define bind_al3p(K_, n_, ptree_, v1_, v2_, v3_, v4_)		\
+    bind_al3tp((K_), (n_), (ptree_), "any", anytype, (v1_),	\
+	       "any", anytype, (v2_), "any", anytype, (v3_), (v4_)) \
+
+/* bind at least 3 parameters (with type), like (v1_ v2_ v3_ . v4_) */
+#define bind_al3tp(K_, n_, ptree_, tstr1_, t1_, v1_, \
+		   tstr2_, t2_, v2_, tstr3_, t3_, v3_, v4_)    \
+    TValue v1_, v2_, v3_, v4_;				       \
+    if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
+	!ttispair(kcddr(ptree_))) {			\
+	klispE_throw_extra(K_, n_ , ": Bad ptree (expected at least " \
+			   "three arguments)");			      \
+	return; \
+    } \
+    v1_ = kcar(ptree_); \
+    v2_ = kcadr(ptree_); \
+    v3_ = kcaddr(ptree_); \
+    v4_ = kcdddr(ptree_); \
+    if (!t1_(v1_)) { \
+	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
+		     tstr1_ ")");				     \
+	return; \
+    } else if (!t2_(v2_)) { \
+	klispE_throw_extra(K_, n_, ": Bad type on second argument (expected " \
+		     tstr2_ ")");				     \
+	return; \
+    } else if (!t3_(v3_)) { \
+	klispE_throw_extra(K_, n_, ": Bad type on third argument (expected " \
+		     tstr3_ ")");				     \
+	return; \
+    }
+
 
 /* returns true if the obj pointed by par is a list of one element of 
    type type, and puts that element in par
