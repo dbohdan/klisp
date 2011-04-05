@@ -238,8 +238,8 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* ASK John: can the object be an improper list? the wording of the report
    seems to indicate that can't be the case, but it makes sense 
    (cf list-tail) For now we allow it. */
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
     /* XXX: should be integer instead of fixint, but that's all
        we have for now */
     bind_2tp(K, "list-ref", ptree, "any", anytype, obj,
@@ -268,8 +268,101 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
+/* Helper for append */
+
+/* Check that ls is an acyclic list, copy it and return both the list
+   (as the ret value) and the last_pair. If obj is nil, *last_pair remains
+   unmodified (this avoids having to check ttisnil before calling this) */
+TValue append_check_copy_list(klisp_State *K, char *name, TValue obj, 
+			      TValue *last_pair_ptr)
+{
+    /* return early if nil to avoid setting *last_pair_ptr */
+    if (ttisnil(obj))
+	return obj;
+
+    TValue dummy = kcons(K, KINERT, KNIL);
+    TValue last_pair = dummy;
+    TValue tail = obj;
+    
+    while(ttispair(tail) && !kis_marked(tail)) {
+	kmark(tail);
+	TValue new_pair = kcons(K, kcar(tail), KNIL);
+	kset_cdr(last_pair, new_pair);
+	last_pair = new_pair;
+	tail = kcdr(tail);
+    }
+    unmark_list(K, obj);
+
+    if (ttispair(tail)) {
+	klispE_throw_extra(K, name , ": expected acyclic list"); 
+	return KINERT;
+    } else if (!ttisnil(tail)) {
+	klispE_throw_extra(K, name , ": expected list"); 
+	return KINERT;
+    }
+    *last_pair_ptr = last_pair;
+    return kcdr(dummy);
+}
+
 /* 6.3.3 append */
-/* TODO */
+void append(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    int32_t cpairs;
+    int32_t pairs = check_list(K, "append", true, ptree, &cpairs);
+    int32_t apairs = pairs - cpairs;
+
+    TValue dummy = kcons(K, KINERT, KNIL);
+    TValue last_pair = dummy;
+    TValue lss = ptree;
+    TValue last_apair;
+
+    while (apairs != 0 || cpairs != 0) {
+	if (apairs == 0) {
+	    /* this is the first run of the loop (if there is no acyclic part) 
+	       or the second run of the loop (the cyclic part), 
+	       must remember the last acyclic pair to encycle! the result */
+	    last_apair = last_pair;
+	    pairs = cpairs;
+	} else {
+	    /* this is the first (maybe only) run of the loop 
+	       (the acyclic part) */
+	    pairs = apairs;
+	}
+
+	while (pairs--) {
+	    TValue first = kcar(lss);
+	    lss = kcdr(lss);
+	    TValue next_list;
+	    TValue new_last_pair = last_pair; /* this helps if first is nil */
+	    /* don't check or copy last list */
+	    if (ttisnil(lss)) {
+		/* here, new_last_pair is bogus, but it isn't necessary 
+		 anymore so don't set it */
+		next_list = first;
+	    } else {
+		next_list = append_check_copy_list(K, "append", first, 
+						   &new_last_pair);
+	    }
+	    kset_cdr(last_pair, next_list);
+	    last_pair = new_last_pair;
+	}
+
+	if (apairs != 0) {
+	    /* acyclic part done */
+	    apairs = 0;
+	} else {
+	    /* cyclic part done */
+	    cpairs = 0;
+	    TValue first_cpair = kcdr(last_apair);
+	    TValue last_cpair = last_pair;
+	    kset_cdr(last_cpair, first_cpair); /* encycle! */
+	}
+    }
+    kapply_cc(K, kcdr(dummy));
+}
 
 /* 6.3.4 list-neighbors */
 void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -436,6 +529,7 @@ void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj)
 void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
+    UNUSED(denv);
     bind_2tp(K, "filter", ptree, "applicative", ttisapplicative, app,
 	     "any", anytype, ls);
     /* copy the list to allow filtering by mutating pairs and

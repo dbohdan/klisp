@@ -61,7 +61,7 @@ void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.3 append */
-/* TODO */
+void append(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.3.4 list-neighbors */
 void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree, 
