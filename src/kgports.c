@@ -214,6 +214,50 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
+/* 15.1.? write-char */
+void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, "write-char", ptree, "char", ttischar, ch,
+	       port);
+
+    if (!get_opt_tpar(K, "write-char", K_TPORT, &port)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } else if (!kport_is_output(port)) {
+	klispE_throw(K, "write-char: the port should be an output port");
+	return;
+    } 
+    if (kport_is_closed(port)) {
+	klispE_throw(K, "write-char: the port is already closed");
+	return;
+    }
+    
+    /* REFACTOR: move this to kwrite, update source info? */
+    FILE *f = K->curr_out = kport_file(port);
+    if (fputc(chvalue(ch), f) == EOF) {
+	/* clear error marker to allow retries later */
+	clearerr(f);
+	klispE_throw(K, "write-char: writing error");
+    } else {
+	kapply_cc(K, KINERT);
+    }
+}
+
+/* 15.1.? read-char */
+/* TODO */
+
+/* 15.1.? peek-char */
+/* TODO */
+
+/* 15.1.? char-ready? */
+/* TODO */
+/* XXX: this always return #t, proper behaviour requires platform 
+   specific code (probably select for posix, a thread for windows
+   (at least for files & consoles), I think pipes and sockets may
+   have something */
+
 /* 15.2.1 call-with-input-file, call-with-output-file */
 /* XXX: The report is incomplete here... for now use an empty environment, 
    the dynamic environment can be captured in the construction of the combiner 
@@ -397,3 +441,6 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	ktail_eval(K, kcar(ls), env);
     }
 }
+
+/* 15.2.? display */
+/* TODO */

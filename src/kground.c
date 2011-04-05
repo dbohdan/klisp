@@ -960,6 +960,22 @@ void kinit_ground_env(klisp_State *K)
     /* 15.1.? newline */
     add_applicative(K, ground_env, "newline", newline, 0);
 
+    /* 15.1.? write-char */
+    add_applicative(K, ground_env, "write-char", write_char, 0);
+    
+    /* 15.1.? read-char */
+    /* TODO */
+    
+    /* 15.1.? peek-char */
+    /* TODO */
+
+    /* 15.1.? char-ready? */
+    /* TODO */
+    /* XXX: this always return #t, proper behaviour requires platform 
+       specific code (probably select for posix, a thread for windows
+       (at least for files & consoles), I think pipes and sockets may
+       have something */
+
     /* 
     ** 15.2 Library features
     */
@@ -976,13 +992,14 @@ void kinit_ground_env(klisp_State *K)
     /* 15.2.3 get-module */
     add_applicative(K, ground_env, "get-module", get_module, 0);
 
-    /* TODO: That's all there is in the report, but we will probably need:
-       (from r5rs) char-ready?, read-char, peek-char, eof-object?, newline,
-       and write-char; (from c) file-exists?, rename-file and remove-file.
+    /* 15.2.? display */
+    /* TODO */
+
+    /* MAYBE: That's all there is in the report combined with r5rs scheme, 
+       but we will probably need: file-exists?, rename-file and remove-file.
        It would also be good to be able to select between append, truncate and
        error if a file exists, but that would need to be an option in all three 
-       methods of opening */
-    
+       methods of opening. Also some directory checking, traversing etc */
 
     return;
 

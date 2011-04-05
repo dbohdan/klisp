@@ -50,6 +50,22 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 15.1.? newline */
 void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 15.1.? write-char */
+void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 15.1.? read-char */
+/* TODO */
+
+/* 15.1.? peek-char */
+/* TODO */
+
+/* 15.1.? char-ready? */
+/* TODO */
+/* XXX: this always return #t, proper behaviour requires platform 
+   specific code (probably select for posix, a thread for windows
+   (at least for files & consoles), I think pipes and sockets may
+   have something */
+
 /* 15.2.1 call-with-input-file, call-with-output-file */
 void call_with_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		    TValue denv);
@@ -59,5 +75,8 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.2.3 get-module */
 void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 15.2.? display */
+/* TODO */
 
 #endif
