@@ -749,14 +749,13 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     int32_t dummy; /* don't care about count of cycle pairs */
     int32_t pairs = check_typed_list(K, "lcm", "number", knumberp, true, 
 				     ptree, &dummy);
-    /* we will need to loop again after obtaining the gcd */
-    int32_t saved_pairs = pairs; 
-				 
-    TValue res = i2tv(1); /* report: (lcm) = 1 */
+
     /* lcm is +infinite if there is any infinite number, must still loop 
        to check for zero but returns #e+infinty */
     bool seen_infinite = false; 
-    int32_t finite_gcd = 0;
+
+    /* report: this will cover the case of (lcm) = 1 */
+    int32_t finite_lcm = 1;
     
     TValue tail = ptree;
     while(pairs--) {
@@ -764,31 +763,17 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	tail = kcdr(tail);
 	if (ttiseinf(first)) {
 	    seen_infinite = true;
-	    res = KEPINF; /* report */
 	} else if (kfast_zerop(first)) {
 	    klispE_throw(K, "lcm: result has no primary");
 	    return;
 	} else if (!seen_infinite) {
-	    finite_gcd = (int32_t) kgcd32_64(finite_gcd, ivalue(first));
+	    finite_lcm = (int32_t) klcm32_64(finite_lcm, ivalue(first));
 	}
     }
 
-    if (!seen_infinite && saved_pairs) {
-	/* now collect the lcm proper, there are no zero and no infinities,
-	   finite_gcd can't be zero because there are at least one finite,
-	   non-zero number */
-	tail = ptree;
-	pairs = saved_pairs;
-	int32_t lcm = 1;
-	while(pairs--) {
-	    TValue first = kcar(tail);
-	    tail = kcdr(tail);
-	    int32_t first_i = ivalue(first);
-            /* no remainder */
-	    lcm *= (first_i < 0? -first_i : first_i) / finite_gcd; 
-	}
-	res = i2tv(lcm);
-    }
+    /* according to the report, if there is any infinite res is #e+infinity */
+    TValue res = seen_infinite? KEPINF : i2tv(finite_lcm);
+
     kapply_cc(K, res);
 }
 
