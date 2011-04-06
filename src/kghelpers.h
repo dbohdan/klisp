@@ -404,4 +404,23 @@ inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
     return kmake_continuation(K, parent, KNIL, KNIL, do_return_value, 1, obj);
 }
 
+/* Some helpers for working with fixints (signed 32 bits) */
+inline int32_t kabs32(int32_t a) { return a < 0? -a : a; }
+inline int64_t kabs64(int64_t a) { return a < 0? -a : a; }
+inline int32_t kmin32(int32_t a, int32_t b) { return a < b? a : b; }
+inline int32_t kmax32(int32_t a, int32_t b) { return a > b? a : b; }
+inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i) 
+{
+    if (i > (int64_t) INT32_MAX || i < (int64_t) INT32_MIN) {
+	klispE_throw(K, msg);
+	return 0;
+    } else {
+	return (int32_t) i;
+    }
+}
+
+/* gcd for two numbers, used for gcd, lcm & map */
+int64_t kgcd32_64(int32_t a, int32_t b);
+int64_t klcm32_64(int32_t a, int32_t b);
+
 #endif

@@ -250,3 +250,53 @@ void do_return_value(klisp_State *K, TValue *xparams, TValue obj)
     TValue ret_obj = xparams[0];
     kapply_cc(K, ret_obj);
 }
+
+/* Some helpers for working with fixints (signed 32 bits) */
+int64_t kgcd32_64(int32_t a_, int32_t b_)
+{
+    /* this is a vanilla binary gcd algorithm */ 
+
+    /* work with positive numbers, use unsigned numbers to 
+       allow INT32_MIN to have an absolute value */
+    uint32_t a = (uint32_t) kabs64(a_);
+    uint32_t b = (uint32_t) kabs64(b_);
+
+    int powerof2;
+
+    /* the easy cases first, unlike the general kernel gcd the
+     gcd2 of a number and zero is zero */
+    if (a == 0)
+	return b;
+    else if (b == 0)
+	return a;
+ 
+    for (powerof2 = 0; ((a & 1) == 0) && 
+	     ((b & 1) == 0); ++powerof2, a >>= 1, b >>= 1)
+	;
+ 
+    while(a != 0 && b!= 0) {
+	/* either a or b are odd, make them both odd */
+	for (; (a & 1) == 0; a >>= 1)
+	    ;
+	for (; (b & 1) == 0; b >>= 1)
+	    ;
+
+	/* now the difference is sure to be even */
+	if (a < b) {
+	    b = (b - a) >> 1;
+	} else {
+	    a = (a - b) >> 1;
+	}
+    }
+ 
+    return (a == 0? b : a) << powerof2;
+}
+
+int64_t klcm32_64(int32_t a_, int32_t b_)
+{
+    int64_t gcd = kgcd32_64(a_, b_);
+    int64_t a = kabs64(a_) / gcd;
+    int64_t b = kabs64(b_) / gcd;
+
+    return a * b;
+}

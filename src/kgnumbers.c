@@ -699,48 +699,6 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.5.14 gcm, lcm */
-
-/* gcd for two numbers */
-int32_t gcd2(int32_t a, int32_t b)
-{
-    /* work with positive numbers */
-    if (a < 0)
-	a = -a;
-    if (b < 0)
-	b = -b;
-
-    /* this is a vanilla binary gcd algorithm */ 
-    int32_t powerof2;
-
-    /* the easy cases first, unlike the general kernel gcd the
-     gcd2 of a number and zero is zero */
-    if (a == 0)
-	return b;
-    else if (b == 0)
-	return a;
- 
-    for (powerof2 = 0; ((a & 1) == 0) && 
-	     ((b & 1) == 0); ++powerof2, a >>= 1, b >>= 1)
-	;
- 
-    while(a != 0 && b!= 0) {
-	/* either a or b are odd, make them both odd */
-	for (; (a & 1) == 0; a >>= 1)
-	    ;
-	for (; (b & 1) == 0; b >>= 1)
-	    ;
-
-	/* now the difference is sure to be even */
-	if (a < b) {
-	    b = (b - a) >> 1;
-	} else {
-	    a = (a - b) >> 1;
-	}
-    }
- 
-    return (a == 0? b : a) << powerof2;
-}
-
 void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
@@ -765,7 +723,7 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 		seen_zero = true;
 	    } else if (ttisfixint(first)) {
 		seen_finite_non_zero = true;
-		finite_gcd = gcd2(finite_gcd, ivalue(first));
+		finite_gcd = (int32_t) kgcd32_64(finite_gcd, ivalue(first));
 	    }
 	}
 	if (seen_finite_non_zero) {
@@ -811,7 +769,7 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    klispE_throw(K, "lcm: result has no primary");
 	    return;
 	} else if (!seen_infinite) {
-	    finite_gcd = gcd2(finite_gcd, ivalue(first));
+	    finite_gcd = (int32_t) kgcd32_64(finite_gcd, ivalue(first));
 	}
     }
 
