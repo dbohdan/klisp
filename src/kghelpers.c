@@ -295,8 +295,8 @@ int64_t kgcd32_64(int32_t a_, int32_t b_)
 int64_t klcm32_64(int32_t a_, int32_t b_)
 {
     int64_t gcd = kgcd32_64(a_, b_);
-    int64_t a = kabs64(a_) / gcd;
-    int64_t b = kabs64(b_) / gcd;
-
-    return a * b;
+    int64_t a = kabs64(a_);
+    int64_t b = kabs64(b_);
+    /* divide first to avoid possible overflow */
+    return (a / gcd) * b;
 }

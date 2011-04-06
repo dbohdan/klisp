@@ -409,6 +409,7 @@ inline int32_t kabs32(int32_t a) { return a < 0? -a : a; }
 inline int64_t kabs64(int64_t a) { return a < 0? -a : a; }
 inline int32_t kmin32(int32_t a, int32_t b) { return a < b? a : b; }
 inline int32_t kmax32(int32_t a, int32_t b) { return a > b? a : b; }
+
 inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i) 
 {
     if (i > (int64_t) INT32_MAX || i < (int64_t) INT32_MIN) {
