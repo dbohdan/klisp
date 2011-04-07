@@ -45,7 +45,7 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
 	   TValue denv);
 
 /* 5.9.1 map */
-/* TODO */
+void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.2.1 combiner? */
 /* uses ftypedp */

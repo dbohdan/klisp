@@ -547,9 +547,7 @@ void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     bind_2tp(K, "filter", ptree, "applicative", ttisapplicative, app,
 	     "any", anytype, ls);
-    /* copy the list to allow filtering by mutating pairs and
-       to avoid changes made by the applicative to alter the 
-       structure of ls */
+    /* copy the list to ignore changes made by the applicative */
     /* REFACTOR: do this in a single pass */
     /* ASK John: the semantics when this is mixed with continuations,
        isn't all that great..., but what are the expectations considering

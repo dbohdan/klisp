@@ -330,7 +330,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 5.9.1 map */
-    /* TODO */
+    add_applicative(K, ground_env, "map", map, 0);
 
     /*
     ** 5.10 Environments
@@ -1004,5 +1004,4 @@ void kinit_ground_env(klisp_State *K)
        methods of opening. Also some directory checking, traversing etc */
 
     return;
-
 }
