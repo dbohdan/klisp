@@ -40,4 +40,7 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj);
 /* 5.6.1 $cond */
 void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 6.9.1 for-each */
+void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 #endif

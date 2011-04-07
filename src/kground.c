@@ -491,9 +491,7 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 6.9.1 for-each */
-    /* TODO */
-
-
+    add_applicative(K, ground_env, "for-each", for_each, 0);
 
     /*
     **

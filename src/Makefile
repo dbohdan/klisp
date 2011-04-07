@@ -96,7 +96,7 @@ kgequalp.o: kgequalp.c kgequalp.c kghelpers.h kstate.h klisp.h \
 kgsymbols.o: kgsymbols.c kgsymbols.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h kstring.h
 kgcontrol.o: kgcontrol.c kgcontrol.c kghelpers.h kstate.h klisp.h \
-	kobject.h kerror.h kpair.h kcontinuation.h
+	kobject.h kerror.h kpair.h kcontinuation.h kgcombiners.h
 kgpairs_lists.o: kgpairs_lists.c kgpairs_lists.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h ksymbol.h kcontinuation.h kgequalp.h \
 	kenvironment.h

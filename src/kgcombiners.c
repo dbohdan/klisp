@@ -466,8 +466,7 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) xparams;
 
-    bind_al1tp(K, "map", ptree, "applicative", ttisapplicative, app,
-	       lss);
+    bind_al1tp(K, "map", ptree, "applicative", ttisapplicative, app, lss);
     
     if (ttisnil(lss)) {
 	klispE_throw(K, "map: no lists");

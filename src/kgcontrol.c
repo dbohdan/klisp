@@ -18,6 +18,7 @@
 
 #include "kghelpers.h"
 #include "kgcontrol.h"
+#include "kgcombiners.h" /* for map/for-each helpers */
 
 /* 4.5.1 inert? */
 /* uses typep */
@@ -258,4 +259,77 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	obj = KFALSE; 
     }
     kapply_cc(K, obj);
+}
+
+/* Helper continuation for for-each */
+void do_for_each(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /*
+    ** xparams[0]: app
+    ** xparams[1]: rem-ls
+    ** xparams[2]: n
+    ** xparams[3]: denv
+    */
+    TValue app = xparams[0];
+    TValue ls = xparams[1];
+    int32_t n = ivalue(xparams[2]);
+    TValue denv = xparams[3];
+
+    /* the resulting value is just ignored */
+    UNUSED(obj);
+
+    if (n == 0) {
+        /* return inert as the final result to for-each */
+	kapply_cc(K, KINERT);
+    } else {
+	/* copy the ptree to avoid problems with mutation */
+	/* XXX: no check necessary, could just use copy_list if there
+	 was such a procedure */
+	TValue first_ptree = check_copy_list(K, "for-each", kcar(ls), false);
+	ls = kcdr(ls);
+	n = n-1;
+	/* have to unwrap the applicative to avoid extra evaluation of first */
+	TValue new_expr = kcons(K, kunwrap(app), first_ptree);
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_for_each, 4, 
+			       app, ls, i2tv(n), denv);
+	kset_cc(K, new_cont);
+	ktail_eval(K, new_expr, denv);
+    }
+}
+
+/* 6.9.1 for-each */
+void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) xparams;
+
+    bind_al1tp(K, "for-each", ptree, "applicative", ttisapplicative, app, lss);
+    
+    if (ttisnil(lss)) {
+	klispE_throw(K, "for-each: no lists");
+	return;
+    }
+
+    /* get the metrics of the ptree of each call to app and
+       of the result list */
+    int32_t app_pairs, app_apairs, app_cpairs;
+    int32_t res_pairs, res_apairs, res_cpairs;
+
+    map_for_each_get_metrics(K, "for-each", lss, &app_apairs, &app_cpairs,
+			     &res_apairs, &res_cpairs);
+    app_pairs = app_apairs + app_cpairs;
+    res_pairs = res_apairs + res_cpairs;
+
+    /* create the list of parameters to app */
+    lss = map_for_each_transpose(K, lss, app_apairs, app_cpairs, 
+				 res_apairs, res_cpairs);
+
+    /* schedule all elements at once, the cycle is just ignored, this
+       will also return #inert once done. */
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_for_each, 4, app, lss,
+			   i2tv(res_pairs), denv);
+    kset_cc(K, new_cont);
+    /* this will be a nop */
+    kapply_cc(K, KINERT);
 }
