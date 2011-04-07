@@ -44,6 +44,26 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void apply(klisp_State *K, TValue *xparams, TValue ptree, 
 	   TValue denv);
 
+/* Helpers for map (also used by for each) */
+
+/* Calculate the metrics for both the result list and the ptree
+   passed to the applicative */
+void map_for_each_get_metrics(
+    klisp_State *K, char *name, TValue lss, int32_t *app_apairs_out, 
+    int32_t *app_cpairs_out, int32_t *res_apairs_out, int32_t *res_cpairs_out);
+
+/* Return two lists, isomorphic to lss: one list of cars and one list
+   of cdrs (replacing the value of lss) */
+TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
+				  int32_t apairs, int32_t cpairs);
+
+/* Transpose lss so that the result is a list of lists, each one having
+   metrics (app_apairs, app_cpairs). The metrics of the returned list
+   should be (res_apairs, res_cpairs) */
+TValue map_for_each_transpose(klisp_State *K, TValue lss, 
+			      int32_t app_apairs, int32_t app_cpairs, 
+			      int32_t res_apairs, int32_t res_cpairs);
+
 /* 5.9.1 map */
 void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 

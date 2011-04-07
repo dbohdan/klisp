@@ -146,11 +146,10 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
     ktail_eval(K, expr, env);
 }
 
-/* Helpers for map (also used by for each) 
- They are inline because they are only used twice */
-inline void map_for_each_get_metrics(klisp_State *K, char *name, TValue lss,
-			    int32_t *app_apairs_out, int32_t *app_cpairs_out,
-			    int32_t *res_apairs_out, int32_t *res_cpairs_out)
+/* Helpers for map (also used by for each) */
+void map_for_each_get_metrics(klisp_State *K, char *name, TValue lss,
+			      int32_t *app_apairs_out, int32_t *app_cpairs_out,
+			      int32_t *res_apairs_out, int32_t *res_cpairs_out)
 {
     /* avoid warnings (shouldn't happen if _No_return was used in throw) */
     *app_apairs_out = 0;
@@ -230,8 +229,8 @@ inline void map_for_each_get_metrics(klisp_State *K, char *name, TValue lss,
 
 /* Return two lists, isomorphic to lss: one list of cars and one list
    of cdrs (replacing the value of lss) */
-inline TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
-					 int32_t apairs, int32_t cpairs)
+TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
+				  int32_t apairs, int32_t cpairs)
 {
     TValue tail = *lss;
 
@@ -292,9 +291,9 @@ inline TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss,
 /* Transpose lss so that the result is a list of lists, each one having
    metrics (app_apairs, app_cpairs). The metrics of the returned list
    should be (res_apairs, res_cpairs) */
-inline TValue map_for_each_transpose(klisp_State *K, TValue lss, 
-				     int32_t app_apairs, int32_t app_cpairs, 
-				     int32_t res_apairs, int32_t res_cpairs)
+TValue map_for_each_transpose(klisp_State *K, TValue lss, 
+			      int32_t app_apairs, int32_t app_cpairs, 
+			      int32_t res_apairs, int32_t res_cpairs)
 {
     /* GC: root intermediate objects */
     TValue dummy = kcons(K, KINERT, KNIL);
