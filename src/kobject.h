@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <assert.h>
 
 /* This should be in a configuration .h */
 /*
@@ -273,19 +274,12 @@ typedef __attribute__((aligned (8))) union {
 typedef struct __attribute__ ((__packed__)) {
     uint32_t digit;
     uintptr_t next_xor_prev;
-} BigintNode;
-
-/* some useful macros to traverse the list */
-#define kxor_next(cur, prev)			\
-    ((BigintNode *) ((cur)->next_xor_prev ^ (uintptr_t) (prev)))
-
-#define kxor_prev(cur, next) \
-    ((BigintNode *) ((cur)->next_xor_prev ^ (uintptr_t) (next)))
+} Bigint_Node;
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader; 
-    BigintNode *first;
-    BigintNode *last;
+    Bigint_Node *first;
+    Bigint_Node *last;
     int32_t sign_size;
 } Bigint;
 
@@ -295,6 +289,70 @@ typedef struct __attribute__ ((__packed__)) {
 #define kbigint_posp(b_) (!kbigint_sign(b_))
 #define kbigint_size(b_) ({ int32_t ss = (b_)->sign_size;	\
 	    ss < 0? -ss : ss;})
+
+/* Java Style Iterator for the xor list */
+typedef struct {
+    Bigint_Node *cur;
+    Bigint_Node *next;
+} Bigint_Iter;
+
+#define kxor_next(cur, prev)						\
+    ((Bigint_Node *) ((cur)->next_xor_prev ^ (uintptr_t) (prev)))
+
+/* REFACTOR: move these macros somewhere else */
+#define KCONCAT(a, b) a ## b
+#define KUNIQUE_NAME(prefix) KCONCAT(prefix, __LINE__)
+
+#define kbind_bigint_iter(name, bigint, be)		\
+    Bigint_Iter KUNIQUE_NAME(iter);			\
+    Bigint_Iter *(name) = &(KUNIQUE_NAME(iter));	\
+    kbigint_iter_init((name), (bigint), (be));
+
+inline void kbigint_iter_init(Bigint_Iter *i, Bigint *bigint, bool big_endian)
+{ 
+    i->cur = (Bigint_Node *) NULL;
+    i->next = big_endian? bigint->first : bigint->last;
+}
+
+inline bool kbigint_iter_has_more(Bigint_Iter *i) 
+{
+    return i->next != NULL;
+}
+
+inline uint32_t kbigint_iter_next(Bigint_Iter *i) 
+{ 
+    assert(kbigint_iter_has_more(i));
+
+    Bigint_Node *next_next = kxor_next(i->next, i->cur);
+    i->cur = i->next;
+    i->next = next_next;
+    return i->cur->digit;
+}
+
+/* this is needed for add_digit */
+inline void kbigint_iter_update_last(Bigint_Iter *i, uint32_t digit)
+{
+    assert(i->cur != NULL);
+    i->cur->digit = digit;
+}
+
+/* Helper for adding nodes to the head of the list.
+   Neither can be NULL.
+   The second argument should have NULL as previous for this to work */
+inline void kbigint_node_cons(Bigint_Node *head, Bigint_Node *tail)
+{
+    head->next_xor_prev = (uintptr_t) tail ^ (uintptr_t) NULL;
+    tail->next_xor_prev = (tail->next_xor_prev ^ (uintptr_t) NULL) ^ 
+	(uintptr_t) head;
+}
+
+/* used in add_digit, bigint has at least one node */
+inline void kbigint_add_node(Bigint *bigint, Bigint_Node *node)
+{
+    kbigint_node_cons(node, bigint->first);
+    bigint->first = node;
+    bigint->sign_size += bigint->sign_size < 0? -1 : 1;
+}
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
@@ -467,9 +525,11 @@ const TValue keminf;
 
 /* Macros to convert a GCObject * into a tagged value */
 /* TODO: add assertions */
+/* REFACTOR: change names to bigint2tv, pair2tv, etc */
 /* LUA NOTE: the corresponding defines are in lstate.h */
 #define gc2tv(t_, o_) ((TValue) {.tv = {.t = (t_),			\
 					.v = { .gc = obj2gco(o_)}}})
+#define gc2bigint(o_) (gc2tv(K_TAG_BIGINT, o_))
 #define gc2pair(o_) (gc2tv(K_TAG_PAIR, o_))
 #define gc2str(o_) (gc2tv(K_TAG_STRING, o_))
 #define gc2sym(o_) (gc2tv(K_TAG_SYMBOL, o_))
@@ -482,6 +542,7 @@ const TValue keminf;
 #define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
+#define tv2bigint(v_) ((Bigint *) gcvalue(v_))
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
 #define tv2str(v_) ((String *) gcvalue(v_))
 #define tv2sym(v_) ((Symbol *) gcvalue(v_))
