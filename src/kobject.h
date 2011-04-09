@@ -283,10 +283,18 @@ typedef struct __attribute__ ((__packed__)) {
     ((BigintNode *) ((cur)->next_xor_prev ^ (uintptr_t) (next)))
 
 typedef struct __attribute__ ((__packed__)) {
-    CommonHeader; /* here there is a flag for the sign */
+    CommonHeader; 
     BigintNode *first;
     BigintNode *last;
+    int32_t sign_size;
 } Bigint;
+
+/* macros to access size/sign */
+#define kbigint_sign(b_) ((b_)->sign_size < 0)
+#define kbigint_negp(b_) (kgigint_sign(b_))
+#define kbigint_posp(b_) (!kbigint_sign(b_))
+#define kbigint_size(b_) ({ int32_t ss = (b_)->sign_size;	\
+	    ss < 0? -ss : ss;})
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
@@ -539,12 +547,6 @@ int32_t kmark_count;
 #define gch_get_type(o_) (obj2gch(o_)->tt)
 #define gch_get_flags(o_) (obj2gch(o_)->flags)
 #define tv_get_flags(o_) (gch_get_flags(tv2gch(o_)))
-
-/* Flags for bigints */
-/* is negative */
-#define K_FLAG_NEG 0x01
-#define kbigint_is_pos(s_) ((tv_get_flags(s_) & K_FLAG_NEG) == 0)
-#define kbigint_is_neg(s_) ((tv_get_flags(s_) & K_FLAG_NEG) != 0)
 
 /* Flags for symbols */
 /* has external representation (identifiers) */
