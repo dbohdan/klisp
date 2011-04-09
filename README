@@ -27,10 +27,13 @@ README for klisp 0.1
 * Installation
   ------------
   klisp is implemented in C99, with some gcc extensions for packing
-  and alignment. It was developed and tested in x86 under Linux. In
-  time it will be written so as to be compiled under many different
-  platforms, but right now the author's efforts are directed towards
-  implementing functionality.
+  and alignment. It was developed and tested in x86 under Linux. It
+  should compile fine under other Operating Systems using gcc
+  (MinGW in Windows also works). As time goes by, platform specific
+  code will have to be added (i.e. for char-ready?). Effort will be
+  directed to minimize the ammount of platform specific code, and 
+  testing will be conducted at least on Linux and Windows (the systems
+  I have access to at the moment).
 
 * Origin
   ------

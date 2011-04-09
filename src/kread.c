@@ -80,7 +80,7 @@ void kread_error(klisp_State *K, char *str)
 /* It is called after kread to clear the shared alist */
 TValue try_shared_ref(klisp_State *K, TValue ref_token)
 {
-    /* TEMP: for now, only allow fixints in shared tokens */
+    /* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
     int32_t ref_num = ivalue(kcdr(ref_token));
     TValue tail = K->shared_dict;
     while (!ttisnil(tail)) {
@@ -97,7 +97,7 @@ TValue try_shared_ref(klisp_State *K, TValue ref_token)
 
 TValue try_shared_def(klisp_State *K, TValue def_token, TValue value)
 {
-    /* TEMP: for now, only allow fixints in shared tokens */
+    /* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
     int32_t ref_num = ivalue(kcdr(def_token));
     TValue tail = K->shared_dict;
     while (!ttisnil(tail)) {
@@ -120,7 +120,7 @@ TValue try_shared_def(klisp_State *K, TValue def_token, TValue value)
 /* NOTE: the shared def is guaranteed to exist */
 void change_shared_def(klisp_State *K, TValue def_token, TValue value)
 {
-    /* TEMP: for now, only allow fixints in shared tokens */
+    /* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
     int32_t ref_num = ivalue(kcdr(def_token));
     TValue tail = K->shared_dict;
     while (!ttisnil(tail)) {

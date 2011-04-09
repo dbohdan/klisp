@@ -47,6 +47,10 @@ extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
     ({ unsigned char ch__ = (unsigned char) (ch_);	\
 	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
+/* TODO: add other bases */
+#define CAN_ADD_DIGIT(res, new_digit) \
+    ((res) <= (INT32_MAX - new_digit) / 10)
+
 /*
 ** Char set contains macro interface
 */

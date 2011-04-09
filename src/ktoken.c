@@ -126,6 +126,7 @@ void ktok_init(klisp_State *K)
 */
 int ktok_getc(klisp_State *K) {
     /* WORKAROUND: for stdin line buffering & reading of EOF */
+    /* Is this really necessary?? double check */
     if (K->ktok_seen_eof) {
 	return EOF;
     } else {
@@ -155,6 +156,7 @@ int ktok_getc(klisp_State *K) {
 
 int ktok_peekc(klisp_State *K) {
     /* WORKAROUND: for stdin line buffering & reading of EOF */
+    /* Is this really necessary?? double check */
     if (K->ktok_seen_eof) {
 	return EOF;
     } else {
@@ -569,28 +571,35 @@ TValue ktok_read_special(klisp_State *K)
     case '0': case '1': case '2': case '3': case '4': 
     case '5': case '6': case '7': case '8': case '9': {
 	/* srfi-38 type token (can be either a def or ref) */
-	/* TODO: allow bigints */
-	    int32_t res = 0;
-	    while(ch != '#' && ch != '=') {
-		if (!ktok_is_numeric(ch)) {
-		    ktok_error(K, "Invalid char found in srfi-38 token");
-		    /* avoid warning */
-		    return KINERT;
-		}
-
-		res = res * 10 + ktok_digit_value(ch);
-
-		chi = ktok_getc(K);
-		ch = (char) chi;
-	
-		if (chi == EOF) {
-		    ktok_error(K, "EOF found while reading a srfi-38 token");
-		    /* avoid warning */
-		    return KINERT;
-		}
+	/* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
+	int32_t res = 0;
+	while(ch != '#' && ch != '=') {
+	    if (!ktok_is_numeric(ch)) {
+		ktok_error(K, "Invalid char found in srfi-38 token");
+		/* avoid warning */
+		return KINERT;
 	    }
-	    return kcons(K, ch2tv(ch), i2tv(res));
+
+	    int new_digit = ktok_digit_value(ch);
+	    if (CAN_ADD_DIGIT(res, new_digit)) {
+		res = res * 10 + new_digit;
+	    } else {
+		ktok_error(K, "IMP. RESTRICTION: shared token too big");
+		/* avoid warning */
+		return KINERT;
+	    }
+
+	    chi = ktok_getc(K);
+	    ch = (char) chi;
+	    
+	    if (chi == EOF) {
+		ktok_error(K, "EOF found while reading a srfi-38 token");
+		/* avoid warning */
+		return KINERT;
+	    }
 	}
+	return kcons(K, ch2tv(ch), i2tv(res));
+    }
     /* TODO: add real with no primary value and undefined */
     default:
 	ktok_error(K, "unexpected char in # constant");
