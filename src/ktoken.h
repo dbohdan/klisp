@@ -48,8 +48,14 @@ extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
 /* TODO: add other bases */
-#define CAN_ADD_DIGIT(res, new_digit) \
-    ((res) <= (INT32_MAX - new_digit) / 10)
+/* This takes the args in sign magnitude form (sign_ & res_),
+   but must work for any representation of negative numbers */
+#define CAN_ADD_DIGIT(res_, sign_, new_digit_)				\
+    ({ uint32_t res = (res_);						\
+	uint32_t digit = (new_digit_);					\
+	(sign_)? res <= -(INT32_MIN + digit) / 10 :			\
+	    res <= (INT32_MAX - digit) / 10;})
+
 
 /*
 ** Char set contains macro interface

@@ -26,7 +26,9 @@ Bigint_Node *make_new_node(klisp_State *K, uint32_t digit)
     return node;
 }
 
-TValue kbigint_new(klisp_State *K, int32_t fixint)
+/* for now used only for reading */
+/* NOTE: is uint to allow INT32_MIN as positive argument in read */
+TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
 {
     Bigint *new_bigint = klispM_new(K, Bigint);
 
@@ -45,9 +47,9 @@ TValue kbigint_new(klisp_State *K, int32_t fixint)
     new_bigint->sign_size = 0;
     new_bigint->first = new_bigint->last = NULL;
 
-    Bigint_Node *node = make_new_node(K, fixint);
+    Bigint_Node *node = make_new_node(K, digit);
     new_bigint->first = new_bigint->last = node;
-    new_bigint->sign_size = fixint < 0? -1 : 1;
+    new_bigint->sign_size = sign? -1 : 1;
 
     return gc2bigint(new_bigint);
 }
@@ -58,7 +60,6 @@ TValue kbigint_new(klisp_State *K, int32_t fixint)
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
 		       int32_t digit)
 {
-    /* GC: root tv_bigint */
     Bigint *bigint = tv2bigint(tv_bigint);
     /* iterate in little endian mode */
     bind_iter(iter, bigint, false);
@@ -77,6 +78,13 @@ void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base,
 
     if (carry != 0) {
 	/* must add one node to the bigint */
-	kbigint_add_node(bigint, make_new_node(K, carry));
+	kbigint_add_node(bigint, make_new_node(K, (uint32_t) carry));
     }
+}
+
+/* Mutate the bigint to have the opposite sign, used in read */
+void kbigint_invert_sign(TValue tv_bigint)
+{
+    Bigint *bigint = tv2bigint(tv_bigint);
+    bigint->sign_size = -bigint->sign_size;
 }

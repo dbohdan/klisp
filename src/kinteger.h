@@ -15,7 +15,8 @@
 #include "kstate.h"
 
 /* for now used only for reading */
-TValue kbigint_new(klisp_State *K, int32_t fixint);
+/* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
+TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
 
 
 /* Create a stack allocated bigints from a fixint,
@@ -36,5 +37,8 @@ TValue kbigint_new(klisp_State *K, int32_t fixint);
 /* This is used by the reader to destructively add digits to a number */
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
 		       int32_t digit);
+
+/* Mutate the bigint to have the opposite sign, used in read */
+void kbigint_invert_sign(TValue tv_bigint);
 
 #endif

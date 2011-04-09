@@ -35,6 +35,7 @@
 #include "ktoken.h"
 #include "kobject.h"
 #include "kstate.h"
+#include "kinteger.h"
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
@@ -359,11 +360,13 @@ int ktok_read_until_delimiter(klisp_State *K)
 
 /*
 ** Numbers
-** TEMP: for now, only fixints in base 10
+** TEMP: for now, only integers in base 10
 */
 TValue ktok_read_number(klisp_State *K, bool is_pos) 
 {
-    int32_t res = 0;
+    uint32_t fixint_res = 0;
+    bool is_fixint = true;
+    TValue bigint_res;
 
     while(!ktok_check_delimiter(K)) {
 	/* NOTE: can't be eof because it's a delimiter */
@@ -373,12 +376,32 @@ TValue ktok_read_number(klisp_State *K, bool is_pos)
 	    /* avoid warning */
 	    return KINERT;
 	}
-	res = res * 10 + ktok_digit_value(ch);
+	int32_t new_digit = ktok_digit_value(ch);
+	if (is_fixint && CAN_ADD_DIGIT(fixint_res, !is_pos, new_digit)) {
+	    fixint_res = fixint_res * 10 + new_digit;
+	} else {
+	    if (is_fixint) {
+		/* up to the last loop was fixint, but can't be anymore.
+		 Create a bigint and mutate to add the new digits. This
+		 avoids unnecessary consing and discarding values that would
+		 occur if it used the regular bigint+ and bigint* */
+		is_fixint = false;
+		bigint_res = kbigint_new(K, false, fixint_res);
+		/* GC: root bigint_res */
+	    }
+	    kbigint_add_digit(K, bigint_res, 10, new_digit);
+	}
     }
 
-    if (!is_pos) 
-	res = -res;
-    return i2tv(res);
+    if (is_fixint) {
+	int32_t fixint = (is_pos)? (int32_t) fixint_res : 
+	    (int32_t) -((int64_t) fixint_res);
+	return i2tv(fixint);
+    } else {
+	if (!is_pos)
+	    kbigint_invert_sign(bigint_res);
+	return bigint_res;
+    }
 }
 
 TValue ktok_read_maybe_signed_numeric(klisp_State *K) 
@@ -581,7 +604,7 @@ TValue ktok_read_special(klisp_State *K)
 	    }
 
 	    int new_digit = ktok_digit_value(ch);
-	    if (CAN_ADD_DIGIT(res, new_digit)) {
+	    if (CAN_ADD_DIGIT(res, false, new_digit)) {
 		res = res * 10 + new_digit;
 	    } else {
 		ktok_error(K, "IMP. RESTRICTION: shared token too big");
