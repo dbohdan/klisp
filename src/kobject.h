@@ -300,8 +300,11 @@ typedef struct {
     ((Bigint_Node *) ((cur)->next_xor_prev ^ (uintptr_t) (prev)))
 
 /* REFACTOR: move these macros somewhere else */
-#define KCONCAT(a, b) a ## b
-#define KUNIQUE_NAME(prefix) KCONCAT(prefix, __LINE__)
+/* NOTE: The use of the intermediate KCONCAT is needed to allow
+   expansion of the __LINE__ macro.  */
+#define KCONCAT_(a, b) a ## b
+#define KCONCAT(a, b) KCONCAT_(a, b)
+#define KUNIQUE_NAME(prefix) KCONCAT(prefix, __LINE__ )
 
 #define kbind_bigint_iter(name, bigint, be)		\
     Bigint_Iter KUNIQUE_NAME(iter);			\
