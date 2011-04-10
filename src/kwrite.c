@@ -40,9 +40,10 @@ void kwrite_error(klisp_State *K, char *msg)
 
 void kw_print_bigint(klisp_State *K, TValue bigint)
 {
-    /* XXX: calculate appropiate size & malloc string,
-     leave space for sign */
-    int32_t size = kbigint_print_size(bigint, 10);
+    int32_t size = kbigint_print_size(bigint, 10) +
+	(kbigint_negativep(bigint))? 1 : 0;
+    
+	
     TValue buf_str = kstring_new_g(K, size);
     /* write backwards so we can use printf later */
     char *buf = kstring_buf(buf_str) + size - 1;
