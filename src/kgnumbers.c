@@ -28,9 +28,9 @@
 bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
 /* obj is known to be a number */
 bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
-/* TEMP: for now only fixint, should also include bigints and 
-   inexact integers */
-bool kintegerp(TValue obj) { return ttisfixint(obj); }
+/* TEMP: for now only fixint & bigints, should also include inexact 
+   integers */
+bool kintegerp(TValue obj) { return ttisinteger(obj); }
 
 /* 12.5.2 =? */
 /* uses typed_bpredp */
