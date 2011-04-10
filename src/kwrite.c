@@ -40,9 +40,8 @@ void kwrite_error(klisp_State *K, char *msg)
 
 void kw_print_bigint(klisp_State *K, TValue bigint)
 {
-    int32_t size = kbigint_print_size(bigint, 10) +
-	(kbigint_negativep(bigint))? 1 : 0;
-    
+    int32_t size = kbigint_print_size(bigint, 10) + 
+	((kbigint_negativep(bigint))? 1 : 0);
 	
     TValue buf_str = kstring_new_g(K, size);
     /* write backwards so we can use printf later */
@@ -59,7 +58,6 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
 	/* XXX: use to_digit function */
 	*buf-- = '0' + digit;
     }
-
     if (kbigint_negativep(bigint))
 	*buf-- = '-';
 
