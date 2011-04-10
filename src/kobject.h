@@ -285,7 +285,7 @@ typedef struct __attribute__ ((__packed__)) {
 
 /* macros to access size/sign */
 #define kbigint_sign(b_) ((b_)->sign_size < 0)
-#define kbigint_negp(b_) (kgigint_sign(b_))
+#define kbigint_negp(b_) (kbigint_sign(b_))
 #define kbigint_posp(b_) (!kbigint_sign(b_))
 #define kbigint_size(b_) ({ int32_t ss = (b_)->sign_size;	\
 	    ss < 0? -ss : ss;})
@@ -352,6 +352,27 @@ inline void kbigint_add_node(Bigint *bigint, Bigint_Node *node)
     kbigint_node_cons(node, bigint->first);
     bigint->first = node;
     bigint->sign_size += bigint->sign_size < 0? -1 : 1;
+}
+
+/* Helper for removing a node from the head of the list.
+   The argument should have NULL as previous for this to work */
+inline Bigint_Node *kbigint_remove_node(Bigint *bigint)
+{
+    Bigint_Node *head = bigint->first;
+    assert(head != NULL);
+    Bigint_Node *tail = (Bigint_Node *) (head->next_xor_prev ^ 
+					 (uintptr_t) NULL);
+    if (tail == NULL) { /* last node removed */
+	bigint->sign_size = 0;
+	bigint->first = bigint->last = (Bigint_Node *) NULL;
+    } else {
+	tail->next_xor_prev = (tail->next_xor_prev ^ (uintptr_t) head) ^ 
+	    (uintptr_t) NULL;
+	bigint->first = tail;
+	bigint->sign_size -= bigint->sign_size < 0? -1 : 1;
+    }
+    head->next_xor_prev = 0; /* NULL ^ NULL: 0 */
+    return head;
 }
 
 typedef struct __attribute__ ((__packed__)) {

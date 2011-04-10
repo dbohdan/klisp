@@ -18,6 +18,8 @@
 /* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
 TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
 
+/* used in write to destructively get the digits */
+TValue kbigint_copy(klisp_State *K, TValue src);
 
 /* Create a stack allocated bigints from a fixint,
    useful for mixed operations, relatively light weight compared
@@ -34,11 +36,25 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
     (KUNIQUE_NAME(bigint)).sign_size = (KUNIQUE_NAME(i)) < 0? -1 : 1;	\
     Bigint *name = &(KUNIQUE_NAME(bigint));
     
-/* This is used by the reader to destructively add digits to a number */
+/* This is used by the reader to destructively add digits to a number 
+ tv_bigint must be positive */
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
 		       int32_t digit);
 
-/* Mutate the bigint to have the opposite sign, used in read */
+/* This is used by the writer to get the digits of a number 
+ tv_bigint must be positive */
+int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base);
+
+/* This is used by write to test if there is any digit left to print */
+bool kbigint_has_digits(klisp_State *K, TValue tv_bigint);
+
+bool kbigint_negativep(TValue tv_bigint);
+bool kbigint_positivep(TValue tv_bigint);
+/* Mutate the bigint to have the opposite sign, used in read & write */
 void kbigint_invert_sign(TValue tv_bigint);
+
+/* this is used by write to estimate the number of chars necessary to
+   print the number */
+int32_t kbigint_print_size(TValue tv_bigint, int32_t base);
 
 #endif

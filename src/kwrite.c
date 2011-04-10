@@ -11,6 +11,7 @@
 
 #include "kwrite.h"
 #include "kobject.h"
+#include "kinteger.h"
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
@@ -36,6 +37,35 @@ void kwrite_error(klisp_State *K, char *msg)
 }
 
 /* TODO: check for return codes and throw error if necessary */
+
+void kw_print_bigint(klisp_State *K, TValue bigint)
+{
+    /* XXX: calculate appropiate size & malloc string,
+     leave space for sign */
+    int32_t size = kbigint_print_size(bigint, 10);
+    TValue buf_str = kstring_new_g(K, size);
+    /* write backwards so we can use printf later */
+    char *buf = kstring_buf(buf_str) + size - 1;
+    /* GC: root copy */
+    TValue copy = kbigint_copy(K, bigint);
+    /* must work with positive bigint to get the digits */
+    if (kbigint_negativep(bigint))
+	kbigint_invert_sign(copy);
+
+    while(kbigint_has_digits(K, copy)) {
+	int32_t digit = kbigint_remove_digit(K, copy, 10);
+	/* write backwards so we can use printf later */
+	/* XXX: use to_digit function */
+	*buf-- = '0' + digit;
+    }
+
+    if (kbigint_negativep(bigint))
+	*buf-- = '-';
+
+    kw_printf(K, "%s", buf+1);
+    /* MAYBE: we could free the copy & string instead of letting the 
+       gc do it */
+}
 
 /*
 ** Helper for printing strings (correcly escapes backslashes and
@@ -165,6 +195,9 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	break;
     case K_TFIXINT:
 	kw_printf(K, "%" PRId32, ivalue(obj));
+	break;
+    case K_TBIGINT:
+	kw_print_bigint(K, obj);
 	break;
     case K_TNIL:
 	kw_printf(K, "()");

@@ -455,6 +455,17 @@ void klisp_close (klisp_State *K)
 	int type = gch_get_type(obj);
 
 	switch(type) {
+	case K_TBIGINT: {
+	    Bigint *bigint = (Bigint *)obj;
+	    int size = kbigint_size(bigint);
+	    Bigint_Node *node;
+	    while(size--) {
+		node = kbigint_remove_node(bigint);
+		klispM_free(K, node);
+	    }
+	    klispM_free(K, bigint);
+	    break;
+	}
 	case K_TPAIR:
 	    klispM_free(K, (Pair *)obj);
 	    break;
