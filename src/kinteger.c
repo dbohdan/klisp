@@ -154,6 +154,54 @@ bool kbigint_has_digits(klisp_State *K, TValue tv_bigint)
     return kbigint_size(tv2bigint(tv_bigint)) != 0;
 }
 
+/* Mutate the bigint to have the opposite sign, used in read,
+   write and abs */
+void kbigint_invert_sign(TValue tv_bigint)
+{
+    Bigint *bigint = tv2bigint(tv_bigint);
+    bigint->sign_size = -bigint->sign_size;
+}
+
+/* this is used by write to estimate the number of chars necessary to
+   print the number */
+int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
+{
+    /* count the number of bits and estimate using the log of
+       the base */
+    Bigint *bigint = tv2bigint(tv_bigint);
+    
+    int32_t num_bits = 0;
+    uint32_t first_digit = bigint->first->digit;
+    while(first_digit != 0) {
+	++num_bits;
+	first_digit >>= 1;
+    }
+    num_bits += 32 * (kbigint_size(bigint)) - 2 ;
+    /* add 1.5 for safety */
+    return (int32_t)(LOG_BASE(base) * num_bits + 1.0); 
+}
+
+bool kbigint_eqp(TValue tv_bigint1, TValue tv_bigint2)
+{
+    Bigint *bigint1 = tv2bigint(tv_bigint1);
+    Bigint *bigint2 = tv2bigint(tv_bigint2);
+
+    if (bigint1->sign_size != bigint2->sign_size)
+	return false;
+
+    /* iterate in big endian mode */
+    bind_iter(iter1, bigint1, true);
+    bind_iter(iter2, bigint2, true);
+
+    while(iter_has_next(iter1)) {
+	uint32_t digit1 = iter_next(iter1);
+	uint32_t digit2 = iter_next(iter2);
+	if (digit1 != digit2)
+	    return false;
+    }
+    return true;
+}
+
 bool kbigint_negativep(TValue tv_bigint)
 {
     return kbigint_negp(tv2bigint(tv_bigint));
@@ -189,28 +237,3 @@ TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
     }
 }
 
-/* Mutate the bigint to have the opposite sign, used in read */
-void kbigint_invert_sign(TValue tv_bigint)
-{
-    Bigint *bigint = tv2bigint(tv_bigint);
-    bigint->sign_size = -bigint->sign_size;
-}
-
-/* this is used by write to estimate the number of chars necessary to
-   print the number */
-int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
-{
-    /* count the number of bits and estimate using the log of
-       the base */
-    Bigint *bigint = tv2bigint(tv_bigint);
-    
-    int32_t num_bits = 0;
-    uint32_t first_digit = bigint->first->digit;
-    while(first_digit != 0) {
-	++num_bits;
-	first_digit >>= 1;
-    }
-    num_bits += 32 * (kbigint_size(bigint)) - 2 ;
-    /* add 1.5 for safety */
-    return (int32_t)(LOG_BASE(base) * num_bits + 1.0); 
-}

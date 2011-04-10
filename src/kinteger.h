@@ -48,6 +48,8 @@ int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base);
 /* This is used by write to test if there is any digit left to print */
 bool kbigint_has_digits(klisp_State *K, TValue tv_bigint);
 
+bool kbigint_eqp(TValue bigint1, TValue bigint2);
+
 bool kbigint_negativep(TValue tv_bigint);
 bool kbigint_positivep(TValue tv_bigint);
 

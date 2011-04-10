@@ -53,8 +53,37 @@ inline int32_t max_ttype(TValue obj1, TValue obj2)
     return (t1 > t2? t1 : t2);
 }
 
-/* TEMP: for now only fixints and exact infinities */
-bool knum_eqp(TValue n1, TValue n2) { return tv_equal(n1, n2); }
+inline int32_t min_ttype(TValue obj1, TValue obj2)
+{
+    int32_t t1 = ttype(obj1);
+    int32_t t2 = ttype(obj2);
+
+    return (t1 < t2? t1 : t2);
+}
+
+/* TEMP: for now only fixints, bigints and exact infinities */
+bool knum_eqp(TValue n1, TValue n2) 
+{ 
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT:
+	return ivalue(n1) == ivalue(n2);
+    case K_TBIGINT:
+	if (min_ttype(n1, n2) != K_TBIGINT) {
+	    /* NOTE: no fixint is =? to a bigint */
+	    return false;
+	} else {
+	    /* both are bigints */
+	    return kbigint_eqp(n1, n2);
+	}
+    case K_TEINF:
+	return (tv_equal(n1, n2));
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return false;
+    }
+}
+
 bool knum_ltp(TValue n1, TValue n2) 
 { 
     switch(max_ttype(n1, n2)) {
