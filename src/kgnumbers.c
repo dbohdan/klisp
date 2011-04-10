@@ -17,6 +17,7 @@
 #include "kcontinuation.h"
 #include "kerror.h"
 #include "ksymbol.h"
+#include "kinteger.h"
 
 #include "kghelpers.h"
 #include "kgnumbers.h"
@@ -617,8 +618,36 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(TValue n) { return ivalue(n) > 0; }
-bool knegativep(TValue n) { return ivalue(n) < 0; }
+bool kpositivep(TValue n) 
+{ 
+    switch (ttype(n)) {
+    case K_TFIXINT:
+    case K_TEINF:
+	return ivalue(n) > 0;
+    case K_TBIGINT:
+	return kbigint_positivep(n);
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return false;
+    }
+}
+
+bool knegativep(TValue n) 
+{ 
+    switch (ttype(n)) {
+    case K_TFIXINT:
+    case K_TEINF:
+	return ivalue(n) < 0;
+    case K_TBIGINT:
+	return kbigint_negativep(n);
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return false;
+    }
+}
+
 bool koddp(TValue n) { return (ivalue(n) & 1) != 0; }
 bool kevenp(TValue n) { return (ivalue(n) & 1) == 0; }
 

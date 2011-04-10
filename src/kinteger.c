@@ -159,6 +159,8 @@ bool kbigint_negativep(TValue tv_bigint)
     return kbigint_negp(tv2bigint(tv_bigint));
 }
 
+/* unlike the positive? applicative this would return true on zero, 
+   but zero is never represented as a bigint so there is no problem */
 bool kbigint_positivep(TValue tv_bigint)
 {
     return kbigint_posp(tv2bigint(tv_bigint));

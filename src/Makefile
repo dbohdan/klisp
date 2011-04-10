@@ -58,7 +58,7 @@ kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
 	kground.h kenvironment.h kpair.h keval.h koperative.h kground.h \
 	krepl.h kcontinuation.h kapplicative.h kport.h ksymbol.h kport.h \
-	kstring.h
+	kstring.h kinteger.h 
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h kstate.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
@@ -135,7 +135,7 @@ kgchars.o: kgchars.c kgchars.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h
 kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
-	ksymbol.h
+	ksymbol.h kinteger.h 
 kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
 	ksymbol.h
