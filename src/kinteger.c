@@ -178,6 +178,17 @@ bool kbigint_evenp(TValue tv_bigint)
     return ((bigint->last->digit) & 1) == 0;
 }
 
+TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
+{
+    if (kbigint_positivep(tv_bigint)) {
+	return tv_bigint;
+    } else {
+	TValue res = kbigint_copy(K, tv_bigint);
+	kbigint_invert_sign(res);
+	return res;
+    }
+}
+
 /* Mutate the bigint to have the opposite sign, used in read */
 void kbigint_invert_sign(TValue tv_bigint)
 {

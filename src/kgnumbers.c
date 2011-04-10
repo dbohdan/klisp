@@ -689,9 +689,15 @@ void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     case K_TFIXINT: {
 	int32_t i = ivalue(n);
 	kapply_cc(K, i < 0? i2tv(-i) : n);
+	return;
+    }
+    case K_TBIGINT: {
+	kapply_cc(K, kbigint_abs(K, n));
+	return;
     }
     case K_TEINF:
 	kapply_cc(K, KEPINF);
+	return;
     default:
 	/* shouldn't happen */
 	assert(0);
