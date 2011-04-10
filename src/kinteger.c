@@ -166,6 +166,18 @@ bool kbigint_positivep(TValue tv_bigint)
     return kbigint_posp(tv2bigint(tv_bigint));
 }
 
+bool kbigint_oddp(TValue tv_bigint)
+{
+    Bigint *bigint = tv2bigint(tv_bigint);
+    return ((bigint->last->digit) & 1) != 0;
+}
+
+bool kbigint_evenp(TValue tv_bigint)
+{
+    Bigint *bigint = tv2bigint(tv_bigint);
+    return ((bigint->last->digit) & 1) == 0;
+}
+
 /* Mutate the bigint to have the opposite sign, used in read */
 void kbigint_invert_sign(TValue tv_bigint)
 {

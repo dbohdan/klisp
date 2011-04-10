@@ -648,8 +648,34 @@ bool knegativep(TValue n)
     }
 }
 
-bool koddp(TValue n) { return (ivalue(n) & 1) != 0; }
-bool kevenp(TValue n) { return (ivalue(n) & 1) == 0; }
+/* n is finite */
+bool koddp(TValue n) 
+{ 
+    switch (ttype(n)) {
+    case K_TFIXINT:
+	return (ivalue(n) & 1) != 0; 
+    case K_TBIGINT:
+	return kbigint_oddp(n);
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return false;
+    }
+}
+
+bool kevenp(TValue n) 
+{ 
+    switch (ttype(n)) {
+    case K_TFIXINT:
+	return (ivalue(n) & 1) == 0; 
+    case K_TBIGINT:
+	return kbigint_evenp(n);
+    default:
+	/* shouldn't happen */
+	assert(0);
+	return false;
+    }
+}
 
 /* 12.5.12 abs */
 void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

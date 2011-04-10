@@ -50,6 +50,10 @@ bool kbigint_has_digits(klisp_State *K, TValue tv_bigint);
 
 bool kbigint_negativep(TValue tv_bigint);
 bool kbigint_positivep(TValue tv_bigint);
+
+bool kbigint_oddp(TValue tv_bigint);
+bool kbigint_evenp(TValue tv_bigint);
+
 /* Mutate the bigint to have the opposite sign, used in read & write */
 void kbigint_invert_sign(TValue tv_bigint);
 
