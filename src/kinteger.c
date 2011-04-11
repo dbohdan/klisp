@@ -202,6 +202,74 @@ bool kbigint_eqp(TValue tv_bigint1, TValue tv_bigint2)
     return true;
 }
 
+bool kbigint_ltp(TValue tv_bigint1, TValue tv_bigint2)
+{
+    Bigint *bigint1 = tv2bigint(tv_bigint1);
+    Bigint *bigint2 = tv2bigint(tv_bigint2);
+
+    /* first take care of the easy sign cases */
+    if (kbigint_negp(bigint1)) {
+	if (kbigint_posp(bigint2)) {
+	    return true;
+	} else {
+	    /* if both are negative reverse the order to compare
+	       as positive */
+	    Bigint *temp = bigint1;
+	    bigint1 = bigint2;
+	    bigint2 = temp;
+	    /* swap the tvalues just in case */
+	    TValue tv_temp = tv_bigint1;
+	    tv_bigint1 = tv_bigint2;
+	    tv_bigint2 = tv_temp;
+	}
+    } else if (kbigint_negp(bigint2)) {
+	return false;
+    }
+
+    /* the the easy size cases */
+    int32_t size1 = kbigint_size(bigint1);
+    int32_t size2 = kbigint_size(bigint2);
+    
+    if (size1 < size2)
+	return true;
+    else if (size1 > size2)
+	return false;
+
+    /* size and sign equal, iterate in big endian mode */
+    bind_iter(iter1, bigint1, true);
+    bind_iter(iter2, bigint2, true);
+
+    while(iter_has_next(iter1) && iter_has_next(iter2)) {
+	uint32_t digit1 = iter_next(iter1);
+	uint32_t digit2 = iter_next(iter2);
+	if (digit1 < digit2)
+	    return true;
+	else if (digit1 > digit2)
+	    return false;
+	/* if equal we keep comparing */
+    }
+    
+    return false;
+}
+
+bool kbigint_lep(TValue tv_bigint1, TValue tv_bigint2)
+{
+    /* a <= b == !(a > b) == !(b < a) */
+    return !kbigint_ltp(tv_bigint2, tv_bigint1);
+}
+
+bool kbigint_gtp(TValue tv_bigint1, TValue tv_bigint2)
+{
+    /* a > b == (b < a) */
+    return kbigint_ltp(tv_bigint2, tv_bigint1);
+}
+
+bool kbigint_gep(TValue tv_bigint1, TValue tv_bigint2)
+{
+    /* a >= b == !(a < b) */
+    return !kbigint_ltp(tv_bigint1, tv_bigint2);
+}
+
 bool kbigint_negativep(TValue tv_bigint)
 {
     return kbigint_negp(tv2bigint(tv_bigint));
@@ -209,6 +277,7 @@ bool kbigint_negativep(TValue tv_bigint)
 
 /* unlike the positive? applicative this would return true on zero, 
    but zero is never represented as a bigint so there is no problem */
+/* XXX: but bigints constructed from fixints could be, clean this up */
 bool kbigint_positivep(TValue tv_bigint)
 {
     return kbigint_posp(tv2bigint(tv_bigint));

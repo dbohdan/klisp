@@ -25,17 +25,29 @@ TValue kbigint_copy(klisp_State *K, TValue src);
    useful for mixed operations, relatively light weight compared
    to creating it in the heap and burdening the gc */
 #define kbind_bigint(name, fixint)					\
-    int32_t (KUNIQUE_NAME(i)) = fixint;					\
-    BigintNode KUNIQUE_NAME(node);					\
-    node.val = { int64_t temp = (KUNIQUE_NAME(i));			\
-		 (uint32_t) (temp < 0)? -temp : temp; };		\
-    node.next_xor_prev = (uintptr_t) 0;	/* NULL ^ NULL: 0 */		\
+    int32_t (KUNIQUE_NAME(i)) = ivalue(fixint);				\
+    Bigint_Node KUNIQUE_NAME(node);					\
+    (KUNIQUE_NAME(node)).digit = ({					\
+	    int64_t temp = (KUNIQUE_NAME(i));				\
+	    (uint32_t) ((temp < 0)? -temp : temp);			\
+	});								\
+    /* NULL ^ NULL: 0 */						\
+    (KUNIQUE_NAME(node)).next_xor_prev = (uintptr_t) 0;			\
     Bigint KUNIQUE_NAME(bigint);					\
     (KUNIQUE_NAME(bigint)).first = &(KUNIQUE_NAME(node));		\
     (KUNIQUE_NAME(bigint)).last = &(KUNIQUE_NAME(node));		\
     (KUNIQUE_NAME(bigint)).sign_size = (KUNIQUE_NAME(i)) < 0? -1 : 1;	\
     Bigint *name = &(KUNIQUE_NAME(bigint));
     
+/* This can be used prior to calling a bigint functions
+   to automatically convert fixints to bigints.
+   NOTE: calls to this macro should go in different lines! */
+#define kensure_bigint(n)						\
+    if (ttisfixint(n)) {						\
+	kbind_bigint(KUNIQUE_NAME(bint), n);				\
+	n = gc2bigint(KUNIQUE_NAME(bint));				\
+    }
+
 /* This is used by the reader to destructively add digits to a number 
  tv_bigint must be positive */
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
@@ -49,6 +61,11 @@ int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base);
 bool kbigint_has_digits(klisp_State *K, TValue tv_bigint);
 
 bool kbigint_eqp(TValue bigint1, TValue bigint2);
+
+bool kbigint_ltp(TValue bigint1, TValue bigint2);
+bool kbigint_lep(TValue bigint1, TValue bigint2);
+bool kbigint_gtp(TValue bigint1, TValue bigint2);
+bool kbigint_gep(TValue bigint1, TValue bigint2);
 
 bool kbigint_negativep(TValue tv_bigint);
 bool kbigint_positivep(TValue tv_bigint);

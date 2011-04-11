@@ -84,11 +84,18 @@ bool knum_eqp(TValue n1, TValue n2)
     }
 }
 
+/* REFACTOR: could be just ltp and all other as calls to it
+   cf: kbigint_ltp, ... */
 bool knum_ltp(TValue n1, TValue n2) 
 { 
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT:
 	return ivalue(n1) < ivalue(n2);
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_ltp(n1, n2);
+    }
     case K_TEINF:
 	return !tv_equal(n1, n2) && (tv_equal(n1, KEMINF) ||
 				     tv_equal(n2, KEPINF));
@@ -104,6 +111,11 @@ bool knum_lep(TValue n1, TValue n2)
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT:
 	return ivalue(n1) <= ivalue(n2);
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_lep(n1, n2);
+    }
     case K_TEINF:
 	return tv_equal(n1, n2) || tv_equal(n1, KEMINF) || 
 	    tv_equal(n2, KEPINF);
@@ -119,6 +131,11 @@ bool knum_gtp(TValue n1, TValue n2)
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT:
 	return ivalue(n1) > ivalue(n2);
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_gtp(n1, n2);
+    }
     case K_TEINF:
 	return !tv_equal(n1, n2) && (tv_equal(n1, KEPINF) ||
 				     tv_equal(n2, KEMINF));
@@ -134,6 +151,11 @@ bool knum_gep(TValue n1, TValue n2)
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT:
 	return ivalue(n1) >= ivalue(n2);
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_ltp(n1, n2);
+    }
     case K_TEINF:
 	return tv_equal(n1, n2) || tv_equal(n1, KEPINF) ||
 	    tv_equal(n2, KEMINF);
