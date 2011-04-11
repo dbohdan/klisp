@@ -277,7 +277,8 @@ bool kbigint_negativep(TValue tv_bigint)
 
 /* unlike the positive? applicative this would return true on zero, 
    but zero is never represented as a bigint so there is no problem */
-/* XXX: but bigints constructed from fixints could be, clean this up */
+/* Bigints constructed from fixints could be, but we don't care about
+ zero returning positive in other place than in positive? */
 bool kbigint_positivep(TValue tv_bigint)
 {
     return kbigint_posp(tv2bigint(tv_bigint));
