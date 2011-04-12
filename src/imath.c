@@ -35,6 +35,10 @@
 #include "kmem.h"
 #include "kerror.h"
 
+/* XXX */
+klisp_State *KK = NULL;
+/* XXX */
+
 /* {{{ Constants */
 
 const mp_result MP_OK     = 0;  /* no error, all is well  */
@@ -216,14 +220,14 @@ STATIC const mp_size multiply_threshold = MP_MULT_THRESH;
 
 /* Allocate a buffer of (at least) num digits, or return
    NULL if that couldn't be done.  */
-STATIC mp_digit *s_alloc(mp_size num);
+STATIC mp_digit *s_alloc(klisp_State *K, mp_size num);
 
 /* Release a buffer of digits allocated by s_alloc(). */
-STATIC void s_free(void *ptr);
+STATIC void s_free(klisp_State *K, void *ptr, mp_size size);
 
 /* Insure that z has at least min digits allocated, resizing if
    necessary.  Returns true if successful, false if out of memory. */
-STATIC int  s_pad(mp_int z, mp_size min);
+STATIC int  s_pad(klisp_State *K, mp_int z, mp_size min);
 
 /* Fill in a "fake" mp_int on the stack with a given value */
 STATIC void      s_fake(mp_int z, mp_small value, mp_digit vbuf[]);
@@ -367,9 +371,9 @@ mp_result mp_int_init(mp_int z)
 
 /* {{{ mp_int_alloc() */
 
-mp_int    mp_int_alloc(void)
+mp_int    mp_int_alloc(klisp_State *K)
 {
-  mp_int out = malloc(sizeof(mpz_t));
+  mp_int out = klispM_new(K, mpz_t);
   
   if(out != NULL) 
     mp_int_init(out);
@@ -381,7 +385,7 @@ mp_int    mp_int_alloc(void)
 
 /* {{{ mp_int_init_size(z, prec) */
 
-mp_result mp_int_init_size(mp_int z, mp_size prec)
+mp_result mp_int_init_size(klisp_State *K, mp_int z, mp_size prec)
 {
   CHECK(z != NULL);
 
@@ -392,7 +396,7 @@ mp_result mp_int_init_size(mp_int z, mp_size prec)
   else 
     prec = (mp_size) ROUND_PREC(prec);
   
-  if((MP_DIGITS(z) = s_alloc(prec)) == NULL)
+  if((MP_DIGITS(z) = s_alloc(K, prec)) == NULL)
     return MP_MEMORY;
 
   z->digits[0] = 0;
@@ -407,7 +411,7 @@ mp_result mp_int_init_size(mp_int z, mp_size prec)
 
 /* {{{ mp_int_init_copy(z, old) */
 
-mp_result mp_int_init_copy(mp_int z, mp_int old)
+mp_result mp_int_init_copy(klisp_State *K, mp_int z, mp_int old)
 {
   mp_result  res;
   mp_size    uold;
@@ -421,7 +425,7 @@ mp_result mp_int_init_copy(mp_int z, mp_int old)
   else {
     mp_size target = MAX(uold, default_precision);
 
-    if((res = mp_int_init_size(z, target)) != MP_OK)
+    if((res = mp_int_init_size(K, z, target)) != MP_OK)
       return res;
   }
 
@@ -436,40 +440,40 @@ mp_result mp_int_init_copy(mp_int z, mp_int old)
 
 /* {{{ mp_int_init_value(z, value) */
 
-mp_result mp_int_init_value(mp_int z, mp_small value)
+mp_result mp_int_init_value(klisp_State *K, mp_int z, mp_small value)
 {
   mpz_t     vtmp;
   mp_digit  vbuf[MP_VALUE_DIGITS(value)];
 
   s_fake(&vtmp, value, vbuf);
-  return mp_int_init_copy(z, &vtmp);
+  return mp_int_init_copy(K, z, &vtmp);
 }
 
 /* }}} */
 
 /* {{{ mp_int_set_value(z, value) */
 
-mp_result  mp_int_set_value(mp_int z, mp_small value)
+mp_result  mp_int_set_value(klisp_State *K, mp_int z, mp_small value)
 {
   mpz_t    vtmp;
   mp_digit vbuf[MP_VALUE_DIGITS(value)];
 
   s_fake(&vtmp, value, vbuf);
-  return mp_int_copy(&vtmp, z);
+  return mp_int_copy(K, &vtmp, z);
 }
 
 /* }}} */
 
 /* {{{ mp_int_clear(z) */
 
-void      mp_int_clear(mp_int z)
+void      mp_int_clear(klisp_State *K, mp_int z)
 {
   if(z == NULL)
     return;
 
   if(MP_DIGITS(z) != NULL) {
     if((void *) MP_DIGITS(z) != (void *) &MP_SINGLE(z))
-      s_free(MP_DIGITS(z));
+      s_free(K, MP_DIGITS(z), MP_ALLOC(z));
     MP_DIGITS(z) = NULL;
   }
 }
@@ -478,19 +482,19 @@ void      mp_int_clear(mp_int z)
 
 /* {{{ mp_int_free(z) */
 
-void      mp_int_free(mp_int z)
+void      mp_int_free(klisp_State *K, mp_int z)
 {
   NRCHECK(z != NULL);
 
-  mp_int_clear(z);
-  free(z); /* note: NOT s_free() */
+  mp_int_clear(K, z);
+  klispM_free(K, z); /* note: NOT s_free() */
 }
 
 /* }}} */
 
 /* {{{ mp_int_copy(a, c) */
 
-mp_result mp_int_copy(mp_int a, mp_int c)
+mp_result mp_int_copy(klisp_State *K, mp_int a, mp_int c)
 {
   CHECK(a != NULL && c != NULL);
 
@@ -498,7 +502,7 @@ mp_result mp_int_copy(mp_int a, mp_int c)
     mp_size   ua = MP_USED(a);
     mp_digit *da, *dc;
 
-    if(!s_pad(c, ua))
+    if(!s_pad(K, c, ua))
       return MP_MEMORY;
 
     da = MP_DIGITS(a); dc = MP_DIGITS(c);
@@ -548,7 +552,7 @@ mp_result mp_int_abs(mp_int a, mp_int c)
 
   CHECK(a != NULL && c != NULL);
 
-  if((res = mp_int_copy(a, c)) != MP_OK)
+  if((res = mp_int_copy(KK, a, c)) != MP_OK)
     return res;
 
   MP_SIGN(c) = MP_ZPOS;
@@ -565,7 +569,7 @@ mp_result mp_int_neg(mp_int a, mp_int c)
 
   CHECK(a != NULL && c != NULL);
 
-  if((res = mp_int_copy(a, c)) != MP_OK)
+  if((res = mp_int_copy(KK, a, c)) != MP_OK)
     return res;
 
   if(CMPZ(c) != 0)
@@ -591,14 +595,14 @@ mp_result mp_int_add(mp_int a, mp_int b, mp_int c)
     /* Same sign -- add magnitudes, preserve sign of addends */
     mp_digit carry;
 
-    if(!s_pad(c, max))
+    if(!s_pad(KK, c, max))
       return MP_MEMORY;
 
     carry = s_uadd(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
     uc = max;
 
     if(carry) {
-      if(!s_pad(c, max + 1))
+      if(!s_pad(KK, c, max + 1))
 	return MP_MEMORY;
 
       c->digits[max] = carry;
@@ -628,7 +632,7 @@ mp_result mp_int_add(mp_int a, mp_int b, mp_int c)
       x = a; y = b;
     }
 
-    if(!s_pad(c, MP_USED(x)))
+    if(!s_pad(KK, c, MP_USED(x)))
       return MP_MEMORY;
 
     /* Subtract smaller from larger */
@@ -674,14 +678,14 @@ mp_result mp_int_sub(mp_int a, mp_int b, mp_int c)
     /* Different signs -- add magnitudes and keep sign of a */
     mp_digit carry;
 
-    if(!s_pad(c, max))
+    if(!s_pad(KK, c, max))
       return MP_MEMORY;
 
     carry = s_uadd(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
     uc = max;
 
     if(carry) {
-      if(!s_pad(c, max + 1))
+      if(!s_pad(KK, c, max + 1))
 	return MP_MEMORY;
 
       c->digits[max] = carry;
@@ -698,7 +702,7 @@ mp_result mp_int_sub(mp_int a, mp_int b, mp_int c)
     mp_sign osign;
     int     cmp = s_ucmp(a, b);
 
-    if(!s_pad(c, max))
+    if(!s_pad(KK, c, max))
       return MP_MEMORY;
 
     if(cmp >= 0) {
@@ -766,11 +770,11 @@ mp_result mp_int_mul(mp_int a, mp_int b, mp_int c)
     p = ROUND_PREC(osize);
     p = MAX(p, default_precision);
 
-    if((out = s_alloc(p)) == NULL)
+    if((out = s_alloc(KK, p)) == NULL)
       return MP_MEMORY;
   } 
   else {
-    if(!s_pad(c, osize))
+    if(!s_pad(KK, c, osize))
       return MP_MEMORY;
     
     out = MP_DIGITS(c);
@@ -785,7 +789,7 @@ mp_result mp_int_mul(mp_int a, mp_int b, mp_int c)
    */
   if(out != MP_DIGITS(c)) {
     if((void *) MP_DIGITS(c) != (void *) &MP_SINGLE(c))
-      s_free(MP_DIGITS(c));
+      s_free(KK, MP_DIGITS(c), MP_ALLOC(c));
     MP_DIGITS(c) = out;
     MP_ALLOC(c) = p;
   }
@@ -820,7 +824,7 @@ mp_result mp_int_mul_pow2(mp_int a, mp_small p2, mp_int c)
   mp_result res;
   CHECK(a != NULL && c != NULL && p2 >= 0);
 
-  if((res = mp_int_copy(a, c)) != MP_OK)
+  if((res = mp_int_copy(KK, a, c)) != MP_OK)
     return res;
 
   if(s_qmul(c, (mp_size) p2))
@@ -846,11 +850,11 @@ mp_result mp_int_sqr(mp_int a, mp_int c)
     p = ROUND_PREC(osize);
     p = MAX(p, default_precision);
 
-    if((out = s_alloc(p)) == NULL)
+    if((out = s_alloc(KK, p)) == NULL)
       return MP_MEMORY;
   } 
   else {
-    if(!s_pad(c, osize)) 
+    if(!s_pad(KK, c, osize)) 
       return MP_MEMORY;
 
     out = MP_DIGITS(c);
@@ -864,7 +868,7 @@ mp_result mp_int_sqr(mp_int a, mp_int c)
    */
   if(out != MP_DIGITS(c)) {
     if((void *) MP_DIGITS(c) != (void *) &MP_SINGLE(c))
-      s_free(MP_DIGITS(c));
+      s_free(KK, MP_DIGITS(c), MP_ALLOC(c));
     MP_DIGITS(c) = out;
     MP_ALLOC(c) = p;
   }
@@ -896,7 +900,7 @@ mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
     /* If |a| < |b|, no division is required:
        q = 0, r = a
      */
-    if(r && (res = mp_int_copy(a, r)) != MP_OK)
+    if(r && (res = mp_int_copy(KK, a, r)) != MP_OK)
       return res;
 
     if(q)
@@ -928,32 +932,32 @@ mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
    */
   if((lg = s_isp2(b)) < 0) {
     if(q && b != q) { 
-      if((res = mp_int_copy(a, q)) != MP_OK)
+      if((res = mp_int_copy(KK, a, q)) != MP_OK)
 	goto CLEANUP;
       else
 	qout = q;
     } 
     else {
       qout = TEMP(last);
-      SETUP(mp_int_init_copy(TEMP(last), a), last);
+      SETUP(mp_int_init_copy(KK, TEMP(last), a), last);
     }
 
     if(r && a != r) {
-      if((res = mp_int_copy(b, r)) != MP_OK)
+      if((res = mp_int_copy(KK, b, r)) != MP_OK)
 	goto CLEANUP;
       else
 	rout = r;
     } 
     else {
       rout = TEMP(last);
-      SETUP(mp_int_init_copy(TEMP(last), b), last);
+      SETUP(mp_int_init_copy(KK, TEMP(last), b), last);
     }
 
     if((res = s_udiv(qout, rout)) != MP_OK) goto CLEANUP;
   } 
   else {
-    if(q && (res = mp_int_copy(a, q)) != MP_OK) goto CLEANUP;
-    if(r && (res = mp_int_copy(a, r)) != MP_OK) goto CLEANUP;
+    if(q && (res = mp_int_copy(KK, a, q)) != MP_OK) goto CLEANUP;
+    if(r && (res = mp_int_copy(KK, a, r)) != MP_OK) goto CLEANUP;
 
     if(q) s_qdiv(q, (mp_size) lg); qout = q;
     if(r) s_qmod(r, (mp_size) lg); rout = r;
@@ -971,12 +975,12 @@ mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
       MP_SIGN(qout) = MP_ZPOS;
   }
 
-  if(q && (res = mp_int_copy(qout, q)) != MP_OK) goto CLEANUP;
-  if(r && (res = mp_int_copy(rout, r)) != MP_OK) goto CLEANUP;
+  if(q && (res = mp_int_copy(KK, qout, q)) != MP_OK) goto CLEANUP;
+  if(r && (res = mp_int_copy(KK, rout, r)) != MP_OK) goto CLEANUP;
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(TEMP(last));
+    mp_int_clear(KK, TEMP(last));
 
   return res;
 }
@@ -1005,11 +1009,11 @@ mp_result mp_int_mod(mp_int a, mp_int m, mp_int c)
   if(CMPZ(out) < 0)
     res = mp_int_add(out, m, c);
   else
-    res = mp_int_copy(out, c);
+    res = mp_int_copy(KK, out, c);
 
  CLEANUP:
   if(out != c)
-    mp_int_clear(&tmp);
+    mp_int_clear(KK, &tmp);
 
   return res;
 }
@@ -1034,7 +1038,7 @@ mp_result mp_int_div_value(mp_int a, mp_small value, mp_int q, mp_small *r)
     (void) mp_int_to_int(&rtmp, r); /* can't fail */
 
  CLEANUP:
-  mp_int_clear(&rtmp);
+  mp_int_clear(KK, &rtmp);
   return res;
 }
 
@@ -1048,10 +1052,10 @@ mp_result mp_int_div_pow2(mp_int a, mp_small p2, mp_int q, mp_int r)
 
   CHECK(a != NULL && p2 >= 0 && q != r);
 
-  if(q != NULL && (res = mp_int_copy(a, q)) == MP_OK)
+  if(q != NULL && (res = mp_int_copy(KK, a, q)) == MP_OK)
     s_qdiv(q, (mp_size) p2);
   
-  if(res == MP_OK && r != NULL && (res = mp_int_copy(a, r)) == MP_OK)
+  if(res == MP_OK && r != NULL && (res = mp_int_copy(KK, a, r)) == MP_OK)
     s_qmod(r, (mp_size) p2);
 
   return res;
@@ -1071,10 +1075,10 @@ mp_result mp_int_expt(mp_int a, mp_small b, mp_int c)
 
   CHECK(b >= 0 && c != NULL);
 
-  if((res = mp_int_init_copy(&t, a)) != MP_OK)
+  if((res = mp_int_init_copy(KK, &t, a)) != MP_OK)
     return res;
 
-  (void) mp_int_set_value(c, 1);
+  (void) mp_int_set_value(KK, c, 1);
   while(v != 0) {
     if(v & 1) {
       if((res = mp_int_mul(c, &t, c)) != MP_OK)
@@ -1089,7 +1093,7 @@ mp_result mp_int_expt(mp_int a, mp_small b, mp_int c)
   }
   
  CLEANUP:
-  mp_int_clear(&t);
+  mp_int_clear(KK, &t);
   return res;
 }
 
@@ -1105,10 +1109,10 @@ mp_result mp_int_expt_value(mp_small a, mp_small b, mp_int c)
   
   CHECK(b >= 0 && c != NULL);
 
-  if((res = mp_int_init_value(&t, a)) != MP_OK)
+  if((res = mp_int_init_value(KK, &t, a)) != MP_OK)
     return res;
 
-  (void) mp_int_set_value(c, 1);
+  (void) mp_int_set_value(KK, c, 1);
   while(v != 0) {
     if(v & 1) {
       if((res = mp_int_mul(c, &t, c)) != MP_OK)
@@ -1123,7 +1127,7 @@ mp_result mp_int_expt_value(mp_small a, mp_small b, mp_int c)
   }
   
  CLEANUP:
-  mp_int_clear(&t);
+  mp_int_clear(KK, &t);
   return res;
 }
 
@@ -1139,10 +1143,10 @@ mp_result mp_int_expt_full(mp_int a, mp_int b, mp_int c)
 
   CHECK(a != NULL && b != NULL && c != NULL);
 
-  if ((res = mp_int_init_copy(&t, a)) != MP_OK)
+  if ((res = mp_int_init_copy(KK, &t, a)) != MP_OK)
     return res;
 
-  (void) mp_int_set_value(c, 1);
+  (void) mp_int_set_value(KK, c, 1);
   for (ix = 0; ix < MP_USED(b); ++ix) {
     mp_digit d = b->digits[ix];
 
@@ -1161,7 +1165,7 @@ mp_result mp_int_expt_full(mp_int a, mp_int b, mp_int c)
   }
 
  CLEANUP:
-  mp_int_clear(&t);
+  mp_int_clear(KK, &t);
   return res;
 }
 
@@ -1270,11 +1274,11 @@ mp_result mp_int_exptmod(mp_int a, mp_int b, mp_int m, mp_int c)
     return MP_RANGE;
 
   um = MP_USED(m);
-  SETUP(mp_int_init_size(TEMP(0), 2 * um), last);
-  SETUP(mp_int_init_size(TEMP(1), 2 * um), last);
+  SETUP(mp_int_init_size(KK, TEMP(0), 2 * um), last);
+  SETUP(mp_int_init_size(KK, TEMP(1), 2 * um), last);
 
   if(c == b || c == m) {
-    SETUP(mp_int_init_size(TEMP(2), 2 * um), last);
+    SETUP(mp_int_init_size(KK, TEMP(2), 2 * um), last);
     s = TEMP(2);
   } 
   else {
@@ -1288,11 +1292,11 @@ mp_result mp_int_exptmod(mp_int a, mp_int b, mp_int m, mp_int c)
   if((res = s_embar(TEMP(0), b, m, TEMP(1), s)) != MP_OK)
     goto CLEANUP;
 
-  res = mp_int_copy(s, c);
+  res = mp_int_copy(KK, s, c);
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(TEMP(last));
+    mp_int_clear(KK, TEMP(last));
 
   return res;
 }
@@ -1347,10 +1351,10 @@ mp_result mp_int_exptmod_known(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c
     return MP_RANGE;
 
   um = MP_USED(m);
-  SETUP(mp_int_init_size(TEMP(0), 2 * um), last);
+  SETUP(mp_int_init_size(KK, TEMP(0), 2 * um), last);
 
   if(c == b || c == m) {
-    SETUP(mp_int_init_size(TEMP(1), 2 * um), last);
+    SETUP(mp_int_init_size(KK, TEMP(1), 2 * um), last);
     s = TEMP(1);
   } 
   else {
@@ -1362,11 +1366,11 @@ mp_result mp_int_exptmod_known(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c
   if((res = s_embar(TEMP(0), b, m, mu, s)) != MP_OK)
     goto CLEANUP;
 
-  res = mp_int_copy(s, c);
+  res = mp_int_copy(KK, s, c);
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(TEMP(last));
+    mp_int_clear(KK, TEMP(last));
 
   return res;
 }
@@ -1423,11 +1427,11 @@ mp_result mp_int_invmod(mp_int a, mp_int m, mp_int c)
   if(sa == MP_NEG)
     res = mp_int_sub(m, TEMP(1), c);
   else
-    res = mp_int_copy(TEMP(1), c);
+    res = mp_int_copy(KK, TEMP(1), c);
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(TEMP(last));
+    mp_int_clear(KK, TEMP(last));
 
   return res;
 }
@@ -1455,9 +1459,9 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
     return mp_int_abs(a, c);
 
   mp_int_init(&t);
-  if((res = mp_int_init_copy(&u, a)) != MP_OK)
+  if((res = mp_int_init_copy(KK, &u, a)) != MP_OK)
     goto U;
-  if((res = mp_int_init_copy(&v, b)) != MP_OK)
+  if((res = mp_int_init_copy(KK, &v, b)) != MP_OK)
     goto V;
 
   MP_SIGN(&u) = MP_ZPOS; MP_SIGN(&v) = MP_ZPOS;
@@ -1475,7 +1479,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
       goto CLEANUP;
   } 
   else {
-    if((res = mp_int_copy(&u, &t)) != MP_OK)
+    if((res = mp_int_copy(KK, &u, &t)) != MP_OK)
       goto CLEANUP;
   }
 
@@ -1483,7 +1487,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
     s_qdiv(&t, s_dp2k(&t));
 
     if(CMPZ(&t) > 0) {
-      if((res = mp_int_copy(&t, &u)) != MP_OK)
+      if((res = mp_int_copy(KK, &t, &u)) != MP_OK)
 	goto CLEANUP;
     } 
     else {
@@ -1504,9 +1508,9 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
     res = MP_MEMORY;
   
  CLEANUP:
-  mp_int_clear(&v);
- V: mp_int_clear(&u);
- U: mp_int_clear(&t);
+  mp_int_clear(KK, &v);
+ V: mp_int_clear(KK, &u);
+ U: mp_int_clear(KK, &t);
 
   return res;
 }
@@ -1535,11 +1539,11 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
     return MP_UNDEF;
   else if(ca == 0) {
     if((res = mp_int_abs(b, c)) != MP_OK) return res;
-    mp_int_zero(x); (void) mp_int_set_value(y, 1); return MP_OK;
+    mp_int_zero(x); (void) mp_int_set_value(KK, y, 1); return MP_OK;
   } 
   else if(cb == 0) {
     if((res = mp_int_abs(a, c)) != MP_OK) return res;
-    (void) mp_int_set_value(x, 1); mp_int_zero(y); return MP_OK;
+    (void) mp_int_set_value(KK, x, 1); mp_int_zero(y); return MP_OK;
   }
 
   /* Initialize temporaries:
@@ -1549,8 +1553,8 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
   TEMP(0)->digits[0] = 1;
   TEMP(3)->digits[0] = 1;
 
-  SETUP(mp_int_init_copy(TEMP(4), a), last);
-  SETUP(mp_int_init_copy(TEMP(5), b), last);
+  SETUP(mp_int_init_copy(KK, TEMP(4), a), last);
+  SETUP(mp_int_init_copy(KK, TEMP(5), b), last);
 
   /* We will work with absolute values here */
   MP_SIGN(TEMP(4)) = MP_ZPOS;
@@ -1564,8 +1568,8 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
     s_qdiv(TEMP(5), k);
   }
 
-  SETUP(mp_int_init_copy(TEMP(6), TEMP(4)), last);
-  SETUP(mp_int_init_copy(TEMP(7), TEMP(5)), last);
+  SETUP(mp_int_init_copy(KK, TEMP(6), TEMP(4)), last);
+  SETUP(mp_int_init_copy(KK, TEMP(7), TEMP(5)), last);
 
   for(;;) {
     while(mp_int_is_even(TEMP(4))) {
@@ -1608,15 +1612,15 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
     }
 
     if(CMPZ(TEMP(4)) == 0) {
-      if(x && (res = mp_int_copy(TEMP(2), x)) != MP_OK) goto CLEANUP;
-      if(y && (res = mp_int_copy(TEMP(3), y)) != MP_OK) goto CLEANUP;
+      if(x && (res = mp_int_copy(KK, TEMP(2), x)) != MP_OK) goto CLEANUP;
+      if(y && (res = mp_int_copy(KK, TEMP(3), y)) != MP_OK) goto CLEANUP;
       if(c) {
 	if(!s_qmul(TEMP(5), k)) {
 	  res = MP_MEMORY;
 	  goto CLEANUP;
 	}
 	 
-	res = mp_int_copy(TEMP(5), c);
+	res = mp_int_copy(KK, TEMP(5), c);
       }
 
       break;
@@ -1625,7 +1629,7 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(TEMP(last));
+    mp_int_clear(KK, TEMP(last));
 
   return res;
 }
@@ -1656,10 +1660,10 @@ mp_result mp_int_lcm(mp_int a, mp_int b, mp_int c)
   if((res = mp_int_mul(&lcm, b, &lcm)) != MP_OK)
     goto CLEANUP;
 
-  res = mp_int_copy(&lcm, c);
+  res = mp_int_copy(KK, &lcm, c);
 
   CLEANUP:
-    mp_int_clear(&lcm);
+    mp_int_clear(KK, &lcm);
 
   return res;
 }
@@ -1707,7 +1711,7 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
   CHECK(a != NULL && c != NULL && b > 0);
 
   if(b == 1) {
-    return mp_int_copy(a, c);
+    return mp_int_copy(KK, a, c);
   }
   if(MP_SIGN(a) == MP_NEG) {
     if(b % 2 == 0)
@@ -1716,8 +1720,8 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
       flips = 1;
   }
 
-  SETUP(mp_int_init_copy(TEMP(last), a), last);
-  SETUP(mp_int_init_copy(TEMP(last), a), last);
+  SETUP(mp_int_init_copy(KK, TEMP(last), a), last);
+  SETUP(mp_int_init_copy(KK, TEMP(last), a), last);
   SETUP(mp_int_init(TEMP(last)), last);
   SETUP(mp_int_init(TEMP(last)), last);
   SETUP(mp_int_init(TEMP(last)), last);
@@ -1747,11 +1751,11 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
       if((res = mp_int_sub_value(TEMP(4), 1, TEMP(4))) != MP_OK)
 	goto CLEANUP;
     }
-    if((res = mp_int_copy(TEMP(4), TEMP(1))) != MP_OK)
+    if((res = mp_int_copy(KK, TEMP(4), TEMP(1))) != MP_OK)
       goto CLEANUP;
   }
   
-  if((res = mp_int_copy(TEMP(1), c)) != MP_OK)
+  if((res = mp_int_copy(KK, TEMP(1), c)) != MP_OK)
     goto CLEANUP;
 
   /* If the original value of a was negative, flip the output sign. */
@@ -1760,7 +1764,7 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(TEMP(last));
+    mp_int_clear(KK, TEMP(last));
 
   return res;  
 }
@@ -1854,7 +1858,7 @@ mp_result mp_int_to_string(mp_int z, mp_size radix,
     mpz_t tmp;
     char  *h, *t;
 
-    if((res = mp_int_init_copy(&tmp, z)) != MP_OK)
+    if((res = mp_int_init_copy(KK, &tmp, z)) != MP_OK)
       return res;
 
     if(MP_SIGN(z) == MP_NEG) {
@@ -1882,7 +1886,7 @@ mp_result mp_int_to_string(mp_int z, mp_size radix,
       *t-- = tc;
     }
 
-    mp_int_clear(&tmp);
+    mp_int_clear(KK, &tmp);
   }
 
   *str = '\0';
@@ -1960,7 +1964,7 @@ mp_result mp_int_read_cstring(mp_int z, mp_size radix, const char *str, char **e
     ++str;
 
   /* Make sure there is enough space for the value */
-  if(!s_pad(z, s_inlen(strlen(str), radix)))
+  if(!s_pad(KK, z, s_inlen(strlen(str), radix)))
     return MP_MEMORY;
 
   MP_USED(z) = 1; z->digits[0] = 0;
@@ -2051,7 +2055,7 @@ mp_result mp_int_read_binary(mp_int z, unsigned char *buf, int len)
 
   /* Figure out how many digits are needed to represent this value */
   need = ((len * CHAR_BIT) + (MP_DIGIT_BIT - 1)) / MP_DIGIT_BIT;
-  if(!s_pad(z, need))
+  if(!s_pad(KK, z, need))
     return MP_MEMORY;
 
   mp_int_zero(z);
@@ -2126,7 +2130,7 @@ mp_result mp_int_read_unsigned(mp_int z, unsigned char *buf, int len)
 
   /* Figure out how many digits are needed to represent this value */
   need = ((len * CHAR_BIT) + (MP_DIGIT_BIT - 1)) / MP_DIGIT_BIT;
-  if(!s_pad(z, need))
+  if(!s_pad(KK, z, need))
     return MP_MEMORY;
 
   mp_int_zero(z);
@@ -2184,9 +2188,9 @@ const char *mp_error_string(mp_result res)
 
 /* {{{ s_alloc(num) */
 
-STATIC mp_digit *s_alloc(mp_size num)
+STATIC mp_digit *s_alloc(klisp_State *K, mp_size num)
 {
-  mp_digit *out = malloc(num * sizeof(mp_digit));
+  mp_digit *out = klispM_malloc(K, num * sizeof(mp_digit));
 
   assert(out != NULL); /* for debugging */
 #if DEBUG > 1
@@ -2206,10 +2210,11 @@ STATIC mp_digit *s_alloc(mp_size num)
 
 /* {{{ s_realloc(old, osize, nsize) */
 
-STATIC mp_digit *s_realloc(mp_digit *old, mp_size osize, mp_size nsize)
+STATIC mp_digit *s_realloc(klisp_State *K, mp_digit *old, mp_size osize, 
+			   mp_size nsize)
 {
 #if DEBUG > 1
-  mp_digit *new = s_alloc(nsize);
+  mp_digit *new = s_alloc(K, nsize);
   int       ix;
 
   for(ix = 0; ix < nsize; ++ix)
@@ -2217,7 +2222,8 @@ STATIC mp_digit *s_realloc(mp_digit *old, mp_size osize, mp_size nsize)
 
   memcpy(new, old, osize * sizeof(mp_digit));
 #else
-  mp_digit *new = realloc(old, nsize * sizeof(mp_digit));
+  mp_digit *new = klispM_realloc_(K, old, osize * sizeof(mp_digit), 
+				  nsize * sizeof(mp_digit));
 
   assert(new != NULL); /* for debugging */
 #endif
@@ -2228,28 +2234,27 @@ STATIC mp_digit *s_realloc(mp_digit *old, mp_size osize, mp_size nsize)
 
 /* {{{ s_free(ptr) */
 
-STATIC void s_free(void *ptr)
+STATIC void s_free(klisp_State *K, void *ptr, mp_size size)
 {
-  free(ptr);
+  klispM_freemem(K, ptr, size * sizeof(mp_digit));
 }
 
 /* }}} */
 
 /* {{{ s_pad(z, min) */
 
-STATIC int      s_pad(mp_int z, mp_size min)
+STATIC int      s_pad(klisp_State *K, mp_int z, mp_size min)
 {
   if(MP_ALLOC(z) < min) {
     mp_size nsize = ROUND_PREC(min);
     mp_digit *tmp;
 
     if((void *)z->digits == (void *)z) {
-      if((tmp = s_alloc(nsize)) == NULL)
+      if((tmp = s_alloc(K, nsize)) == NULL)
         return 0;
 
       COPY(MP_DIGITS(z), tmp, MP_USED(z));
-    }
-    else if((tmp = s_realloc(MP_DIGITS(z), MP_ALLOC(z), nsize)) == NULL)
+    } else if((tmp = s_realloc(K, MP_DIGITS(z), MP_ALLOC(z), nsize)) == NULL)
       return 0;
     
     MP_DIGITS(z) = tmp;
@@ -2461,7 +2466,7 @@ STATIC int       s_kmul(mp_digit *da, mp_digit *db, mp_digit *dc,
        bottom halves, and one buffer needs space for the completed 
        product; twice the space is plenty.
      */
-    if((t1 = s_alloc(4 * buf_size)) == NULL) return 0;
+    if((t1 = s_alloc(KK, 4 * buf_size)) == NULL) return 0;
     t2 = t1 + buf_size;
     t3 = t2 + buf_size;
     ZERO(t1, 4 * buf_size);
@@ -2499,7 +2504,8 @@ STATIC int       s_kmul(mp_digit *da, mp_digit *db, mp_digit *dc,
 		   buf_size, buf_size); 
     assert(carry == 0);
     
-    s_free(t1); /* note t2 and t3 are just internal pointers to t1 */
+    /* note t2 and t3 are just internal pointers to t1 */
+    s_free(KK, t1, 4 * buf_size); 
   } 
   else {
     s_umul(da, db, dc, size_a, size_b);
@@ -2550,7 +2556,7 @@ STATIC int       s_ksqr(mp_digit *da, mp_digit *dc, mp_size size_a)
     mp_size    at_size = size_a - bot_size;
     mp_size    buf_size = 2 * bot_size;
 
-    if((t1 = s_alloc(4 * buf_size)) == NULL) return 0;
+    if((t1 = s_alloc(KK, 4 * buf_size)) == NULL) return 0;
     t2 = t1 + buf_size;
     t3 = t2 + buf_size;
     ZERO(t1, 4 * buf_size);
@@ -2584,8 +2590,8 @@ STATIC int       s_ksqr(mp_digit *da, mp_digit *dc, mp_size size_a)
 		   buf_size, buf_size);
     assert(carry == 0);
 
-    s_free(t1); /* note that t2 and t2 are internal pointers only */
-
+    /* note that t2 and t2 are internal pointers only */
+    s_free(KK, t1, 4 * buf_size); 
   } 
   else {
     s_usqr(da, dc, size_a);
@@ -2838,7 +2844,7 @@ STATIC int      s_qmul(mp_int z, mp_size p2)
       extra = 1;
   }
 
-  if(!s_pad(z, uz + need + extra))
+  if(!s_pad(KK, z, uz + need + extra))
     return 0;
 
   /* If we need to shift by whole digits, do that in one pass, then
@@ -2890,7 +2896,7 @@ STATIC int       s_qsub(mp_int z, mp_size p2)
   mp_size  tdig = (p2 / MP_DIGIT_BIT), pos;
   mp_word  w = 0;
 
-  if(!s_pad(z, tdig + 1))
+  if(!s_pad(KK, z, tdig + 1))
     return 0;
 
   for(pos = 0, zp = MP_DIGITS(z); pos < tdig; ++pos, ++zp) {
@@ -2975,7 +2981,7 @@ STATIC int       s_2expt(mp_int z, mp_small k)
   ndig = (k + MP_DIGIT_BIT) / MP_DIGIT_BIT;
   rest = k % MP_DIGIT_BIT;
 
-  if(!s_pad(z, ndig))
+  if(!s_pad(KK, z, ndig))
     return 0;
 
   dz = MP_DIGITS(z);
@@ -3017,7 +3023,7 @@ STATIC mp_result s_brmu(mp_int z, mp_int m)
 {
   mp_size um = MP_USED(m) * 2;
 
-  if(!s_pad(z, um))
+  if(!s_pad(KK, z, um))
     return MP_MEMORY;
 
   s_2expt(z, MP_DIGIT_BIT * um);
@@ -3035,7 +3041,7 @@ STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2)
   umb_p1 = (um + 1) * MP_DIGIT_BIT;
   umb_m1 = (um - 1) * MP_DIGIT_BIT;
 
-  if(mp_int_copy(x, q1) != MP_OK)
+  if(mp_int_copy(KK, x, q1) != MP_OK)
     return 0;
 
   /* Compute q2 = floor((floor(x / b^(k-1)) * mu) / b^(k+1)) */
@@ -3087,11 +3093,11 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
   umu = MP_USED(mu); db = MP_DIGITS(b); dbt = db + MP_USED(b) - 1;
 
   while(last < 3) {
-    SETUP(mp_int_init_size(TEMP(last), 4 * umu), last);
+    SETUP(mp_int_init_size(KK, TEMP(last), 4 * umu), last);
     ZERO(MP_DIGITS(TEMP(last - 1)), MP_ALLOC(TEMP(last - 1)));
   }
 
-  (void) mp_int_set_value(c, 1);
+  (void) mp_int_set_value(KK, c, 1);
 
   /* Take care of low-order digits */
   while(db < dbt) {
@@ -3104,7 +3110,7 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
 	if(!s_reduce(TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	  res = MP_MEMORY; goto CLEANUP;
 	}
-	mp_int_copy(TEMP(0), c);
+	mp_int_copy(KK, TEMP(0), c);
       }
 
 
@@ -3114,7 +3120,7 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
 	res = MP_MEMORY; goto CLEANUP;
       }
       assert(MP_SIGN(TEMP(0)) == MP_ZPOS);
-      mp_int_copy(TEMP(0), a);
+      mp_int_copy(KK, TEMP(0), a);
 
 
     }
@@ -3130,7 +3136,7 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
       if(!s_reduce(TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	res = MP_MEMORY; goto CLEANUP;
       }
-      mp_int_copy(TEMP(0), c);
+      mp_int_copy(KK, TEMP(0), c);
     }
     
     d >>= 1;
@@ -3140,12 +3146,12 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
     if(!s_reduce(TEMP(0), m, mu, TEMP(1), TEMP(2))) {
       res = MP_MEMORY; goto CLEANUP;
     }
-    (void) mp_int_copy(TEMP(0), a);
+    (void) mp_int_copy(KK, TEMP(0), a);
   }
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(TEMP(last));
+    mp_int_clear(KK, TEMP(last));
   
   return res;
 }
@@ -3173,8 +3179,8 @@ STATIC mp_result s_udiv(mp_int a, mp_int b)
   k = s_norm(a, b);
 
   ua = MP_USED(a); ub = MP_USED(b); btop = b->digits[ub - 1];
-  if((res = mp_int_init_size(&q, ua)) != MP_OK) return res;
-  if((res = mp_int_init_size(&t, ua + 1)) != MP_OK) goto CLEANUP;
+  if((res = mp_int_init_size(KK, &q, ua)) != MP_OK) return res;
+  if((res = mp_int_init_size(KK, &t, ua + 1)) != MP_OK) goto CLEANUP;
 
   da = MP_DIGITS(a);
   r.digits = da + ua - 1;  /* The contents of r are shared with a */
@@ -3237,12 +3243,12 @@ STATIC mp_result s_udiv(mp_int a, mp_int b)
   if(k != 0)
     s_qdiv(a, k);
   
-  mp_int_copy(a, b);  /* ok:  0 <= r < b */
-  mp_int_copy(&q, a); /* ok:  q <= a     */
+  mp_int_copy(KK, a, b);  /* ok:  0 <= r < b */
+  mp_int_copy(KK, &q, a); /* ok:  q <= a     */
   
-  mp_int_clear(&t);
+  mp_int_clear(KK, &t);
  CLEANUP:
-  mp_int_clear(&q);
+  mp_int_clear(KK, &q);
   return res;
 }
 

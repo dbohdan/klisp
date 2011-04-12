@@ -25,6 +25,11 @@
 #include "kobject.h"
 #include "kstate.h"
 
+/* XXX */
+extern klisp_State *KK;
+/* XXX */
+
+
 #ifdef USE_C99
 #include <stdint.h>
 #endif
@@ -133,15 +138,15 @@ extern const mp_sign   MP_ZPOS;
 #define mp_int_is_even(Z) !((Z)->digits[0] & 1)
 
 mp_result mp_int_init(mp_int z);
-mp_int    mp_int_alloc(void);
-mp_result mp_int_init_size(mp_int z, mp_size prec);
-mp_result mp_int_init_copy(mp_int z, mp_int old);
-mp_result mp_int_init_value(mp_int z, mp_small value);
-mp_result mp_int_set_value(mp_int z, mp_small value);
-void      mp_int_clear(mp_int z);
-void      mp_int_free(mp_int z);
+mp_int    mp_int_alloc(klisp_State *K);
+mp_result mp_int_init_size(klisp_State *K, mp_int z, mp_size prec);
+mp_result mp_int_init_copy(klisp_State *K, mp_int z, mp_int old);
+mp_result mp_int_init_value(klisp_State *K, mp_int z, mp_small value);
+mp_result mp_int_set_value(klisp_State *K, mp_int z, mp_small value);
+void      mp_int_clear(klisp_State *K, mp_int z);
+void      mp_int_free(klisp_State *K, mp_int z);
 
-mp_result mp_int_copy(mp_int a, mp_int c);           /* c = a     */
+mp_result mp_int_copy(klisp_State *K, mp_int a, mp_int c); /* c = a */
 void      mp_int_swap(mp_int a, mp_int c);           /* swap a, c */
 void      mp_int_zero(mp_int z);                     /* z = 0     */
 mp_result mp_int_abs(mp_int a, mp_int c);            /* c = |a|   */

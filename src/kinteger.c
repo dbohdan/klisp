@@ -46,7 +46,7 @@ TValue kbigint_copy(klisp_State *K, TValue src)
     TValue copy = kbigint_new(K, false, 0);
     Bigint *src_bigint = tv2bigint(src);
     Bigint *copy_bigint = tv2bigint(copy);
-    UNUSED(mp_int_init_copy(copy_bigint, src_bigint));
+    UNUSED(mp_int_init_copy(K, copy_bigint, src_bigint));
     return copy;
 }
 

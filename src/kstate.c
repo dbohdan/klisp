@@ -35,6 +35,8 @@
 
 #include "kgpairs_lists.h" /* for creating list_app */
 
+#include "imath.h" /* for memory freeing */
+
 /*
 ** State creation and destruction
 */
@@ -147,6 +149,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->module_params_sym = ksymbol_new(K, "module-parameters");
     
     kinit_ground_env(K);
+
+    /* XXX */
+    KK = k; /* imath.h */
+    /* XXX */
 
     return K;
 }
@@ -456,13 +462,7 @@ void klisp_close (klisp_State *K)
 
 	switch(type) {
 	case K_TBIGINT: {
-	    Bigint *bigint = (Bigint *)obj;
-	    /* XXX / TODO change when klisp allocator is used in IMath */
-	    if (bigint->digits != NULL && 
-          	    bigint->digits != &(bigint->single)) {
-		free(bigint->digits);
-	    }
-	    klispM_free(K, bigint);
+	    mp_int_free(K, (Bigint *)obj);
 	    break;
 	}
 	case K_TPAIR:
