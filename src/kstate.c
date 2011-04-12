@@ -35,6 +35,8 @@
 
 #include "kgpairs_lists.h" /* for creating list_app */
 
+#include "imath.h" /* for memory freeing */
+
 /*
 ** State creation and destruction
 */
@@ -456,14 +458,7 @@ void klisp_close (klisp_State *K)
 
 	switch(type) {
 	case K_TBIGINT: {
-	    Bigint *bigint = (Bigint *)obj;
-	    int size = kbigint_size(bigint);
-	    Bigint_Node *node;
-	    while(size--) {
-		node = kbigint_remove_node(bigint);
-		klispM_free(K, node);
-	    }
-	    klispM_free(K, bigint);
+	    mp_int_free(K, (Bigint *)obj);
 	    break;
 	}
 	case K_TPAIR:

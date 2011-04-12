@@ -50,7 +50,7 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
     TValue copy = kbigint_copy(K, bigint);
     /* must work with positive bigint to get the digits */
     if (kbigint_negativep(bigint))
-	kbigint_invert_sign(copy);
+	kbigint_invert_sign(K, copy);
 
     while(kbigint_has_digits(K, copy)) {
 	int32_t digit = kbigint_remove_digit(K, copy, 10);

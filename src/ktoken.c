@@ -399,7 +399,7 @@ TValue ktok_read_number(klisp_State *K, bool is_pos)
 	return i2tv(fixint);
     } else {
 	if (!is_pos)
-	    kbigint_invert_sign(bigint_res);
+	    kbigint_invert_sign(K, bigint_res);
 	return bigint_res;
     }
 }

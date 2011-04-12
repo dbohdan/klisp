@@ -15,7 +15,7 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
 	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
-	kgstrings.o
+	kgstrings.o imath.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -45,7 +45,7 @@ klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
 kobject.o: kobject.c kobject.h klisp.h
 ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
 	kerror.h klisp.h kinteger.h
-kinteger.o: kinteger.c kinteger.h kobject.h kstate.h kmem.h klisp.h
+kinteger.o: kinteger.c kinteger.h kobject.h kstate.h kmem.h klisp.h imath.h
 kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h klisp.h
 kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h klisp.h
 # XXX: kpair.h because of use of list as symbol table
@@ -54,7 +54,7 @@ ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstring.h kstate.h kmem.h \
 kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h \
 	kport.h
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
-	klisp.h kport.h
+	klisp.h kport.h kinteger.h
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
 	kground.h kenvironment.h kpair.h keval.h koperative.h kground.h \
 	krepl.h kcontinuation.h kapplicative.h kport.h ksymbol.h kport.h \
@@ -139,3 +139,4 @@ kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
 kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
 	ksymbol.h
+imath.o: kobject.h kstate.h kmem.h kerror.h
