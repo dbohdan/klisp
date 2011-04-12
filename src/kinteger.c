@@ -28,12 +28,14 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
     new_bigint->flags = 0;
 
     /* bigint specific fields */
-
-    /* GC: root bigint */
-    /* put dummy value to work if garbage collections happens while allocating
-       node */
-
-    /* TODO */
+    /* If later changed to alloc obj: 
+       GC: root bigint & put dummy value to work if garbage collections 
+       happens while allocating array */
+    new_bigint->single = digit;
+    new_bigint->digits = &(new_bigint->single);
+    new_bigint->alloc = 1;
+    new_bigint->used = 1;
+    new_bigint->sign = sign? MP_NEG : MP_ZPOS;
 
     return gc2bigint(new_bigint);
 }
@@ -41,8 +43,12 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
 /* used in write to destructively get the digits */
 TValue kbigint_copy(klisp_State *K, TValue src)
 {
-    /* XXX / TODO */
-    return src;
+    TValue copy = kbigint_new(K, false, 0);
+    Bigint *src_bigint = tv2bigint(src);
+    Bigint *copy_bigint = tv2bigint(copy);
+    /* TODO: when the klisp allocator is used mem errors throw exceptions */
+    UNUSED(mp_int_init_copy(copy_bigint, src_bigint));
+    return copy;
 }
 
 /* This algorithm is like a fused multiply add on bignums,
