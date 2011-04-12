@@ -205,14 +205,12 @@ TValue kbigint_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
     Bigint *r = tv2bigint(tv_r);
     UNUSED(mp_int_div(K, n, d, q, r));
 
-#if 0
     /* Adjust q & r so that -|d/2| <= r < |d/2| */
     /* It seems easier to check -|d| <= 2r < |d| */
     TValue tv_two_r = kbigint_new(K, false, 0);
     Bigint *two_r = tv2bigint(tv_two_r);
     /* two_r = r * 2 = r * 2^1 */
-//    UNUSED(mp_int_mul_pow2(K, r, 1, two_r));
-    UNUSED(mp_int_mul_value(K, r, 2, two_r));
+    UNUSED(mp_int_mul_pow2(K, r, 1, two_r));
     TValue tv_abs_d = kbigint_new(K, false, 0);
     /* NOTE: this makes a copy if d >= 0 */
     Bigint *abs_d = tv2bigint(tv_abs_d);
@@ -242,7 +240,7 @@ TValue kbigint_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 	    }
 	}
     }
-#endif
+
     *res_r = kbigint_try_fixint(K, tv_r);
     return kbigint_try_fixint(K, tv_q);
 }
