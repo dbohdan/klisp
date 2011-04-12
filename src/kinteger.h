@@ -21,6 +21,8 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
 /* used in write to destructively get the digits */
 TValue kbigint_copy(klisp_State *K, TValue src);
 
+/* XXX/TODO: rewrite this to use IMath */
+
 /* Create a stack allocated bigints from a fixint,
    useful for mixed operations, relatively light weight compared
    to creating it in the heap and burdening the gc */
@@ -39,15 +41,19 @@ TValue kbigint_copy(klisp_State *K, TValue src);
     (KUNIQUE_NAME(bigint)).sign_size = (KUNIQUE_NAME(i)) < 0? -1 : 1;	\
     Bigint *name = &(KUNIQUE_NAME(bigint));
     
+/* XXX/TODO: rewrite this to use IMath */
+
 /* This can be used prior to calling a bigint functions
    to automatically convert fixints to bigints.
    NOTE: calls to this macro should go in different lines! */
 #define kensure_bigint(n)						\
+    (n)
+/*
     if (ttisfixint(n)) {						\
 	kbind_bigint(KUNIQUE_NAME(bint), n);				\
 	n = gc2bigint(KUNIQUE_NAME(bint));				\
     }
-
+*/
 /* This is used by the reader to destructively add digits to a number 
  tv_bigint must be positive */
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 

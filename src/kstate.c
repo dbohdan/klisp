@@ -457,12 +457,7 @@ void klisp_close (klisp_State *K)
 	switch(type) {
 	case K_TBIGINT: {
 	    Bigint *bigint = (Bigint *)obj;
-	    int size = kbigint_size(bigint);
-	    Bigint_Node *node;
-	    while(size--) {
-		node = kbigint_remove_node(bigint);
-		klispM_free(K, node);
-	    }
+	    /* XXX / TODO free array */
 	    klispM_free(K, bigint);
 	    break;
 	}

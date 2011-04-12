@@ -139,4 +139,4 @@ kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
 kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
 	ksymbol.h
-imath.o: 
+imath.o: kobject.h kstate.h

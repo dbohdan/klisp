@@ -255,49 +255,15 @@ typedef __attribute__((aligned (8))) union {
 ** Individual heap-allocated values
 */
 
-/*
-** Node Structure for the list of 'digits' in bignums.
-** The node list is a xor encoded doubly linked list of big endian 'digits'
-** in base 2^32.
-** It is a linked list instead of say, an array because it is immutable and 
-** there is no need to index the list.
-** It is doubly linked because some operations (like + and *) work from least
-** significant to most significant and some others (like <? and >?) work the
-** other way around.
-** It is xor encoded because, well... I never had a chance to actually use
-** this and this is a perfect example of where it is actually useful: Lists
-** are to be traversed in both directions, the node is small so the space
-** gain is real (2/3 the space in 32 bits, 3/5 in 64 bits) and all the code
-** using the pointers is encapsulated in a (relatively) small module.
-*/
-
-typedef struct __attribute__ ((__packed__)) {
-    uint32_t digit;
-    uintptr_t next_xor_prev;
-} Bigint_Node;
-
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader; 
-    Bigint_Node *first;
-    Bigint_Node *last;
-    int32_t sign_size;
+/* These are all from IMath (XXX: find a way to use mp_types directly) */
+    uint32_t single;
+    uint32_t *digits;
+    uint32_t alloc;
+    uint32_t used;
+    unsigned char sign;
 } Bigint;
-
-/* macros to access size/sign */
-#define kbigint_sign(b_) ((b_)->sign_size < 0)
-#define kbigint_negp(b_) (kbigint_sign(b_))
-#define kbigint_posp(b_) (!kbigint_sign(b_))
-#define kbigint_size(b_) ({ int32_t ss = (b_)->sign_size;	\
-	    ss < 0? -ss : ss;})
-
-/* Java Style Iterator for the xor list */
-typedef struct {
-    Bigint_Node *cur;
-    Bigint_Node *next;
-} Bigint_Iter;
-
-#define kxor_next(cur, prev)						\
-    ((Bigint_Node *) ((cur)->next_xor_prev ^ (uintptr_t) (prev)))
 
 /* REFACTOR: move these macros somewhere else */
 /* NOTE: The use of the intermediate KCONCAT is needed to allow
@@ -305,78 +271,6 @@ typedef struct {
 #define KCONCAT_(a, b) a ## b
 #define KCONCAT(a, b) KCONCAT_(a, b)
 #define KUNIQUE_NAME(prefix) KCONCAT(prefix, __LINE__ )
-
-#define kbind_bigint_iter(name, bigint, be)		\
-    Bigint_Iter KUNIQUE_NAME(iter);			\
-    Bigint_Iter *(name) = &(KUNIQUE_NAME(iter));	\
-    kbigint_iter_init((name), (bigint), (be));
-
-inline void kbigint_iter_init(Bigint_Iter *i, Bigint *bigint, bool big_endian)
-{ 
-    i->cur = (Bigint_Node *) NULL;
-    i->next = big_endian? bigint->first : bigint->last;
-}
-
-inline bool kbigint_iter_has_more(Bigint_Iter *i) 
-{
-    return i->next != NULL;
-}
-
-inline uint32_t kbigint_iter_next(Bigint_Iter *i) 
-{ 
-    assert(kbigint_iter_has_more(i));
-
-    Bigint_Node *next_next = kxor_next(i->next, i->cur);
-    i->cur = i->next;
-    i->next = next_next;
-    return i->cur->digit;
-}
-
-/* this is needed for add_digit */
-inline void kbigint_iter_update_last(Bigint_Iter *i, uint32_t digit)
-{
-    assert(i->cur != NULL);
-    i->cur->digit = digit;
-}
-
-/* Helper for adding nodes to the head of the list.
-   Neither can be NULL.
-   The second argument should have NULL as previous for this to work */
-inline void kbigint_node_cons(Bigint_Node *head, Bigint_Node *tail)
-{
-    head->next_xor_prev = (uintptr_t) tail ^ (uintptr_t) NULL;
-    tail->next_xor_prev = (tail->next_xor_prev ^ (uintptr_t) NULL) ^ 
-	(uintptr_t) head;
-}
-
-/* used in add_digit, bigint has at least one node */
-inline void kbigint_add_node(Bigint *bigint, Bigint_Node *node)
-{
-    kbigint_node_cons(node, bigint->first);
-    bigint->first = node;
-    bigint->sign_size += bigint->sign_size < 0? -1 : 1;
-}
-
-/* Helper for removing a node from the head of the list.
-   The argument should have NULL as previous for this to work */
-inline Bigint_Node *kbigint_remove_node(Bigint *bigint)
-{
-    Bigint_Node *head = bigint->first;
-    assert(head != NULL);
-    Bigint_Node *tail = (Bigint_Node *) (head->next_xor_prev ^ 
-					 (uintptr_t) NULL);
-    if (tail == NULL) { /* last node removed */
-	bigint->sign_size = 0;
-	bigint->first = bigint->last = (Bigint_Node *) NULL;
-    } else {
-	tail->next_xor_prev = (tail->next_xor_prev ^ (uintptr_t) head) ^ 
-	    (uintptr_t) NULL;
-	bigint->first = tail;
-	bigint->sign_size -= bigint->sign_size < 0? -1 : 1;
-    }
-    head->next_xor_prev = 0; /* NULL ^ NULL: 0 */
-    return head;
-}
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;

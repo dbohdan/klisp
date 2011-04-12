@@ -21,6 +21,10 @@
 #define USE_C99 1
 #endif
 
+/* Andres Navarro: klisp includes */
+#include "kobject.h"
+#include "kstate.h"
+
 #ifdef USE_C99
 #include <stdint.h>
 #endif
@@ -52,7 +56,8 @@ typedef unsigned int       mp_word;
 #endif /* USE_LONG_LONG */
 #endif /* USE_C99 */
 
-
+/* Andres Navarro: Use kobject type instead */
+/*
 typedef struct mpz {
   mp_digit    single;
   mp_digit   *digits;
@@ -60,6 +65,8 @@ typedef struct mpz {
   mp_size     used;
   mp_sign     sign;
 } mpz_t, *mp_int;
+*/
+typedef Bigint mpz_t, *mp_int;
 
 #define MP_DIGITS(Z) ((Z)->digits)
 #define MP_ALLOC(Z)  ((Z)->alloc)
