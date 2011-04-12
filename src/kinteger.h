@@ -79,7 +79,7 @@ bool kbigint_evenp(TValue tv_bigint);
 TValue kbigint_abs(klisp_State *K, TValue tv_bigint);
 
 /* Mutate the bigint to have the opposite sign, used in read & write */
-void kbigint_invert_sign(TValue tv_bigint);
+void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
 
 /* this is used by write to estimate the number of chars necessary to
    print the number */
