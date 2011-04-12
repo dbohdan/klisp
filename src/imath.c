@@ -29,6 +29,12 @@
 #define STATIC static
 #endif
 
+/* Andres Navarro: klisp includes */
+#include "kobject.h"
+#include "kstate.h"
+#include "kmem.h"
+#include "kerror.h"
+
 /* {{{ Constants */
 
 const mp_result MP_OK     = 0;  /* no error, all is well  */
