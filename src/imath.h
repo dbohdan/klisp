@@ -170,14 +170,21 @@ mp_result mp_int_mul_value(klisp_State *K, mp_int a, mp_small value,
 			   mp_int c);
 mp_result mp_int_mul_pow2(klisp_State *K, mp_int a, mp_small p2, mp_int c);
 mp_result mp_int_sqr(klisp_State *K, mp_int a, mp_int c); /* c = a * a */
-mp_result mp_int_div(mp_int a, mp_int b,             /* q = a / b */
-		     mp_int q, mp_int r);            /* r = a % b */
-mp_result mp_int_div_value(mp_int a, mp_small value, /* q = a / value */
-			   mp_int q, mp_small *r);   /* r = a % value */
-mp_result mp_int_div_pow2(mp_int a, mp_small p2,     /* q = a / 2^p2  */
-			  mp_int q, mp_int r);       /* r = q % 2^p2  */
-mp_result mp_int_mod(mp_int a, mp_int m, mp_int c);  /* c = a % m */
-#define   mp_int_mod_value(A, V, R) mp_int_div_value((A), (V), 0, (R))
+/* q = a / b */
+/* r = a % b */
+mp_result mp_int_div(klisp_State *K, mp_int a, mp_int b, mp_int q, 
+		     mp_int r); 
+/* q = a / value */
+/* r = a % value */
+mp_result mp_int_div_value(klisp_State *K, mp_int a, mp_small value, 
+			   mp_int q, mp_small *r);   
+/* q = a / 2^p2  */
+/* r = q % 2^p2  */
+mp_result mp_int_div_pow2(klisp_State *K, mp_int a, mp_small p2,     
+			  mp_int q, mp_int r);       
+/* c = a % m */
+mp_result mp_int_mod(klisp_State *K, mp_int a, mp_int m, mp_int c);  
+#define   mp_int_mod_value(K, A, V, R) mp_int_div_value((K), (A), (V), 0, (R))
 mp_result mp_int_expt(mp_int a, mp_small b, mp_int c);         /* c = a^b */
 mp_result mp_int_expt_value(mp_small a, mp_small b, mp_int c); /* c = a^b */
 mp_result mp_int_expt_full(mp_int a, mp_int b, mp_int c);      /* c = a^b */

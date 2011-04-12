@@ -67,7 +67,7 @@ int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base)
     UNUSED(K);
     Bigint *bigint = tv2bigint(tv_bigint);
     int32_t r;
-    UNUSED(mp_int_div_value(bigint, base, bigint, &r));
+    UNUSED(mp_int_div_value(K, bigint, base, bigint, &r));
     return r;
 }
 

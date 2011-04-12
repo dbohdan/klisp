@@ -305,7 +305,7 @@ STATIC int       s_isp2(mp_int z);
 STATIC int       s_2expt(mp_int z, mp_small k);
 
 /* Normalize a and b for division, returns normalization constant */
-STATIC int       s_norm(mp_int a, mp_int b);
+STATIC int       s_norm(klisp_State *K, mp_int a, mp_int b);
 
 /* Compute constant mu for Barrett reduction, given modulus m, result
    replaces z, m is untouched. */
@@ -319,7 +319,7 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c);
 
 /* Unsigned magnitude division.  Assumes |a| > |b|.  Allocates
    temporaries; overwrites a with quotient, b with remainder. */
-STATIC mp_result s_udiv(mp_int a, mp_int b);
+STATIC mp_result s_udiv(klisp_State *K, mp_int a, mp_int b);
 
 /* Compute the number of digits in radix r required to represent the
    given value.  Does not account for sign flags, terminators, etc. */
@@ -885,7 +885,7 @@ mp_result mp_int_sqr(klisp_State *K, mp_int a, mp_int c)
 
 /* {{{ mp_int_div(a, b, q, r) */
 
-mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
+mp_result mp_int_div(klisp_State *K, mp_int a, mp_int b, mp_int q, mp_int r)
 {
   int       cmp, last = 0, lg;
   mp_result res = MP_OK;
@@ -901,7 +901,7 @@ mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
     /* If |a| < |b|, no division is required:
        q = 0, r = a
      */
-    if(r && (res = mp_int_copy(KK, a, r)) != MP_OK)
+    if(r && (res = mp_int_copy(K, a, r)) != MP_OK)
       return res;
 
     if(q)
@@ -933,32 +933,32 @@ mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
    */
   if((lg = s_isp2(b)) < 0) {
     if(q && b != q) { 
-      if((res = mp_int_copy(KK, a, q)) != MP_OK)
+      if((res = mp_int_copy(K, a, q)) != MP_OK)
 	goto CLEANUP;
       else
 	qout = q;
     } 
     else {
       qout = TEMP(last);
-      SETUP(mp_int_init_copy(KK, TEMP(last), a), last);
+      SETUP(mp_int_init_copy(K, TEMP(last), a), last);
     }
 
     if(r && a != r) {
-      if((res = mp_int_copy(KK, b, r)) != MP_OK)
+      if((res = mp_int_copy(K, b, r)) != MP_OK)
 	goto CLEANUP;
       else
 	rout = r;
     } 
     else {
       rout = TEMP(last);
-      SETUP(mp_int_init_copy(KK, TEMP(last), b), last);
+      SETUP(mp_int_init_copy(K, TEMP(last), b), last);
     }
 
-    if((res = s_udiv(qout, rout)) != MP_OK) goto CLEANUP;
+    if((res = s_udiv(K, qout, rout)) != MP_OK) goto CLEANUP;
   } 
   else {
-    if(q && (res = mp_int_copy(KK, a, q)) != MP_OK) goto CLEANUP;
-    if(r && (res = mp_int_copy(KK, a, r)) != MP_OK) goto CLEANUP;
+    if(q && (res = mp_int_copy(K, a, q)) != MP_OK) goto CLEANUP;
+    if(r && (res = mp_int_copy(K, a, r)) != MP_OK) goto CLEANUP;
 
     if(q) s_qdiv(q, (mp_size) lg); qout = q;
     if(r) s_qmod(r, (mp_size) lg); rout = r;
@@ -976,12 +976,12 @@ mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
       MP_SIGN(qout) = MP_ZPOS;
   }
 
-  if(q && (res = mp_int_copy(KK, qout, q)) != MP_OK) goto CLEANUP;
-  if(r && (res = mp_int_copy(KK, rout, r)) != MP_OK) goto CLEANUP;
+  if(q && (res = mp_int_copy(K, qout, q)) != MP_OK) goto CLEANUP;
+  if(r && (res = mp_int_copy(K, rout, r)) != MP_OK) goto CLEANUP;
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(KK, TEMP(last));
+    mp_int_clear(K, TEMP(last));
 
   return res;
 }
@@ -990,7 +990,7 @@ mp_result mp_int_div(mp_int a, mp_int b, mp_int q, mp_int r)
 
 /* {{{ mp_int_mod(a, m, c) */
 
-mp_result mp_int_mod(mp_int a, mp_int m, mp_int c)
+mp_result mp_int_mod(klisp_State *K, mp_int a, mp_int m, mp_int c)
 {
   mp_result res;
   mpz_t     tmp;
@@ -1004,17 +1004,17 @@ mp_result mp_int_mod(mp_int a, mp_int m, mp_int c)
     out = c;
   }
 
-  if((res = mp_int_div(a, m, NULL, out)) != MP_OK)
+  if((res = mp_int_div(K, a, m, NULL, out)) != MP_OK)
     goto CLEANUP;
 
   if(CMPZ(out) < 0)
-    res = mp_int_add(KK, out, m, c);
+    res = mp_int_add(K, out, m, c);
   else
-    res = mp_int_copy(KK, out, c);
+    res = mp_int_copy(K, out, c);
 
  CLEANUP:
   if(out != c)
-    mp_int_clear(KK, &tmp);
+    mp_int_clear(K, &tmp);
 
   return res;
 }
@@ -1023,7 +1023,8 @@ mp_result mp_int_mod(mp_int a, mp_int m, mp_int c)
 
 /* {{{ mp_int_div_value(a, value, q, r) */
 
-mp_result mp_int_div_value(mp_int a, mp_small value, mp_int q, mp_small *r)
+mp_result mp_int_div_value(klisp_State *K, mp_int a, mp_small value, 
+			   mp_int q, mp_small *r)
 {
   mpz_t     vtmp, rtmp;
   mp_digit  vbuf[MP_VALUE_DIGITS(value)];
@@ -1032,14 +1033,14 @@ mp_result mp_int_div_value(mp_int a, mp_small value, mp_int q, mp_small *r)
   mp_int_init(&rtmp);
   s_fake(&vtmp, value, vbuf);
 
-  if((res = mp_int_div(a, &vtmp, q, &rtmp)) != MP_OK)
+  if((res = mp_int_div(K, a, &vtmp, q, &rtmp)) != MP_OK)
     goto CLEANUP;
 
   if(r)
     (void) mp_int_to_int(&rtmp, r); /* can't fail */
 
  CLEANUP:
-  mp_int_clear(KK, &rtmp);
+  mp_int_clear(K, &rtmp);
   return res;
 }
 
@@ -1047,16 +1048,17 @@ mp_result mp_int_div_value(mp_int a, mp_small value, mp_int q, mp_small *r)
 
 /* {{{ mp_int_div_pow2(a, p2, q, r) */
 
-mp_result mp_int_div_pow2(mp_int a, mp_small p2, mp_int q, mp_int r)
+mp_result mp_int_div_pow2(klisp_State *K, mp_int a, mp_small p2, mp_int q, 
+			  mp_int r)
 {
   mp_result res = MP_OK;
 
   CHECK(a != NULL && p2 >= 0 && q != r);
 
-  if(q != NULL && (res = mp_int_copy(KK, a, q)) == MP_OK)
+  if(q != NULL && (res = mp_int_copy(K, a, q)) == MP_OK)
     s_qdiv(q, (mp_size) p2);
   
-  if(res == MP_OK && r != NULL && (res = mp_int_copy(KK, a, r)) == MP_OK)
+  if(res == MP_OK && r != NULL && (res = mp_int_copy(K, a, r)) == MP_OK)
     s_qmod(r, (mp_size) p2);
 
   return res;
@@ -1286,7 +1288,7 @@ mp_result mp_int_exptmod(mp_int a, mp_int b, mp_int m, mp_int c)
     s = c;
   }
   
-  if((res = mp_int_mod(a, m, TEMP(0))) != MP_OK) goto CLEANUP;
+  if((res = mp_int_mod(KK, a, m, TEMP(0))) != MP_OK) goto CLEANUP;
 
   if((res = s_brmu(TEMP(1), m)) != MP_OK) goto CLEANUP;
 
@@ -1362,7 +1364,7 @@ mp_result mp_int_exptmod_known(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c
     s = c;
   }
   
-  if((res = mp_int_mod(a, m, TEMP(0))) != MP_OK) goto CLEANUP;
+  if((res = mp_int_mod(KK, a, m, TEMP(0))) != MP_OK) goto CLEANUP;
 
   if((res = s_embar(TEMP(0), b, m, mu, s)) != MP_OK)
     goto CLEANUP;
@@ -1417,7 +1419,7 @@ mp_result mp_int_invmod(mp_int a, mp_int m, mp_int c)
   }
 
   /* It is first necessary to constrain the value to the proper range */
-  if((res = mp_int_mod(TEMP(1), m, TEMP(1))) != MP_OK)
+  if((res = mp_int_mod(KK, TEMP(1), m, TEMP(1))) != MP_OK)
     goto CLEANUP;
 
   /* Now, if 'a' was originally negative, the value we have is
@@ -1656,7 +1658,7 @@ mp_result mp_int_lcm(mp_int a, mp_int b, mp_int c)
     return res;
   if((res = mp_int_gcd(a, b, &lcm)) != MP_OK)
     goto CLEANUP;
-  if((res = mp_int_div(a, &lcm, &lcm, NULL)) != MP_OK)
+  if((res = mp_int_div(KK, a, &lcm, &lcm, NULL)) != MP_OK)
     goto CLEANUP;
   if((res = mp_int_mul(KK, &lcm, b, &lcm)) != MP_OK)
     goto CLEANUP;
@@ -1677,7 +1679,7 @@ int       mp_int_divisible_value(mp_int a, mp_small v)
 {
   mp_small rem = 0;
 
-  if(mp_int_div_value(a, v, NULL, &rem) != MP_OK)
+  if(mp_int_div_value(KK, a, v, NULL, &rem) != MP_OK)
     return 0;
 
   return rem == 0;
@@ -1743,7 +1745,7 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
       goto CLEANUP;
     if((res = mp_int_mul_value(KK, TEMP(3), b, TEMP(3))) != MP_OK)
       goto CLEANUP;
-    if((res = mp_int_div(TEMP(2), TEMP(3), TEMP(4), NULL)) != MP_OK)
+    if((res = mp_int_div(KK, TEMP(2), TEMP(3), TEMP(4), NULL)) != MP_OK)
       goto CLEANUP;
     if((res = mp_int_sub(KK, TEMP(1), TEMP(4), TEMP(4))) != MP_OK)
       goto CLEANUP;
@@ -2997,7 +2999,7 @@ STATIC int       s_2expt(mp_int z, mp_small k)
 
 /* {{{ s_norm(a, b) */
 
-STATIC int      s_norm(mp_int a, mp_int b)
+STATIC int      s_norm(klisp_State *K, mp_int a, mp_int b)
 {
   mp_digit d = b->digits[MP_USED(b) - 1];
   int      k = 0;
@@ -3009,8 +3011,8 @@ STATIC int      s_norm(mp_int a, mp_int b)
 
   /* These multiplications can't fail */
   if(k != 0) {
-    (void) s_qmul(KK, a, (mp_size) k);
-    (void) s_qmul(KK, b, (mp_size) k);
+    (void) s_qmul(K, a, (mp_size) k);
+    (void) s_qmul(K, b, (mp_size) k);
   }
 
   return k;
@@ -3028,7 +3030,7 @@ STATIC mp_result s_brmu(mp_int z, mp_int m)
     return MP_MEMORY;
 
   s_2expt(z, MP_DIGIT_BIT * um);
-  return mp_int_div(z, m, z, NULL);
+  return mp_int_div(KK, z, m, z, NULL);
 }
 
 /* }}} */
@@ -3164,7 +3166,7 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
 /* Precondition:  a >= b and b > 0
    Postcondition: a' = a / b, b' = a % b
  */
-STATIC mp_result s_udiv(mp_int a, mp_int b)
+STATIC mp_result s_udiv(klisp_State *K, mp_int a, mp_int b)
 {
   mpz_t     q, r, t;
   mp_size   ua, ub, qpos = 0;
@@ -3177,11 +3179,11 @@ STATIC mp_result s_udiv(mp_int a, mp_int b)
   MP_SIGN(b) = MP_ZPOS;
 
   /* Normalize, per Knuth */
-  k = s_norm(a, b);
+  k = s_norm(K, a, b);
 
   ua = MP_USED(a); ub = MP_USED(b); btop = b->digits[ub - 1];
-  if((res = mp_int_init_size(KK, &q, ua)) != MP_OK) return res;
-  if((res = mp_int_init_size(KK, &t, ua + 1)) != MP_OK) goto CLEANUP;
+  if((res = mp_int_init_size(K, &q, ua)) != MP_OK) return res;
+  if((res = mp_int_init_size(K, &t, ua + 1)) != MP_OK) goto CLEANUP;
 
   da = MP_DIGITS(a);
   r.digits = da + ua - 1;  /* The contents of r are shared with a */
@@ -3222,7 +3224,7 @@ STATIC mp_result s_udiv(mp_int a, mp_int b)
       t.used = ub + 1; CLAMP(&t);
       while(s_ucmp(&t, &r) > 0) {
 	--qdigit;
-	(void) mp_int_sub(KK, &t, b, &t); /* cannot fail */
+	(void) mp_int_sub(K, &t, b, &t); /* cannot fail */
       }
       
       s_usub(r.digits, t.digits, r.digits, r.used, t.used);
@@ -3244,12 +3246,12 @@ STATIC mp_result s_udiv(mp_int a, mp_int b)
   if(k != 0)
     s_qdiv(a, k);
   
-  mp_int_copy(KK, a, b);  /* ok:  0 <= r < b */
-  mp_int_copy(KK, &q, a); /* ok:  q <= a     */
+  mp_int_copy(K, a, b);  /* ok:  0 <= r < b */
+  mp_int_copy(K, &q, a); /* ok:  q <= a     */
   
-  mp_int_clear(KK, &t);
+  mp_int_clear(K, &t);
  CLEANUP:
-  mp_int_clear(KK, &q);
+  mp_int_clear(K, &q);
   return res;
 }
 
