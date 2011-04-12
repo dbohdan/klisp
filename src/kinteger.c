@@ -55,10 +55,9 @@ TValue kbigint_copy(klisp_State *K, TValue src)
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
 		       int32_t digit)
 {
-    UNUSED(K);
     Bigint *bigint = tv2bigint(tv_bigint);
     UNUSED(mp_int_mul_value(bigint, base, bigint));
-    UNUSED(mp_int_add_value(bigint, digit, bigint));
+    UNUSED(mp_int_add_value(K, bigint, digit, bigint));
 }
 
 /* This is used by the writer to get the digits of a number 

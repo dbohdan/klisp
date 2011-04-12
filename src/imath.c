@@ -582,7 +582,7 @@ mp_result mp_int_neg(klisp_State *K, mp_int a, mp_int c)
 
 /* {{{ mp_int_add(a, b, c) */
 
-mp_result mp_int_add(mp_int a, mp_int b, mp_int c)
+mp_result mp_int_add(klisp_State *K, mp_int a, mp_int b, mp_int c)
 { 
   mp_size  ua, ub, uc, max;
 
@@ -595,14 +595,14 @@ mp_result mp_int_add(mp_int a, mp_int b, mp_int c)
     /* Same sign -- add magnitudes, preserve sign of addends */
     mp_digit carry;
 
-    if(!s_pad(KK, c, max))
+    if(!s_pad(K, c, max))
       return MP_MEMORY;
 
     carry = s_uadd(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
     uc = max;
 
     if(carry) {
-      if(!s_pad(KK, c, max + 1))
+      if(!s_pad(K, c, max + 1))
 	return MP_MEMORY;
 
       c->digits[max] = carry;
@@ -632,7 +632,7 @@ mp_result mp_int_add(mp_int a, mp_int b, mp_int c)
       x = a; y = b;
     }
 
-    if(!s_pad(KK, c, MP_USED(x)))
+    if(!s_pad(K, c, MP_USED(x)))
       return MP_MEMORY;
 
     /* Subtract smaller from larger */
@@ -651,21 +651,21 @@ mp_result mp_int_add(mp_int a, mp_int b, mp_int c)
 
 /* {{{ mp_int_add_value(a, value, c) */
 
-mp_result mp_int_add_value(mp_int a, mp_small value, mp_int c)
+mp_result mp_int_add_value(klisp_State *K, mp_int a, mp_small value, mp_int c)
 {
   mpz_t     vtmp;
   mp_digit  vbuf[MP_VALUE_DIGITS(value)];
 
   s_fake(&vtmp, value, vbuf);
 
-  return mp_int_add(a, &vtmp, c);
+  return mp_int_add(K, a, &vtmp, c);
 }
 
 /* }}} */
 
 /* {{{ mp_int_sub(a, b, c) */
 
-mp_result mp_int_sub(mp_int a, mp_int b, mp_int c)
+mp_result mp_int_sub(klisp_State *K, mp_int a, mp_int b, mp_int c)
 {
   mp_size  ua, ub, uc, max;
 
@@ -678,14 +678,14 @@ mp_result mp_int_sub(mp_int a, mp_int b, mp_int c)
     /* Different signs -- add magnitudes and keep sign of a */
     mp_digit carry;
 
-    if(!s_pad(KK, c, max))
+    if(!s_pad(K, c, max))
       return MP_MEMORY;
 
     carry = s_uadd(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
     uc = max;
 
     if(carry) {
-      if(!s_pad(KK, c, max + 1))
+      if(!s_pad(K, c, max + 1))
 	return MP_MEMORY;
 
       c->digits[max] = carry;
@@ -702,7 +702,7 @@ mp_result mp_int_sub(mp_int a, mp_int b, mp_int c)
     mp_sign osign;
     int     cmp = s_ucmp(a, b);
 
-    if(!s_pad(KK, c, max))
+    if(!s_pad(K, c, max))
       return MP_MEMORY;
 
     if(cmp >= 0) {
@@ -729,14 +729,14 @@ mp_result mp_int_sub(mp_int a, mp_int b, mp_int c)
 
 /* {{{ mp_int_sub_value(a, value, c) */
 
-mp_result mp_int_sub_value(mp_int a, mp_small value, mp_int c)
+mp_result mp_int_sub_value(klisp_State *K, mp_int a, mp_small value, mp_int c)
 {
   mpz_t     vtmp;
   mp_digit  vbuf[MP_VALUE_DIGITS(value)];
 
   s_fake(&vtmp, value, vbuf);
 
-  return mp_int_sub(a, &vtmp, c);
+  return mp_int_sub(K, a, &vtmp, c);
 }
 
 /* }}} */
@@ -1007,7 +1007,7 @@ mp_result mp_int_mod(mp_int a, mp_int m, mp_int c)
     goto CLEANUP;
 
   if(CMPZ(out) < 0)
-    res = mp_int_add(out, m, c);
+    res = mp_int_add(KK, out, m, c);
   else
     res = mp_int_copy(KK, out, c);
 
@@ -1425,7 +1425,7 @@ mp_result mp_int_invmod(mp_int a, mp_int m, mp_int c)
      the value is okay as it stands.
    */
   if(sa == MP_NEG)
-    res = mp_int_sub(m, TEMP(1), c);
+    res = mp_int_sub(KK, m, TEMP(1), c);
   else
     res = mp_int_copy(KK, TEMP(1), c);
 
@@ -1495,7 +1495,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
 	goto CLEANUP;
     }
 
-    if((res = mp_int_sub(&u, &v, &t)) != MP_OK)
+    if((res = mp_int_sub(KK, &u, &v, &t)) != MP_OK)
       goto CLEANUP;
 
     if(CMPZ(&t) == 0)
@@ -1576,9 +1576,9 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
       s_qdiv(TEMP(4), 1);
       
       if(mp_int_is_odd(TEMP(0)) || mp_int_is_odd(TEMP(1))) {
-	if((res = mp_int_add(TEMP(0), TEMP(7), TEMP(0))) != MP_OK) 
+	if((res = mp_int_add(KK, TEMP(0), TEMP(7), TEMP(0))) != MP_OK) 
 	  goto CLEANUP;
-	if((res = mp_int_sub(TEMP(1), TEMP(6), TEMP(1))) != MP_OK) 
+	if((res = mp_int_sub(KK, TEMP(1), TEMP(6), TEMP(1))) != MP_OK) 
 	  goto CLEANUP;
       }
 
@@ -1590,9 +1590,9 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
       s_qdiv(TEMP(5), 1);
 
       if(mp_int_is_odd(TEMP(2)) || mp_int_is_odd(TEMP(3))) {
-	if((res = mp_int_add(TEMP(2), TEMP(7), TEMP(2))) != MP_OK) 
+	if((res = mp_int_add(KK, TEMP(2), TEMP(7), TEMP(2))) != MP_OK) 
 	  goto CLEANUP;
-	if((res = mp_int_sub(TEMP(3), TEMP(6), TEMP(3))) != MP_OK) 
+	if((res = mp_int_sub(KK, TEMP(3), TEMP(6), TEMP(3))) != MP_OK) 
 	  goto CLEANUP;
       }
 
@@ -1601,14 +1601,14 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
     }
 
     if(mp_int_compare(TEMP(4), TEMP(5)) >= 0) {
-      if((res = mp_int_sub(TEMP(4), TEMP(5), TEMP(4))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(TEMP(0), TEMP(2), TEMP(0))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(TEMP(1), TEMP(3), TEMP(1))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(KK, TEMP(4), TEMP(5), TEMP(4))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(KK, TEMP(0), TEMP(2), TEMP(0))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(KK, TEMP(1), TEMP(3), TEMP(1))) != MP_OK) goto CLEANUP;
     } 
     else {
-      if((res = mp_int_sub(TEMP(5), TEMP(4), TEMP(5))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(TEMP(2), TEMP(0), TEMP(2))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(TEMP(3), TEMP(1), TEMP(3))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(KK, TEMP(5), TEMP(4), TEMP(5))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(KK, TEMP(2), TEMP(0), TEMP(2))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(KK, TEMP(3), TEMP(1), TEMP(3))) != MP_OK) goto CLEANUP;
     }
 
     if(CMPZ(TEMP(4)) == 0) {
@@ -1736,7 +1736,7 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
     if(mp_int_compare_unsigned(TEMP(2), TEMP(0)) <= 0)
       break;
 
-    if((res = mp_int_sub(TEMP(2), TEMP(0), TEMP(2))) != MP_OK)
+    if((res = mp_int_sub(KK, TEMP(2), TEMP(0), TEMP(2))) != MP_OK)
       goto CLEANUP;
     if((res = mp_int_expt(TEMP(1), b - 1, TEMP(3))) != MP_OK)
       goto CLEANUP;
@@ -1744,11 +1744,11 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
       goto CLEANUP;
     if((res = mp_int_div(TEMP(2), TEMP(3), TEMP(4), NULL)) != MP_OK)
       goto CLEANUP;
-    if((res = mp_int_sub(TEMP(1), TEMP(4), TEMP(4))) != MP_OK)
+    if((res = mp_int_sub(KK, TEMP(1), TEMP(4), TEMP(4))) != MP_OK)
       goto CLEANUP;
 
     if(mp_int_compare_unsigned(TEMP(1), TEMP(4)) == 0) {
-      if((res = mp_int_sub_value(TEMP(4), 1, TEMP(4))) != MP_OK)
+      if((res = mp_int_sub_value(KK, TEMP(4), 1, TEMP(4))) != MP_OK)
 	goto CLEANUP;
     }
     if((res = mp_int_copy(KK, TEMP(4), TEMP(1))) != MP_OK)
@@ -3058,7 +3058,7 @@ STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2)
    */
   UMUL(q2, m, q1);
   s_qmod(q1, umb_p1);
-  (void) mp_int_sub(x, q1, x); /* can't fail */
+  (void) mp_int_sub(KK, x, q1, x); /* can't fail */
 
   /* The result may be < 0; if it is, add b^(k+1) to pin it in the
      proper range. */
@@ -3068,9 +3068,9 @@ STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2)
   /* If x > m, we need to back it off until it is in range.
      This will be required at most twice.  */
   if(mp_int_compare(x, m) >= 0) {
-    (void) mp_int_sub(x, m, x);
+    (void) mp_int_sub(KK, x, m, x);
     if(mp_int_compare(x, m) >= 0)
-      (void) mp_int_sub(x, m, x);
+      (void) mp_int_sub(KK, x, m, x);
   }
 
   /* At this point, x has been properly reduced. */
@@ -3221,7 +3221,7 @@ STATIC mp_result s_udiv(mp_int a, mp_int b)
       t.used = ub + 1; CLAMP(&t);
       while(s_ucmp(&t, &r) > 0) {
 	--qdigit;
-	(void) mp_int_sub(&t, b, &t); /* cannot fail */
+	(void) mp_int_sub(KK, &t, b, &t); /* cannot fail */
       }
       
       s_usub(r.digits, t.digits, r.digits, r.used, t.used);

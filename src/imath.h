@@ -139,6 +139,7 @@ extern const mp_sign   MP_ZPOS;
 #define mp_int_is_odd(Z)  ((Z)->digits[0] & 1)
 #define mp_int_is_even(Z) !((Z)->digits[0] & 1)
 
+/* NOTE: this doesn't use the allocator */
 mp_result mp_int_init(mp_int z);
 mp_int    mp_int_alloc(klisp_State *K);
 mp_result mp_int_init_size(klisp_State *K, mp_int z, mp_size prec);
@@ -149,14 +150,20 @@ void      mp_int_clear(klisp_State *K, mp_int z);
 void      mp_int_free(klisp_State *K, mp_int z);
 
 mp_result mp_int_copy(klisp_State *K, mp_int a, mp_int c); /* c = a */
+/* NOTE: this doesn't use the allocator */
 void      mp_int_swap(mp_int a, mp_int c);           /* swap a, c */
-void      mp_int_zero(mp_int z);                     /* z = 0 */
+/* NOTE: this doesn't use the allocator */
+void      mp_int_zero(mp_int z);     /* z = 0 */
 mp_result mp_int_abs(klisp_State *K, mp_int a, mp_int c); /* c = |a| */
 mp_result mp_int_neg(klisp_State *K, mp_int a, mp_int c); /* c = -a  */
-mp_result mp_int_add(mp_int a, mp_int b, mp_int c);  /* c = a + b */
-mp_result mp_int_add_value(mp_int a, mp_small value, mp_int c);
-mp_result mp_int_sub(mp_int a, mp_int b, mp_int c);  /* c = a - b */
-mp_result mp_int_sub_value(mp_int a, mp_small value, mp_int c);
+/* c = a + b */
+mp_result mp_int_add(klisp_State *K, mp_int a, mp_int b, mp_int c);  
+mp_result mp_int_add_value(klisp_State *K, mp_int a, mp_small value, 
+			   mp_int c);
+/* c = a - b */
+mp_result mp_int_sub(klisp_State *K, mp_int a, mp_int b, mp_int c);  
+mp_result mp_int_sub_value(klisp_State *K, mp_int a, mp_small value, 
+			   mp_int c);
 mp_result mp_int_mul(mp_int a, mp_int b, mp_int c);  /* c = a * b */
 mp_result mp_int_mul_value(mp_int a, mp_small value, mp_int c);
 mp_result mp_int_mul_pow2(mp_int a, mp_small p2, mp_int c);
