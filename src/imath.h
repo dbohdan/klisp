@@ -1,41 +1,43 @@
 /*
-  Name:     imath.h
-  Purpose:  Arbitrary precision integer arithmetic routines.
-  Author:   M. J. Fromberger <http://spinning-yarns.org/michael/>
-  Info:     $Id: imath.h 635 2008-01-08 18:19:40Z sting $
+** imath.h
+** Arbitrary precision integer arithmetic routines.
+** See Copyright Notice in klisp.h
+*/
 
-  Copyright (C) 2002-2007 Michael J. Fromberger, All Rights Reserved.
-
-  Permission is hereby granted, free of charge, to any person
-  obtaining a copy of this software and associated documentation files
-  (the "Software"), to deal in the Software without restriction,
-  including without limitation the rights to use, copy, modify, merge,
-  publish, distribute, sublicense, and/or sell copies of the Software,
-  and to permit persons to whom the Software is furnished to do so,
-  subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-  NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-  BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-  ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
- */
+/*
+** SOURCE NOTE: This is mostly from the IMath library, written by
+** M.J. Fromberger. It is adapted to klisp, mainly in the use of the
+** klisp allocator and fixing of digit size to 32 bits.
+** Imported from version (1.15) updated 01-Feb-2011 at 03:10 PM.
+*/
 
 #ifndef IMATH_H_
 #define IMATH_H_
 
 #include <limits.h>
 
+/* Andres Navarro: use c99 constants */
+#ifndef USE_C99
+#define USE_C99 1
+#endif
+
+#ifdef USE_C99
+#include <stdint.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if USE_C99
+typedef unsigned char      mp_sign;
+typedef uint32_t           mp_size;
+typedef int                mp_result;
+typedef int32_t            mp_small;  /* must be a signed type */
+typedef uint32_t           mp_usmall; /* must be an unsigned type */
+typedef uint32_t           mp_digit;
+typedef uint64_t           mp_word;
+#else /* USE_C99 */
 typedef unsigned char      mp_sign;
 typedef unsigned int       mp_size;
 typedef int                mp_result;
@@ -44,10 +46,12 @@ typedef unsigned long      mp_usmall; /* must be an unsigned type */
 #ifdef USE_LONG_LONG
 typedef unsigned int       mp_digit;
 typedef unsigned long long mp_word;
-#else
+#else /* USE_LONG_LONG */
 typedef unsigned short     mp_digit;
 typedef unsigned int       mp_word;
-#endif
+#endif /* USE_LONG_LONG */
+#endif /* USE_C99 */
+
 
 typedef struct mpz {
   mp_digit    single;
@@ -74,11 +78,19 @@ extern const mp_result MP_MINERR;
 
 #define MP_DIGIT_BIT    (sizeof(mp_digit) * CHAR_BIT)
 #define MP_WORD_BIT     (sizeof(mp_word) * CHAR_BIT)
+/* Andres Navarro: USE_C99 */
+#ifdef USE_C99
+#define MP_SMALL_MIN    INT32_MIN
+#define MP_SMALL_MAX    INT32_MAX
+#define MP_USMALL_MIN   UINT32_MIN
+#define MP_USMALL_MAX   UINT32_MAX
+#define MP_DIGIT_MAX   ((uint64_t) UINT32_MAX)
+#define MP_WORD_MAX    UINT64_MAX
+#else /* USE_C99 */
 #define MP_SMALL_MIN    LONG_MIN
 #define MP_SMALL_MAX    LONG_MAX
 #define MP_USMALL_MIN   ULONG_MIN
 #define MP_USMALL_MAX   ULONG_MAX
-
 #ifdef USE_LONG_LONG
 #  ifndef ULONG_LONG_MAX
 #    ifdef ULLONG_MAX
@@ -89,10 +101,11 @@ extern const mp_result MP_MINERR;
 #  endif
 #  define MP_DIGIT_MAX   (UINT_MAX * 1ULL)
 #  define MP_WORD_MAX    ULONG_LONG_MAX
-#else
+#else /* USE_LONG_LONG */
 #  define MP_DIGIT_MAX    (USHRT_MAX * 1UL)
 #  define MP_WORD_MAX     (UINT_MAX * 1UL)
-#endif
+#endif /* USE_LONG_LONG */
+#endif /* USE_C99 */
 
 #define MP_MIN_RADIX    2
 #define MP_MAX_RADIX    36
