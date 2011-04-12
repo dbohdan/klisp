@@ -164,10 +164,12 @@ mp_result mp_int_add_value(klisp_State *K, mp_int a, mp_small value,
 mp_result mp_int_sub(klisp_State *K, mp_int a, mp_int b, mp_int c);  
 mp_result mp_int_sub_value(klisp_State *K, mp_int a, mp_small value, 
 			   mp_int c);
-mp_result mp_int_mul(mp_int a, mp_int b, mp_int c);  /* c = a * b */
-mp_result mp_int_mul_value(mp_int a, mp_small value, mp_int c);
-mp_result mp_int_mul_pow2(mp_int a, mp_small p2, mp_int c);
-mp_result mp_int_sqr(mp_int a, mp_int c);            /* c = a * a */
+/* c = a * b */
+mp_result mp_int_mul(klisp_State *K, mp_int a, mp_int b, mp_int c);  
+mp_result mp_int_mul_value(klisp_State *K, mp_int a, mp_small value, 
+			   mp_int c);
+mp_result mp_int_mul_pow2(klisp_State *K, mp_int a, mp_small p2, mp_int c);
+mp_result mp_int_sqr(klisp_State *K, mp_int a, mp_int c); /* c = a * a */
 mp_result mp_int_div(mp_int a, mp_int b,             /* q = a / b */
 		     mp_int q, mp_int r);            /* r = a % b */
 mp_result mp_int_div_value(mp_int a, mp_small value, /* q = a / value */

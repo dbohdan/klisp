@@ -289,11 +289,11 @@ STATIC void      s_qmod(mp_int z, mp_size p2);
 
 /* Quick multiplication by a power of 2, replaces z. 
    Allocates if necessary; returns false in case this fails. */
-STATIC int       s_qmul(mp_int z, mp_size p2);
+STATIC int       s_qmul(klisp_State *K, mp_int z, mp_size p2);
 
 /* Quick subtraction from a power of 2, replaces z.
    Allocates if necessary; returns false in case this fails. */
-STATIC int       s_qsub(mp_int z, mp_size p2);
+STATIC int       s_qsub(klisp_State *K, mp_int z, mp_size p2);
 
 /* Return maximum k such that 2^k divides z. */
 STATIC int       s_dp2k(mp_int z);
@@ -743,7 +743,7 @@ mp_result mp_int_sub_value(klisp_State *K, mp_int a, mp_small value, mp_int c)
 
 /* {{{ mp_int_mul(a, b, c) */
 
-mp_result mp_int_mul(mp_int a, mp_int b, mp_int c)
+mp_result mp_int_mul(klisp_State *K, mp_int a, mp_int b, mp_int c)
 { 
   mp_digit *out;
   mp_size   osize, ua, ub, p = 0;
@@ -770,11 +770,11 @@ mp_result mp_int_mul(mp_int a, mp_int b, mp_int c)
     p = ROUND_PREC(osize);
     p = MAX(p, default_precision);
 
-    if((out = s_alloc(KK, p)) == NULL)
+    if((out = s_alloc(K, p)) == NULL)
       return MP_MEMORY;
   } 
   else {
-    if(!s_pad(KK, c, osize))
+    if(!s_pad(K, c, osize))
       return MP_MEMORY;
     
     out = MP_DIGITS(c);
@@ -789,7 +789,7 @@ mp_result mp_int_mul(mp_int a, mp_int b, mp_int c)
    */
   if(out != MP_DIGITS(c)) {
     if((void *) MP_DIGITS(c) != (void *) &MP_SINGLE(c))
-      s_free(KK, MP_DIGITS(c), MP_ALLOC(c));
+      s_free(K, MP_DIGITS(c), MP_ALLOC(c));
     MP_DIGITS(c) = out;
     MP_ALLOC(c) = p;
   }
@@ -805,29 +805,30 @@ mp_result mp_int_mul(mp_int a, mp_int b, mp_int c)
 
 /* {{{ mp_int_mul_value(a, value, c) */
 
-mp_result mp_int_mul_value(mp_int a, mp_small value, mp_int c)
+mp_result mp_int_mul_value(klisp_State *K, mp_int a, mp_small value, 
+			   mp_int c)
 {
   mpz_t     vtmp;
   mp_digit  vbuf[MP_VALUE_DIGITS(value)];
 
   s_fake(&vtmp, value, vbuf);
 
-  return mp_int_mul(a, &vtmp, c);
+  return mp_int_mul(K, a, &vtmp, c);
 }
 
 /* }}} */
 
 /* {{{ mp_int_mul_pow2(a, p2, c) */
 
-mp_result mp_int_mul_pow2(mp_int a, mp_small p2, mp_int c)
+mp_result mp_int_mul_pow2(klisp_State *K, mp_int a, mp_small p2, mp_int c)
 {
   mp_result res;
   CHECK(a != NULL && c != NULL && p2 >= 0);
 
-  if((res = mp_int_copy(KK, a, c)) != MP_OK)
+  if((res = mp_int_copy(K, a, c)) != MP_OK)
     return res;
 
-  if(s_qmul(c, (mp_size) p2))
+  if(s_qmul(K, c, (mp_size) p2))
     return MP_OK;
   else
     return MP_MEMORY;
@@ -837,7 +838,7 @@ mp_result mp_int_mul_pow2(mp_int a, mp_small p2, mp_int c)
 
 /* {{{ mp_int_sqr(a, c) */
 
-mp_result mp_int_sqr(mp_int a, mp_int c)
+mp_result mp_int_sqr(klisp_State *K, mp_int a, mp_int c)
 { 
   mp_digit *out;
   mp_size   osize, p = 0;
@@ -850,11 +851,11 @@ mp_result mp_int_sqr(mp_int a, mp_int c)
     p = ROUND_PREC(osize);
     p = MAX(p, default_precision);
 
-    if((out = s_alloc(KK, p)) == NULL)
+    if((out = s_alloc(K, p)) == NULL)
       return MP_MEMORY;
   } 
   else {
-    if(!s_pad(KK, c, osize)) 
+    if(!s_pad(K, c, osize)) 
       return MP_MEMORY;
 
     out = MP_DIGITS(c);
@@ -868,7 +869,7 @@ mp_result mp_int_sqr(mp_int a, mp_int c)
    */
   if(out != MP_DIGITS(c)) {
     if((void *) MP_DIGITS(c) != (void *) &MP_SINGLE(c))
-      s_free(KK, MP_DIGITS(c), MP_ALLOC(c));
+      s_free(K, MP_DIGITS(c), MP_ALLOC(c));
     MP_DIGITS(c) = out;
     MP_ALLOC(c) = p;
   }
@@ -1081,14 +1082,14 @@ mp_result mp_int_expt(mp_int a, mp_small b, mp_int c)
   (void) mp_int_set_value(KK, c, 1);
   while(v != 0) {
     if(v & 1) {
-      if((res = mp_int_mul(c, &t, c)) != MP_OK)
+      if((res = mp_int_mul(KK, c, &t, c)) != MP_OK)
 	goto CLEANUP;
     }
 
     v >>= 1;
     if(v == 0) break;
 
-    if((res = mp_int_sqr(&t, &t)) != MP_OK)
+    if((res = mp_int_sqr(KK, &t, &t)) != MP_OK)
       goto CLEANUP;
   }
   
@@ -1115,14 +1116,14 @@ mp_result mp_int_expt_value(mp_small a, mp_small b, mp_int c)
   (void) mp_int_set_value(KK, c, 1);
   while(v != 0) {
     if(v & 1) {
-      if((res = mp_int_mul(c, &t, c)) != MP_OK)
+      if((res = mp_int_mul(KK, c, &t, c)) != MP_OK)
 	goto CLEANUP;
     }
 
     v >>= 1;
     if(v == 0) break;
 
-    if((res = mp_int_sqr(&t, &t)) != MP_OK)
+    if((res = mp_int_sqr(KK, &t, &t)) != MP_OK)
       goto CLEANUP;
   }
   
@@ -1152,14 +1153,14 @@ mp_result mp_int_expt_full(mp_int a, mp_int b, mp_int c)
 
     for (jx = 0; jx < MP_DIGIT_BIT; ++jx) {
       if (d & 1) {
-	if ((res = mp_int_mul(c, &t, c)) != MP_OK)
+	if ((res = mp_int_mul(KK, c, &t, c)) != MP_OK)
 	  goto CLEANUP;
       }
 
       d >>= 1;
       if (d == 0 && ix + 1 == MP_USED(b))
 	break;
-      if ((res = mp_int_sqr(&t, &t)) != MP_OK)
+      if ((res = mp_int_sqr(KK, &t, &t)) != MP_OK)
 	goto CLEANUP;
     }
   }
@@ -1504,7 +1505,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
 
   if((res = mp_int_abs(KK, &u, c)) != MP_OK)
     goto CLEANUP;
-  if(!s_qmul(c, (mp_size) k))
+  if(!s_qmul(KK, c, (mp_size) k))
     res = MP_MEMORY;
   
  CLEANUP:
@@ -1615,7 +1616,7 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
       if(x && (res = mp_int_copy(KK, TEMP(2), x)) != MP_OK) goto CLEANUP;
       if(y && (res = mp_int_copy(KK, TEMP(3), y)) != MP_OK) goto CLEANUP;
       if(c) {
-	if(!s_qmul(TEMP(5), k)) {
+	if(!s_qmul(KK, TEMP(5), k)) {
 	  res = MP_MEMORY;
 	  goto CLEANUP;
 	}
@@ -1657,7 +1658,7 @@ mp_result mp_int_lcm(mp_int a, mp_int b, mp_int c)
     goto CLEANUP;
   if((res = mp_int_div(a, &lcm, &lcm, NULL)) != MP_OK)
     goto CLEANUP;
-  if((res = mp_int_mul(&lcm, b, &lcm)) != MP_OK)
+  if((res = mp_int_mul(KK, &lcm, b, &lcm)) != MP_OK)
     goto CLEANUP;
 
   res = mp_int_copy(KK, &lcm, c);
@@ -1740,7 +1741,7 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
       goto CLEANUP;
     if((res = mp_int_expt(TEMP(1), b - 1, TEMP(3))) != MP_OK)
       goto CLEANUP;
-    if((res = mp_int_mul_value(TEMP(3), b, TEMP(3))) != MP_OK)
+    if((res = mp_int_mul_value(KK, TEMP(3), b, TEMP(3))) != MP_OK)
       goto CLEANUP;
     if((res = mp_int_div(TEMP(2), TEMP(3), TEMP(4), NULL)) != MP_OK)
       goto CLEANUP;
@@ -2069,7 +2070,7 @@ mp_result mp_int_read_binary(mp_int z, unsigned char *buf, int len)
   
   dz = MP_DIGITS(z);
   for(tmp = buf, i = len; i > 0; --i, ++tmp) {
-    s_qmul(z, (mp_size) CHAR_BIT);
+    s_qmul(KK, z, (mp_size) CHAR_BIT);
     *dz |= *tmp;
   }
 
@@ -2137,7 +2138,7 @@ mp_result mp_int_read_unsigned(mp_int z, unsigned char *buf, int len)
 
   dz = MP_DIGITS(z);
   for(tmp = buf, i = len; i > 0; --i, ++tmp) {
-    (void) s_qmul(z, CHAR_BIT);
+    (void) s_qmul(KK, z, CHAR_BIT);
     *dz |= *tmp;
   }
 
@@ -2822,7 +2823,7 @@ STATIC void     s_qmod(mp_int z, mp_size p2)
 
 /* {{{ s_qmul(z, p2) */
 
-STATIC int      s_qmul(mp_int z, mp_size p2)
+STATIC int      s_qmul(klisp_State *K, mp_int z, mp_size p2)
 {
   mp_size   uz, need, rest, extra, i;
   mp_digit *from, *to, d;
@@ -2844,7 +2845,7 @@ STATIC int      s_qmul(mp_int z, mp_size p2)
       extra = 1;
   }
 
-  if(!s_pad(KK, z, uz + need + extra))
+  if(!s_pad(K, z, uz + need + extra))
     return 0;
 
   /* If we need to shift by whole digits, do that in one pass, then
@@ -2890,13 +2891,13 @@ STATIC int      s_qmul(mp_int z, mp_size p2)
 /* Compute z = 2^p2 - |z|; requires that 2^p2 >= |z|
    The sign of the result is always zero/positive.
  */
-STATIC int       s_qsub(mp_int z, mp_size p2)
+STATIC int       s_qsub(klisp_State *K, mp_int z, mp_size p2)
 {
   mp_digit hi = (1 << (p2 % MP_DIGIT_BIT)), *zp;
   mp_size  tdig = (p2 / MP_DIGIT_BIT), pos;
   mp_word  w = 0;
 
-  if(!s_pad(KK, z, tdig + 1))
+  if(!s_pad(K, z, tdig + 1))
     return 0;
 
   for(pos = 0, zp = MP_DIGITS(z); pos < tdig; ++pos, ++zp) {
@@ -3008,8 +3009,8 @@ STATIC int      s_norm(mp_int a, mp_int b)
 
   /* These multiplications can't fail */
   if(k != 0) {
-    (void) s_qmul(a, (mp_size) k);
-    (void) s_qmul(b, (mp_size) k);
+    (void) s_qmul(KK, a, (mp_size) k);
+    (void) s_qmul(KK, b, (mp_size) k);
   }
 
   return k;
@@ -3062,7 +3063,7 @@ STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2)
 
   /* The result may be < 0; if it is, add b^(k+1) to pin it in the
      proper range. */
-  if((CMPZ(x) < 0) && !s_qsub(x, umb_p1))
+  if((CMPZ(x) < 0) && !s_qsub(KK, x, umb_p1))
     return 0;
 
   /* If x > m, we need to back it off until it is in range.
