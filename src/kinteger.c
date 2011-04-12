@@ -14,6 +14,23 @@
 #include "kstate.h"
 #include "kmem.h"
 
+/* This tries to convert a bigint to a fixint */
+inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
+{
+    Bigint *b = tv2bigint(n);
+    if (MP_USED(b) != 1)
+	return n;
+
+    int64_t digit = (int64_t) MP_SINGLE(b);
+    if (MP_SIGN(b) == MP_NEG) digit = -digit;
+    if (kfit_int32_t(digit)) {
+	/* n shouln't be reachable but the let the gc do its job */
+	return i2tv((int32_t) digit); 
+    } else {
+	return n;
+    }
+}
+
 /* for now used only for reading */
 /* NOTE: is uint to allow INT32_MIN as positive argument in read */
 TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
@@ -78,8 +95,8 @@ bool kbigint_has_digits(klisp_State *K, TValue tv_bigint)
     return (mp_int_compare_zero(tv2bigint(tv_bigint)) != 0);
 }
 
-/* Mutate the bigint to have the opposite sign, used in read,
-   write and abs */
+/* Mutate the bigint to have the opposite sign, used in read
+   and write*/
 void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
 {
     Bigint *bigint = tv2bigint(tv_bigint);
@@ -128,7 +145,7 @@ TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2)
 {
     TValue res = kbigint_new(K, false, 0);
     UNUSED(mp_int_add(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
-    return res;
+    return kbigint_try_fixint(K, res);
 }
 
 bool kbigint_negativep(TValue tv_bigint)
@@ -156,6 +173,7 @@ TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
     if (kbigint_negativep(tv_bigint)) {
 	TValue copy = kbigint_new(K, false, 0);
 	UNUSED(mp_int_abs(K, tv2bigint(tv_bigint), tv2bigint(copy)));
+	/* NOTE: this can never be a fixint if the parameter was a bigint */
 	return copy;
     } else {
 	return tv_bigint;

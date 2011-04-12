@@ -22,6 +22,11 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
 /* used in write to destructively get the digits */
 TValue kbigint_copy(klisp_State *K, TValue src);
 
+/* Check to see if an int64_t fits in a int32_t */
+inline bool kfit_int32_t(int64_t n) {
+    return (n >= (int64_t) INT32_MIN && n <= (int64_t) INT32_MAX);
+}
+
 /* Create a stack allocated bigints from a fixint,
    useful for mixed operations, relatively light weight compared
    to creating it in the heap and burdening the gc */
