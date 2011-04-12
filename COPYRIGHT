@@ -3,12 +3,15 @@ klisp License
 
 klisp is licensed under the terms of the MIT license reproduced below.
 This means that klisp is free software and can be used for both academic
-and commercial purposes at absolutely no cost.
+and commercial purposes at absolutely no cost. 
+The two projects whose code klisp uses, Lua & IMath, are also distributed 
+under the MIT license.
 
 ===============================================================================
 
-Copyright (C) 2011 Andres Navarro
+klisp Parts: Copyright (C) 2011 Andres Navarro.
 Lua Parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
+IMath Parts: Copyright (C) 2002-2007 Michael J. Fromberger.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
