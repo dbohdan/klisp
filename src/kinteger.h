@@ -13,6 +13,7 @@
 
 #include "kobject.h"
 #include "kstate.h"
+#include "imath.h"
 
 /* for now used only for reading */
 /* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
@@ -28,32 +29,27 @@ TValue kbigint_copy(klisp_State *K, TValue src);
    to creating it in the heap and burdening the gc */
 #define kbind_bigint(name, fixint)					\
     int32_t (KUNIQUE_NAME(i)) = ivalue(fixint);				\
-    Bigint_Node KUNIQUE_NAME(node);					\
-    (KUNIQUE_NAME(node)).digit = ({					\
+    Bigint KUNIQUE_NAME(bigint);					\
+    (KUNIQUE_NAME(bigint)).single = ({					\
 	    int64_t temp = (KUNIQUE_NAME(i));				\
 	    (uint32_t) ((temp < 0)? -temp : temp);			\
 	});								\
-    /* NULL ^ NULL: 0 */						\
-    (KUNIQUE_NAME(node)).next_xor_prev = (uintptr_t) 0;			\
-    Bigint KUNIQUE_NAME(bigint);					\
-    (KUNIQUE_NAME(bigint)).first = &(KUNIQUE_NAME(node));		\
-    (KUNIQUE_NAME(bigint)).last = &(KUNIQUE_NAME(node));		\
-    (KUNIQUE_NAME(bigint)).sign_size = (KUNIQUE_NAME(i)) < 0? -1 : 1;	\
+    (KUNIQUE_NAME(bigint)).digits = &((KUNIQUE_NAME(bigint)).single);	\
+    (KUNIQUE_NAME(bigint)).alloc = 1;					\
+    (KUNIQUE_NAME(bigint)).used = 1;					\
+    (KUNIQUE_NAME(bigint)).sign = (KUNIQUE_NAME(i)) < 0?		\
+	MP_NEG : MP_ZPOS;						\
     Bigint *name = &(KUNIQUE_NAME(bigint));
     
-/* XXX/TODO: rewrite this to use IMath */
-
 /* This can be used prior to calling a bigint functions
    to automatically convert fixints to bigints.
    NOTE: calls to this macro should go in different lines! */
 #define kensure_bigint(n)						\
-    (n)
-/*
     if (ttisfixint(n)) {						\
 	kbind_bigint(KUNIQUE_NAME(bint), n);				\
 	n = gc2bigint(KUNIQUE_NAME(bint));				\
     }
-*/
+
 /* This is used by the reader to destructively add digits to a number 
  tv_bigint must be positive */
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 

@@ -45,7 +45,7 @@ klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
 kobject.o: kobject.c kobject.h klisp.h
 ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
 	kerror.h klisp.h kinteger.h
-kinteger.o: kinteger.c kinteger.h kobject.h kstate.h kmem.h klisp.h
+kinteger.o: kinteger.c kinteger.h kobject.h kstate.h kmem.h klisp.h imath.h
 kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h klisp.h
 kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h klisp.h
 # XXX: kpair.h because of use of list as symbol table
