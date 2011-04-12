@@ -22,8 +22,6 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
 /* used in write to destructively get the digits */
 TValue kbigint_copy(klisp_State *K, TValue src);
 
-/* XXX/TODO: rewrite this to use IMath */
-
 /* Create a stack allocated bigints from a fixint,
    useful for mixed operations, relatively light weight compared
    to creating it in the heap and burdening the gc */
@@ -45,10 +43,13 @@ TValue kbigint_copy(klisp_State *K, TValue src);
    to automatically convert fixints to bigints.
    NOTE: calls to this macro should go in different lines! */
 #define kensure_bigint(n)						\
-    if (ttisfixint(n)) {						\
-	kbind_bigint(KUNIQUE_NAME(bint), n);				\
-	n = gc2bigint(KUNIQUE_NAME(bint));				\
-    }
+    /* must use goto, no block should be entered before calling		\
+       kbind_bigint */							\
+    if (!ttisfixint(n))							\
+	goto KUNIQUE_NAME(exit_lbl);					\
+    kbind_bigint(KUNIQUE_NAME(bint), (n));				\
+    (n) = gc2bigint(KUNIQUE_NAME(bint));				\
+    KUNIQUE_NAME(exit_lbl):
 
 /* This is used by the reader to destructively add digits to a number 
  tv_bigint must be positive */
@@ -62,12 +63,22 @@ int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base);
 /* This is used by write to test if there is any digit left to print */
 bool kbigint_has_digits(klisp_State *K, TValue tv_bigint);
 
+/* Mutate the bigint to have the opposite sign, used in read & write */
+void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
+
+/* this is used by write to estimate the number of chars necessary to
+   print the number */
+int32_t kbigint_print_size(TValue tv_bigint, int32_t base);
+
+/* Interface for kgnumbers */
 bool kbigint_eqp(TValue bigint1, TValue bigint2);
 
 bool kbigint_ltp(TValue bigint1, TValue bigint2);
 bool kbigint_lep(TValue bigint1, TValue bigint2);
 bool kbigint_gtp(TValue bigint1, TValue bigint2);
 bool kbigint_gep(TValue bigint1, TValue bigint2);
+
+TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2);
 
 bool kbigint_negativep(TValue tv_bigint);
 bool kbigint_positivep(TValue tv_bigint);
@@ -77,12 +88,5 @@ bool kbigint_evenp(TValue tv_bigint);
 
 /* needs the state to create a copy if negative */
 TValue kbigint_abs(klisp_State *K, TValue tv_bigint);
-
-/* Mutate the bigint to have the opposite sign, used in read & write */
-void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
-
-/* this is used by write to estimate the number of chars necessary to
-   print the number */
-int32_t kbigint_print_size(TValue tv_bigint, int32_t base);
 
 #endif
