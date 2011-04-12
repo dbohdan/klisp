@@ -86,6 +86,7 @@ bool kbigint_gep(TValue bigint1, TValue bigint2);
 TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2);
 TValue kbigint_times(klisp_State *K, TValue n1, TValue n2);
 TValue kbigint_minus(klisp_State *K, TValue n1, TValue n2);
+
 TValue kbigint_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r);
 TValue kbigint_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r);
 

@@ -637,10 +637,17 @@ void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     switch(ttype(n)) {
     case K_TFIXINT: {
 	int32_t i = ivalue(n);
-	kapply_cc(K, i < 0? i2tv(-i) : n);
-	return;
+	if (i != INT32_MIN) {
+	    kapply_cc(K, i < 0? i2tv(-i) : n);
+	    return;
+	} /* if i == INT32_MIN, fall through */
+	/* MAYBE: we could cache the bigint INT32_MAX+1 */
     }
     case K_TBIGINT: {
+       /* this is needed for INT32_MIN, can't be in previous
+	  case because it should be in the same block, remember
+          the bigint is allocated on the stack. */
+	kensure_bigint(n); 
 	kapply_cc(K, kbigint_abs(K, n));
 	return;
     }
