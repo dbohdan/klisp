@@ -1848,7 +1848,7 @@ mp_result mp_int_to_uint(mp_int z, mp_usmall *out)
 
 /* {{{ mp_int_to_string(z, radix, str, limit) */
 
-mp_result mp_int_to_string(mp_int z, mp_size radix, 
+mp_result mp_int_to_string(klisp_State *K, mp_int z, mp_size radix, 
 			   char *str, int limit)
 {
   mp_result res;
@@ -1866,7 +1866,7 @@ mp_result mp_int_to_string(mp_int z, mp_size radix,
     mpz_t tmp;
     char  *h, *t;
 
-    if((res = mp_int_init_copy(KK, &tmp, z)) != MP_OK)
+    if((res = mp_int_init_copy(K, &tmp, z)) != MP_OK)
       return res;
 
     if(MP_SIGN(z) == MP_NEG) {
@@ -1894,7 +1894,7 @@ mp_result mp_int_to_string(mp_int z, mp_size radix,
       *t-- = tc;
     }
 
-    mp_int_clear(KK, &tmp);
+    mp_int_clear(K, &tmp);
   }
 
   *str = '\0';
@@ -1931,17 +1931,18 @@ mp_result mp_int_string_len(mp_int z, mp_size radix)
 /* {{{ mp_int_read_string(z, radix, *str) */
 
 /* Read zero-terminated string into z */
-mp_result mp_int_read_string(mp_int z, mp_size radix, const char *str)
+mp_result mp_int_read_string(klisp_State *K, mp_int z, mp_size radix, 
+			     const char *str)
 {
-  return mp_int_read_cstring(z, radix, str, NULL);
-
+  return mp_int_read_cstring(K, z, radix, str, NULL);
 }
 
 /* }}} */
 
 /* {{{ mp_int_read_cstring(z, radix, *str, **end) */
 
-mp_result mp_int_read_cstring(mp_int z, mp_size radix, const char *str, char **end)
+mp_result mp_int_read_cstring(klisp_State *K, mp_int z, mp_size radix, 
+			      const char *str, char **end)
 { 
   int       ch;
 
@@ -1972,7 +1973,7 @@ mp_result mp_int_read_cstring(mp_int z, mp_size radix, const char *str, char **e
     ++str;
 
   /* Make sure there is enough space for the value */
-  if(!s_pad(KK, z, s_inlen(strlen(str), radix)))
+  if(!s_pad(K, z, s_inlen(strlen(str), radix)))
     return MP_MEMORY;
 
   MP_USED(z) = 1; z->digits[0] = 0;

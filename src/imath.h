@@ -247,19 +247,22 @@ mp_result mp_int_to_uint(mp_int z, mp_usmall *out);
 
 /* Convert to nul-terminated string with the specified radix, writing at
    most limit characters including the nul terminator  */
-mp_result mp_int_to_string(mp_int z, mp_size radix, 
+mp_result mp_int_to_string(klisp_State *K, mp_int z, mp_size radix, 
 			   char *str, int limit);
 
 /* Return the number of characters required to represent 
    z in the given radix.  May over-estimate. */
+/* NOTE: this doesn't use the allocator */
 mp_result mp_int_string_len(mp_int z, mp_size radix);
 
 /* Read zero-terminated string into z */
-mp_result mp_int_read_string(mp_int z, mp_size radix, const char *str);
-mp_result mp_int_read_cstring(mp_int z, mp_size radix, const char *str, 
-			      char **end);
+mp_result mp_int_read_string(klisp_State *K, mp_int z, mp_size radix, 
+			     const char *str);
+mp_result mp_int_read_cstring(klisp_State *K, mp_int z, mp_size radix, 
+			      const char *str, char **end);
 
 /* Return the number of significant bits in z */
+/* NOTE: this doesn't use the allocator */
 mp_result mp_int_count_bits(mp_int z);
 
 /* Convert z to two's complement binary, writing at most limit bytes */
