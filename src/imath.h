@@ -68,6 +68,7 @@ typedef struct mpz {
 */
 typedef Bigint mpz_t, *mp_int;
 
+#define MP_SINGLE(Z) ((Z)->single) /* added to correct check in mp_int_clear */
 #define MP_DIGITS(Z) ((Z)->digits)
 #define MP_ALLOC(Z)  ((Z)->alloc)
 #define MP_USED(Z)   ((Z)->used)

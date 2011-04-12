@@ -457,7 +457,11 @@ void klisp_close (klisp_State *K)
 	switch(type) {
 	case K_TBIGINT: {
 	    Bigint *bigint = (Bigint *)obj;
-	    /* XXX / TODO free array */
+	    /* XXX / TODO change when klisp allocator is used in IMath */
+	    if (bigint->digits != NULL && 
+          	    bigint->digits != &(bigint->single)) {
+		free(bigint->digits);
+	    }
 	    klispM_free(K, bigint);
 	    break;
 	}

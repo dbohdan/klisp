@@ -468,9 +468,8 @@ void      mp_int_clear(mp_int z)
     return;
 
   if(MP_DIGITS(z) != NULL) {
-    if((void *) MP_DIGITS(z) != (void *) z)
+    if((void *) MP_DIGITS(z) != (void *) &MP_SINGLE(z))
       s_free(MP_DIGITS(z));
-
     MP_DIGITS(z) = NULL;
   }
 }
@@ -785,7 +784,7 @@ mp_result mp_int_mul(mp_int a, mp_int b, mp_int c)
      already using, and fix up its fields to reflect that.
    */
   if(out != MP_DIGITS(c)) {
-    if((void *) MP_DIGITS(c) != (void *) c)
+    if((void *) MP_DIGITS(c) != (void *) &MP_SINGLE(c))
       s_free(MP_DIGITS(c));
     MP_DIGITS(c) = out;
     MP_ALLOC(c) = p;
@@ -864,7 +863,7 @@ mp_result mp_int_sqr(mp_int a, mp_int c)
      fields to reflect the new digit array it's using
    */
   if(out != MP_DIGITS(c)) {
-    if((void *) MP_DIGITS(c) != (void *) c)
+    if((void *) MP_DIGITS(c) != (void *) &MP_SINGLE(c))
       s_free(MP_DIGITS(c));
     MP_DIGITS(c) = out;
     MP_ALLOC(c) = p;
