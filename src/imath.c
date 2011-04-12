@@ -2249,7 +2249,7 @@ STATIC int      s_pad(klisp_State *K, mp_int z, mp_size min)
     mp_size nsize = ROUND_PREC(min);
     mp_digit *tmp;
 
-    if((void *)z->digits == (void *)z) {
+    if((void *)z->digits == (void *)&(z->single)) {
       if((tmp = s_alloc(K, nsize)) == NULL)
         return 0;
 
