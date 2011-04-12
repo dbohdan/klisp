@@ -1415,7 +1415,7 @@ mp_result mp_int_invmod(klisp_State *K, mp_int a, mp_int m, mp_int c)
   for(last = 0; last < 2; ++last)
     mp_int_init(TEMP(last));
 
-  if((res = mp_int_egcd(a, m, TEMP(0), TEMP(1), NULL)) != MP_OK) 
+  if((res = mp_int_egcd(K, a, m, TEMP(0), TEMP(1), NULL)) != MP_OK) 
     goto CLEANUP;
 
   if(mp_int_compare_value(TEMP(0), 1) != 0) {
@@ -1449,7 +1449,7 @@ mp_result mp_int_invmod(klisp_State *K, mp_int a, mp_int m, mp_int c)
 /* {{{ mp_int_gcd(a, b, c) */
 
 /* Binary GCD algorithm due to Josef Stein, 1961 */
-mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
+mp_result mp_int_gcd(klisp_State *K, mp_int a, mp_int b, mp_int c)
 { 
   int       ca, cb, k = 0;
   mpz_t     u, v, t;
@@ -1462,14 +1462,14 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
   if(ca == 0 && cb == 0)
     return MP_UNDEF;
   else if(ca == 0) 
-    return mp_int_abs(KK, b, c);
+    return mp_int_abs(K, b, c);
   else if(cb == 0) 
-    return mp_int_abs(KK, a, c);
+    return mp_int_abs(K, a, c);
 
   mp_int_init(&t);
-  if((res = mp_int_init_copy(KK, &u, a)) != MP_OK)
+  if((res = mp_int_init_copy(K, &u, a)) != MP_OK)
     goto U;
-  if((res = mp_int_init_copy(KK, &v, b)) != MP_OK)
+  if((res = mp_int_init_copy(K, &v, b)) != MP_OK)
     goto V;
 
   MP_SIGN(&u) = MP_ZPOS; MP_SIGN(&v) = MP_ZPOS;
@@ -1483,11 +1483,11 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
   }
   
   if(mp_int_is_odd(&u)) {
-    if((res = mp_int_neg(KK, &v, &t)) != MP_OK)
+    if((res = mp_int_neg(K, &v, &t)) != MP_OK)
       goto CLEANUP;
   } 
   else {
-    if((res = mp_int_copy(KK, &u, &t)) != MP_OK)
+    if((res = mp_int_copy(K, &u, &t)) != MP_OK)
       goto CLEANUP;
   }
 
@@ -1495,30 +1495,30 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
     s_qdiv(&t, s_dp2k(&t));
 
     if(CMPZ(&t) > 0) {
-      if((res = mp_int_copy(KK, &t, &u)) != MP_OK)
+      if((res = mp_int_copy(K, &t, &u)) != MP_OK)
 	goto CLEANUP;
     } 
     else {
-      if((res = mp_int_neg(KK, &t, &v)) != MP_OK)
+      if((res = mp_int_neg(K, &t, &v)) != MP_OK)
 	goto CLEANUP;
     }
 
-    if((res = mp_int_sub(KK, &u, &v, &t)) != MP_OK)
+    if((res = mp_int_sub(K, &u, &v, &t)) != MP_OK)
       goto CLEANUP;
 
     if(CMPZ(&t) == 0)
       break;
   } 
 
-  if((res = mp_int_abs(KK, &u, c)) != MP_OK)
+  if((res = mp_int_abs(K, &u, c)) != MP_OK)
     goto CLEANUP;
-  if(!s_qmul(KK, c, (mp_size) k))
+  if(!s_qmul(K, c, (mp_size) k))
     res = MP_MEMORY;
   
  CLEANUP:
-  mp_int_clear(KK, &v);
- V: mp_int_clear(KK, &u);
- U: mp_int_clear(KK, &t);
+  mp_int_clear(K, &v);
+ V: mp_int_clear(K, &u);
+ U: mp_int_clear(K, &t);
 
   return res;
 }
@@ -1531,7 +1531,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
    of the elementary matrix operations as we go, so we can get values
    x and y satisfying c = ax + by.
  */
-mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c, 
+mp_result mp_int_egcd(klisp_State *K, mp_int a, mp_int b, mp_int c, 
 		      mp_int x, mp_int y)
 { 
   int       k, last = 0, ca, cb;
@@ -1546,12 +1546,12 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
   if(ca == 0 && cb == 0)
     return MP_UNDEF;
   else if(ca == 0) {
-    if((res = mp_int_abs(KK, b, c)) != MP_OK) return res;
-    mp_int_zero(x); (void) mp_int_set_value(KK, y, 1); return MP_OK;
+    if((res = mp_int_abs(K, b, c)) != MP_OK) return res;
+    mp_int_zero(x); (void) mp_int_set_value(K, y, 1); return MP_OK;
   } 
   else if(cb == 0) {
-    if((res = mp_int_abs(KK, a, c)) != MP_OK) return res;
-    (void) mp_int_set_value(KK, x, 1); mp_int_zero(y); return MP_OK;
+    if((res = mp_int_abs(K, a, c)) != MP_OK) return res;
+    (void) mp_int_set_value(K, x, 1); mp_int_zero(y); return MP_OK;
   }
 
   /* Initialize temporaries:
@@ -1561,8 +1561,8 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
   TEMP(0)->digits[0] = 1;
   TEMP(3)->digits[0] = 1;
 
-  SETUP(mp_int_init_copy(KK, TEMP(4), a), last);
-  SETUP(mp_int_init_copy(KK, TEMP(5), b), last);
+  SETUP(mp_int_init_copy(K, TEMP(4), a), last);
+  SETUP(mp_int_init_copy(K, TEMP(5), b), last);
 
   /* We will work with absolute values here */
   MP_SIGN(TEMP(4)) = MP_ZPOS;
@@ -1576,17 +1576,17 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
     s_qdiv(TEMP(5), k);
   }
 
-  SETUP(mp_int_init_copy(KK, TEMP(6), TEMP(4)), last);
-  SETUP(mp_int_init_copy(KK, TEMP(7), TEMP(5)), last);
+  SETUP(mp_int_init_copy(K, TEMP(6), TEMP(4)), last);
+  SETUP(mp_int_init_copy(K, TEMP(7), TEMP(5)), last);
 
   for(;;) {
     while(mp_int_is_even(TEMP(4))) {
       s_qdiv(TEMP(4), 1);
       
       if(mp_int_is_odd(TEMP(0)) || mp_int_is_odd(TEMP(1))) {
-	if((res = mp_int_add(KK, TEMP(0), TEMP(7), TEMP(0))) != MP_OK) 
+	if((res = mp_int_add(K, TEMP(0), TEMP(7), TEMP(0))) != MP_OK) 
 	  goto CLEANUP;
-	if((res = mp_int_sub(KK, TEMP(1), TEMP(6), TEMP(1))) != MP_OK) 
+	if((res = mp_int_sub(K, TEMP(1), TEMP(6), TEMP(1))) != MP_OK) 
 	  goto CLEANUP;
       }
 
@@ -1598,9 +1598,9 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
       s_qdiv(TEMP(5), 1);
 
       if(mp_int_is_odd(TEMP(2)) || mp_int_is_odd(TEMP(3))) {
-	if((res = mp_int_add(KK, TEMP(2), TEMP(7), TEMP(2))) != MP_OK) 
+	if((res = mp_int_add(K, TEMP(2), TEMP(7), TEMP(2))) != MP_OK) 
 	  goto CLEANUP;
-	if((res = mp_int_sub(KK, TEMP(3), TEMP(6), TEMP(3))) != MP_OK) 
+	if((res = mp_int_sub(K, TEMP(3), TEMP(6), TEMP(3))) != MP_OK) 
 	  goto CLEANUP;
       }
 
@@ -1609,26 +1609,26 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
     }
 
     if(mp_int_compare(TEMP(4), TEMP(5)) >= 0) {
-      if((res = mp_int_sub(KK, TEMP(4), TEMP(5), TEMP(4))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(KK, TEMP(0), TEMP(2), TEMP(0))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(KK, TEMP(1), TEMP(3), TEMP(1))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(K, TEMP(4), TEMP(5), TEMP(4))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(K, TEMP(0), TEMP(2), TEMP(0))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(K, TEMP(1), TEMP(3), TEMP(1))) != MP_OK) goto CLEANUP;
     } 
     else {
-      if((res = mp_int_sub(KK, TEMP(5), TEMP(4), TEMP(5))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(KK, TEMP(2), TEMP(0), TEMP(2))) != MP_OK) goto CLEANUP;
-      if((res = mp_int_sub(KK, TEMP(3), TEMP(1), TEMP(3))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(K, TEMP(5), TEMP(4), TEMP(5))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(K, TEMP(2), TEMP(0), TEMP(2))) != MP_OK) goto CLEANUP;
+      if((res = mp_int_sub(K, TEMP(3), TEMP(1), TEMP(3))) != MP_OK) goto CLEANUP;
     }
 
     if(CMPZ(TEMP(4)) == 0) {
-      if(x && (res = mp_int_copy(KK, TEMP(2), x)) != MP_OK) goto CLEANUP;
-      if(y && (res = mp_int_copy(KK, TEMP(3), y)) != MP_OK) goto CLEANUP;
+      if(x && (res = mp_int_copy(K, TEMP(2), x)) != MP_OK) goto CLEANUP;
+      if(y && (res = mp_int_copy(K, TEMP(3), y)) != MP_OK) goto CLEANUP;
       if(c) {
-	if(!s_qmul(KK, TEMP(5), k)) {
+	if(!s_qmul(K, TEMP(5), k)) {
 	  res = MP_MEMORY;
 	  goto CLEANUP;
 	}
 	 
-	res = mp_int_copy(KK, TEMP(5), c);
+	res = mp_int_copy(K, TEMP(5), c);
       }
 
       break;
@@ -1637,7 +1637,7 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(KK, TEMP(last));
+    mp_int_clear(K, TEMP(last));
 
   return res;
 }
@@ -1646,7 +1646,7 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
 
 /* {{{ mp_int_lcm(a, b, c) */
 
-mp_result mp_int_lcm(mp_int a, mp_int b, mp_int c)
+mp_result mp_int_lcm(klisp_State *K, mp_int a, mp_int b, mp_int c)
 {
   mpz_t     lcm;
   mp_result res;
@@ -1661,17 +1661,17 @@ mp_result mp_int_lcm(mp_int a, mp_int b, mp_int c)
    */
   if((res = mp_int_init(&lcm)) != MP_OK)
     return res;
-  if((res = mp_int_gcd(a, b, &lcm)) != MP_OK)
+  if((res = mp_int_gcd(K, a, b, &lcm)) != MP_OK)
     goto CLEANUP;
-  if((res = mp_int_div(KK, a, &lcm, &lcm, NULL)) != MP_OK)
+  if((res = mp_int_div(K, a, &lcm, &lcm, NULL)) != MP_OK)
     goto CLEANUP;
-  if((res = mp_int_mul(KK, &lcm, b, &lcm)) != MP_OK)
+  if((res = mp_int_mul(K, &lcm, b, &lcm)) != MP_OK)
     goto CLEANUP;
 
-  res = mp_int_copy(KK, &lcm, c);
+  res = mp_int_copy(K, &lcm, c);
 
   CLEANUP:
-    mp_int_clear(KK, &lcm);
+    mp_int_clear(K, &lcm);
 
   return res;
 }

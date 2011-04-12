@@ -223,15 +223,21 @@ mp_result mp_int_redux_const(klisp_State *K, mp_int m, mp_int c);
 /* c = 1/a (mod m) */
 mp_result mp_int_invmod(klisp_State *K, mp_int a, mp_int m, mp_int c); 
 
-mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c);    /* c = gcd(a, b)   */
+/* c = gcd(a, b)   */
+mp_result mp_int_gcd(klisp_State *K, mp_int a, mp_int b, mp_int c);
 
-mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,    /* c = gcd(a, b)   */
-		      mp_int x, mp_int y);             /* c = ax + by     */
+/* c = gcd(a, b)   */
+/* c = ax + by     */
+mp_result mp_int_egcd(klisp_State *K, mp_int a, mp_int b, mp_int c,
+		      mp_int x, mp_int y);             
 
-mp_result mp_int_lcm(mp_int a, mp_int b, mp_int c);    /* c = lcm(a, b)   */
+/* c = lcm(a, b)   */
+mp_result mp_int_lcm(klisp_State *K, mp_int a, mp_int b, mp_int c);
 
-mp_result mp_int_root(mp_int a, mp_small b, mp_int c); /* c = floor(a^{1/b}) */
-#define   mp_int_sqrt(a, c) mp_int_root(a, 2, c)       /* c = floor(sqrt(a)) */
+/* c = floor(a^{1/b}) */
+mp_result mp_int_root(mp_int a, mp_small b, mp_int c); 
+/* c = floor(sqrt(a)) */
+#define   mp_int_sqrt(a, c) mp_int_root(a, 2, c)       
 
 /* Convert to a small int, if representable; else MP_RANGE */
 mp_result mp_int_to_int(mp_int z, mp_small *out);
