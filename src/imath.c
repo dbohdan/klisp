@@ -173,23 +173,23 @@ do{ \
 
 /* Multiply X by Y into Z, ignoring signs.  Requires that Z have
    enough storage preallocated to hold the result. */
-#define UMUL(X, Y, Z) \
+#define UMUL(K, X, Y, Z)				\
 do{ \
   mp_size ua_ = MP_USED(X), ub_ = MP_USED(Y); \
   mp_size o_ = ua_ + ub_; \
   ZERO(MP_DIGITS(Z), o_); \
-  (void) s_kmul(MP_DIGITS(X), MP_DIGITS(Y), MP_DIGITS(Z), ua_, ub_); \
+  (void) s_kmul((K), MP_DIGITS(X), MP_DIGITS(Y), MP_DIGITS(Z), ua_, ub_); \
   MP_USED(Z) = o_; \
   CLAMP(Z); \
 } while(0)
 
 /* Square X into Z.  Requires that Z have enough storage to hold the
    result. */
-#define USQR(X, Z) \
+#define USQR(K, X, Z)				\
 do{ \
   mp_size ua_ = MP_USED(X), o_ = ua_ + ua_; \
   ZERO(MP_DIGITS(Z), o_); \
-  (void) s_ksqr(MP_DIGITS(X), MP_DIGITS(Z), ua_); \
+  (void) s_ksqr((K), MP_DIGITS(X), MP_DIGITS(Z), ua_);	\
   MP_USED(Z) = o_; \
   CLAMP(Z); \
 } while(0)
@@ -254,15 +254,17 @@ STATIC void      s_usub(mp_digit *da, mp_digit *db, mp_digit *dc,
 		        mp_size size_a, mp_size size_b);
 
 /* Unsigned recursive multiplication.  Assumes dc is big enough. */
-STATIC int       s_kmul(mp_digit *da, mp_digit *db, mp_digit *dc,
-			mp_size size_a, mp_size size_b);
+STATIC int       s_kmul(klisp_State *K, mp_digit *da, mp_digit *db, 
+			mp_digit *dc, mp_size size_a, mp_size size_b);
 
 /* Unsigned magnitude multiplication.  Assumes dc is big enough. */
 STATIC void      s_umul(mp_digit *da, mp_digit *db, mp_digit *dc,
 			mp_size size_a, mp_size size_b);
 
 /* Unsigned recursive squaring.  Assumes dc is big enough. */
-STATIC int       s_ksqr(mp_digit *da, mp_digit *dc, mp_size size_a);
+/* Andres Navarro: allocs temporaries */
+STATIC int       s_ksqr(klisp_State *K, mp_digit *da, mp_digit *dc, 
+			mp_size size_a);
 
 /* Unsigned magnitude squaring.  Assumes dc is big enough. */
 STATIC void      s_usqr(mp_digit *da, mp_digit *dc, mp_size size_a);
@@ -783,7 +785,7 @@ mp_result mp_int_mul(klisp_State *K, mp_int a, mp_int b, mp_int c)
   }
   ZERO(out, osize);
 
-  if(!s_kmul(MP_DIGITS(a), MP_DIGITS(b), out, ua, ub))
+  if(!s_kmul(K, MP_DIGITS(a), MP_DIGITS(b), out, ua, ub))
     return MP_MEMORY;
 
   /* If we allocated a new buffer, get rid of whatever memory c was
@@ -864,7 +866,7 @@ mp_result mp_int_sqr(klisp_State *K, mp_int a, mp_int c)
   }
   ZERO(out, osize);
 
-  s_ksqr(MP_DIGITS(a), out, MP_USED(a));
+  s_ksqr(K, MP_DIGITS(a), out, MP_USED(a));
 
   /* Get rid of whatever memory c was already using, and fix up its
      fields to reflect the new digit array it's using
@@ -2440,8 +2442,8 @@ STATIC void     s_usub(mp_digit *da, mp_digit *db, mp_digit *dc,
 
 /* {{{ s_kmul(da, db, dc, size_a, size_b) */
 
-STATIC int       s_kmul(mp_digit *da, mp_digit *db, mp_digit *dc,
-			mp_size size_a, mp_size size_b)
+STATIC int       s_kmul(klisp_State *K, mp_digit *da, mp_digit *db, 
+			mp_digit *dc, mp_size size_a, mp_size size_b)
 {
   mp_size  bot_size;
 
@@ -2478,7 +2480,7 @@ STATIC int       s_kmul(mp_digit *da, mp_digit *db, mp_digit *dc,
        bottom halves, and one buffer needs space for the completed 
        product; twice the space is plenty.
      */
-    if((t1 = s_alloc(KK, 4 * buf_size)) == NULL) return 0;
+    if((t1 = s_alloc(K, 4 * buf_size)) == NULL) return 0;
     t2 = t1 + buf_size;
     t3 = t2 + buf_size;
     ZERO(t1, 4 * buf_size);
@@ -2492,15 +2494,16 @@ STATIC int       s_kmul(mp_digit *da, mp_digit *db, mp_digit *dc,
     carry = s_uadd(db, b_top, t2, bot_size, bt_size);      /* t2 = b1 + b0 */
     t2[bot_size] = carry;
 
-    (void) s_kmul(t1, t2, t3, bot_size + 1, bot_size + 1); /* t3 = t1 * t2 */
+    /* t3 = t1 * t2 */
+    (void) s_kmul(K, t1, t2, t3, bot_size + 1, bot_size + 1); 
 
     /* Now we'll get t1 = a0b0 and t2 = a1b1, and subtract them out so that
        we're left with only the pieces we want:  t3 = a1b0 + a0b1
      */
     ZERO(t1, buf_size);
     ZERO(t2, buf_size);
-    (void) s_kmul(da, db, t1, bot_size, bot_size);     /* t1 = a0 * b0 */
-    (void) s_kmul(a_top, b_top, t2, at_size, bt_size); /* t2 = a1 * b1 */
+    (void) s_kmul(K, da, db, t1, bot_size, bot_size);     /* t1 = a0 * b0 */
+    (void) s_kmul(K, a_top, b_top, t2, at_size, bt_size); /* t2 = a1 * b1 */
 
     /* Subtract out t1 and t2 to get the inner product */
     s_usub(t3, t1, t3, buf_size + 2, buf_size);
@@ -2517,7 +2520,7 @@ STATIC int       s_kmul(mp_digit *da, mp_digit *db, mp_digit *dc,
     assert(carry == 0);
     
     /* note t2 and t3 are just internal pointers to t1 */
-    s_free(KK, t1, 4 * buf_size); 
+    s_free(K, t1, 4 * buf_size); 
   } 
   else {
     s_umul(da, db, dc, size_a, size_b);
@@ -2559,7 +2562,8 @@ STATIC void     s_umul(mp_digit *da, mp_digit *db, mp_digit *dc,
 
 /* {{{ s_ksqr(da, dc, size_a) */
 
-STATIC int       s_ksqr(mp_digit *da, mp_digit *dc, mp_size size_a)
+STATIC int       s_ksqr(klisp_State *K, mp_digit *da, mp_digit *dc, 
+			mp_size size_a)
 {
   if(multiply_threshold && size_a > multiply_threshold) {
     mp_size    bot_size = (size_a + 1) / 2;
@@ -2568,15 +2572,15 @@ STATIC int       s_ksqr(mp_digit *da, mp_digit *dc, mp_size size_a)
     mp_size    at_size = size_a - bot_size;
     mp_size    buf_size = 2 * bot_size;
 
-    if((t1 = s_alloc(KK, 4 * buf_size)) == NULL) return 0;
+    if((t1 = s_alloc(K, 4 * buf_size)) == NULL) return 0;
     t2 = t1 + buf_size;
     t3 = t2 + buf_size;
     ZERO(t1, 4 * buf_size);
 
-    (void) s_ksqr(da, t1, bot_size);    /* t1 = a0 ^ 2 */
-    (void) s_ksqr(a_top, t2, at_size);  /* t2 = a1 ^ 2 */
+    (void) s_ksqr(K, da, t1, bot_size);    /* t1 = a0 ^ 2 */
+    (void) s_ksqr(K, a_top, t2, at_size);  /* t2 = a1 ^ 2 */
 
-    (void) s_kmul(da, a_top, t3, bot_size, at_size);  /* t3 = a0 * a1 */
+    (void) s_kmul(K, da, a_top, t3, bot_size, at_size);  /* t3 = a0 * a1 */
 
     /* Quick multiply t3 by 2, shifting left (can't overflow) */
     {
@@ -2603,7 +2607,7 @@ STATIC int       s_ksqr(mp_digit *da, mp_digit *dc, mp_size size_a)
     assert(carry == 0);
 
     /* note that t2 and t2 are internal pointers only */
-    s_free(KK, t1, 4 * buf_size); 
+    s_free(K, t1, 4 * buf_size); 
   } 
   else {
     s_usqr(da, dc, size_a);
@@ -3059,7 +3063,7 @@ STATIC int       s_reduce(klisp_State *K, mp_int x, mp_int m, mp_int mu,
 
   /* Compute q2 = floor((floor(x / b^(k-1)) * mu) / b^(k+1)) */
   s_qdiv(q1, umb_m1);
-  UMUL(q1, mu, q2);
+  UMUL(K, q1, mu, q2);
   s_qdiv(q2, umb_p1);
 
   /* Set x = x mod b^(k+1) */
@@ -3069,7 +3073,7 @@ STATIC int       s_reduce(klisp_State *K, mp_int x, mp_int m, mp_int mu,
      Compute x - q * m mod b^(k+1), replacing x.  This may be off
      by a factor of 2m, but no more than that.
    */
-  UMUL(q2, m, q1);
+  UMUL(K, q2, m, q1);
   s_qmod(q1, umb_p1);
   (void) mp_int_sub(K, x, q1, x); /* can't fail */
 
@@ -3120,7 +3124,7 @@ STATIC mp_result s_embar(klisp_State *K, mp_int a, mp_int b, mp_int m,
     for(d = *db, i = MP_DIGIT_BIT; i > 0; --i, d >>= 1) {
       if(d & 1) {
 	/* The use of a second temporary avoids allocation */
-	UMUL(c, a, TEMP(0));
+	UMUL(K, c, a, TEMP(0));
 	if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	  res = MP_MEMORY; goto CLEANUP;
 	}
@@ -3128,7 +3132,7 @@ STATIC mp_result s_embar(klisp_State *K, mp_int a, mp_int b, mp_int m,
       }
 
 
-      USQR(a, TEMP(0));
+      USQR(K, a, TEMP(0));
       assert(MP_SIGN(TEMP(0)) == MP_ZPOS);
       if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	res = MP_MEMORY; goto CLEANUP;
@@ -3146,7 +3150,7 @@ STATIC mp_result s_embar(klisp_State *K, mp_int a, mp_int b, mp_int m,
   d = *dbt;
   for(;;) {
     if(d & 1) {
-      UMUL(c, a, TEMP(0));
+      UMUL(K, c, a, TEMP(0));
       if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	res = MP_MEMORY; goto CLEANUP;
       }
@@ -3156,7 +3160,7 @@ STATIC mp_result s_embar(klisp_State *K, mp_int a, mp_int b, mp_int m,
     d >>= 1;
     if(!d) break;
 
-    USQR(a, TEMP(0));
+    USQR(K, a, TEMP(0));
     if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
       res = MP_MEMORY; goto CLEANUP;
     }
