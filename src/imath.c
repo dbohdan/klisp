@@ -1709,7 +1709,7 @@ int       mp_int_is_pow2(mp_int z)
    patch contributed by Hal Finkel <half@halssoftware.com>
    modified by M. J. Fromberger.
  */
-mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
+mp_result mp_int_root(klisp_State *K, mp_int a, mp_small b, mp_int c)
 {
   mp_result  res = MP_OK;
   mpz_t      temp[5];
@@ -1719,7 +1719,7 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
   CHECK(a != NULL && c != NULL && b > 0);
 
   if(b == 1) {
-    return mp_int_copy(KK, a, c);
+    return mp_int_copy(K, a, c);
   }
   if(MP_SIGN(a) == MP_NEG) {
     if(b % 2 == 0)
@@ -1728,51 +1728,51 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
       flips = 1;
   }
 
-  SETUP(mp_int_init_copy(KK, TEMP(last), a), last);
-  SETUP(mp_int_init_copy(KK, TEMP(last), a), last);
+  SETUP(mp_int_init_copy(K, TEMP(last), a), last);
+  SETUP(mp_int_init_copy(K, TEMP(last), a), last);
   SETUP(mp_int_init(TEMP(last)), last);
   SETUP(mp_int_init(TEMP(last)), last);
   SETUP(mp_int_init(TEMP(last)), last);
 
-  (void) mp_int_abs(KK, TEMP(0), TEMP(0));
-  (void) mp_int_abs(KK, TEMP(1), TEMP(1));
+  (void) mp_int_abs(K, TEMP(0), TEMP(0));
+  (void) mp_int_abs(K, TEMP(1), TEMP(1));
 
   for(;;) {
-    if((res = mp_int_expt(KK, TEMP(1), b, TEMP(2))) != MP_OK)
+    if((res = mp_int_expt(K, TEMP(1), b, TEMP(2))) != MP_OK)
       goto CLEANUP;
 
     if(mp_int_compare_unsigned(TEMP(2), TEMP(0)) <= 0)
       break;
 
-    if((res = mp_int_sub(KK, TEMP(2), TEMP(0), TEMP(2))) != MP_OK)
+    if((res = mp_int_sub(K, TEMP(2), TEMP(0), TEMP(2))) != MP_OK)
       goto CLEANUP;
-    if((res = mp_int_expt(KK, TEMP(1), b - 1, TEMP(3))) != MP_OK)
+    if((res = mp_int_expt(K, TEMP(1), b - 1, TEMP(3))) != MP_OK)
       goto CLEANUP;
-    if((res = mp_int_mul_value(KK, TEMP(3), b, TEMP(3))) != MP_OK)
+    if((res = mp_int_mul_value(K, TEMP(3), b, TEMP(3))) != MP_OK)
       goto CLEANUP;
-    if((res = mp_int_div(KK, TEMP(2), TEMP(3), TEMP(4), NULL)) != MP_OK)
+    if((res = mp_int_div(K, TEMP(2), TEMP(3), TEMP(4), NULL)) != MP_OK)
       goto CLEANUP;
-    if((res = mp_int_sub(KK, TEMP(1), TEMP(4), TEMP(4))) != MP_OK)
+    if((res = mp_int_sub(K, TEMP(1), TEMP(4), TEMP(4))) != MP_OK)
       goto CLEANUP;
 
     if(mp_int_compare_unsigned(TEMP(1), TEMP(4)) == 0) {
-      if((res = mp_int_sub_value(KK, TEMP(4), 1, TEMP(4))) != MP_OK)
+      if((res = mp_int_sub_value(K, TEMP(4), 1, TEMP(4))) != MP_OK)
 	goto CLEANUP;
     }
-    if((res = mp_int_copy(KK, TEMP(4), TEMP(1))) != MP_OK)
+    if((res = mp_int_copy(K, TEMP(4), TEMP(1))) != MP_OK)
       goto CLEANUP;
   }
   
-  if((res = mp_int_copy(KK, TEMP(1), c)) != MP_OK)
+  if((res = mp_int_copy(K, TEMP(1), c)) != MP_OK)
     goto CLEANUP;
 
   /* If the original value of a was negative, flip the output sign. */
   if(flips)
-    (void) mp_int_neg(KK, c, c); /* cannot fail */
+    (void) mp_int_neg(K, c, c); /* cannot fail */
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(KK, TEMP(last));
+    mp_int_clear(K, TEMP(last));
 
   return res;  
 }

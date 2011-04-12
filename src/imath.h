@@ -235,12 +235,14 @@ mp_result mp_int_egcd(klisp_State *K, mp_int a, mp_int b, mp_int c,
 mp_result mp_int_lcm(klisp_State *K, mp_int a, mp_int b, mp_int c);
 
 /* c = floor(a^{1/b}) */
-mp_result mp_int_root(mp_int a, mp_small b, mp_int c); 
+mp_result mp_int_root(klisp_State *K, mp_int a, mp_small b, mp_int c); 
 /* c = floor(sqrt(a)) */
-#define   mp_int_sqrt(a, c) mp_int_root(a, 2, c)       
+#define   mp_int_sqrt(K, a, c) mp_int_root((K), a, 2, c)       
 
 /* Convert to a small int, if representable; else MP_RANGE */
+/* NOTE: this doesn't use the allocator */
 mp_result mp_int_to_int(mp_int z, mp_small *out);
+/* NOTE: this doesn't use the allocator */
 mp_result mp_int_to_uint(mp_int z, mp_usmall *out);
 
 /* Convert to nul-terminated string with the specified radix, writing at
