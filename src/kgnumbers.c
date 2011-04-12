@@ -144,6 +144,42 @@ TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
     }
 }
 
+/* May throw an error */
+TValue knum_times(klisp_State *K, TValue n1, TValue n2)
+{
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: {
+	int64_t res = (int64_t) ivalue(n1) * (int64_t) ivalue(n2);
+	if (res >= (int64_t) INT32_MIN &&
+	    res <= (int64_t) INT32_MAX) {
+	    return i2tv((int32_t) res);
+	} /* else fall through */
+    }
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_times(K, n1, n2);
+    }
+    case K_TEINF:
+	if (!ttiseinf(n1) || !ttiseinf(n2)) {
+	    if (kfast_zerop(n1) || kfast_zerop(n2)) {
+		/* report: #e+infinity * 0 has no primary value */
+		klispE_throw(K, "*: result has no primary value");
+		return KINERT;
+	    } else {
+		return (kpositivep(n1) == kpositivep(n2))?
+		    KEPINF : KEMINF;
+	    }
+	} else {
+	    return (tv_equal(n1, n2))?
+		KEPINF : KEMINF;
+	}
+    default:
+	klispE_throw(K, "*: unsopported type");
+	return KINERT;
+    }
+}
+
 /* 12.5.4 + */
 void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -217,130 +253,53 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* first the acyclic part */
     TValue ares = i2tv(1);
-    int32_t accum = 1;
-    bool seen_zero = false;
     TValue tail = ptree;
-    bool seen_infinity = false;
 
     while(apairs--) {
 	TValue first = kcar(tail);
 	tail = kcdr(tail);
-
-	if (ttiseinf(first)) {
-	    if (seen_zero) {
-		/* report: #e+infinity * 0 has no primary value */
-		klispE_throw(K, "*: result has no primary value");
-		return;
-	    } else {
-		/* record which infinity we have seen */
-		if (!seen_infinity) {
-		    seen_infinity = true;
-		    ares = first;
-		} else if (tv_equal(first, KEMINF))
-		    ares = kneg_inf(ares);
-	    }
-	} else if (ivalue(first) == 0) {
-	    if (seen_infinity) {
-		/* report: #e+infinity * 0 has no primary value */
-		klispE_throw(K, "*: result has no primary value");
-		return;
-	    }
-	    seen_zero = true;
-	    accum = 0;
-	} else if (!seen_zero) {
-	    accum *= ivalue(first);
-	}
+	ares = knum_times(K, ares, first);
     }
-
-    if (seen_infinity)
-	ares = (accum < 0)? kneg_inf(ares) : ares;
-    else
-	ares = i2tv(accum);
 
     /* next the cyclic part */
     TValue cres = i2tv(1);
 
     if (cpairs == 0) {
+	/* speed things up if there is no cycle */
 	res = ares;
     } else {
 	bool all_one = true;
-	seen_zero = false;
-	seen_infinity = false;
-	accum = 1;
 
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
-
 	    all_one = all_one && kfast_onep(first);
-
-	    if (ttiseinf(first)) {
-		if (seen_zero) {
-		    /* report: 0 * #e+infinity has no primary value */
-		    klispE_throw(K, "*: result has no primary value");
-		    return;
-		} else {
-		    /* record which infinity we have seen */
-		    if (!seen_infinity) {
-			seen_infinity = true;
-			cres = first;
-		    } else if (tv_equal(first, KEMINF))
-			cres = kneg_inf(cres);
-		}
-	    } else if (kfast_zerop(first)) {
-		if (seen_infinity) {
-		    /* report: 0 * #e+infinity has no primary value */
-		    klispE_throw(K, "*: result has no primary value");
-		    return;
-		}
-		seen_zero = true;
-		accum = 0;
-	    } else if (!seen_zero) {
-		accum *= ivalue(first);
-	    }
+	    cres = knum_times(K, cres, first);
 	}
 
-	/* think of accum as the product of an infinite series */
-	if (seen_infinity) {
-	    cres = (accum < 0)? kneg_inf(cres) : cres;
-	} else if (seen_zero || (accum >= 0 && accum < 1)) {
+	/* think of cres as the product of an infinite series */
+	if (kfast_zerop(cres)) 
+	    ; /* do nothing */
+	else if (kpositivep(cres) && knum_ltp(cres, i2tv(1)))
 	    cres = i2tv(0);
-	} else if (accum == 1) {
+	else if (kfast_onep(cres)) {
 	    if (all_one)
 		cres = i2tv(1);
 	    else {
 		klispE_throw(K, "*: result has no primary value");
 		return;
 	    }
-	} else if (accum > 1) {
+	} else if (knum_gtp(cres, i2tv(1))) {
 	    /* ASK JOHN: this is as per the report, but maybe we should check
 	       that all elements are positive... */
 	    cres = KEPINF;
 	} else {
+	    /* cycle result less than zero */
 	    klispE_throw(K, "*: result has no primary value");
 	    return;
 	}
 
-	if (ttiseinf(ares)) {
-	    if (ttiseinf(cres)) {
-		res = tv_equal(cres, ares)? KEPINF : KEMINF;
-	    } else if (ivalue(cres) == 0) {
-		klispE_throw(K, "*: result has no primary value");
-		return;
-	    } else {
-		res = ivalue(cres) < 0? kneg_inf(ares) : ares;
-	    }
-	} else {
-	    if (ttiseinf(cres)) {
-		if (ivalue(ares) == 0) {
-		    klispE_throw(K, "*: result has no primary value");
-		    return;
-		} else 
-		    res = ivalue(ares) < 0? kneg_inf(cres) : cres;
-	    } else {
-		res = i2tv(ivalue(ares) * ivalue(cres));
-	    }
-	}
+	res = knum_times(K, ares, cres);
     } 
     kapply_cc(K, res);
 }

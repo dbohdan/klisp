@@ -84,6 +84,7 @@ bool kbigint_gtp(TValue bigint1, TValue bigint2);
 bool kbigint_gep(TValue bigint1, TValue bigint2);
 
 TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2);
+TValue kbigint_times(klisp_State *K, TValue n1, TValue n2);
 
 bool kbigint_negativep(TValue tv_bigint);
 bool kbigint_positivep(TValue tv_bigint);

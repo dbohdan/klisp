@@ -148,6 +148,13 @@ TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2)
     return kbigint_try_fixint(K, res);
 }
 
+TValue kbigint_times(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue res = kbigint_new(K, false, 0);
+    UNUSED(mp_int_mul(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
+    return kbigint_try_fixint(K, res);
+}
+
 bool kbigint_negativep(TValue tv_bigint)
 {
     return (mp_int_compare_zero(tv2bigint(tv_bigint)) < 0);
