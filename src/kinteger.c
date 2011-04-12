@@ -21,7 +21,7 @@ inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
     if (MP_USED(b) != 1)
 	return n;
 
-    int64_t digit = (int64_t) MP_SINGLE(b);
+    int64_t digit = (int64_t) *(MP_DIGITS(b));
     if (MP_SIGN(b) == MP_NEG) digit = -digit;
     if (kfit_int32_t(digit)) {
 	/* n shouln't be reachable but the let the gc do its job */
