@@ -35,10 +35,6 @@
 #include "kmem.h"
 #include "kerror.h"
 
-/* XXX */
-klisp_State *KK = NULL;
-/* XXX */
-
 /* {{{ Constants */
 
 const mp_result MP_OK     = 0;  /* no error, all is well  */

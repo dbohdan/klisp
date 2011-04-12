@@ -150,10 +150,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     
     kinit_ground_env(K);
 
-    /* XXX */
-    KK = k; /* imath.h */
-    /* XXX */
-
     return K;
 }
 

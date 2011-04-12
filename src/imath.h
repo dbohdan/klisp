@@ -25,20 +25,13 @@
 #include "kobject.h"
 #include "kstate.h"
 
-/* XXX */
-extern klisp_State *KK;
-/* XXX */
-
-
 #ifdef USE_C99
 #include <stdint.h>
 #endif
 
-/* XXX
 #ifdef __cplusplus
 extern "C" {
 #endif
-*/
 
 #if USE_C99
 typedef unsigned char      mp_sign;
@@ -298,9 +291,8 @@ void      s_print(char *tag, mp_int z);
 void      s_print_buf(char *tag, mp_digit *buf, mp_size num);
 #endif
 
-/* XXX
 #ifdef __cplusplus
 }
 #endif
-*/
+
 #endif /* end IMATH_H_ */
