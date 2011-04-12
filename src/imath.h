@@ -184,10 +184,14 @@ mp_result mp_int_div_pow2(klisp_State *K, mp_int a, mp_small p2,
 			  mp_int q, mp_int r);       
 /* c = a % m */
 mp_result mp_int_mod(klisp_State *K, mp_int a, mp_int m, mp_int c);  
-#define   mp_int_mod_value(K, A, V, R) mp_int_div_value((K), (A), (V), 0, (R))
-mp_result mp_int_expt(mp_int a, mp_small b, mp_int c);         /* c = a^b */
-mp_result mp_int_expt_value(mp_small a, mp_small b, mp_int c); /* c = a^b */
-mp_result mp_int_expt_full(mp_int a, mp_int b, mp_int c);      /* c = a^b */
+#define   mp_int_mod_value(K, A, V, R) \
+    mp_int_div_value((K), (A), (V), 0, (R))
+/* c = a^b */
+mp_result mp_int_expt(klisp_State *K, mp_int a, mp_small b, mp_int c);
+/* c = a^b */
+mp_result mp_int_expt_value(klisp_State *K, mp_small a, mp_small b, mp_int c);
+/* c = a^b */
+mp_result mp_int_expt_full(klisp_State *K, mp_int a, mp_int b, mp_int c);
 
 int       mp_int_compare(mp_int a, mp_int b);          /* a <=> b     */
 int       mp_int_compare_unsigned(mp_int a, mp_int b); /* |a| <=> |b| */
