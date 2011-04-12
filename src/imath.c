@@ -309,13 +309,15 @@ STATIC int       s_norm(klisp_State *K, mp_int a, mp_int b);
 
 /* Compute constant mu for Barrett reduction, given modulus m, result
    replaces z, m is untouched. */
-STATIC mp_result s_brmu(mp_int z, mp_int m);
+STATIC mp_result s_brmu(klisp_State *K, mp_int z, mp_int m);
 
 /* Reduce a modulo m, using Barrett's algorithm. */
-STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2);
+STATIC int       s_reduce(klisp_State *K, mp_int x, mp_int m, mp_int mu, 
+			  mp_int q1, mp_int q2);
 
 /* Modular exponentiation, using Barrett reduction */
-STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c);
+STATIC mp_result s_embar(klisp_State *K, mp_int a, mp_int b, mp_int m, 
+			 mp_int mu, mp_int c);
 
 /* Unsigned magnitude division.  Assumes |a| > |b|.  Allocates
    temporaries; overwrites a with quotient, b with remainder. */
@@ -1260,7 +1262,8 @@ int       mp_int_compare_value(mp_int z, mp_small value)
 
 /* {{{ mp_int_exptmod(a, b, m, c) */
 
-mp_result mp_int_exptmod(mp_int a, mp_int b, mp_int m, mp_int c)
+mp_result mp_int_exptmod(klisp_State *K, mp_int a, mp_int b, mp_int m, 
+			 mp_int c)
 { 
   mp_result res;
   mp_size   um;
@@ -1277,29 +1280,29 @@ mp_result mp_int_exptmod(mp_int a, mp_int b, mp_int m, mp_int c)
     return MP_RANGE;
 
   um = MP_USED(m);
-  SETUP(mp_int_init_size(KK, TEMP(0), 2 * um), last);
-  SETUP(mp_int_init_size(KK, TEMP(1), 2 * um), last);
+  SETUP(mp_int_init_size(K, TEMP(0), 2 * um), last);
+  SETUP(mp_int_init_size(K, TEMP(1), 2 * um), last);
 
   if(c == b || c == m) {
-    SETUP(mp_int_init_size(KK, TEMP(2), 2 * um), last);
+    SETUP(mp_int_init_size(K, TEMP(2), 2 * um), last);
     s = TEMP(2);
   } 
   else {
     s = c;
   }
   
-  if((res = mp_int_mod(KK, a, m, TEMP(0))) != MP_OK) goto CLEANUP;
+  if((res = mp_int_mod(K, a, m, TEMP(0))) != MP_OK) goto CLEANUP;
 
-  if((res = s_brmu(TEMP(1), m)) != MP_OK) goto CLEANUP;
+  if((res = s_brmu(K, TEMP(1), m)) != MP_OK) goto CLEANUP;
 
-  if((res = s_embar(TEMP(0), b, m, TEMP(1), s)) != MP_OK)
+  if((res = s_embar(K, TEMP(0), b, m, TEMP(1), s)) != MP_OK)
     goto CLEANUP;
 
-  res = mp_int_copy(KK, s, c);
+  res = mp_int_copy(K, s, c);
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(KK, TEMP(last));
+    mp_int_clear(K, TEMP(last));
 
   return res;
 }
@@ -1308,21 +1311,7 @@ mp_result mp_int_exptmod(mp_int a, mp_int b, mp_int m, mp_int c)
 
 /* {{{ mp_int_exptmod_evalue(a, value, m, c) */
 
-mp_result mp_int_exptmod_evalue(mp_int a, mp_small value, mp_int m, mp_int c)
-{
-  mpz_t    vtmp;
-  mp_digit vbuf[MP_VALUE_DIGITS(value)];
-
-  s_fake(&vtmp, value, vbuf);
-
-  return mp_int_exptmod(a, &vtmp, m, c);
-}
-
-/* }}} */
-
-/* {{{ mp_int_exptmod_bvalue(v, b, m, c) */
-
-mp_result mp_int_exptmod_bvalue(mp_small value, mp_int b,
+mp_result mp_int_exptmod_evalue(klisp_State *K, mp_int a, mp_small value, 
 				mp_int m, mp_int c)
 {
   mpz_t    vtmp;
@@ -1330,14 +1319,30 @@ mp_result mp_int_exptmod_bvalue(mp_small value, mp_int b,
 
   s_fake(&vtmp, value, vbuf);
 
-  return mp_int_exptmod(&vtmp, b, m, c);
+  return mp_int_exptmod(K, a, &vtmp, m, c);
+}
+
+/* }}} */
+
+/* {{{ mp_int_exptmod_bvalue(v, b, m, c) */
+
+mp_result mp_int_exptmod_bvalue(klisp_State *K, mp_small value, mp_int b,
+				mp_int m, mp_int c)
+{
+  mpz_t    vtmp;
+  mp_digit vbuf[MP_VALUE_DIGITS(value)];
+
+  s_fake(&vtmp, value, vbuf);
+
+  return mp_int_exptmod(K, &vtmp, b, m, c);
 }
 
 /* }}} */
 
 /* {{{ mp_int_exptmod_known(a, b, m, mu, c) */
 
-mp_result mp_int_exptmod_known(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
+mp_result mp_int_exptmod_known(klisp_State *K, mp_int a, mp_int b, mp_int m, 
+			       mp_int mu, mp_int c)
 {
   mp_result res;
   mp_size   um;
@@ -1354,26 +1359,26 @@ mp_result mp_int_exptmod_known(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c
     return MP_RANGE;
 
   um = MP_USED(m);
-  SETUP(mp_int_init_size(KK, TEMP(0), 2 * um), last);
+  SETUP(mp_int_init_size(K, TEMP(0), 2 * um), last);
 
   if(c == b || c == m) {
-    SETUP(mp_int_init_size(KK, TEMP(1), 2 * um), last);
+    SETUP(mp_int_init_size(K, TEMP(1), 2 * um), last);
     s = TEMP(1);
   } 
   else {
     s = c;
   }
   
-  if((res = mp_int_mod(KK, a, m, TEMP(0))) != MP_OK) goto CLEANUP;
+  if((res = mp_int_mod(K, a, m, TEMP(0))) != MP_OK) goto CLEANUP;
 
-  if((res = s_embar(TEMP(0), b, m, mu, s)) != MP_OK)
+  if((res = s_embar(K, TEMP(0), b, m, mu, s)) != MP_OK)
     goto CLEANUP;
 
-  res = mp_int_copy(KK, s, c);
+  res = mp_int_copy(K, s, c);
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(KK, TEMP(last));
+    mp_int_clear(K, TEMP(last));
 
   return res;
 }
@@ -1382,18 +1387,18 @@ mp_result mp_int_exptmod_known(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c
 
 /* {{{ mp_int_redux_const(m, c) */
 
-mp_result mp_int_redux_const(mp_int m, mp_int c)
+mp_result mp_int_redux_const(klisp_State *K, mp_int m, mp_int c)
 {
   CHECK(m != NULL && c != NULL && m != c);
 
-  return s_brmu(c, m);
+  return s_brmu(K, c, m);
 }
 
 /* }}} */
 
 /* {{{ mp_int_invmod(a, m, c) */
 
-mp_result mp_int_invmod(mp_int a, mp_int m, mp_int c)
+mp_result mp_int_invmod(klisp_State *K, mp_int a, mp_int m, mp_int c)
 {
   mp_result res;
   mp_sign   sa;
@@ -1419,7 +1424,7 @@ mp_result mp_int_invmod(mp_int a, mp_int m, mp_int c)
   }
 
   /* It is first necessary to constrain the value to the proper range */
-  if((res = mp_int_mod(KK, TEMP(1), m, TEMP(1))) != MP_OK)
+  if((res = mp_int_mod(K, TEMP(1), m, TEMP(1))) != MP_OK)
     goto CLEANUP;
 
   /* Now, if 'a' was originally negative, the value we have is
@@ -1428,13 +1433,13 @@ mp_result mp_int_invmod(mp_int a, mp_int m, mp_int c)
      the value is okay as it stands.
    */
   if(sa == MP_NEG)
-    res = mp_int_sub(KK, m, TEMP(1), c);
+    res = mp_int_sub(K, m, TEMP(1), c);
   else
-    res = mp_int_copy(KK, TEMP(1), c);
+    res = mp_int_copy(K, TEMP(1), c);
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(KK, TEMP(last));
+    mp_int_clear(K, TEMP(last));
 
   return res;
 }
@@ -1675,11 +1680,11 @@ mp_result mp_int_lcm(mp_int a, mp_int b, mp_int c)
 
 /* {{{ mp_int_divisible_value(a, v) */
 
-int       mp_int_divisible_value(mp_int a, mp_small v)
+int       mp_int_divisible_value(klisp_State *K, mp_int a, mp_small v)
 {
   mp_small rem = 0;
 
-  if(mp_int_div_value(KK, a, v, NULL, &rem) != MP_OK)
+  if(mp_int_div_value(K, a, v, NULL, &rem) != MP_OK)
     return 0;
 
   return rem == 0;
@@ -3022,29 +3027,30 @@ STATIC int      s_norm(klisp_State *K, mp_int a, mp_int b)
 
 /* {{{ s_brmu(z, m) */
 
-STATIC mp_result s_brmu(mp_int z, mp_int m)
+STATIC mp_result s_brmu(klisp_State *K, mp_int z, mp_int m)
 {
   mp_size um = MP_USED(m) * 2;
 
-  if(!s_pad(KK, z, um))
+  if(!s_pad(K, z, um))
     return MP_MEMORY;
 
-  s_2expt(KK, z, MP_DIGIT_BIT * um);
-  return mp_int_div(KK, z, m, z, NULL);
+  s_2expt(K, z, MP_DIGIT_BIT * um);
+  return mp_int_div(K, z, m, z, NULL);
 }
 
 /* }}} */
 
 /* {{{ s_reduce(x, m, mu, q1, q2) */
 
-STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2)
+STATIC int       s_reduce(klisp_State *K, mp_int x, mp_int m, mp_int mu, 
+			  mp_int q1, mp_int q2)
 {
   mp_size   um = MP_USED(m), umb_p1, umb_m1;
 
   umb_p1 = (um + 1) * MP_DIGIT_BIT;
   umb_m1 = (um - 1) * MP_DIGIT_BIT;
 
-  if(mp_int_copy(KK, x, q1) != MP_OK)
+  if(mp_int_copy(K, x, q1) != MP_OK)
     return 0;
 
   /* Compute q2 = floor((floor(x / b^(k-1)) * mu) / b^(k+1)) */
@@ -3061,19 +3067,19 @@ STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2)
    */
   UMUL(q2, m, q1);
   s_qmod(q1, umb_p1);
-  (void) mp_int_sub(KK, x, q1, x); /* can't fail */
+  (void) mp_int_sub(K, x, q1, x); /* can't fail */
 
   /* The result may be < 0; if it is, add b^(k+1) to pin it in the
      proper range. */
-  if((CMPZ(x) < 0) && !s_qsub(KK, x, umb_p1))
+  if((CMPZ(x) < 0) && !s_qsub(K, x, umb_p1))
     return 0;
 
   /* If x > m, we need to back it off until it is in range.
      This will be required at most twice.  */
   if(mp_int_compare(x, m) >= 0) {
-    (void) mp_int_sub(KK, x, m, x);
+    (void) mp_int_sub(K, x, m, x);
     if(mp_int_compare(x, m) >= 0)
-      (void) mp_int_sub(KK, x, m, x);
+      (void) mp_int_sub(K, x, m, x);
   }
 
   /* At this point, x has been properly reduced. */
@@ -3086,7 +3092,8 @@ STATIC int       s_reduce(mp_int x, mp_int m, mp_int mu, mp_int q1, mp_int q2)
 
 /* Perform modular exponentiation using Barrett's method, where mu is
    the reduction constant for m.  Assumes a < m, b > 0. */
-STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
+STATIC mp_result s_embar(klisp_State *K, mp_int a, mp_int b, mp_int m, 
+			 mp_int mu, mp_int c)
 {
   mp_digit  *db, *dbt, umu, d;
   mpz_t     temp[3]; 
@@ -3096,11 +3103,11 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
   umu = MP_USED(mu); db = MP_DIGITS(b); dbt = db + MP_USED(b) - 1;
 
   while(last < 3) {
-    SETUP(mp_int_init_size(KK, TEMP(last), 4 * umu), last);
+    SETUP(mp_int_init_size(K, TEMP(last), 4 * umu), last);
     ZERO(MP_DIGITS(TEMP(last - 1)), MP_ALLOC(TEMP(last - 1)));
   }
 
-  (void) mp_int_set_value(KK, c, 1);
+  (void) mp_int_set_value(K, c, 1);
 
   /* Take care of low-order digits */
   while(db < dbt) {
@@ -3110,20 +3117,20 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
       if(d & 1) {
 	/* The use of a second temporary avoids allocation */
 	UMUL(c, a, TEMP(0));
-	if(!s_reduce(TEMP(0), m, mu, TEMP(1), TEMP(2))) {
+	if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	  res = MP_MEMORY; goto CLEANUP;
 	}
-	mp_int_copy(KK, TEMP(0), c);
+	mp_int_copy(K, TEMP(0), c);
       }
 
 
       USQR(a, TEMP(0));
       assert(MP_SIGN(TEMP(0)) == MP_ZPOS);
-      if(!s_reduce(TEMP(0), m, mu, TEMP(1), TEMP(2))) {
+      if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	res = MP_MEMORY; goto CLEANUP;
       }
       assert(MP_SIGN(TEMP(0)) == MP_ZPOS);
-      mp_int_copy(KK, TEMP(0), a);
+      mp_int_copy(K, TEMP(0), a);
 
 
     }
@@ -3136,25 +3143,25 @@ STATIC mp_result s_embar(mp_int a, mp_int b, mp_int m, mp_int mu, mp_int c)
   for(;;) {
     if(d & 1) {
       UMUL(c, a, TEMP(0));
-      if(!s_reduce(TEMP(0), m, mu, TEMP(1), TEMP(2))) {
+      if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
 	res = MP_MEMORY; goto CLEANUP;
       }
-      mp_int_copy(KK, TEMP(0), c);
+      mp_int_copy(K, TEMP(0), c);
     }
     
     d >>= 1;
     if(!d) break;
 
     USQR(a, TEMP(0));
-    if(!s_reduce(TEMP(0), m, mu, TEMP(1), TEMP(2))) {
+    if(!s_reduce(K, TEMP(0), m, mu, TEMP(1), TEMP(2))) {
       res = MP_MEMORY; goto CLEANUP;
     }
-    (void) mp_int_copy(KK, TEMP(0), a);
+    (void) mp_int_copy(K, TEMP(0), a);
   }
 
  CLEANUP:
   while(--last >= 0)
-    mp_int_clear(KK, TEMP(last));
+    mp_int_clear(K, TEMP(last));
   
   return res;
 }

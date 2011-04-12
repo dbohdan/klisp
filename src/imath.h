@@ -193,29 +193,35 @@ mp_result mp_int_expt_value(klisp_State *K, mp_small a, mp_small b, mp_int c);
 /* c = a^b */
 mp_result mp_int_expt_full(klisp_State *K, mp_int a, mp_int b, mp_int c);
 
+/* NOTE: this doesn't use the allocator */
 int       mp_int_compare(mp_int a, mp_int b);          /* a <=> b     */
+/* NOTE: this doesn't use the allocator */
 int       mp_int_compare_unsigned(mp_int a, mp_int b); /* |a| <=> |b| */
+/* NOTE: this doesn't use the allocator */
 int       mp_int_compare_zero(mp_int z);                  /* a <=> 0  */
+/* NOTE: this doesn't use the allocator */
 int       mp_int_compare_value(mp_int z, mp_small value); /* a <=> v  */
 
 /* Returns true if v|a, false otherwise (including errors) */
-int       mp_int_divisible_value(mp_int a, mp_small v);
+int       mp_int_divisible_value(klisp_State *K, mp_int a, mp_small v);
 
+/* NOTE: this doesn't use the allocator */
 /* Returns k >= 0 such that z = 2^k, if one exists; otherwise < 0 */
 int       mp_int_is_pow2(mp_int z);
 
-mp_result mp_int_exptmod(mp_int a, mp_int b, mp_int m,
+mp_result mp_int_exptmod(klisp_State *K, mp_int a, mp_int b, mp_int m,
 			 mp_int c);                    /* c = a^b (mod m) */
-mp_result mp_int_exptmod_evalue(mp_int a, mp_small value, 
+mp_result mp_int_exptmod_evalue(klisp_State *K, mp_int a, mp_small value, 
 				mp_int m, mp_int c);   /* c = a^v (mod m) */
-mp_result mp_int_exptmod_bvalue(mp_small value, mp_int b,
+mp_result mp_int_exptmod_bvalue(klisp_State *K, mp_small value, mp_int b,
 				mp_int m, mp_int c);   /* c = v^b (mod m) */
-mp_result mp_int_exptmod_known(mp_int a, mp_int b,
+mp_result mp_int_exptmod_known(klisp_State *K, mp_int a, mp_int b,
 			       mp_int m, mp_int mu,
 			       mp_int c);              /* c = a^b (mod m) */
-mp_result mp_int_redux_const(mp_int m, mp_int c); 
+mp_result mp_int_redux_const(klisp_State *K, mp_int m, mp_int c); 
 
-mp_result mp_int_invmod(mp_int a, mp_int m, mp_int c); /* c = 1/a (mod m) */
+/* c = 1/a (mod m) */
+mp_result mp_int_invmod(klisp_State *K, mp_int a, mp_int m, mp_int c); 
 
 mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c);    /* c = gcd(a, b)   */
 
