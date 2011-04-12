@@ -34,9 +34,11 @@ extern klisp_State *KK;
 #include <stdint.h>
 #endif
 
+/* XXX
 #ifdef __cplusplus
 extern "C" {
 #endif
+*/
 
 #if USE_C99
 typedef unsigned char      mp_sign;
@@ -148,9 +150,9 @@ void      mp_int_free(klisp_State *K, mp_int z);
 
 mp_result mp_int_copy(klisp_State *K, mp_int a, mp_int c); /* c = a */
 void      mp_int_swap(mp_int a, mp_int c);           /* swap a, c */
-void      mp_int_zero(mp_int z);                     /* z = 0     */
-mp_result mp_int_abs(mp_int a, mp_int c);            /* c = |a|   */
-mp_result mp_int_neg(mp_int a, mp_int c);            /* c = -a    */
+void      mp_int_zero(mp_int z);                     /* z = 0 */
+mp_result mp_int_abs(klisp_State *K, mp_int a, mp_int c); /* c = |a| */
+mp_result mp_int_neg(klisp_State *K, mp_int a, mp_int c); /* c = -a  */
 mp_result mp_int_add(mp_int a, mp_int b, mp_int c);  /* c = a + b */
 mp_result mp_int_add_value(mp_int a, mp_small value, mp_int c);
 mp_result mp_int_sub(mp_int a, mp_int b, mp_int c);  /* c = a - b */
@@ -252,7 +254,9 @@ void      s_print(char *tag, mp_int z);
 void      s_print_buf(char *tag, mp_digit *buf, mp_size num);
 #endif
 
+/* XXX
 #ifdef __cplusplus
 }
 #endif
+*/
 #endif /* end IMATH_H_ */

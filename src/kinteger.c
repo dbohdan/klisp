@@ -83,9 +83,8 @@ bool kbigint_has_digits(klisp_State *K, TValue tv_bigint)
    write and abs */
 void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
 {
-    UNUSED(K);
     Bigint *bigint = tv2bigint(tv_bigint);
-    UNUSED(mp_int_neg(bigint, bigint));
+    UNUSED(mp_int_neg(K, bigint, bigint));
 }
 
 /* this is used by write to estimate the number of chars necessary to
@@ -147,10 +146,9 @@ bool kbigint_evenp(TValue tv_bigint)
 
 TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
 {
-    UNUSED(K);
     if (kbigint_negativep(tv_bigint)) {
 	TValue copy = kbigint_new(K, false, 0);
-	UNUSED(mp_int_abs(tv2bigint(tv_bigint), tv2bigint(copy)));
+	UNUSED(mp_int_abs(K, tv2bigint(tv_bigint), tv2bigint(copy)));
 	return copy;
     } else {
 	return tv_bigint;

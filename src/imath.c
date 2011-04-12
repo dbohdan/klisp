@@ -546,13 +546,13 @@ void      mp_int_zero(mp_int z)
 
 /* {{{ mp_int_abs(a, c) */
 
-mp_result mp_int_abs(mp_int a, mp_int c)
+mp_result mp_int_abs(klisp_State *K, mp_int a, mp_int c)
 {
   mp_result res;
 
   CHECK(a != NULL && c != NULL);
 
-  if((res = mp_int_copy(KK, a, c)) != MP_OK)
+  if((res = mp_int_copy(K, a, c)) != MP_OK)
     return res;
 
   MP_SIGN(c) = MP_ZPOS;
@@ -563,13 +563,13 @@ mp_result mp_int_abs(mp_int a, mp_int c)
 
 /* {{{ mp_int_neg(a, c) */
 
-mp_result mp_int_neg(mp_int a, mp_int c)
+mp_result mp_int_neg(klisp_State *K, mp_int a, mp_int c)
 {
   mp_result res;
 
   CHECK(a != NULL && c != NULL);
 
-  if((res = mp_int_copy(KK, a, c)) != MP_OK)
+  if((res = mp_int_copy(K, a, c)) != MP_OK)
     return res;
 
   if(CMPZ(c) != 0)
@@ -1454,9 +1454,9 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
   if(ca == 0 && cb == 0)
     return MP_UNDEF;
   else if(ca == 0) 
-    return mp_int_abs(b, c);
+    return mp_int_abs(KK, b, c);
   else if(cb == 0) 
-    return mp_int_abs(a, c);
+    return mp_int_abs(KK, a, c);
 
   mp_int_init(&t);
   if((res = mp_int_init_copy(KK, &u, a)) != MP_OK)
@@ -1475,7 +1475,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
   }
   
   if(mp_int_is_odd(&u)) {
-    if((res = mp_int_neg(&v, &t)) != MP_OK)
+    if((res = mp_int_neg(KK, &v, &t)) != MP_OK)
       goto CLEANUP;
   } 
   else {
@@ -1491,7 +1491,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
 	goto CLEANUP;
     } 
     else {
-      if((res = mp_int_neg(&t, &v)) != MP_OK)
+      if((res = mp_int_neg(KK, &t, &v)) != MP_OK)
 	goto CLEANUP;
     }
 
@@ -1502,7 +1502,7 @@ mp_result mp_int_gcd(mp_int a, mp_int b, mp_int c)
       break;
   } 
 
-  if((res = mp_int_abs(&u, c)) != MP_OK)
+  if((res = mp_int_abs(KK, &u, c)) != MP_OK)
     goto CLEANUP;
   if(!s_qmul(c, (mp_size) k))
     res = MP_MEMORY;
@@ -1538,11 +1538,11 @@ mp_result mp_int_egcd(mp_int a, mp_int b, mp_int c,
   if(ca == 0 && cb == 0)
     return MP_UNDEF;
   else if(ca == 0) {
-    if((res = mp_int_abs(b, c)) != MP_OK) return res;
+    if((res = mp_int_abs(KK, b, c)) != MP_OK) return res;
     mp_int_zero(x); (void) mp_int_set_value(KK, y, 1); return MP_OK;
   } 
   else if(cb == 0) {
-    if((res = mp_int_abs(a, c)) != MP_OK) return res;
+    if((res = mp_int_abs(KK, a, c)) != MP_OK) return res;
     (void) mp_int_set_value(KK, x, 1); mp_int_zero(y); return MP_OK;
   }
 
@@ -1726,8 +1726,8 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
   SETUP(mp_int_init(TEMP(last)), last);
   SETUP(mp_int_init(TEMP(last)), last);
 
-  (void) mp_int_abs(TEMP(0), TEMP(0));
-  (void) mp_int_abs(TEMP(1), TEMP(1));
+  (void) mp_int_abs(KK, TEMP(0), TEMP(0));
+  (void) mp_int_abs(KK, TEMP(1), TEMP(1));
 
   for(;;) {
     if((res = mp_int_expt(TEMP(1), b, TEMP(2))) != MP_OK)
@@ -1760,7 +1760,7 @@ mp_result mp_int_root(mp_int a, mp_small b, mp_int c)
 
   /* If the original value of a was negative, flip the output sign. */
   if(flips)
-    (void) mp_int_neg(c, c); /* cannot fail */
+    (void) mp_int_neg(KK, c, c); /* cannot fail */
 
  CLEANUP:
   while(--last >= 0)
