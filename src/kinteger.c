@@ -93,6 +93,7 @@ int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
     return mp_int_string_len(tv2bigint(tv_bigint), base);
 }
 
+/* Interface for kgnumbers */
 bool kbigint_eqp(TValue tv_bigint1, TValue tv_bigint2)
 {
     return (mp_int_compare(tv2bigint(tv_bigint1), 
@@ -121,6 +122,13 @@ bool kbigint_gep(TValue tv_bigint1, TValue tv_bigint2)
 {
     return (mp_int_compare(tv2bigint(tv_bigint1), 
 			   tv2bigint(tv_bigint2)) >= 0);
+}
+
+TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue res = kbigint_new(K, false, 0);
+    UNUSED(mp_int_add(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
+    return res;
 }
 
 bool kbigint_negativep(TValue tv_bigint)
