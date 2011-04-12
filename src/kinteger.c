@@ -44,9 +44,8 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
 TValue kbigint_copy(klisp_State *K, TValue src)
 {
     TValue copy = kbigint_new(K, false, 0);
-    Bigint *src_bigint = tv2bigint(src);
-    Bigint *copy_bigint = tv2bigint(copy);
-    UNUSED(mp_int_init_copy(K, copy_bigint, src_bigint));
+    /* arguments are in reverse order with respect to mp_int_copy */
+    UNUSED(mp_int_init_copy(K, tv2bigint(copy), tv2bigint(src)));
     return copy;
 }
 
@@ -77,8 +76,7 @@ int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base)
 bool kbigint_has_digits(klisp_State *K, TValue tv_bigint)
 {
     UNUSED(K);
-    Bigint *bigint = tv2bigint(tv_bigint);
-    return (mp_int_compare_zero(bigint) != 0);
+    return (mp_int_compare_zero(tv2bigint(tv_bigint)) != 0);
 }
 
 /* Mutate the bigint to have the opposite sign, used in read,
@@ -94,75 +92,67 @@ void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
    print the number */
 int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
 {
-    Bigint *bigint = tv2bigint(tv_bigint);
-    return mp_int_string_len(bigint, base);
+    return mp_int_string_len(tv2bigint(tv_bigint), base);
 }
 
 bool kbigint_eqp(TValue tv_bigint1, TValue tv_bigint2)
 {
-    Bigint *bigint1 = tv2bigint(tv_bigint1);
-    Bigint *bigint2 = tv2bigint(tv_bigint2);
-    return (mp_int_compare(bigint1, bigint2) == 0);
+    return (mp_int_compare(tv2bigint(tv_bigint1), 
+			   tv2bigint(tv_bigint2)) == 0);
 }
 
 bool kbigint_ltp(TValue tv_bigint1, TValue tv_bigint2)
 {
-    Bigint *bigint1 = tv2bigint(tv_bigint1);
-    Bigint *bigint2 = tv2bigint(tv_bigint2);
-    return (mp_int_compare(bigint1, bigint2) < 0);
+    return (mp_int_compare(tv2bigint(tv_bigint1), 
+			   tv2bigint(tv_bigint2)) < 0);
 }
 
 bool kbigint_lep(TValue tv_bigint1, TValue tv_bigint2)
 {
-    Bigint *bigint1 = tv2bigint(tv_bigint1);
-    Bigint *bigint2 = tv2bigint(tv_bigint2);
-    return (mp_int_compare(bigint1, bigint2) <= 0);
+    return (mp_int_compare(tv2bigint(tv_bigint1), 
+			   tv2bigint(tv_bigint2)) <= 0);
 }
 
 bool kbigint_gtp(TValue tv_bigint1, TValue tv_bigint2)
 {
-    Bigint *bigint1 = tv2bigint(tv_bigint1);
-    Bigint *bigint2 = tv2bigint(tv_bigint2);
-    return (mp_int_compare(bigint1, bigint2) > 0);
+    return (mp_int_compare(tv2bigint(tv_bigint1), 
+			   tv2bigint(tv_bigint2)) > 0);
 }
 
 bool kbigint_gep(TValue tv_bigint1, TValue tv_bigint2)
 {
-    Bigint *bigint1 = tv2bigint(tv_bigint1);
-    Bigint *bigint2 = tv2bigint(tv_bigint2);
-    return (mp_int_compare(bigint1, bigint2) >= 0);
+    return (mp_int_compare(tv2bigint(tv_bigint1), 
+			   tv2bigint(tv_bigint2)) >= 0);
 }
 
 bool kbigint_negativep(TValue tv_bigint)
 {
-    Bigint *bigint = tv2bigint(tv_bigint);
-    return (mp_int_compare_zero(bigint) < 0);
+    return (mp_int_compare_zero(tv2bigint(tv_bigint)) < 0);
 }
 
 bool kbigint_positivep(TValue tv_bigint)
 {
-    Bigint *bigint = tv2bigint(tv_bigint);
-    return (mp_int_compare_zero(bigint) > 0);
+    return (mp_int_compare_zero(tv2bigint(tv_bigint)) > 0);
 }
 
 bool kbigint_oddp(TValue tv_bigint)
 {
-    Bigint *bigint = tv2bigint(tv_bigint);
-    return mp_int_is_odd(bigint);
+    return mp_int_is_odd(tv2bigint(tv_bigint));
 }
 
 bool kbigint_evenp(TValue tv_bigint)
 {
-    Bigint *bigint = tv2bigint(tv_bigint);
-    return mp_int_is_even(bigint);
+    return mp_int_is_even(tv2bigint(tv_bigint));
 }
 
 TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
 {
     UNUSED(K);
-    Bigint *src_bigint = tv2bigint(tv_bigint);
-    TValue copy = kbigint_new(K, false, 0);
-    Bigint *copy_bigint = tv2bigint(copy);
-    UNUSED(mp_int_abs(copy_bigint, src_bigint));
-    return copy;
+    if (kbigint_negativep(tv_bigint)) {
+	TValue copy = kbigint_new(K, false, 0);
+	UNUSED(mp_int_abs(tv2bigint(tv_bigint), tv2bigint(copy)));
+	return copy;
+    } else {
+	return tv_bigint;
+    }
 }
