@@ -266,24 +266,31 @@ mp_result mp_int_read_cstring(klisp_State *K, mp_int z, mp_size radix,
 mp_result mp_int_count_bits(mp_int z);
 
 /* Convert z to two's complement binary, writing at most limit bytes */
-mp_result mp_int_to_binary(mp_int z, unsigned char *buf, int limit);
+mp_result mp_int_to_binary(klisp_State *K, mp_int z, unsigned char *buf, 
+			   int limit);
 
 /* Read a two's complement binary value into z from the given buffer */
-mp_result mp_int_read_binary(mp_int z, unsigned char *buf, int len);
+mp_result mp_int_read_binary(klisp_State *K, mp_int z, unsigned char *buf, 
+			     int len);
 
 /* Return the number of bytes required to represent z in binary. */
+/* NOTE: this doesn't use the allocator */
 mp_result mp_int_binary_len(mp_int z);
 
 /* Convert z to unsigned binary, writing at most limit bytes */
-mp_result mp_int_to_unsigned(mp_int z, unsigned char *buf, int limit);
+mp_result mp_int_to_unsigned(klisp_State *K, mp_int z, unsigned char *buf, 
+			     int limit);
 
 /* Read an unsigned binary value into z from the given buffer */
-mp_result mp_int_read_unsigned(mp_int z, unsigned char *buf, int len);
+mp_result mp_int_read_unsigned(klisp_State *K, mp_int z, unsigned char *buf, 
+			       int len);
 
 /* Return the number of bytes required to represent z as unsigned output */
+/* NOTE: this doesn't use the allocator */
 mp_result mp_int_unsigned_len(mp_int z);
 
 /* Return a statically allocated string describing error code res */
+/* NOTE: this doesn't use the allocator */
 const char *mp_error_string(mp_result res);
 
 #if DEBUG

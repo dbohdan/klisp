@@ -2033,7 +2033,8 @@ mp_result mp_int_count_bits(mp_int z)
 
 /* {{{ mp_int_to_binary(z, buf, limit) */
 
-mp_result mp_int_to_binary(mp_int z, unsigned char *buf, int limit)
+mp_result mp_int_to_binary(klisp_State *K, mp_int z, unsigned char *buf, 
+			   int limit)
 {
   static const int PAD_FOR_2C = 1;
 
@@ -2054,7 +2055,8 @@ mp_result mp_int_to_binary(mp_int z, unsigned char *buf, int limit)
 
 /* {{{ mp_int_read_binary(z, buf, len) */
 
-mp_result mp_int_read_binary(mp_int z, unsigned char *buf, int len)
+mp_result mp_int_read_binary(klisp_State *K, mp_int z, unsigned char *buf, 
+			     int len)
 {
   mp_size need, i;
   unsigned char *tmp;
@@ -2064,7 +2066,7 @@ mp_result mp_int_read_binary(mp_int z, unsigned char *buf, int len)
 
   /* Figure out how many digits are needed to represent this value */
   need = ((len * CHAR_BIT) + (MP_DIGIT_BIT - 1)) / MP_DIGIT_BIT;
-  if(!s_pad(KK, z, need))
+  if(!s_pad(K, z, need))
     return MP_MEMORY;
 
   mp_int_zero(z);
@@ -2078,7 +2080,7 @@ mp_result mp_int_read_binary(mp_int z, unsigned char *buf, int len)
   
   dz = MP_DIGITS(z);
   for(tmp = buf, i = len; i > 0; --i, ++tmp) {
-    s_qmul(KK, z, (mp_size) CHAR_BIT);
+    s_qmul(K, z, (mp_size) CHAR_BIT);
     *dz |= *tmp;
   }
 
@@ -2116,7 +2118,8 @@ mp_result mp_int_binary_len(mp_int z)
 
 /* {{{ mp_int_to_unsigned(z, buf, limit) */
 
-mp_result mp_int_to_unsigned(mp_int z, unsigned char *buf, int limit)
+mp_result mp_int_to_unsigned(klisp_State *K, mp_int z, unsigned char *buf, 
+			     int limit)
 {
   static const int NO_PADDING = 0;
 
@@ -2129,7 +2132,7 @@ mp_result mp_int_to_unsigned(mp_int z, unsigned char *buf, int limit)
 
 /* {{{ mp_int_read_unsigned(z, buf, len) */
 
-mp_result mp_int_read_unsigned(mp_int z, unsigned char *buf, int len)
+mp_result mp_int_read_unsigned(klisp_State *K, mp_int z, unsigned char *buf, int len)
 {
   mp_size need, i;
   unsigned char *tmp;
@@ -2139,14 +2142,14 @@ mp_result mp_int_read_unsigned(mp_int z, unsigned char *buf, int len)
 
   /* Figure out how many digits are needed to represent this value */
   need = ((len * CHAR_BIT) + (MP_DIGIT_BIT - 1)) / MP_DIGIT_BIT;
-  if(!s_pad(KK, z, need))
+  if(!s_pad(K, z, need))
     return MP_MEMORY;
 
   mp_int_zero(z);
 
   dz = MP_DIGITS(z);
   for(tmp = buf, i = len; i > 0; --i, ++tmp) {
-    (void) s_qmul(KK, z, CHAR_BIT);
+    (void) s_qmul(K, z, CHAR_BIT);
     *dz |= *tmp;
   }
 
