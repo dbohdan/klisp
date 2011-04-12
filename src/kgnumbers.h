@@ -119,4 +119,9 @@ inline TValue kneg_inf(TValue i)
     return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
 }
 
+inline bool knum_same_signp(TValue n1, TValue n2) 
+{ 
+    return kpositivep(n1) == kpositivep(n2); 
+}
+
 #endif

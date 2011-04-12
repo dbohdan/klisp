@@ -166,14 +166,10 @@ TValue knum_times(klisp_State *K, TValue n1, TValue n2)
 		/* report: #e+infinity * 0 has no primary value */
 		klispE_throw(K, "*: result has no primary value");
 		return KINERT;
-	    } else {
-		return (kpositivep(n1) == kpositivep(n2))?
-		    KEPINF : KEMINF;
-	    }
-	} else {
-	    return (tv_equal(n1, n2))?
-		KEPINF : KEMINF;
-	}
+	    } else
+		return knum_same_signp(n1, n2)? KEPINF : KEMINF;
+	} else
+	    return (tv_equal(n1, n2))? KEPINF : KEMINF;
     default:
 	klispE_throw(K, "*: unsopported type");
 	return KINERT;
@@ -414,49 +410,60 @@ bool kzerop(TValue n) { return kfast_zerop(n); }
 
 /* Helpers for div, mod, div0 and mod0 */
 
-/* zerop signals div0 and mod0 if true div and mod if false */
-inline void div_mod(bool zerop, int32_t n, int32_t d, int32_t *div, 
-		    int32_t *mod) 
+int32_t kfixint_div_mod(int32_t n, int32_t d, int32_t *res_mod) 
 {
-    *div = n / d;
-    *mod = n % d;
+    int32_t div = n / d;
+    int32_t mod = n % d;
 
-    if (zerop) {
-	/* div0, mod0 or div-and-mod0 */
-	/* -|d/2| <= mod0 < |d/2| */
-
-	int32_t dabs = ((d<0? -d : d) + 1) / 2;
-	
-	if (*mod < -dabs) {
-	    if (d < 0) {
-		*mod -= d;
-		++(*div);
-	    } else {
-		*mod += d;
-		--(*div);
-	    }
-	} else if (*mod >= dabs) {
-	    if (d < 0) {
-		*mod += d;
-		--(*div);
-	    } else {
-		*mod -= d;
-		++(*div);
-	    }
-	}
-    } else {
-	/* div, mod or div-and-mod */
-	/* 0 <= mod0 < |d| */
-	if (*mod < 0) {
-	    if (d < 0) {
-		*mod -= d;
-		++(*div);
-	    } else {
-		*mod += d;
-		--(*div);
-	    }
+    /* div, mod or div-and-mod */
+    /* 0 <= mod0 < |d| */
+    if (mod < 0) {
+	if (d < 0) {
+	    mod -= d;
+	    ++div;
+	} else {
+	    mod += d;
+	    --div;
 	}
     }
+    *res_mod = mod;
+    return div;
+}
+
+int32_t kfixint_div0_mod0(int32_t n, int32_t d, int32_t *res_mod) 
+{
+    int32_t div = n / d;
+    int32_t mod = n % d;
+
+    /* div0, mod0 or div-and-mod0 */
+    /*
+    ** Adjust q and r so that:
+    ** -|d/2| <= mod0 < |d/2| which is the same as
+    ** dmin <= mod0 < dmax, where 
+    ** dmin = -floor(|d/2|) and dmax = ceil(|d/2|) 
+    */
+    int32_t dmin = -((d<0? -d : d) / 2);
+    int32_t dmax = ((d<0? -d : d) + 1) / 2;
+	
+    if (mod < dmin) {
+	if (d < 0) {
+	    mod -= d;
+	    ++div;
+	} else {
+	    mod += d;
+	    --div;
+	}
+    } else if (mod >= dmax) {
+	if (d < 0) {
+	    mod += d;
+	    --div;
+	} else {
+	    mod -= d;
+	    ++div;
+	}
+    }
+    *res_mod = mod;
+    return div;
 }
 
 /* flags are FDIV_DIV, FDIV_MOD, FDIV_ZERO */
@@ -474,24 +481,72 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_2tp(K, name, ptree, "number", knumberp, tv_n,
 	     "number", knumberp, tv_d);
 
-    /* TEMP: only fixnums */
     TValue tv_div, tv_mod;
 
     if (kfast_zerop(tv_d)) {
 	klispE_throw_extra(K, name, ": division by zero");
 	return;
-    } else if (ttiseinf(tv_n)) {
-	klispE_throw_extra(K, name, ": non finite dividend");
-	return;
-    } else if (ttiseinf(tv_d)) {
-	tv_div = ((ivalue(tv_n) ^ ivalue(tv_d)) < 0)? KEPINF : KEMINF;
-	tv_mod = i2tv(0);
-    } else {
-	int32_t div, mod;
-	div_mod(flags & FDIV_ZERO, ivalue(tv_n), ivalue(tv_d), &div, &mod);
-	tv_div = i2tv(div);
-	tv_mod = i2tv(mod);
+    } 
+
+    switch(max_ttype(tv_n, tv_d)) {
+    case K_TFIXINT:
+	/* NOTE: the only case were the result wouldn't fit in a fixint
+	   is INT32_MIN divided by -1, resulting in INT32_MAX + 1.
+	   The remainder is always < |tv_d| so no problem there, and
+	   the quotient is always <= |tv_n|. All that said, the code to
+	   correct the result returned by c operators / and % could cause
+	   problems if d = INT32_MIN or d = INT32_MAX so just to be safe
+	   we restrict d to be |d| < INT32_MAX and n to be 
+	   |n| < INT32_MAX */
+	if (!(ivalue(tv_n) <= INT32_MIN+2 || ivalue(tv_n) >= INT32_MAX-1 ||
+	      ivalue(tv_d) <= INT32_MIN+2 || ivalue(tv_d) >= INT32_MAX-1)) {
+	    int32_t div, mod;
+	    if ((flags & FDIV_ZERO) == 0)
+		div = kfixint_div_mod(ivalue(tv_n), ivalue(tv_d), &mod);
+	    else
+		div = kfixint_div0_mod0(ivalue(tv_n), ivalue(tv_d), &mod);
+	    tv_div = i2tv(div);
+	    tv_mod = i2tv(mod);
+	    break;
+	} /* else fall through */
+    case K_TBIGINT:
+	kensure_bigint(tv_n);
+	kensure_bigint(tv_d);
+	if ((flags & FDIV_ZERO) == 0)
+	    tv_div = kbigint_div_mod(K, tv_n, tv_d, &tv_mod);
+	else
+	    tv_div = kbigint_div0_mod0(K, tv_n, tv_d, &tv_mod);
+	break;
+    case K_TEINF:
+	if (ttiseinf(tv_n)) {
+	    klispE_throw_extra(K, name, ": non finite dividend");
+	    return;
+	} else { /* if (ttiseinf(tv_d)) */
+	    /* The semantics here are unclear, following the general
+	       guideline of the report that says that if an infinity is 
+	       involved it should be understand as a limit. In that
+	       case once the divisor is greater in magnitude than the
+	       dividend the division stabilizes itself at q = 0; r = n
+	       if both have the same sign, and q = 1; r = +infinity if
+	       both have different sign (but in that case !(r < |d|)
+	       !!) */ 
+            /* RATIONALE: if q were 0 we can't accomplish 
+	       q * d + r = n because q * d is undefined, if q isn't zero
+	       then, either q*d + r is infinite or undefined so
+	       there's no good q.  on the other hand if we want 
+	       n - q*d = r & 0 <= r < d, r can't be infinite because it
+	       would be equal to d, but q*d is infinite, so there's no
+	       way out */
+	    /* throw an exception, until this is resolved */
+	    /* ASK John */
+	    klispE_throw_extra(K, name, ": non finite divisor");
+	    return;
+	}
+    default:
+	klispE_throw_extra(K, name, ": unsopported type");
+	return KINERT;
     }
+
     TValue res;
     if (flags & FDIV_DIV) {
 	if (flags & FDIV_MOD) { /* return both div and mod */

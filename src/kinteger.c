@@ -162,6 +162,91 @@ TValue kbigint_minus(klisp_State *K, TValue n1, TValue n2)
     return kbigint_try_fixint(K, res);
 }
 
+/* NOTE: n2 can't be zero, that case should be checked before calling this */
+TValue kbigint_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
+{
+    /* GC: root bigints */
+    TValue tv_q = kbigint_new(K, false, 0);
+    TValue tv_r = kbigint_new(K, false, 0);
+
+    Bigint *n = tv2bigint(n1);
+    Bigint *d = tv2bigint(n2);
+
+    Bigint *q = tv2bigint(tv_q);
+    Bigint *r = tv2bigint(tv_r);
+
+    UNUSED(mp_int_div(K, n, d, q, r));
+
+    /* Adjust q & r so that 0 <= r < |d| */
+    if (mp_int_compare_zero(r) < 0) {
+	if (mp_int_compare_zero(d) < 0) {
+	    mp_int_sub(K, r, d, r);
+	    mp_int_add_value(K, q, 1, q);
+	} else {
+	    mp_int_add(K, r, d, r);
+	    mp_int_sub_value(K, q, 1, q);
+	}
+    }
+
+    *res_r = kbigint_try_fixint(K, tv_r);
+    return kbigint_try_fixint(K, tv_q);
+}
+
+TValue kbigint_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
+{
+    /* GC: root bigints */
+    TValue tv_q = kbigint_new(K, false, 0);
+    TValue tv_r = kbigint_new(K, false, 0);
+
+    Bigint *n = tv2bigint(n1);
+    Bigint *d = tv2bigint(n2);
+
+    Bigint *q = tv2bigint(tv_q);
+    Bigint *r = tv2bigint(tv_r);
+    UNUSED(mp_int_div(K, n, d, q, r));
+
+#if 0
+    /* Adjust q & r so that -|d/2| <= r < |d/2| */
+    /* It seems easier to check -|d| <= 2r < |d| */
+    TValue tv_two_r = kbigint_new(K, false, 0);
+    Bigint *two_r = tv2bigint(tv_two_r);
+    /* two_r = r * 2 = r * 2^1 */
+//    UNUSED(mp_int_mul_pow2(K, r, 1, two_r));
+    UNUSED(mp_int_mul_value(K, r, 2, two_r));
+    TValue tv_abs_d = kbigint_new(K, false, 0);
+    /* NOTE: this makes a copy if d >= 0 */
+    Bigint *abs_d = tv2bigint(tv_abs_d);
+    UNUSED(mp_int_abs(K, d, abs_d));
+    
+    /* the case analysis is inverse to that of fixint */
+
+    /* this checks 2r >= |d| (which is the same r >= |d/2|) */
+    if (mp_int_compare(two_r, abs_d) >= 0) {
+	if (mp_int_compare_zero(d) < 0) {
+	    mp_int_add(K, r, d, r);
+	    mp_int_sub_value(K, q, 1, q);
+	} else {
+	    mp_int_sub(K, r, d, r);
+	    mp_int_add_value(K, q, 1, q);
+	}
+    } else {
+	UNUSED(mp_int_neg(K, abs_d, abs_d));
+	/* this checks 2r < -|d| (which is the same r < |d/2|) */
+	if (mp_int_compare(two_r, abs_d) < 0) {
+	    if (mp_int_compare_zero(d) < 0) {
+		mp_int_sub(K, r, d, r);
+		mp_int_add_value(K, q, 1, q);
+	    } else {
+		mp_int_add(K, r, d, r);
+		mp_int_sub_value(K, q, 1, q);
+	    }
+	}
+    }
+#endif
+    *res_r = kbigint_try_fixint(K, tv_r);
+    return kbigint_try_fixint(K, tv_q);
+}
+
 bool kbigint_negativep(TValue tv_bigint)
 {
     return (mp_int_compare_zero(tv2bigint(tv_bigint)) < 0);
