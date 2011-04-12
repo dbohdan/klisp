@@ -180,6 +180,38 @@ TValue knum_times(klisp_State *K, TValue n1, TValue n2)
     }
 }
 
+/* May throw an error */
+TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
+{
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: {
+	int64_t res = (int64_t) ivalue(n1) - (int64_t) ivalue(n2);
+	if (res >= (int64_t) INT32_MIN &&
+	    res <= (int64_t) INT32_MAX) {
+	    return i2tv((int32_t) res);
+	} /* else fall through */
+    }
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_minus(K, n1, n2);
+    }
+    case K_TEINF:
+	if (!ttiseinf(n1))
+	    return kneg_inf(n2);
+	else if (!ttiseinf(n2))
+	    return n1;
+	if (tv_equal(n1, n2)) {
+	    klispE_throw(K, "-: no primary value");
+	    return KINERT;
+	} else
+	    return n1;
+    default:
+	klispE_throw(K, "-: unsopported type");
+	return KINERT;
+    }
+}
+
 /* 12.5.4 + */
 void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -229,10 +261,8 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 		klispE_throw(K, "+: result has no primary value");
 		return;
 	    }
-	} else {
+	} else
 	    cres = knegativep(cres)? KEMINF : KEPINF;
-	}
-
 	res = knum_plus(K, ares, cres);
     }
     kapply_cc(K, res);
@@ -321,7 +351,6 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
     TValue first_val = kcar(ptree);
-
     int32_t pairs = check_typed_list(K, "-", "number", knumberp, true,
 				     kcdr(ptree), &cpairs);
     int32_t apairs = pairs - cpairs;
@@ -330,110 +359,43 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* first the acyclic part */
     TValue ares = i2tv(0);
-    int32_t accum = 0;
-    bool seen_infinity = false;
     TValue tail = kcdr(ptree);
 
     while(apairs--) {
 	TValue first = kcar(tail);
 	tail = kcdr(tail);
-
-	if (ttiseinf(first)) {
-	    if (seen_infinity && !tv_equal(first, ares)) {
-		/* report: #e+infinity + #e-infinity has no primary value */
-		klispE_throw(K, "-: result has no primary value");
-		return;
-	    } else {
-		/* record which infinity we have seen */
-		seen_infinity = true;
-		ares = first;
-	    }
-	} else if (!seen_infinity) {
-	    accum += ivalue(first);
-	}
+	ares = knum_plus(K, ares, first);
     }
-
-    if (!seen_infinity)
-	ares = i2tv(accum);
 
     /* next the cyclic part */
     TValue cres = i2tv(0);
 
     if (cpairs == 0) {
+	/* speed things up if there is no cycle */
 	res = ares;
     } else {
 	bool all_zero = true;
 
-	seen_infinity = false;
-	accum = 0;
-
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
-
 	    all_zero = all_zero && kfast_zerop(first);
-
-	    if (ttiseinf(first)) {
-		if (seen_infinity && !tv_equal(first, cres)) {
-		    /* report: #e+infinity + #e-infinity has no primary value */
-		    klispE_throw(K, "-: result has no primary value");
-		    return;
-		} else {
-		    /* record which infinity we have seen */
-		    seen_infinity = true;
-		    cres = first;
-		}
-	    } else if (!seen_infinity) {
-		accum += ivalue(first);
-	    }
+	    cres = knum_plus(K, cres, first);
 	}
 
-	if (!seen_infinity) {
-	    if (accum == 0)  {
-		if (!all_zero) {
-		    /* report */
-		    klispE_throw(K, "-: result has no primary value");
-		    return;
-		} else {
-		    cres = i2tv(accum);
-		}
-	    } else {
-		cres = accum < 0? KEMINF : KEPINF;
-	    }
-	}
-
-	if (ttiseinf(ares)) {
-	    if (!ttiseinf(cres) || tv_equal(ares, cres))
-		res = ares;
-	    else {
+	if (kfast_zerop(cres)) {
+	    if (!all_zero) {
 		/* report */
 		klispE_throw(K, "-: result has no primary value");
 		return;
-	    }
-	} else {
-	    if (ttiseinf(cres))
-		res = cres;
-	    else 
-		res = i2tv(ivalue(ares) + ivalue(cres));
-	}
+	    } 
+	} else
+	    cres = knegativep(cres)? KEMINF : KEPINF;
+	res = knum_plus(K, ares, cres);
     } 
-
     /* now substract the sum of all the elements in the list to the first 
        value */
-    if (ttiseinf(first_val)) {
-	if (!ttiseinf(res) || !tv_equal(first_val, res)) {
-	    res = first_val;
-	} else {
-	    /* report */
-	    klispE_throw(K, "-: result has no primary value");
-	    return;
-	}
-    } else {
-	if (ttiseinf(res))
-	    res = kneg_inf(res);
-	else 
-	    res = i2tv(ivalue(first_val) - ivalue(res));
-    }
+    res = knum_minus(K, first_val, res);
 
     kapply_cc(K, res);
 }
