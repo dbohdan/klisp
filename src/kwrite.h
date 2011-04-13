@@ -14,7 +14,7 @@
 ** Writer interface
 */
 void kwrite(klisp_State *K, TValue obj);
-void knewline(klisp_State *K);
+void kwrite_newline(klisp_State *K);
 
 #endif
 

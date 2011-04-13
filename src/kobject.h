@@ -408,6 +408,9 @@ union GCObject {
 #define KFALSE_ {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = false }}}
 #define KEPINF_ {.tv = {.t = K_TAG_EINF, .v = { .i = 1 }}}
 #define KEMINF_ {.tv = {.t = K_TAG_EINF, .v = { .i = -1 }}}
+#define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
+#define KNEWLINE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\n' }}}
+
 
 /* RATIONALE: the ones above can be used in initializers */
 #define KNIL ((TValue) KNIL_)
@@ -418,6 +421,8 @@ union GCObject {
 #define KFALSE ((TValue) KFALSE_)
 #define KEPINF ((TValue) KEPINF_)
 #define KEMINF ((TValue) KEMINF_)
+#define KSPACE ((TValue) KSPACE_)
+#define KNEWLINE ((TValue) KNEWLINE_)
 
 /* The same constants as global const variables */
 const TValue knil;
@@ -428,6 +433,8 @@ const TValue ktrue;
 const TValue kfalse;
 const TValue kepinf;
 const TValue keminf;
+const TValue kspace;
+const TValue knewline;
 
 /* Macros to create TValues of non-heap allocated types (for initializers) */
 #define ch2tv_(ch_) {.tv = {.t = K_TAG_CHAR, .v = { .ch = (ch_) }}}

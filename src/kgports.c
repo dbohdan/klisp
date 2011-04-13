@@ -211,7 +211,7 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* TEMP: for now set this by hand */
     K->curr_out = kport_file(port);
 
-    knewline(K);
+    kwrite_newline(K);
     kapply_cc(K, KINERT);
 }
 

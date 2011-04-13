@@ -20,6 +20,8 @@ const TValue ktrue = KTRUE_;
 const TValue kfalse = KFALSE_;
 const TValue kepinf = KEPINF_;
 const TValue keminf = KEMINF_;
+const TValue kspace = KSPACE_;
+const TValue knewline = KNEWLINE_;
 
 /*
 ** The name strings for all TValue types

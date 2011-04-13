@@ -92,7 +92,7 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
     K->curr_out = stdout;
     K->write_displayp = false;
     kwrite(K, obj);
-    knewline(K);
+    kwrite_newline(K);
     TValue denv = xparams[0];
     create_loop(K, denv);
 } 

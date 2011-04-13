@@ -373,7 +373,7 @@ void kwrite(klisp_State *K, TValue obj)
     kw_clear_marks(K, obj);
 }
 
-void knewline(klisp_State *K)
+void kwrite_newline(klisp_State *K)
 {
     kw_printf(K, "\n");
     kw_flush(K);

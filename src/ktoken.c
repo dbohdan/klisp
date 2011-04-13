@@ -350,7 +350,7 @@ bool ktok_check_delimiter(klisp_State *K)
 /*
 ** Returns the number of bytes read
 */
-int ktok_read_until_delimiter(klisp_State *K)
+int32_t ktok_read_until_delimiter(klisp_State *K)
 {
     int i = 0;
 
@@ -501,74 +501,51 @@ TValue ktok_read_string(klisp_State *K)
 ** (Special number syntax, char constants, #ignore, #inert, srfi-38 tokens) 
 */
 
-/* TODO always read till delimiter, then process the array instead
-   of reading one by one. Do the same for numbers, use the IMath functions 
-   even */
+/* this include the named chars as a subcase */
+struct kspecial_token {
+    const char *ext_rep; /* downcase external representation */
+    TValue obj;
+} kspecial_tokens[] = { { "#t", KTRUE_ },
+			{ "#f", KFALSE_ },
+			{ "#ignore", KIGNORE_ },
+			{ "#inert", KINERT_ },
+			{ "#e+infinity", KEPINF_ },
+			{ "#e-infinity", KEMINF_ },
+			/* TODO add undefined, real with on primary value,
+			   and inexact infinities */
+			{ "#\\space", KSPACE_ },
+			{ "#\\newline", KNEWLINE_ }
+ }; 
+
+#define MAX_EXT_REP_SIZE 64  /* all special tokens have much than 64 chars */
+
 TValue ktok_read_special(klisp_State *K)
 {
-    /* discard the '#' */
-    ktok_getc(K);
-    
-    int chi = ktok_getc(K);
-    char ch = (char) chi;
+    /* the # is still pending (was only peeked) */
+    int32_t buf_len = ktok_read_until_delimiter(K);
+    char *buf = ks_tbget_buffer(K);
 
-    if (chi == EOF) {
-	ktok_error(K, "EOF found while reading a '#' constant");
+    if (buf_len < 2) {
+	/* we need at least one char in addition to the '#' */
+	ktok_error(K, "# constant is too short");
 	/* avoid warning */
 	return KINERT;
     }
 
-    switch(ch) {
-    case 'i': {
-	/* ignore or inert */
-	/* XXX: could also be an inexact number */
-	ktok_read_until_delimiter(K);
-	/* NOTE: can use strcmp even in the presence of '\0's */
-	TValue ret_val;
-	char *buf = ks_tbget_buffer(K);
-	if (strcmp(buf, "gnore") == 0)
-	    ret_val = KIGNORE;
-	else if (strcmp(buf, "nert") == 0)
-	    ret_val =  KINERT;
-	else {
-	    ktok_error(K, "unexpected char in # constant");
-	    /* avoid warning */
-	    return KINERT;
-	}
-	ks_tbclear(K);
-	return ret_val;
+    /* first check that is not an output only representation, 
+       they begin with '#[' and end with ']', but we know
+       that buf[0] == '#' */
+    if (buf_len > 2 && buf[1] == '[' && buf[buf_len-1] == ']') {
+	ktok_error(K, "output only representation found");
+	/* avoid warning */
+	return KINERT;
     }
-    case 'e': {
-	/* an exact infinity */
-	/* XXX: could also be an exact number */
-	ktok_read_until_delimiter(K);
-	TValue ret_val;
-	/* NOTE: can use strcmp even in the presence of '\0's */
-	char *buf = ks_tbget_buffer(K);
-	if (strcmp(buf, "+infinity") == 0) {
-	    ret_val = KEPINF;
-	} else if (strcmp(buf, "-infinity") == 0) {
-	    ret_val =  KEMINF;
-	} else {
-	    ktok_error(K, "unexpected char in # constant");
-	    /* avoid warning */
-	    return KINERT;
-	}
-	ks_tbclear(K);
-	return ret_val;
-    }
-    case 't':
-    case 'f':
-	/* boolean constant */
-	if (ktok_check_delimiter(K))
-	    return b2tv(ch == 't');
-	else {
-	    ktok_error(K, "unexpected char in # constant");
-	    /* avoid warning */
-	    return KINERT;
-	}
-    case '\\': {
-	/* char constant */
+
+    /* Then check for simple chars, this is the only thing
+       that is case dependant, so after this we downcase buf */
+    /* REFACTOR: move this to a new function */
+    /* char constant, needs at least 3 chars  */
+    if (buf_len > 2 && buf[1] == '\\') {
 	/* 
 	** RATIONALE: in the scheme spec (R5RS) it says that only alphabetic 
 	** char constants need a delimiter to disambiguate the cases with 
@@ -577,15 +554,8 @@ TValue ktok_read_special(klisp_State *K)
 	** Kernel report (R-1RK))
 	** For now we follow the scheme report 
 	*/
-	chi = ktok_getc(K);
 
-	if (chi == EOF) {
-	    ktok_error(K, "EOF found while reading a char constant");
-	    /* avoid warning */
-	    return KINERT;
-	}
-
-	ch = (char) chi;
+	char ch = buf[2];
 
 	if (ch < 0 || ch > 127) {
 	    ktok_error(K, "Non ASCII char found as character constant");
@@ -593,36 +563,52 @@ TValue ktok_read_special(klisp_State *K)
 	    return KINERT;
 	} 
 
-	if (!ktok_is_alphabetic(ch) || ktok_check_delimiter(K))
+	if (!ktok_is_alphabetic(ch) || buf_len == 3) { /* simple char */
+	    ks_tbclear(K);
 	    return ch2tv(ch);
+	}
 
-	ktok_read_until_delimiter(K);
-	char *p = ks_tbget_buffer(K);
-	while (*p) {
-	    *p = tolower(*p);
-	    p++;
-	}
-	ch = tolower(ch);
-	/* NOTE: can use strcmp even in the presence of '\0's */
-	char *buf = ks_tbget_buffer(K);
-	if (ch == 's' && strcmp(buf, "pace") == 0)
-	    ch = ' ';
-	else if (ch == 'n' && strcmp(buf, "ewline") == 0)
-	    ch = ('\n');
-	else {
-	    ktok_error(K, "Unrecognized character name");
-	    /* avoid warning */
-	    return KINERT;
-	}
-	ks_tbclear(K);
-	return ch2tv(ch);
+	/* char names are a subcase of special tokens so this case
+	   will be handled later */
+	/* fall through */
     }
-    case '0': case '1': case '2': case '3': case '4': 
-    case '5': case '6': case '7': case '8': case '9': {
+
+    /* we ignore case in all remaining comparisons */
+    for(char *str2 = buf; *str2 != '\0'; str2++)
+	*str2 = tolower(*str2);
+
+    /* REFACTOR: move this to a new function */
+    /* then check the known constants */
+    size_t stok_size = sizeof(kspecial_tokens) / 
+	sizeof(struct kspecial_token);
+    size_t i;
+    for (i = 0; i < stok_size; i++) {
+	struct kspecial_token token = kspecial_tokens[i];
+	/* NOTE: must check type because buf may contain embedded '\0's */
+	if (buf_len == strlen(token.ext_rep) &&
+	       strcmp(token.ext_rep, buf) == 0) {
+	    ks_tbclear(K);
+	    return token.obj; 
+	}
+    }
+
+    if (buf[1] == '\\') { /* this is to have a meaningful error msg */
+	ktok_error(K, "Unrecognized character name");
+	/* avoid warning */
+	return KINERT;
+    }
+
+    /* REFACTOR: move this to a new function */
+    /* It was not a special token so it must be either a srfi-38 style
+       token, or a char constant or a number. srfi-38 tokens are a '#' a 
+       decimal number and end with a '=' or a '#' */
+    if (buf_len > 2 && ktok_is_numeric(buf[1])) {
 	/* srfi-38 type token (can be either a def or ref) */
 	/* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
 	int32_t res = 0;
-	while(ch != '#' && ch != '=') {
+	int32_t i = 1;
+	char ch = buf[i];
+	while(i < buf_len && ch != '#' && ch != '=') {
 	    if (!ktok_is_numeric(ch)) {
 		ktok_error(K, "Invalid char found in srfi-38 token");
 		/* avoid warning */
@@ -637,24 +623,80 @@ TValue ktok_read_special(klisp_State *K)
 		/* avoid warning */
 		return KINERT;
 	    }
-
-	    chi = ktok_getc(K);
-	    ch = (char) chi;
-	    
-	    if (chi == EOF) {
-		ktok_error(K, "EOF found while reading a srfi-38 token");
-		/* avoid warning */
-		return KINERT;
-	    }
+	    ch = buf[i++];
 	}
+	if (i == buf_len) {
+	    ktok_error(K, "Missing last char in srfi-38 token");
+	    return KINERT;
+	} /* else buf[i] == '#' or '=' */
+	ks_tbclear(K);
 	return kcons(K, ch2tv(ch), i2tv(res));
     }
-    /* TODO: add real with no primary value and undefined */
-    default:
-	ktok_error(K, "unexpected char in # constant");
-	/* avoid warning */
-	return KINERT;
+    
+    /* REFACTOR: move to new function */
+
+    /* the only possibility left is that it is a number with
+       an exactness or radix refix */
+    bool has_exactp = false;
+    bool exactp = false;  /* the default exactness will depend on the format */
+    bool has_radixp = false;
+    int32_t radix = 10;
+	
+    int32_t idx = 1;
+    while (idx < buf_len) {
+	char ch = buf[idx];
+	switch(ch) {
+	case 'i':
+	case 'e':
+	    if (has_exactp) {
+		ktok_error(K, "two exactness prefixes in number");
+		return KINERT;
+	    }
+	    has_exactp = true;
+	    exactp = (ch == 'e');
+	    break;
+	case 'b': radix = 2; goto RADIX;
+	case 'o': radix = 2; goto RADIX;
+	case 'd': radix = 2; goto RADIX;
+	case 'x': radix = 16; goto RADIX;
+	RADIX: 
+	    if (has_radixp) {
+		ktok_error(K, "two radix prefixes in number");
+		return KINERT;
+	    }
+	    has_radixp = true;
+	    break;
+	default:
+	    ktok_error(K, "unexpected char in number after #");
+	    /* avoid warning */
+	    return KINERT;
+	}
+
+	ch = buf[++idx];
+
+	switch(ch) {
+	case '#': {
+	    ++idx; /* get next exacness or radix prefix */
+	    break;
+	}
+	case '0': case '1': case '2': case '3': case '4':
+	case '5': case '6': case '7': case '8': case '9': 
+	case 'a': case 'b': case 'c': case 'd': case 'e':
+	case 'f': case '+': case '-': { /* read the number */
+		/* TODO */
+		ktok_error(K, "not supported");
+		return KINERT;
+	}
+	default:
+	    ktok_error(K, "unexpected char in number");
+	    /* avoid warning */
+	    return KINERT;
+	}
     }
+    /* this means that the number wasn't found after the prefixes */
+    ktok_error(K, "no digits found in number");
+    /* avoid warning */
+    return KINERT;
 }
 
 /*
