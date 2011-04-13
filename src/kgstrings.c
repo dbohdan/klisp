@@ -24,6 +24,7 @@
 #include "kghelpers.h"
 #include "kgchars.h" /* for kcharp */
 #include "kgstrings.h"
+#include "kgnumbers.h" /* for kintegerp & knegativep */
 
 /* 13.1.1? string? */
 /* uses typep */
@@ -33,15 +34,18 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_al1tp(K, "make-string", ptree, "finite number", ttisfixint, tv_s, 
+    bind_al1tp(K, "make-string", ptree, "integer", kintegerp, tv_s, 
 	       maybe_char);
 
     char fill = ' ';
     if (get_opt_tpar(K, "make-string", K_TCHAR, &maybe_char))
 	fill = chvalue(maybe_char);
 
-    if (ivalue(tv_s) < 0) {
+    if (knegativep(tv_s)) {
 	klispE_throw(K, "make-string: negative size");    
+	return;
+    } else if (!ttisfixint(tv_s)) {
+	klispE_throw(K, "make-string: size is too big");    
 	return;
     }
 
@@ -67,8 +71,13 @@ void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, "string-ref", ptree, "string", ttisstring, str,
-	     "finite integer", ttisfixint, tv_i);
+	     "integer", kintegerp, tv_i);
 
+    if (!ttisfixint(tv_i)) {
+	/* TODO show index */
+	klispE_throw(K, "string-ref: index out of bounds");
+	return;
+    }
     int32_t i = ivalue(tv_i);
     
     if (i < 0 || i >= kstring_size(str)) {
@@ -87,7 +96,13 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, "string-set!", ptree, "string", ttisstring, str,
-	     "finite integer", ttisfixint, tv_i, "char", ttischar, tv_ch);
+	     "integer", kintegerp, tv_i, "char", ttischar, tv_ch);
+
+    if (!ttisfixint(tv_i)) {
+	/* TODO show index */
+	klispE_throw(K, "string-set!: index out of bounds");
+	return;
+    }
 
     int32_t i = ivalue(tv_i);
     
@@ -230,23 +245,29 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, "substring", ptree, "string", ttisstring, str,
-	     "finite integer", ttisfixint, tv_start,
-	     "finite integer", ttisfixint, tv_end);
+	     "integer", kintegerp, tv_start,
+	     "integer", kintegerp, tv_end);
 
-    int32_t start = ivalue(tv_start);
-    int32_t end = ivalue(tv_end);
-
-    if (start < 0 || start >= kstring_size(str)) {
+    if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
+	  ivalue(tv_start) > kstring_size(str)) {
 	/* TODO show index */
 	klispE_throw(K, "substring: start index out of bounds");
 	return;
-    } else if (end < 0 || end > kstring_size(str)) { /* end can be = size */
-	/* TODO show index */
+    } 
+
+    int32_t start = ivalue(tv_start);
+
+    if (!ttisfixint(tv_end) || ivalue(tv_end) < 0 || 
+	  ivalue(tv_end) > kstring_size(str)) {
 	klispE_throw(K, "substring: end index out of bounds");
 	return;
-    } else if (start > end) {
+    }
+
+    int32_t end = ivalue(tv_end);
+
+    if (start > end) {
 	/* TODO show indexes */
-	klispE_throw(K, "substring: end index is greater than start index");
+	klispE_throw(K, "substring: end index is smaller than start index");
 	return;
     }
 

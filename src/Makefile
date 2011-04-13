@@ -138,5 +138,5 @@ kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
 	ksymbol.h kinteger.h 
 kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
-	ksymbol.h
+	ksymbol.h kgnumbers.h
 imath.o: kobject.h kstate.h kmem.h kerror.h
