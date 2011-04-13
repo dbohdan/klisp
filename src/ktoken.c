@@ -270,6 +270,7 @@ TValue ktok_read_token (klisp_State *K)
 	}
     case '"':
 	return ktok_read_string(K);
+/* TODO use read_until_delimiter in all these cases */
     case '#':
 	return ktok_read_special(K);
     case '0': case '1': case '2': case '3': case '4': 
@@ -499,6 +500,10 @@ TValue ktok_read_string(klisp_State *K)
 ** Special constants (starting with "#")
 ** (Special number syntax, char constants, #ignore, #inert, srfi-38 tokens) 
 */
+
+/* TODO always read till delimiter, then process the array instead
+   of reading one by one. Do the same for numbers, use the IMath functions 
+   even */
 TValue ktok_read_special(klisp_State *K)
 {
     /* discard the '#' */
