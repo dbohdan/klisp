@@ -13,7 +13,7 @@
 ** TODO:
 **
 ** From the Report:
-** - Support other number types besides fixints and exact infinities
+** - Support other number types besides integers and exact infinities
 ** - Support for complete number syntax (exactness, radix, etc)
 ** 
 ** NOT from the Report:

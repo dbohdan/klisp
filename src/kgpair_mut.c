@@ -157,8 +157,8 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
     (void) xparams;
 
     bind_3tp(K, "encycle!", ptree, "any", anytype, obj,
-	     "finite integer", kintegerp, tk1,
-	     "finite integer", kintegerp, tk2);
+	     "integer", kintegerp, tk1,
+	     "integer", kintegerp, tk2);
 
     if (knegativep(tk1) || knegativep(tk2)) {
 	klispE_throw(K, "encycle!: negative index");

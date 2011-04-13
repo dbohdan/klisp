@@ -241,7 +241,7 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
     (void) denv;
     (void) xparams;
     bind_2tp(K, "list-tail", ptree, "any", anytype, obj,
-	     "finite integer", kintegerp, tk);
+	     "integer", kintegerp, tk);
 
     if (knegativep(tk)) {
 	klispE_throw(K, "list-tail: negative index");
@@ -294,7 +294,7 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
 
     bind_2tp(K, "list-ref", ptree, "any", anytype, obj,
-	     "finite integer", kintegerp, tk);
+	     "integer", kintegerp, tk);
 
     if (knegativep(tk)) {
 	klispE_throw(K, "list-ref: negative index");
