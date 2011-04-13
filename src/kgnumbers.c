@@ -27,6 +27,8 @@
 
 /* Helpers for typed predicates */
 bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
+/* This is used in gcd & lcm */
+bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
 /* obj is known to be a number */
 bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
 /* TEMP: for now only fixint & bigints, should also include inexact 
@@ -204,6 +206,94 @@ TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
 	    return n1;
     default:
 	klispE_throw(K, "-: unsopported type");
+	return KINERT;
+    }
+}
+
+TValue knum_abs(klisp_State *K, TValue n)
+{
+    switch(ttype(n)) {
+    case K_TFIXINT: {
+	int32_t i = ivalue(n);
+	if (i != INT32_MIN)
+	    return (i < 0? i2tv(-i) : n);
+	/* if i == INT32_MIN, fall through */
+	/* MAYBE: we could cache the bigint INT32_MAX+1 */
+    }
+    case K_TBIGINT: {
+       /* this is needed for INT32_MIN, can't be in previous
+	  case because it should be in the same block, remember
+          the bigint is allocated on the stack. */
+	kensure_bigint(n); 
+	return kbigint_abs(K, n);
+    }
+    case K_TEINF:
+	return KEPINF;
+    default:
+	/* shouldn't happen */
+	klispE_throw(K, "abs: unsopported type");
+	return KINERT;
+    }
+}
+
+/* unlike the kernel gcd this returns |n| for gcd(n, 0) and gcd(0, n) and
+ 0 for gcd(0, 0) */
+TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
+{
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: {
+	int64_t gcd = kgcd32_64(ivalue(n1), ivalue(n2));
+        /* May fail for gcd(INT32_MIN, INT32_MIN) because
+	   it would return INT32_MAX+1 */
+	if (kfit_int32_t(gcd)) 
+	    return i2tv((int32_t) gcd);
+	/* else fall through */
+    }
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_gcd(K, n1, n2);
+    }
+    case K_TEINF:
+	if (kfast_zerop(n2) || !ttiseinf(n1))
+	    return knum_abs(K, n1);
+	else if (kfast_zerop(n1) || !ttiseinf(n2))
+	    return knum_abs(K, n2);
+	else
+	    return KEPINF;
+    default:
+	klispE_throw(K, "gcd: unsopported type");
+	return KINERT;
+    }
+}
+
+/* may throw an error if one of the arguments if zero */
+TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
+{
+    /* get this out of the way first */
+    if (kfast_zerop(n1) || kfast_zerop(n2)) {
+	klispE_throw(K, "lcm: no primary value");
+	return KINERT;
+    }
+
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: {
+	int64_t lcm = klcm32_64(ivalue(n1), ivalue(n2));
+        /* May fail for lcm(INT32_MIN, 1) because
+	   it would return INT32_MAX+1 */
+	if (kfit_int32_t(lcm)) 
+	    return i2tv((int32_t) lcm);
+	/* else fall through */
+    }
+    case K_TBIGINT: {
+	kensure_bigint(n1);
+	kensure_bigint(n2);
+	return kbigint_lcm(K, n1, n2);
+    }
+    case K_TEINF:
+	return KEPINF;
+    default:
+	klispE_throw(K, "lcm: unsopported type");
 	return KINERT;
     }
 }
@@ -544,7 +634,7 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	}
     default:
 	klispE_throw_extra(K, name, ": unsopported type");
-	return KINERT;
+	return;
     }
 
     TValue res;
@@ -634,31 +724,8 @@ void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_1tp(K, "abs", ptree, "number", knumberp, n);
 
-    switch(ttype(n)) {
-    case K_TFIXINT: {
-	int32_t i = ivalue(n);
-	if (i != INT32_MIN) {
-	    kapply_cc(K, i < 0? i2tv(-i) : n);
-	    return;
-	} /* if i == INT32_MIN, fall through */
-	/* MAYBE: we could cache the bigint INT32_MAX+1 */
-    }
-    case K_TBIGINT: {
-       /* this is needed for INT32_MIN, can't be in previous
-	  case because it should be in the same block, remember
-          the bigint is allocated on the stack. */
-	kensure_bigint(n); 
-	kapply_cc(K, kbigint_abs(K, n));
-	return;
-    }
-    case K_TEINF:
-	kapply_cc(K, KEPINF);
-	return;
-    default:
-	/* shouldn't happen */
-	assert(0);
-	return;
-    }
+    TValue res = knum_abs(K, n);
+    kapply_cc(K, res);
 }
 
 /* 12.5.13 min, max */
@@ -708,37 +775,31 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
     int32_t dummy; /* don't care about count of cycle pairs */
-    int32_t pairs = check_typed_list(K, "gcd", "number", knumberp, true,
+    int32_t pairs = check_typed_list(K, "gcd", "number", kimp_intp, true,
 				     ptree, &dummy);
 
     TValue res;
 
-    if (pairs) {
+    if (pairs == 0) {
+	res = KEPINF; /* report: (gcd) = #e+infinity */
+    } else {
 	TValue tail = ptree;
-	bool seen_zero = false; 
 	bool seen_finite_non_zero = false; 
-	int32_t finite_gcd = 0;
+	res = i2tv(0);
 
 	while(pairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
-	    if (kfast_zerop(first)) {
-		seen_zero = true;
-	    } else if (ttisfixint(first)) {
-		seen_finite_non_zero = true;
-		finite_gcd = (int32_t) kgcd32_64(finite_gcd, ivalue(first));
-	    }
+	    seen_finite_non_zero |= 
+		(!ttiseinf(first) && !kfast_zerop(first));
+	    res = knum_gcd(K, res, first);
 	}
-	if (seen_finite_non_zero) {
-	    res = i2tv(finite_gcd);
-	} else if (seen_zero) {
+
+	if (!seen_finite_non_zero) {
            /* report */
 	    klispE_throw(K, "gcd: result has no primary value");
-	} else {
-	    res = KEPINF; /* report */
+	    return;
 	}
-    } else {
-	res = KEPINF; /* report: (gcd) = #e+infinity */
     }
 
     kapply_cc(K, res);
@@ -750,33 +811,19 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
     int32_t dummy; /* don't care about count of cycle pairs */
-    int32_t pairs = check_typed_list(K, "lcm", "number", knumberp, true, 
+    int32_t pairs = check_typed_list(K, "lcm", "number", kimp_intp, true, 
 				     ptree, &dummy);
 
-    /* lcm is +infinite if there is any infinite number, must still loop 
-       to check for zero but returns #e+infinty */
-    bool seen_infinite = false; 
-
     /* report: this will cover the case of (lcm) = 1 */
-    int32_t finite_lcm = 1;
+    TValue res = i2tv(1);
     
     TValue tail = ptree;
     while(pairs--) {
 	TValue first = kcar(tail);
 	tail = kcdr(tail);
-	if (ttiseinf(first)) {
-	    seen_infinite = true;
-	} else if (kfast_zerop(first)) {
-	    klispE_throw(K, "lcm: result has no primary");
-	    return;
-	} else if (!seen_infinite) {
-	    finite_lcm = (int32_t) klcm32_64(finite_lcm, ivalue(first));
-	}
+	/* This will check that neither is zero */
+	res = knum_lcm(K, res, first);
     }
-
-    /* according to the report, if there is any infinite res is #e+infinity */
-    TValue res = seen_infinite? KEPINF : i2tv(finite_lcm);
-
     kapply_cc(K, res);
 }
 

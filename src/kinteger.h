@@ -99,4 +99,7 @@ bool kbigint_evenp(TValue tv_bigint);
 /* needs the state to create a copy if negative */
 TValue kbigint_abs(klisp_State *K, TValue tv_bigint);
 
+TValue kbigint_gcd(klisp_State *K, TValue n1, TValue n2);
+TValue kbigint_lcm(klisp_State *K, TValue n1, TValue n2);
+
 #endif

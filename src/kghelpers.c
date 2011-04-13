@@ -266,9 +266,9 @@ int64_t kgcd32_64(int32_t a_, int32_t b_)
     /* the easy cases first, unlike the general kernel gcd the
      gcd2 of a number and zero is zero */
     if (a == 0)
-	return b;
+	return (int64_t) b;
     else if (b == 0)
-	return a;
+	return (int64_t) a;
  
     for (powerof2 = 0; ((a & 1) == 0) && 
 	     ((b & 1) == 0); ++powerof2, a >>= 1, b >>= 1)
@@ -289,7 +289,7 @@ int64_t kgcd32_64(int32_t a_, int32_t b_)
 	}
     }
  
-    return (a == 0? b : a) << powerof2;
+    return ((int64_t) (a == 0? b : a)) << powerof2;
 }
 
 int64_t klcm32_64(int32_t a_, int32_t b_)

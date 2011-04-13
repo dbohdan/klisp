@@ -276,3 +276,21 @@ TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
 	return tv_bigint;
     }
 }
+
+TValue kbigint_gcd(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue res = kbigint_new(K, false, 0);
+    UNUSED(mp_int_gcd(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
+    return kbigint_try_fixint(K, res);
+}
+
+TValue kbigint_lcm(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue tv_res = kbigint_new(K, false, 0);
+    Bigint *res = tv2bigint(tv_res);
+    /* unlike in kernel, lcm in IMath can return a negative value
+       (if sign a != sign b) */
+    UNUSED(mp_int_lcm(K, tv2bigint(n1), tv2bigint(n2), res));
+    UNUSED(mp_int_abs(K, res, res));
+    return kbigint_try_fixint(K, tv_res);
+}
