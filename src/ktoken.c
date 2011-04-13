@@ -222,18 +222,17 @@ void ktok_ignore_whitespace_and_comments(klisp_State *K);
 bool ktok_check_delimiter(klisp_State *K);
 TValue ktok_read_string(klisp_State *K);
 TValue ktok_read_special(klisp_State *K);
-TValue ktok_read_number(klisp_State *K, bool sign, bool has_exactp, 
-			bool exactp, bool has_radixp, int32_t radix);
-TValue ktok_read_maybe_signed_numeric(klisp_State *K, bool has_exactp,
-				      bool exactp, bool has_radixp,
-				      int32_t radix);
+TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
+			bool has_exactp, bool exactp, bool has_radixp, 
+			int32_t radix);
+TValue ktok_read_maybe_signed_numeric(klisp_State *K);
 TValue ktok_read_identifier(klisp_State *K);
 int ktok_read_until_delimiter(klisp_State *K);
 
 /*
 ** Main tokenizer function
 */
-TValue ktok_read_token (klisp_State *K)
+TValue ktok_read_token(klisp_State *K)
 {
     assert(ks_tbisempty(K));
 
@@ -274,12 +273,15 @@ TValue ktok_read_token (klisp_State *K)
     case '#':
 	return ktok_read_special(K);
     case '0': case '1': case '2': case '3': case '4': 
-    case '5': case '6': case '7': case '8': case '9':
+    case '5': case '6': case '7': case '8': case '9': {
         /* positive number, no exactness or radix indicator */
-	return ktok_read_number(K, true, false, false, false, 10); 
+	int32_t buf_len = ktok_read_until_delimiter(K);
+	char *buf = ks_tbget_buffer(K);
+	return ktok_read_number(K, buf, buf_len, false, false, false, 10);
+	}
     case '+': case '-':
         /* signed number, no exactness or radix indicator */
-	return ktok_read_maybe_signed_numeric(K, false, false, false, 10);
+	return ktok_read_maybe_signed_numeric(K);
     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': 
     case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': 
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': 
@@ -367,25 +369,43 @@ int32_t ktok_read_until_delimiter(klisp_State *K)
 /*
 ** Numbers
 ** TEMP: for now, only integers, ignore exactness
+** The digits are in buf, that must be freed after use,
+** len should be at least one 
 */
-TValue ktok_read_number(klisp_State *K, bool is_pos, bool has_exactp, 
-			bool exactp, bool has_radixp, int32_t radix)
+TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
+			bool has_exactp, bool exactp, bool has_radixp, 
+			int32_t radix)
 {
+    /* TODO use IMATH library to do this */
     uint32_t fixint_res = 0;
     bool is_fixint = true;
     TValue bigint_res;
 
-    while(!ktok_check_delimiter(K)) {
-	/* NOTE: can't be eof because it's a delimiter */
-	/* both is_digit and digit_value only recognize lowercase 
-	   for hex */
-	char ch = tolower((char) ktok_getc(K));
+    int32_t i = 0;
+    bool is_pos = true;
+    /* first check the sign */
+    if (buf[i] == '+' || buf[i] == '-') {
+	is_pos = (buf[i] == '+');
+	++i;
+	if (i == len) {
+	    ktok_error(K, "No digit found in number");
+	    /* avoid warning */
+	    return KINERT;
+	}
+    }
+
+    while(i < len) {
+	char ch = buf[i++];
 
 	if (!ktok_is_digit(ch, radix)) {
 	    /* TODO show the char */
-	    ktok_error(K, "Invalid char found in number");
-	    /* avoid warning */
-	    return KINERT;
+	    if (ktok_is_digit(ch, 16)) {
+		ktok_error(K, "Invalid digit in this radix");
+		return KINERT;
+	    } else {
+		ktok_error(K, "Invalid char found in number");
+		return KINERT;
+	    }
 	}
 	int32_t new_digit = ktok_digit_value(ch);
 
@@ -406,6 +426,8 @@ TValue ktok_read_number(klisp_State *K, bool is_pos, bool has_exactp,
 	}
     }
 
+    ks_tbclear(K);
+
     if (is_fixint) {
 	int32_t fixint = (is_pos)? (int32_t) fixint_res : 
 	    (int32_t) -((int64_t) fixint_res);
@@ -417,27 +439,22 @@ TValue ktok_read_number(klisp_State *K, bool is_pos, bool has_exactp,
     }
 }
 
-TValue ktok_read_maybe_signed_numeric(klisp_State *K, bool has_exactp,
-				      bool exactp, bool has_radixp,
-				      int32_t radix) 
+TValue ktok_read_maybe_signed_numeric(klisp_State *K)
 {
     /* NOTE: can't be eof, it's either '+' or '-' */
     char ch = (char) ktok_getc(K);
     if (ktok_check_delimiter(K)) {
-	if (has_exactp || has_radixp) {
-	    ktok_error(K, "No digit found in number");
-	    /* avoid warning */
-	    return KINERT;
-	}
-
 	ks_tbadd(K, ch);
 	ks_tbadd(K, '\0');
 	TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), 1);
 	ks_tbclear(K);
 	return new_sym;
     } else {
-	return ktok_read_number(K, ch == '+', has_exactp, exactp, 
-				has_radixp, radix);
+	ks_tbadd(K, ch);
+	int32_t buf_len = ktok_read_until_delimiter(K);
+	char *buf = ks_tbget_buffer(K);
+	/* no exactness or radix prefix, default radix: 10 */
+	return ktok_read_number(K, buf, buf_len, false, false, false, 10);
     }
 }
 
@@ -656,8 +673,8 @@ TValue ktok_read_special(klisp_State *K)
 	    exactp = (ch == 'e');
 	    break;
 	case 'b': radix = 2; goto RADIX;
-	case 'o': radix = 2; goto RADIX;
-	case 'd': radix = 2; goto RADIX;
+	case 'o': radix = 8; goto RADIX;
+	case 'd': radix = 10; goto RADIX;
 	case 'x': radix = 16; goto RADIX;
 	RADIX: 
 	    if (has_radixp) {
@@ -671,8 +688,10 @@ TValue ktok_read_special(klisp_State *K)
 	    /* avoid warning */
 	    return KINERT;
 	}
-
-	ch = buf[++idx];
+	++idx;
+	if (idx == buf_len)
+	    break;
+	ch = buf[idx];
 
 	switch(ch) {
 	case '#': {
@@ -683,9 +702,16 @@ TValue ktok_read_special(klisp_State *K)
 	case '5': case '6': case '7': case '8': case '9': 
 	case 'a': case 'b': case 'c': case 'd': case 'e':
 	case 'f': case '+': case '-': { /* read the number */
-		/* TODO */
-		ktok_error(K, "not supported");
-		return KINERT;
+		if (has_exactp && !exactp) {
+		    ktok_error(K, "inexact numbers not supported");
+		    return KINERT;
+		} else if (idx == buf_len) {
+		    ktok_error(K, "no digits found in number");
+		} else {
+		    return ktok_read_number(K, buf+idx, buf_len - idx,
+					    has_exactp, exactp, 
+					    has_radixp, radix);
+		}
 	}
 	default:
 	    ktok_error(K, "unexpected char in number");
