@@ -20,6 +20,7 @@
 #include "kghelpers.h"
 #include "kgpair_mut.h"
 #include "kgeqp.h" /* eq? checking in memq and assq */
+#include "kgnumbers.h" /* for kpositivep and kintegerp */
 
 /* 4.7.1 set-car!, set-cdr! */
 void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -154,19 +155,25 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
    than needed */
     (void) denv;
     (void) xparams;
-    /* XXX: should be integer instead of fixint, but that's all
-       we have for now */
+
     bind_3tp(K, "encycle!", ptree, "any", anytype, obj,
-	     "finite integer", ttisfixint, tk1,
-	     "finite integer", ttisfixint, tk2);
+	     "finite integer", kintegerp, tk1,
+	     "finite integer", kintegerp, tk2);
 
-    int32_t k1 = ivalue(tk1);
-    int32_t k2 = ivalue(tk2);
-
-    if (k1 < 0 || k2 < 0) {
+    if (knegativep(tk1) || knegativep(tk2)) {
 	klispE_throw(K, "encycle!: negative index");
 	return;
     }
+
+    if (!ttisfixint(tk1) || !ttisfixint(tk2)) {
+	/* no list can have that many pairs */
+	klispE_throw(K, "encycle!: non pair found while traversing "
+		     "object");
+	return;
+    }
+
+    int32_t k1 = ivalue(tk1);
+    int32_t k2 = ivalue(tk2);
 
     TValue tail = obj;
 

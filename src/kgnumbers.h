@@ -109,6 +109,9 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+
+/* REFACTOR: These should be in a knumber.h header */
+
 /* Misc Helpers */
 /* TEMP: only infinities, fixints and bigints for now */
 inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
