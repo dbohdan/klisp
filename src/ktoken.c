@@ -14,7 +14,7 @@
 **
 ** From the Report:
 ** - Support other number types besides integers and exact infinities
-** - Support for complete number syntax (exactness, radix, etc)
+** - Support for complete number syntax (inexacts, rationals, reals, complex)
 ** 
 ** NOT from the Report:
 ** - Support for unicode (strings, char and symbols).
@@ -222,8 +222,11 @@ void ktok_ignore_whitespace_and_comments(klisp_State *K);
 bool ktok_check_delimiter(klisp_State *K);
 TValue ktok_read_string(klisp_State *K);
 TValue ktok_read_special(klisp_State *K);
-TValue ktok_read_number(klisp_State *K, bool sign);
-TValue ktok_read_maybe_signed_numeric(klisp_State *K);
+TValue ktok_read_number(klisp_State *K, bool sign, bool has_exactp, 
+			bool exactp, bool has_radixp, int32_t radix);
+TValue ktok_read_maybe_signed_numeric(klisp_State *K, bool has_exactp,
+				      bool exactp, bool has_radixp,
+				      int32_t radix);
 TValue ktok_read_identifier(klisp_State *K);
 int ktok_read_until_delimiter(klisp_State *K);
 
@@ -271,9 +274,11 @@ TValue ktok_read_token (klisp_State *K)
 	return ktok_read_special(K);
     case '0': case '1': case '2': case '3': case '4': 
     case '5': case '6': case '7': case '8': case '9':
-	return ktok_read_number(K, true); /* positive number */
+        /* positive number, no exactness or radix indicator */
+	return ktok_read_number(K, true, false, false, false, 10); 
     case '+': case '-':
-	return ktok_read_maybe_signed_numeric(K);
+        /* signed number, no exactness or radix indicator */
+	return ktok_read_maybe_signed_numeric(K, false, false, false, 10);
     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': 
     case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': 
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': 
@@ -360,9 +365,10 @@ int ktok_read_until_delimiter(klisp_State *K)
 
 /*
 ** Numbers
-** TEMP: for now, only integers in base 10
+** TEMP: for now, only integers, ignore exactness
 */
-TValue ktok_read_number(klisp_State *K, bool is_pos) 
+TValue ktok_read_number(klisp_State *K, bool is_pos, bool has_exactp, 
+			bool exactp, bool has_radixp, int32_t radix)
 {
     uint32_t fixint_res = 0;
     bool is_fixint = true;
@@ -370,15 +376,21 @@ TValue ktok_read_number(klisp_State *K, bool is_pos)
 
     while(!ktok_check_delimiter(K)) {
 	/* NOTE: can't be eof because it's a delimiter */
-	char ch = (char) ktok_getc(K);
-	if (!ktok_is_numeric(ch)) {
-	    ktok_error(K, "Not a digit found in number");
+	/* both is_digit and digit_value only recognize lowercase 
+	   for hex */
+	char ch = tolower((char) ktok_getc(K));
+
+	if (!ktok_is_digit(ch, radix)) {
+	    /* TODO show the char */
+	    ktok_error(K, "Invalid char found in number");
 	    /* avoid warning */
 	    return KINERT;
 	}
 	int32_t new_digit = ktok_digit_value(ch);
-	if (is_fixint && CAN_ADD_DIGIT(fixint_res, !is_pos, new_digit)) {
-	    fixint_res = fixint_res * 10 + new_digit;
+
+	if (is_fixint && can_add_digit(fixint_res, !is_pos, new_digit,
+		radix)) {
+	    fixint_res = fixint_res * radix + new_digit;
 	} else {
 	    if (is_fixint) {
 		/* up to the last loop was fixint, but can't be anymore.
@@ -389,7 +401,7 @@ TValue ktok_read_number(klisp_State *K, bool is_pos)
 		bigint_res = kbigint_new(K, false, fixint_res);
 		/* GC: root bigint_res */
 	    }
-	    kbigint_add_digit(K, bigint_res, 10, new_digit);
+	    kbigint_add_digit(K, bigint_res, radix, new_digit);
 	}
     }
 
@@ -404,18 +416,27 @@ TValue ktok_read_number(klisp_State *K, bool is_pos)
     }
 }
 
-TValue ktok_read_maybe_signed_numeric(klisp_State *K) 
+TValue ktok_read_maybe_signed_numeric(klisp_State *K, bool has_exactp,
+				      bool exactp, bool has_radixp,
+				      int32_t radix) 
 {
     /* NOTE: can't be eof, it's either '+' or '-' */
     char ch = (char) ktok_getc(K);
     if (ktok_check_delimiter(K)) {
+	if (has_exactp || has_radixp) {
+	    ktok_error(K, "No digit found in number");
+	    /* avoid warning */
+	    return KINERT;
+	}
+
 	ks_tbadd(K, ch);
 	ks_tbadd(K, '\0');
 	TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), 1);
 	ks_tbclear(K);
 	return new_sym;
     } else {
-	return ktok_read_number(K, ch == '+');
+	return ktok_read_number(K, ch == '+', has_exactp, exactp, 
+				has_radixp, radix);
     }
 }
 
@@ -604,7 +625,7 @@ TValue ktok_read_special(klisp_State *K)
 	    }
 
 	    int new_digit = ktok_digit_value(ch);
-	    if (CAN_ADD_DIGIT(res, false, new_digit)) {
+	    if (can_add_digit(res, false, new_digit, 10)) {
 		res = res * 10 + new_digit;
 	    } else {
 		ktok_error(K, "IMP. RESTRICTION: shared token too big");

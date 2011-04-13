@@ -27,6 +27,12 @@ void clear_shared_dict(klisp_State *K);
    representation as an identifier */
 /* REFACTOR: think out a better interface to all this */
 
+/*
+** Char set contains macro interface
+*/
+#define KCHS_OCTANT(ch) ((ch) >> 5)
+#define KCHS_BIT(ch) (1 << ((ch) & 0x1f))
+
 /* Each bit correspond to a char in the 0-255 range */
 typedef uint32_t kcharset[8];
 
@@ -34,10 +40,8 @@ extern kcharset ktok_alphabetic, ktok_numeric, ktok_whitespace;
 extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 
 #define ktok_is_alphabetic(chi_) kcharset_contains(ktok_alphabetic, chi_)
-/* TODO: add is_digit, that takes the base as parameter */
 #define ktok_is_numeric(chi_) kcharset_contains(ktok_numeric, chi_)
-/* TODO: add hex digits */
-#define ktok_digit_value(ch_) (ch_ - '0')
+
 #define ktok_is_whitespace(chi_) kcharset_contains(ktok_whitespace, chi_)
 #define ktok_is_delimiter(chi_) ((chi_) == EOF ||			\
 				 kcharset_contains(ktok_delimiter, chi_))
@@ -47,20 +51,26 @@ extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
     ({ unsigned char ch__ = (unsigned char) (ch_);	\
 	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
-/* TODO: add other bases */
-/* This takes the args in sign magnitude form (sign_ & res_),
+
+/* NOTE: only lowercase chars for hexa */
+inline bool ktok_is_digit(char ch, int32_t radix)
+{
+    return (ktok_is_numeric(ch) && (ch - '0') < radix) ||
+	(ktok_is_alphabetic(ch) && (10 + (ch - 'a')) < radix);
+}
+
+inline int32_t ktok_digit_value(char ch)
+{
+    return (ch <= '9')? ch - '0' : 10 + (ch - 'a');
+}
+
+/* This takes the args in sign magnitude form (sign & res),
    but must work for any representation of negative numbers */
-#define CAN_ADD_DIGIT(res_, sign_, new_digit_)				\
-    ({ uint32_t res = (res_);						\
-	uint32_t digit = (new_digit_);					\
-	(sign_)? res <= -(INT32_MIN + digit) / 10 :			\
-	    res <= (INT32_MAX - digit) / 10;})
-
-
-/*
-** Char set contains macro interface
-*/
-#define KCHS_OCTANT(ch) ((ch) >> 5)
-#define KCHS_BIT(ch) (1 << ((ch) & 0x1f))
+inline bool can_add_digit(uint32_t res, bool sign, uint32_t new_digit, 
+			  int32_t radix)
+{
+    return (sign)? res <= -(INT32_MIN + new_digit) / radix :
+	res <= (INT32_MAX - new_digit) / radix;
+}
 
 #endif
