@@ -100,7 +100,7 @@ kgcontrol.o: kgcontrol.c kgcontrol.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h kgcombiners.h
 kgpairs_lists.o: kgpairs_lists.c kgpairs_lists.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h ksymbol.h kcontinuation.h kgequalp.h \
-	kenvironment.h
+	kenvironment.h kgnumbers.h kinteger.h
 kgpair_mut.o: kgpair_mut.c kgpair_mut.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h ksymbol.h kcontinuation.h kgeqp.h
 kgenvironments.o: kgenvironments.c kgenvironments.h kghelpers.h kstate.h \

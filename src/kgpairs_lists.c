@@ -22,6 +22,8 @@
 #include "kghelpers.h"
 #include "kgequalp.h"
 #include "kgpairs_lists.h"
+#include "kgnumbers.h"
+#include "kinteger.h"
 
 /* 4.6.1 pair? */
 /* uses typep */
@@ -138,16 +140,13 @@ void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, obj);
 }
 
-/* 5.7.1 get-list-metrics */
-void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+/* also used in list-tail and list-ref when receiving
+   bigint indexes */
+void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n, 
+			  int32_t *a, int32_t *c)
 {
-    (void) denv;
-    (void) xparams;
-
-    bind_1p(K, "get-list-metrics", ptree, obj);
-    int32_t pairs = 0;
     TValue tail = obj;
+    int32_t pairs = 0;
 
     while(ttispair(tail) && !kis_marked(tail)) {
 	/* record the pair number to simplify cycle pair counting */
@@ -174,11 +173,63 @@ void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree,
 
     unmark_list(K, obj);
 
+    if (p) *p = pairs;
+    if (n) *n = nils;
+    if (a) *a = apairs;
+    if (c) *c = cpairs;
+}
+
+/* 5.7.1 get-list-metrics */
+void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    (void) denv;
+    (void) xparams;
+
+    bind_1p(K, "get-list-metrics", ptree, obj);
+
+    int32_t pairs, nils, apairs, cpairs;
+    get_list_metrics_aux(K, obj, &pairs, &nils, &apairs, &cpairs);
+
     /* GC: root intermediate pairs */
     TValue res = kcons(K, i2tv(apairs), kcons(K, i2tv(cpairs), KNIL));
     res = kcons(K, i2tv(pairs), kcons(K, i2tv(nils), res));
     kapply_cc(K, res);
 }
+
+/* Helper for list-tail and list-ref */
+
+/* Calculate the smallest i such that 
+   (eq? (list-tail obj i) (list-tail obj tk))
+   tk is a bigint and all lists have fixint range number of pairs,
+   so the list should cyclic and we should calculate an index that
+   doesn't go through the complete cycle not even once */
+int32_t ksmallest_index(klisp_State *K, char *name, TValue obj, 
+		      TValue tk)
+{
+    int32_t apairs, cpairs;
+    get_list_metrics_aux(K, obj, NULL, NULL, &apairs, &cpairs);
+    if (cpairs == 0) {
+	klispE_throw_extra(K, name, ": non pair found while traversing "
+			   "object");
+	return 0;
+    }
+    TValue tv_apairs = i2tv(apairs);
+    TValue tv_cpairs = i2tv(cpairs);
+	
+    /* all calculations will be done with bigints */
+    kensure_bigint(tv_apairs);
+    kensure_bigint(tv_cpairs);
+	
+    TValue idx = kbigint_minus(K, tk, tv_apairs);
+    /* idx may have become a fixint */
+    kensure_bigint(idx);
+    UNUSED(kbigint_div_mod(K, idx, tv_cpairs, &idx));
+    /* now idx is less than cpairs so it fits in a fixint */
+    assert(ttisfixint(idx));
+    return ivalue(idx) + apairs; 
+}
+
 
 /* 5.7.2 list-tail */
 void list_tail(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -189,15 +240,16 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
    (cf $encycle!) to allow cyclic lists, so that's what I do */
     (void) denv;
     (void) xparams;
-    /* XXX: should be integer instead of fixint, but that's all
-       we have for now */
     bind_2tp(K, "list-tail", ptree, "any", anytype, obj,
-	     "finite integer", ttisfixint, tk);
-    int k = ivalue(tk);
-    if (k < 0) {
+	     "finite integer", kintegerp, tk);
+
+    if (knegativep(tk)) {
 	klispE_throw(K, "list-tail: negative index");
 	return;
     }
+
+    int32_t k = (ttisfixint(tk))? ivalue(tk)
+	: ksmallest_index(K, "list-tail", obj, tk);
 
     while(k) {
 	if (!ttispair(obj)) {
@@ -240,15 +292,17 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
    (cf list-tail) For now we allow it. */
     UNUSED(denv);
     UNUSED(xparams);
-    /* XXX: should be integer instead of fixint, but that's all
-       we have for now */
+
     bind_2tp(K, "list-ref", ptree, "any", anytype, obj,
-	     "finite integer", ttisfixint, tk);
-    int k = ivalue(tk);
-    if (k < 0) {
+	     "finite integer", kintegerp, tk);
+
+    if (knegativep(tk)) {
 	klispE_throw(K, "list-ref: negative index");
 	return;
     }
+
+    int32_t k = (ttisfixint(tk))? ivalue(tk)
+	: ksmallest_index(K, "list-tail", obj, tk);
 
     while(k) {
 	if (!ttispair(obj)) {
