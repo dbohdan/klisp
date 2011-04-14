@@ -30,8 +30,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <assert.h>
+
+#include "klimits.h"
 
 /* This should be in a configuration .h */
 /*
@@ -50,6 +50,9 @@ typedef union GCObject GCObject;
 #define CommonHeader GCObject *next; uint8_t tt; uint8_t flags; \
     uint16_t gct; uint32_t padding; GCObject *gclist;
     
+/* NOTE: the gc flags are called marked in lua, but we reserve that them
+   for marks used in cycle traversal. The field flags is also missing
+   from lua, they serve as compact bool fields for certain types */
 
 /* 
 ** NOTE: this is next pointer comes from lua. This is a byproduct of the 
@@ -235,8 +238,12 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttischar(o)	(tbasetype_(o) == K_TAG_CHAR)
 #define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 
-/* Complex types (value in heap) */
-#define ttiscollectable(o)  (ttype(o) >= K_FIRST_GC_TYPE)
+/* Complex types (value in heap), 
+   (bigints, rationals, etc could be collectable)
+   maybe we should use a better way for this, to speed up checks, maybe use
+   a flag? */
+#define ttiscollectable(o)  ({ uint8_t t = ttype(o);			\
+	    (t == K_TBIGINT || t == K_TBIGRAT || t >= K_FIRST_GC_TYPE); })
 #define ttiscollectible(o)  ttiscollectable(o)
 
 #define ttisstring(o)	(tbasetype_(o) == K_TAG_STRING)
@@ -615,5 +622,16 @@ bool kis_output_port(TValue o);
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)
+
+/*
+** for internal debug only
+*/
+#define checkconsistency(obj) \
+  klisp_assert(!iscollectable(obj) || (ttype_(obj) == gcvalue(obj)->gch.tt))
+
+#define checkliveness(k,obj) \
+  klisp_assert(!iscollectable(obj) || \
+  ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(k, gcvalue(obj))))
+
 
 #endif
