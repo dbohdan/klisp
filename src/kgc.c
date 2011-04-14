@@ -464,7 +464,37 @@ static void markroot (klisp_State *K) {
     K->grayagain = NULL; /* for now in klisp this isn't used */
     K->weak = NULL; /* for now in klisp this isn't used */
 
-    /* TODO add klisp root set */
+    /* TEMP: this is quite awfull, think of other way to do this */
+    /* MAYBE: some of these could be FIXED */
+    markvalue(K, K->symbol_table);
+    markvalue(K, K->curr_cont);
+    markvalue(K, K->next_obj);
+    markvalue(K, K->next_value);
+    markvalue(K, K->next_env);
+    /* NOTE: next_x_params is protected by next_obj */
+    markvalue(K, K->eval_op);
+    markvalue(K, K->list_app);
+    markvalue(K, K->ground_env);
+    markvalue(K, K->module_params_sym);
+    markvalue(K, K->root_cont);
+    markvalue(K, K->error_cont);
+
+    markvalue(K, K->kd_in_port_key);
+    markvalue(K, K->kd_out_port_key);
+    markvalue(K, K->empty_string);
+
+    markvalue(K, K->ktok_lparen);
+    markvalue(K, K->ktok_rparen);
+    markvalue(K, K->ktok_dot);
+    markvalue(K, K->shared_dict);
+
+    /* Mark all objects in the auxiliary stack,
+       all valid indexes are below top */
+    TValue *ptr = K->sbuf;
+    for (int i = 0, top = K->stop; i < top; i++, ptr++) {
+	markvalue(K, *ptr);
+    }
+
 /*    markmt(g); */
     K->gcstate = GCSpropagate;
 }
