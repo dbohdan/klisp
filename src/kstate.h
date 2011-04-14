@@ -12,14 +12,11 @@
 #ifndef kstate_h
 #define kstate_h
 
-/* TEMP: for error signaling */
-#include <assert.h>
-
 #include <stdio.h>
 #include <setjmp.h>
 
-#include "kobject.h"
 #include "klimits.h"
+#include "kobject.h"
 #include "klisp.h"
 #include "ktoken.h"
 #include "kmem.h"
@@ -64,9 +61,22 @@ struct klisp_State {
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;         /* auxiliary data to `frealloc' */
 
-    /* TODO: gc info */
-    GCObject *root_gc; /* list of all collectable objects */
-    int32_t totalbytes;
+    /* GC */
+    uint16_t currentwhite; /* the one of the two whites that is in use in
+			      this collection cycle */
+    uint8_t gcstate;  /* state of garbage collector */
+    GCObject *rootgc; /* list of all collectable objects */
+    GCObject **sweepgc;  /* position of sweep in `rootgc' */
+    GCObject *gray;  /* list of gray objects */
+    GCObject *grayagain;  /* list of objects to be traversed atomically */
+    GCObject *weak;  /* list of weak tables (to be cleared) */
+    GCObject *tmudata;  /* last element of list of userdata to be GC */
+    uint32_t GCthreshold;
+    uint32_t totalbytes;  /* number of bytes currently allocated */
+    uint32_t estimate;  /* an estimate of number of bytes actually in use */
+    uint32_t gcdept;  /* how much GC is `behind schedule' */
+    int32_t gcpause;  /* size of pause between successive GCs */
+    int32_t gcstepmul;  /* GC `granularity' */
 
     /* TEMP: error handling */
     jmp_buf error_jb;
@@ -239,7 +249,7 @@ inline char ks_tbpop(klisp_State *K)
 
 inline char *ks_tbget_buffer(klisp_State *K)
 {
-    assert(ks_tbelem(K, ks_tbidx(K) - 1) == '\0');
+    klisp_assert(ks_tbelem(K, ks_tbidx(K) - 1) == '\0');
     return ks_tbuf(K);
 }
 

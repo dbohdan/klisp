@@ -8,6 +8,7 @@
 #include "kstate.h"
 #include "kapplicative.h"
 #include "kmem.h"
+#include "kgc.h"
 
 TValue kwrap(klisp_State *K, TValue underlying)
 {
@@ -20,11 +21,7 @@ TValue kmake_applicative(klisp_State *K, TValue name, TValue si,
     Applicative *new_app = klispM_new(K, Applicative);
 
     /* header + gc_fields */
-    new_app->next = K->root_gc;
-    K->root_gc = (GCObject *)new_app;
-    new_app->gct = 0;
-    new_app->tt = K_TAPPLICATIVE;
-    new_app->flags = 0;
+    klispC_link(K, (GCObject *) new_app, K_TAPPLICATIVE, 0);
 
     /* applicative specific fields */
     new_app->name = name;

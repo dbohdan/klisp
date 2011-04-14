@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 
+/* NOTE: this inclusion is reversed in lua */
 #include "kobject.h"
 
 /*

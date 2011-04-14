@@ -13,6 +13,7 @@
 #include "kmem.h"
 #include "kerror.h"
 #include "kstring.h"
+#include "kgc.h"
 
 /* XXX: per the c spec, this truncates the file if it extists! */
 /* Ask John: what would be best? Probably should also include delete,
@@ -40,13 +41,10 @@ TValue kmake_std_port(klisp_State *K, TValue filename, bool writep,
     Port *new_port = klispM_new(K, Port);
 
     /* header + gc_fields */
-    new_port->next = K->root_gc;
-    K->root_gc = (GCObject *)new_port;
-    new_port->gct = 0;
-    new_port->tt = K_TPORT;
-    new_port->flags = writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT;
+    klispC_link(K, (GCObject *) new_port, K_TPORT, 
+	writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT);
 
-    /* portinuation specific fields */
+    /* port specific fields */
     new_port->name = name;
     new_port->si = si;
     new_port->filename = filename;

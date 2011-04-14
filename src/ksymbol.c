@@ -13,6 +13,7 @@
 #include "kpair.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size, 
 		     bool identifierp)
@@ -39,11 +40,8 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     Symbol *new_sym = klispM_new(K, Symbol);
     
     /* header + gc_fields */
-    new_sym->next = K->root_gc;
-    K->root_gc = (GCObject *)new_sym;
-    new_sym->gct = 0;
-    new_sym->tt = K_TSYMBOL;
-    new_sym->flags = identifierp? K_FLAG_EXT_REP : 0; 
+    klispC_link(K, (GCObject *) new_sym, K_TSYMBOL, 
+	identifierp? K_FLAG_EXT_REP : 0);
 
     /* symbol specific fields */
     new_sym->mark = KFALSE;

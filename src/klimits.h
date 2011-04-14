@@ -14,6 +14,11 @@
 #include <limits.h>
 #include <stddef.h>
 
+/* this should be done outside of here, but for now */
+#include <assert.h>
+/* turn on assertions for internal checking */
+#define klisp_assert(c) (assert(c))
+
 #include "klisp.h"
 
 /* internal assertions for in-house debugging */

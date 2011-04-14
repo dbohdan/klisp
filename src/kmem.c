@@ -46,6 +46,7 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
 
   block = (*K->frealloc)(K->ud, block, osize, nsize);
   if (block == NULL && nsize > 0) {
+      /* TEMP: try GC if there is no more mem */
       /* TODO: make this a catchable error */
       fprintf(stderr, MEMERRMSG);
       abort();

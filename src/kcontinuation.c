@@ -10,6 +10,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 TValue kmake_continuation(klisp_State *K, TValue parent, TValue name, 
 			  TValue si, klisp_Cfunc fn, int32_t xcount, ...)
@@ -19,11 +20,7 @@ TValue kmake_continuation(klisp_State *K, TValue parent, TValue name,
 	klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
 
     /* header + gc_fields */
-    new_cont->next = K->root_gc;
-    K->root_gc = (GCObject *)new_cont;
-    new_cont->gct = 0;
-    new_cont->tt = K_TCONTINUATION;
-    new_cont->flags = 0;
+    klispC_link(K, (GCObject *) new_cont, K_TCONTINUATION, 0);
 
     /* continuation specific fields */
     new_cont->mark = KFALSE;    

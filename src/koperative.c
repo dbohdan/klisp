@@ -10,6 +10,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 TValue kmake_operative(klisp_State *K, TValue name, TValue si, 
 		       klisp_Ofunc fn, int32_t xcount, ...)
@@ -19,11 +20,7 @@ TValue kmake_operative(klisp_State *K, TValue name, TValue si,
 	klispM_malloc(K, sizeof(Operative) + sizeof(TValue) * xcount);
 
     /* header + gc_fields */
-    new_op->next = K->root_gc;
-    K->root_gc = (GCObject *)new_op;
-    new_op->gct = 0;
-    new_op->tt = K_TOPERATIVE;
-    new_op->flags = 0;
+    klispC_link(K, (GCObject *) new_op, K_TOPERATIVE, 0);
 
     /* operative specific fields */
     new_op->name = name;

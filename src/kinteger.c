@@ -13,6 +13,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 /* This tries to convert a bigint to a fixint */
 inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
@@ -38,11 +39,7 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
     Bigint *new_bigint = klispM_new(K, Bigint);
 
     /* header + gc_fields */
-    new_bigint->next = K->root_gc;
-    K->root_gc = (GCObject *)new_bigint;
-    new_bigint->gct = 0;
-    new_bigint->tt = K_TBIGINT;
-    new_bigint->flags = 0;
+    klispC_link(K, (GCObject *) new_bigint, K_TBIGINT, 0);
 
     /* bigint specific fields */
     /* If later changed to alloc obj: 

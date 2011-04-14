@@ -30,13 +30,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "klimits.h"
-
-/* This should be in a configuration .h */
-/*
-#define KTRACK_MARKS (true)
-*/
+#include "klispconf.h"
 
 /*
 ** Union of all collectible objects

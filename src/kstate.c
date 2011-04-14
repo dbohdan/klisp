@@ -35,7 +35,8 @@
 
 #include "kgpairs_lists.h" /* for creating list_app */
 
-#include "imath.h" /* for memory freeing */
+#include "kgc.h" /* for memory freeing & gc init */
+
 
 /*
 ** State creation and destruction
@@ -89,10 +90,27 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->kd_in_port_key = KINERT;
     K->kd_out_port_key = KINERT;
 
-    /* TODO: more gc info */
+    /* GC */
+    K->currentwhite = bit2mask(WHITE0BIT, FIXEDBIT);
+    K->gcstate = GCSpause;
+    K->rootgc = NULL;
+    K->sweepgc = &(K->rootgc);
+    K->gray = NULL;
+    K->grayagain = NULL;
+    K->weak = NULL;
+    K->tmudata = NULL;
+    /* how to init other gc values ?? */
     K->totalbytes = state_size() + KS_ISSIZE * sizeof(TValue) +
 	KS_ITBSIZE;
-    K->root_gc = NULL;
+    /* CHECK this when implementing incremental collector */
+    K->GCthreshold = 4*K->totalbytes; /* this is from lua, but we
+					 still have a lot of allocation
+					 to do... */
+
+    K->estimate = 0; /* doesn't matter, it is set by gc later */
+    K->gcdept = 0;
+    K->gcpause = KLISPI_GCPAUSE;
+    K->gcstepmul = KLISPI_GCMUL;
 
     /* TEMP: err */
     /* do nothing for now */
@@ -449,69 +467,14 @@ void klispS_run(klisp_State *K)
 void klisp_close (klisp_State *K)
 {
     /* free all collectable objects */
-    GCObject *next = K->root_gc;
+    klispC_freeall(K);
 
-    while(next) {
-	GCObject *obj = next;
-	next = obj->gch.next;
-	int type = gch_get_type(obj);
-
-	switch(type) {
-	case K_TBIGINT: {
-	    mp_int_free(K, (Bigint *)obj);
-	    break;
-	}
-	case K_TPAIR:
-	    klispM_free(K, (Pair *)obj);
-	    break;
-	case K_TSYMBOL:
-	    /* The string will be freed before/after */
-	    klispM_free(K, (Symbol *)obj);
-	    break;
-	case K_TSTRING:
-	    klispM_freemem(K, obj, sizeof(String)+obj->str.size+1);
-	    break;
-	case K_TENVIRONMENT:
-	    klispM_free(K, (Environment *)obj);
-	    break;
-	case K_TCONTINUATION:
-	    klispM_freemem(K, obj, sizeof(Continuation) + 
-			   obj->cont.extra_size * sizeof(TValue));
-	    break;
-	case K_TOPERATIVE:
-	    klispM_freemem(K, obj, sizeof(Operative) + 
-			   obj->op.extra_size * sizeof(TValue));
-	    break;
-	case K_TAPPLICATIVE:
-	    klispM_free(K, (Applicative *)obj);
-	    break;
-	case K_TENCAPSULATION:
-	    klispM_free(K, (Encapsulation *)obj);
-	    break;
-	case K_TPROMISE:
-	    klispM_free(K, (Promise *)obj);
-	    break;
-	case K_TPORT:
-	    /* first close the port to free the FILE structure.
-	     This works even if the port was already closed,
-	     it is important that this don't throw errors, because
-	     the mechanism used in error handling would crash at this
-	     point */
-	    kclose_port(K, gc2port(obj));
-	    klispM_free(K, (Port *)obj);
-	    break;
-	default:
-	    /* shouldn't happen */
-	    fprintf(stderr, "Unknown GCObject type: %d\n", type);
-	    abort();
-	}
-    }
     /* free helper buffers */
     klispM_freemem(K, ks_sbuf(K), ks_ssize(K) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
 
     /* only remaining mem should be of the state struct */
-    assert(K->totalbytes == state_size());
+    klisp_assert(K->totalbytes == state_size());
 
     /* NOTE: this needs to be done "by hand" */
     (*(K->frealloc))(K->ud, K, state_size(), 0);

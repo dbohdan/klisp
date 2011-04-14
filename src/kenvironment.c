@@ -13,6 +13,7 @@
 #include "kerror.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 /* keyed dynamic vars */
 #define env_keyed_parents(env_) (tv2env(env_)->keyed_parents)
@@ -28,11 +29,7 @@ TValue kmake_environment(klisp_State *K, TValue parents)
     Environment *new_env = klispM_new(K, Environment);
 
     /* header + gc_fields */
-    new_env->next = K->root_gc;
-    K->root_gc = (GCObject *) new_env;
-    new_env->gct = 0;
-    new_env->tt = K_TENVIRONMENT;
-    new_env->flags = 0;
+    klispC_link(K, (GCObject *) new_env, K_TENVIRONMENT, 0);
 
     /* environment specific fields */
     new_env->mark = KFALSE;    
