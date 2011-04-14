@@ -239,9 +239,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
    (bigints, rationals, etc could be collectable)
    maybe we should use a better way for this, to speed up checks, maybe use
    a flag? */
-#define ttiscollectable(o)  ({ uint8_t t = ttype(o);			\
+#define iscollectable(o)  ({ uint8_t t = ttype(o);			\
 	    (t == K_TBIGINT || t == K_TBIGRAT || t >= K_FIRST_GC_TYPE); })
-#define ttiscollectible(o)  ttiscollectable(o)
 
 #define ttisstring(o)	(tbasetype_(o) == K_TAG_STRING)
 #define ttissymbol(o)	(tbasetype_(o) == K_TAG_SYMBOL)
