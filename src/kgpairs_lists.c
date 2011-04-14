@@ -905,6 +905,12 @@ void do_reduce(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 6.3.10 reduce */
+/* ASK John: There should probably be a clarification to reduce comparing
+   with fold like in Haskell, r6rs and srfi-1 (all of which have the
+   mentioned in the report, left/right distintion).
+   srfi-1 also defines reduce-left/reduce-right that work as in 
+   kernel. The difference is the use or not of the id value if the list
+   is not null */
 void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
