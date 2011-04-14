@@ -63,6 +63,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* TODO: create a continuation */
     K->curr_cont = KNIL;
 
+    K->next_obj = KINERT;
     K->next_func = NULL;
     K->next_value = KINERT;
     K->next_env = KNIL;

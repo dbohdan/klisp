@@ -34,6 +34,8 @@ typedef struct {
     int32_t saved_col;
 } ksource_info_t;
 
+/* NOTE: when adding TValues here, remember to add them to
+   markroot in kgc.c!! */
 struct klisp_State {
     TValue symbol_table;
     TValue curr_cont;
@@ -43,6 +45,8 @@ struct klisp_State {
     ** (from a continuation) and otherwise next_func is of type
     ** klisp_Ofunc (from an operative)
     */
+    TValue next_obj; /* this is the operative or continuation to call
+			must be here to protect it from gc */
     void *next_func; /* the next function to call (operative or cont) */
     TValue next_value;     /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
@@ -280,6 +284,7 @@ typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree,
 */
 inline void klispS_apply_cc(klisp_State *K, TValue val)
 {
+    K->next_obj = K->curr_cont; /* save it from GC */
     Continuation *cont = tv2cont(K->curr_cont);
     K->next_func = cont->fn;
     K->next_value = val;
@@ -308,6 +313,7 @@ inline void klispS_set_cc(klisp_State *K, TValue new_cont)
 inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree, 
 			     TValue env)
 {
+    K->next_obj = top; /* save it from GC */
     Operative *op = tv2op(top);
     K->next_func = op->fn;
     K->next_value = ptree;
