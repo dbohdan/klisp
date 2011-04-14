@@ -47,8 +47,35 @@ typedef union GCObject GCObject;
 ** Common Header for all collectible objects (in macro form, to be
 ** included in other objects)
 */
-#define CommonHeader GCObject *next; uint8_t tt; uint8_t flags; uint16_t gct; 
+#define CommonHeader GCObject *next; uint8_t tt; uint8_t flags; \
+    uint16_t gct; uint32_t padding; GCObject *gclist;
+    
 
+/* 
+** NOTE: this is next pointer comes from lua. This is a byproduct of the 
+** lua allocator. Because objects come from an arbitrary allocator, they
+** can't be assumed to be contiguous; but in the sweep phase of garbage 
+** collection there has to be a way to iterate over all allocated objects
+** and that is the function of the next pointer: for storing the white
+** list. Upon allocation objects are added to this white list, all linked
+** together by a succession of next pointers starting in a field of the
+** state struct. Likewise, during the tracing phase, gray objects are linked
+** by means of the gclist pointer. Technically this is necessary only for
+** objects that have references, but in klisp all objects except strings
+** have them so it is easier to just put it here. Re the use of the padding,
+** this is necessary (TODO add 32-bit check) in 32 bits because of the packed
+** attribute. Otherwise, all TValues would be misaligned. All of this, 
+** assuming the compiler complies with it, but if not the padding doesn't
+** hurt.
+*/
+
+/* 
+** MAYBE/REFACTOR: other way to do it would be to have a packed GCHeader 
+** struct inside each object, but would have to change all references to 
+** header objects from 'obj.*' to 'obj.h.*', or something like that. I 
+** think the next C standard (C1X at this point) allows the use of
+** anonymous inner struct and unions for this use case
+*/
 
 /*
 ** Common header in struct form
@@ -74,6 +101,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 ** so tttt tttt tttt tttt is actually ffff ffff tttt tttt
 ** This gives us 256 types and as many as 8 flags per type.
 */
+
+/* TODO eliminate flags */
 
 /*
 ** Macros for manipulating tags directly
@@ -135,6 +164,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 /* this is used to test for numbers, as returned by ttype */
 #define K_LAST_NUMBER_TYPE K_TCOMPLEX
 
+/* this is used to if the object is collectable */
+#define K_FIRST_GC_TYPE K_TPAIR
+
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
 /*
@@ -192,6 +224,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_FIXINT)
 #define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+#define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
 #define ttisnil(o)	(tbasetype_(o) == K_TAG_NIL)
@@ -203,6 +236,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 
 /* Complex types (value in heap) */
+#define ttiscollectable(o)  (ttype(o) >= K_FIRST_GC_TYPE)
+#define ttiscollectible(o)  ttiscollectable(o)
+
 #define ttisstring(o)	(tbasetype_(o) == K_TAG_STRING)
 #define ttissymbol(o)	(tbasetype_(o) == K_TAG_SYMBOL)
 #define ttispair(o)	(tbasetype_(o) == K_TAG_PAIR)
