@@ -37,7 +37,9 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     /* NOTE: there are no embedded '\0's in symbols */
     /* GC: root new_str */
     TValue new_str = kstring_new(K, buf, size); /* this copies the buf */
+    krooted_tvs_push(K, new_str);
     Symbol *new_sym = klispM_new(K, Symbol);
+    krooted_tvs_pop(K);
     
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_sym, K_TSYMBOL, 
@@ -48,7 +50,6 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     new_sym->str = new_str;
 
     TValue new_symv = gc2sym(new_sym);
-    /* GC: root new_symb */
     K->symbol_table = kcons(K, new_symv, K->symbol_table);
     return new_symv;
 }
@@ -102,7 +103,11 @@ TValue ksymbol_new_check_i(klisp_State *K, TValue str)
     /* recover size & buf*/
     size = kstring_size(str);
     buf = kstring_buf(str);
-    return ksymbol_new_g(K, buf, size, identifierp);
+
+    krooted_tvs_push(K, str);
+    TValue new_sym = ksymbol_new_g(K, buf, size, identifierp);
+    krooted_tvs_pop(K);
+    return new_sym;
 }
 
 bool ksymbolp(TValue obj) { return ttissymbol(obj); }
