@@ -113,6 +113,15 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* TEMP: err */
     /* do nothing for now */
 
+    /* init the stacks used to protect variables & values from gc,
+     this should be done before any new object is created because
+     they are used by them */
+    K->rootedtv_top = 0;
+    K->rootedv_top = 0;
+
+    K->dummy_pair1 = kcons(K, KINERT, KNIL);
+    K->dummy_pair2 = kcons(K, KINERT, KNIL);
+
     /* initialize strings */
     /* Empty string */
     /* TODO: make it uncollectible */
@@ -164,10 +173,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ground_env = kmake_empty_environment(K);
     K->module_params_sym = ksymbol_new(K, "module-parameters");
 
-    /* init the stacks used to protect variables & values from gc */
-    K->rootedtv_top = 0;
-    K->rootedv_top = 0;
-    
     kinit_ground_env(K);
 
     /* set the threshold for gc start now that we have allocated all mem */ 

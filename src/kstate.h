@@ -138,6 +138,13 @@ struct klisp_State {
        object pointed to by a variable may change */
     int32_t rootedv_top;
     TValue *rootedv_buf[GC_PROTECT_SIZE];
+
+    /* These two are useful for constructing lists by means of set-car &
+       set-cdr. The idea is that these dummy pairs start as the head of 
+       the list (protecting the entire chain from GC) and at the end of the
+       construction, the list is cut off from the cdr of the dummy */
+    TValue dummy_pair1;
+    TValue dummy_pair2;
  };
 
 /* some size related macros */
@@ -310,6 +317,8 @@ inline void krootedv_pop(klisp_State *K)
     --(K->rootedv_top);
 }
 
+/* dummy functions will be in kpair.h, because we can't include
+   it from here */
 
 /*
 ** prototypes for underlying c functions of continuations &

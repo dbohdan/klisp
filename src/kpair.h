@@ -9,6 +9,7 @@
 
 #include "kobject.h"
 #include "kstate.h"
+#include "klimits.h"
 
 /* TODO: add type assertions */
 #define kcar(p_) (tv2pair(p_)->car)
@@ -62,5 +63,33 @@ TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr);
 #define kset_source_info(p_, si_) (kget_source_info(p_) = (si_))
 
 bool kpairp(TValue obj);
+
+inline TValue kget_dummy1(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair2) && ttisnil(kcdr(K->dummy_pair2)));
+    return K->dummy_pair1; 
+}
+
+inline TValue kcutoff_dummy1(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair1));
+    TValue res = kcdr(K->dummy_pair1);
+    kset_cdr(K->dummy_pair1, KNIL);
+    return res;
+}
+
+inline TValue kget_dummy2(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair2) && ttisnil(kcdr(K->dummy_pair2)));
+    return K->dummy_pair2; 
+}
+
+inline TValue kcutoff_dummy2(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair2));
+    TValue res = kcdr(K->dummy_pair2);
+    kset_cdr(K->dummy_pair2, KNIL);
+    return res;
+}
 
 #endif
