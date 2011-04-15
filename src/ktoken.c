@@ -458,7 +458,7 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
 	return new_sym;
     } else {
 	ks_tbadd(K, ch);
-	int32_t buf_len = ktok_read_until_delimiter(K);
+	int32_t buf_len = ktok_read_until_delimiter(K)+1;
 	char *buf = ks_tbget_buffer(K);
 	/* no exactness or radix prefix, default radix: 10 */
 	return ktok_read_number(K, buf, buf_len, false, false, false, 10);
