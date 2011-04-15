@@ -182,10 +182,13 @@ inline bool ks_sisempty(klisp_State *K);
 
 inline void ks_spush(klisp_State *K, TValue obj)
 {
-    if (ks_stop(K) == ks_ssize(K))
-	ks_sgrow(K, ks_stop(K)+1);
     ks_selem(K, ks_stop(K)) = obj;
     ++ks_stop(K);
+    /* put check after so that there is always space for one obj, and if 
+       realloc is needed, obj is already rooted */
+    if (ks_stop(K) == ks_ssize(K)) {
+	ks_sgrow(K, ks_stop(K)+1);
+    }
 }
 
 
