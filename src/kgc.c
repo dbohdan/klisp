@@ -755,7 +755,7 @@ void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t flags) {
     K->rootgc = o;
     o->gch.gct = klispC_white(K);
     o->gch.tt = tt;
-    o->gch.flags = tt;
+    o->gch.flags = flags;
     /* NOTE that o->gch.gclist doesn't need to be setted */
 }
 
