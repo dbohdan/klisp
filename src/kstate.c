@@ -116,8 +116,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* init the stacks used to protect variables & values from gc,
      this should be done before any new object is created because
      they are used by them */
-    K->rootedtv_top = 0;
-    K->rootedv_top = 0;
+    K->rooted_tvs_top = 0;
+    K->rooted_vars_top = 0;
 
     K->dummy_pair1 = kcons(K, KINERT, KNIL);
     K->dummy_pair2 = kcons(K, KINERT, KNIL);

@@ -131,13 +131,13 @@ struct klisp_State {
 
     /* TValue stack to protect values from gc, must not grow, otherwise 
        it may call the gc */
-    int32_t rootedtv_top;
-    TValue rootedtv_buf[GC_PROTECT_SIZE];
+    int32_t rooted_tvs_top;
+    TValue rooted_tvs_buf[GC_PROTECT_SIZE];
 
     /* TValue * stack to protect c variables from gc. This is used when the
        object pointed to by a variable may change */
-    int32_t rootedv_top;
-    TValue *rootedv_buf[GC_PROTECT_SIZE];
+    int32_t rooted_vars_top;
+    TValue *rooted_vars_buf[GC_PROTECT_SIZE];
 
     /* These two are useful for constructing lists by means of set-car &
        set-cdr. The idea is that these dummy pairs start as the head of 
@@ -293,28 +293,28 @@ inline bool ks_tbisempty(klisp_State *K)
 ** Functions to protect values from GC
 ** TODO: add write barriers
 */
-inline void krootedtv_push(klisp_State *K, TValue tv)
+inline void krooted_tvs_push(klisp_State *K, TValue tv)
 {
-    klisp_assert(K->rootedtv_top < GC_PROTECT_SIZE);
-    K->rootedtv_buf[K->rootedtv_top++] = tv;
+    klisp_assert(K->rooted_tvs_top < GC_PROTECT_SIZE);
+    K->rooted_tvs_buf[K->rooted_tvs_top++] = tv;
 }
 
-inline void krootedtv_pop(klisp_State *K)
+inline void krooted_tvs_pop(klisp_State *K)
 {
-    klisp_assert(K->rootedtv_top > 0);
-    --(K->rootedtv_top);
+    klisp_assert(K->rooted_tvs_top > 0);
+    --(K->rooted_tvs_top);
 }
 
-inline void krootedv_push(klisp_State *K, TValue *v)
+inline void krooted_vars_push(klisp_State *K, TValue *v)
 {
-    klisp_assert(K->rootedv_top < GC_PROTECT_SIZE);
-    K->rootedv_buf[K->rootedv_top++] = v;
+    klisp_assert(K->rooted_vars_top < GC_PROTECT_SIZE);
+    K->rooted_vars_buf[K->rooted_vars_top++] = v;
 }
 
-inline void krootedv_pop(klisp_State *K)
+inline void krooted_vars_pop(klisp_State *K)
 {
-    klisp_assert(K->rootedv_top > 0);
-    --(K->rootedv_top);
+    klisp_assert(K->rooted_vars_top > 0);
+    --(K->rooted_vars_top);
 }
 
 /* dummy functions will be in kpair.h, because we can't include

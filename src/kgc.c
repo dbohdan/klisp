@@ -571,10 +571,10 @@ static void markroot (klisp_State *K) {
        (all valid indexes are below top), all the objects in
        the two protected areas, and the two two dummy pairs */
     markvaluearray(K, K->sbuf, K->stop);
-    markvaluearray(K, K->rootedtv_buf, K->rootedtv_top);
+    markvaluearray(K, K->rooted_tvs_buf, K->rooted_tvs_top);
     /* the area protecting variables is an array of type TValue *[] */
-    TValue **ptr = K->rootedv_buf;
-    for (int i = 0, top = K->rootedv_top; i < top; i++, ptr++) {
+    TValue **ptr = K->rooted_vars_buf;
+    for (int i = 0, top = K->rooted_vars_top; i < top; i++, ptr++) {
 	markvalue(K, **ptr);
     }
     
