@@ -214,6 +214,10 @@ void ktok_error(klisp_State *K, char *str)
     ks_tbclear(K);
     ks_sclear(K);
     clear_shared_dict(K);
+
+    krooted_tvs_clear(K);
+    krooted_vars_clear(K);
+
     klispE_throw(K, str);
 }
 

@@ -307,6 +307,8 @@ inline void krooted_tvs_pop(klisp_State *K)
     --(K->rooted_tvs_top);
 }
 
+inline void krooted_tvs_clear(klisp_State *K) { K->rooted_tvs_top = 0; }
+
 inline void krooted_vars_push(klisp_State *K, TValue *v)
 {
     klisp_assert(K->rooted_vars_top < GC_PROTECT_SIZE);
@@ -318,6 +320,8 @@ inline void krooted_vars_pop(klisp_State *K)
     klisp_assert(K->rooted_vars_top > 0);
     --(K->rooted_vars_top);
 }
+
+inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
 
 /* dummy functions will be in kpair.h, because we can't include
    it from here */

@@ -21,8 +21,8 @@ void clear_buffers(klisp_State *K)
     K->shared_dict = KNIL;
 
     /* is it okay to do this in all cases? */
-    K->rooted_tvs_top = 0;
-    K->rooted_vars_top = 0;
+    krooted_tvs_clear(K);
+    krooted_vars_clear(K);
 }
 
 void klispE_throw(klisp_State *K, char *msg)
