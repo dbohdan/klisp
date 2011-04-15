@@ -45,7 +45,14 @@
 #define KEYWEAK         bitmask(KEYWEAKBIT)
 #define VALUEWEAK       bitmask(VALUEWEAKBIT)
 
-
+/* this one is klisp specific */
+#define markvaluearray(k, a, s) ({			\
+	    TValue *array_ = (a);			\
+    int32_t size_ = (s);				\
+    for(int32_t i_ = 0; i_ < size_; i_++, array_++) {	\
+	TValue o_ = *array_;				\
+	markvalue(k, o_);				\
+    }})
 
 #define markvalue(k,o) { checkconsistency(o);				\
 	if (iscollectable(o) && iswhite(gcvalue(o)))			\
@@ -240,8 +247,80 @@ static int32_t propagatemark (klisp_State *K) {
 	    sizeof(Node) * sizenode(h);
     }
 #endif
-	/* TODO add klisp cases here */
-	    
+/*    case K_TBIGINT: bigints are never gray */
+    case K_TPAIR: {
+	Pair *p = cast(Pair *, o);
+	markvalue(K, p->mark);
+	markvalue(K, p->car);
+	markvalue(K, p->cdr);
+	markvalue(K, p->si);
+	return sizeof(Pair);
+    }
+    case K_TSYMBOL: {
+	Symbol *s = cast(Symbol *, o);
+	markvalue(K, s->mark);
+	markvalue(K, s->str);
+	return sizeof(Symbol);
+    }
+    case K_TSTRING: {
+	String *s = cast(String *, o);
+	markvalue(K, s->mark); 
+	return sizeof(String) + s->size * sizeof(char);
+    }
+    case K_TENVIRONMENT: {
+	Environment *e = cast(Environment *, o);
+	markvalue(K, e->mark); 
+	markvalue(K, e->parents); 
+	markvalue(K, e->bindings); 
+	markvalue(K, e->keyed_node); 
+	markvalue(K, e->keyed_parents); 
+	return sizeof(Environment);
+    }
+    case K_TCONTINUATION: {
+	Continuation *c = cast(Continuation *, o);
+	markvalue(K, c->mark);
+	markvalue(K, c->name);
+	markvalue(K, c->si);
+	markvalue(K, c->parent);
+	markvaluearray(K, c->extra, c->extra_size);
+	return sizeof(Continuation) + sizeof(TValue) * c->extra_size;
+    }
+    case K_TOPERATIVE: {
+	Operative *op = cast(Operative *, o);
+	markvalue(K, op->name);
+	markvalue(K, op->si);
+	markvaluearray(K, op->extra, op->extra_size);
+	return sizeof(Operative) + sizeof(TValue) * op->extra_size;
+    }
+    case K_TAPPLICATIVE: {
+	Applicative *a = cast(Applicative *, o);
+	markvalue(K, a->name);
+	markvalue(K, a->si);
+	markvalue(K, a->underlying);
+	return sizeof(Applicative);
+    }
+    case K_TENCAPSULATION: {
+	Encapsulation *e = cast(Encapsulation *, o);
+	markvalue(K, e->name);
+	markvalue(K, e->si);
+	markvalue(K, e->key);
+	markvalue(K, e->value);
+	return sizeof(Encapsulation);
+    }
+    case K_TPROMISE: {
+	Promise *p = cast(Promise *, o);
+	markvalue(K, p->name);
+	markvalue(K, p->si);
+	markvalue(K, p->node);
+	return sizeof(Promise);
+    }
+    case K_TPORT: {
+	Port *p = cast(Port *, o);
+	markvalue(K, p->name);
+	markvalue(K, p->si);
+	markvalue(K, p->filename);
+	return sizeof(Port);
+    }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
 		type);
