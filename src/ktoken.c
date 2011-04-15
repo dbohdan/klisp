@@ -186,14 +186,17 @@ void ktok_save_source_info(klisp_State *K)
 
 TValue ktok_get_source_info(klisp_State *K)
 {
-    /* XXX: what happens on gc? (unrooted objects) */
     /* NOTE: the filename doesn't contains embedded '\0's */
     TValue filename_str = 
 	kstring_new(K, K->ktok_source_info.saved_filename,
 		    strlen(K->ktok_source_info.saved_filename));
+    krooted_tvs_push(K, filename_str);
     /* TEMP: for now, lines and column names are fixints */
-    return kcons(K, filename_str, kcons(K, i2tv(K->ktok_source_info.saved_line),
-					i2tv(K->ktok_source_info.saved_col)));
+    TValue res = kcons(K, filename_str, 
+		       kcons(K, i2tv(K->ktok_source_info.saved_line),
+			     i2tv(K->ktok_source_info.saved_col)));
+    krooted_tvs_pop(K);
+    return res;
 }
 
 /*
@@ -277,6 +280,7 @@ TValue ktok_read_token(klisp_State *K)
         /* positive number, no exactness or radix indicator */
 	int32_t buf_len = ktok_read_until_delimiter(K);
 	char *buf = ks_tbget_buffer(K);
+	/* read number should free the tbbuffer */
 	return ktok_read_number(K, buf, buf_len, false, false, false, 10);
 	}
     case '+': case '-':
@@ -420,7 +424,7 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
 		 occur if it used the regular bigint+ and bigint* */
 		is_fixint = false;
 		bigint_res = kbigint_new(K, false, fixint_res);
-		/* GC: root bigint_res */
+		krooted_vars_push(K, &bigint_res);
 	    }
 	    kbigint_add_digit(K, bigint_res, radix, new_digit);
 	}
@@ -435,6 +439,7 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
     } else {
 	if (!is_pos)
 	    kbigint_invert_sign(K, bigint_res);
+	krooted_vars_pop(K);
 	return bigint_res;
     }
 }
@@ -447,7 +452,9 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
 	ks_tbadd(K, ch);
 	ks_tbadd(K, '\0');
 	TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), 1);
-	ks_tbclear(K);
+	krooted_tvs_push(K, new_sym);
+	ks_tbclear(K); /* this shouldn't cause gc, but just in case */
+	krooted_tvs_pop(K);
 	return new_sym;
     } else {
 	ks_tbadd(K, ch);
@@ -508,8 +515,10 @@ TValue ktok_read_string(klisp_State *K)
 	    i++;
 	}
     }
-    TValue new_str = kstring_new(K, ks_tbget_buffer(K), i);
-    ks_tbclear(K);
+    TValue new_str = kstring_new(K, ks_tbget_buffer(K), i); 
+    krooted_tvs_push(K, new_str);
+    ks_tbclear(K); /* shouldn't cause gc, but still */
+    krooted_tvs_pop(K);
     return new_str;
 }
 
@@ -744,7 +753,9 @@ TValue ktok_read_identifier(klisp_State *K)
     }
     ks_tbadd(K, '\0');
     TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), i-1);
-    ks_tbclear(K);
+    krooted_tvs_push(K, new_sym);
+    ks_tbclear(K); /* this shouldn't cause gc, but just in case */
+    krooted_tvs_pop(K);
     return new_sym;
 }
 
