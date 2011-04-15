@@ -38,7 +38,13 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep, TValue name,
 TValue kmake_std_port(klisp_State *K, TValue filename, bool writep, 
 		      TValue name, TValue si, FILE *file)
 {
+    krooted_tvs_push(K, filename);
+    krooted_tvs_push(K, name);
+    krooted_tvs_push(K, si);
     Port *new_port = klispM_new(K, Port);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_port, K_TPORT, 

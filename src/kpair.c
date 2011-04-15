@@ -12,7 +12,11 @@
 
 TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr) 
 {
+    krooted_tvs_push(K, car);
+    krooted_tvs_push(K, cdr);
     Pair *new_pair = klispM_new(K, Pair);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_pair, K_TPAIR, (m? 0 : K_FLAG_IMMUTABLE));
