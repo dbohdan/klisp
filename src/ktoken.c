@@ -653,7 +653,7 @@ TValue ktok_read_special(klisp_State *K)
 		/* avoid warning */
 		return KINERT;
 	    }
-	    ch = buf[i++];
+	    ch = buf[++i];
 	}
 	if (i == buf_len) {
 	    ktok_error(K, "Missing last char in srfi-38 token");
