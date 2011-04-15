@@ -34,8 +34,7 @@ typedef struct {
     int32_t saved_col;
 } ksource_info_t;
 
-/* We would probably do with 3 or 4, but have a little extra just in case */
-#define GC_PROTECT_SIZE 16
+#define GC_PROTECT_SIZE 32
 
 /* NOTE: when adding TValues here, remember to add them to
    markroot in kgc.c!! */

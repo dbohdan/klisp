@@ -45,22 +45,30 @@
 ** "value", both of type TValue. symbol will be bound to a symbol named by
 ** "n_" and can be referrenced in the var_args
 */
-#define add_operative(K_, env_, n_, fn_, ...)	\
-    { symbol = ksymbol_new(K_, n_); \
-    value = make_operative(K_, fn_, __VA_ARGS__); \
-    kadd_binding(K_, env_, symbol, value); }
+
+/* Right now all symbols are rooted, but when possible, they will
+   be moved to a weak hashtable, so just in case root symbols during
+   operand/applicative construction */
+#define add_operative(K_, env_, n_, fn_, ...)		\
+    { symbol = ksymbol_new(K_, n_);			\
+	krooted_tvs_push(K, symbol);			\
+	value = make_operative(K_, fn_, __VA_ARGS__);	\
+	krooted_tvs_pop(K);				\
+	kadd_binding(K_, env_, symbol, value); }
 
 #define add_applicative(K_, env_, n_, fn_, ...)	\
-    { symbol = ksymbol_new(K_, n_); \
-    value = make_applicative(K_, fn_, __VA_ARGS__); \
-    kadd_binding(K_, env_, symbol, value); }
+    { symbol = ksymbol_new(K_, n_);			\
+	krooted_tvs_push(K, symbol);			\
+	value = make_applicative(K_, fn_, __VA_ARGS__); \
+	krooted_tvs_pop(K);				\
+	kadd_binding(K_, env_, symbol, value); }
 
 /*
 ** This is called once to bind all symbols in the ground environment
 */
 void kinit_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = K->ground_env; /* this is already rooted */
     TValue symbol, value;
 
     /*

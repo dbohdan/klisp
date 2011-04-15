@@ -8,6 +8,10 @@
 #include "kmem.h"
 #include "kstring.h"
 
+/* XXX: the msg buffers should be statically allocated and msgs
+   should be copied there, otherwise problems may occur if
+   the objects whose buffers were passed as parameters get GCted */
+
 void clear_buffers(klisp_State *K)
 {
     /* XXX: clear stack and char buffer, clear shared dict */
@@ -15,6 +19,10 @@ void clear_buffers(klisp_State *K)
     ks_sclear(K);
     ks_tbclear(K);
     K->shared_dict = KNIL;
+
+    /* is it okay to do this in all cases? */
+    K->rooted_tvs_top = 0;
+    K->rooted_vars_top = 0;
 }
 
 void klispE_throw(klisp_State *K, char *msg)
@@ -37,7 +45,8 @@ void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg) {
     char *msg_buf = klispM_malloc(K, tl);
     strcpy(msg_buf, msg);
     strcpy(msg_buf+l1, extra_msg);
-
+    /* if the mem allocator could throw errors, this
+       could potentially leak msg_buf */
     TValue error_msg = kstring_new(K, msg_buf, tl);
     klispM_freemem(K, msg_buf, tl);
 
