@@ -43,11 +43,17 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
     int32_t size = kbigint_print_size(bigint, 10) + 
 	((kbigint_negativep(bigint))? 1 : 0);
 	
+    krooted_tvs_push(K, bigint);
     TValue buf_str = kstring_new_g(K, size);
+    krooted_tvs_push(K, buf_str);
+
     /* write backwards so we can use printf later */
     char *buf = kstring_buf(buf_str) + size - 1;
-    /* GC: root copy */
+    krooted_tvs_push(K, buf_str);
+
     TValue copy = kbigint_copy(K, bigint);
+    krooted_vars_push(K, &copy);
+
     /* must work with positive bigint to get the digits */
     if (kbigint_negativep(bigint))
 	kbigint_invert_sign(K, copy);
@@ -62,8 +68,10 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
 	*buf-- = '-';
 
     kw_printf(K, "%s", buf+1);
-    /* MAYBE: we could free the copy & string instead of letting the 
-       gc do it */
+
+    krooted_vars_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
 }
 
 /*
@@ -113,9 +121,9 @@ void kw_print_string(klisp_State *K, TValue str)
 /*
 ** Mark initialization and clearing
 */
+/* GC: root is rooted */
 void kw_clear_marks(klisp_State *K, TValue root)
 {
-    
     assert(ks_sisempty(K));
     push_data(K, root);
 
@@ -146,7 +154,7 @@ void kw_clear_marks(klisp_State *K, TValue root)
 **   - The objects that appear only once are marked with a #t to 
 **   find repetitions and to allow unmarking after write
 */
-
+/* GC: root is rooted */
 void kw_set_initial_marks(klisp_State *K, TValue root)
 {
     assert(ks_sisempty(K));
@@ -276,6 +284,7 @@ void kwrite_simple(klisp_State *K, TValue obj)
 }
 
 
+/* GC: obj is rooted */
 void kwrite_fsm(klisp_State *K, TValue obj)
 {
     /* NOTE: a fixint is more than enough for output */
@@ -367,10 +376,15 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 */
 void kwrite(klisp_State *K, TValue obj)
 {
+    /* GC: root obj */
+    krooted_tvs_push(K, obj);
+
     kw_set_initial_marks(K, obj);
     kwrite_fsm(K, obj);
     kw_flush(K);
     kw_clear_marks(K, obj);
+
+    krooted_tvs_pop(K);
 }
 
 void kwrite_newline(klisp_State *K)
