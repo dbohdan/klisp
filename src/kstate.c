@@ -100,14 +100,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->grayagain = NULL;
     K->weak = NULL;
     K->tmudata = NULL;
-    /* how to init other gc values ?? */
     K->totalbytes = state_size() + KS_ISSIZE * sizeof(TValue) +
 	KS_ITBSIZE;
-    /* CHECK this when implementing incremental collector */
-    K->GCthreshold = 4*K->totalbytes; /* this is from lua, but we
-					 still have a lot of allocation
-					 to do... */
-
+    K->GCthreshold = UINT32_MAX; /* we still have a lot of allocation
+				    to do, put a very high value to 
+				    avoid collection */
     K->estimate = 0; /* doesn't matter, it is set by gc later */
     K->gcdept = 0;
     K->gcpause = KLISPI_GCPAUSE;
@@ -166,8 +163,15 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->list_app = kwrap(K, kmake_operative(K, KNIL, KNIL, list, 0));
     K->ground_env = kmake_empty_environment(K);
     K->module_params_sym = ksymbol_new(K, "module-parameters");
+
+    /* init the stacks used to protect variables & values from gc */
+    K->rootedtv_top = 0;
+    K->rootedv_top = 0;
     
     kinit_ground_env(K);
+
+    /* set the threshold for gc start now that we have allocated all mem */ 
+    K->GCthreshold = 4*K->totalbytes;
 
     return K;
 }
@@ -480,5 +484,3 @@ void klisp_close (klisp_State *K)
     /* NOTE: this needs to be done "by hand" */
     (*(K->frealloc))(K->ud, K, state_size(), 0);
 }
-
-

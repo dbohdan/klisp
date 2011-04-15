@@ -34,6 +34,9 @@ typedef struct {
     int32_t saved_col;
 } ksource_info_t;
 
+/* We would probably do with 3 or 4, but have a little extra just in case */
+#define GC_PROTECT_SIZE 16
+
 /* NOTE: when adding TValues here, remember to add them to
    markroot in kgc.c!! */
 struct klisp_State {
@@ -125,6 +128,16 @@ struct klisp_State {
     int32_t ssize; /* total size of array */
     int32_t stop; /* top of the stack (all elements are below this index) */
     TValue *sbuf;
+
+    /* TValue stack to protect values from gc, must not grow, otherwise 
+       it may call the gc */
+    int32_t rootedtv_top;
+    TValue rootedtv_buf[GC_PROTECT_SIZE];
+
+    /* TValue * stack to protect c variables from gc. This is used when the
+       object pointed to by a variable may change */
+    int32_t rootedv_top;
+    TValue *rootedv_buf[GC_PROTECT_SIZE];
  };
 
 /* some size related macros */
@@ -267,6 +280,34 @@ inline void ks_tbclear(klisp_State *K)
 inline bool ks_tbisempty(klisp_State *K)
 {
     return ks_tbidx(K) == 0;
+}
+
+/*
+** Functions to protect values from GC
+** TODO: add write barriers
+*/
+inline void krootedtv_push(klisp_State *K, TValue tv)
+{
+    klisp_assert(K->rootedtv_top < GC_PROTECT_SIZE);
+    K->rootedtv_buf[K->rootedtv_top++] = tv;
+}
+
+inline void krootedtv_pop(klisp_State *K)
+{
+    klisp_assert(K->rootedtv_top > 0);
+    --(K->rootedtv_top);
+}
+
+inline void krootedv_push(klisp_State *K, TValue *v)
+{
+    klisp_assert(K->rootedv_top < GC_PROTECT_SIZE);
+    K->rootedv_buf[K->rootedv_top++] = v;
+}
+
+inline void krootedv_pop(klisp_State *K)
+{
+    klisp_assert(K->rootedv_top > 0);
+    --(K->rootedv_top);
 }
 
 

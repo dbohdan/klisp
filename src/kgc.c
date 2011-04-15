@@ -568,10 +568,14 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->shared_dict);
 
     /* Mark all objects in the auxiliary stack,
-       all valid indexes are below top */
-    TValue *ptr = K->sbuf;
-    for (int i = 0, top = K->stop; i < top; i++, ptr++) {
-	markvalue(K, *ptr);
+       (all valid indexes are below top) and all the objects in
+       the two protected areas */
+    markvaluearray(K, K->sbuf, K->stop);
+    markvaluearray(K, K->rootedtv_buf, K->rootedtv_top);
+    /* the area protecting variables is an array of type TValue *[] */
+    TValue **ptr = K->rootedv_buf;
+    for (int i = 0, top = K->rootedv_top; i < top; i++, ptr++) {
+	markvalue(K, **ptr);
     }
 
 /*    markmt(g); */
