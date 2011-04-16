@@ -54,12 +54,16 @@ void map_for_each_get_metrics(
 
 /* Return two lists, isomorphic to lss: one list of cars and one list
    of cdrs (replacing the value of lss) */
+/* GC: Assumes lss is rooted, uses dummys 2 & 3 */
 TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
 				  int32_t apairs, int32_t cpairs);
 
 /* Transpose lss so that the result is a list of lists, each one having
    metrics (app_apairs, app_cpairs). The metrics of the returned list
    should be (res_apairs, res_cpairs) */
+
+/* GC: Assumes lss is rooted, uses dummys 1, & 
+   (through get_cars_cdrs, 2, 3) */
 TValue map_for_each_transpose(klisp_State *K, TValue lss, 
 			      int32_t app_apairs, int32_t app_cpairs, 
 			      int32_t res_apairs, int32_t res_cpairs);

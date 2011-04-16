@@ -321,7 +321,13 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
     TValue lp = kget_dummy3(K);
     TValue lap = lp;
 
+    TValue cars = KNIL; /* put something for GC */
     TValue tail = lss;
+
+    /* GC: both cars & tail vary in each loop, to protect them we need
+       the vars stack */
+    krooted_vars_push(K, &cars);
+    krooted_vars_push(K, &tail);
     
     /* Loop over list of lists, creating a list of cars and 
        a list of cdrs, accumulate the list of cars and loop
@@ -339,11 +345,8 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 
 	while(pairs--) {
 	    /* accumulate cars and replace tail with cdrs */
-	    TValue cars = 
-		map_for_each_get_cars_cdrs(K, &tail, app_apairs, app_cpairs);
-	    krooted_tvs_push(K, cars);
+	    cars = map_for_each_get_cars_cdrs(K, &tail, app_apairs, app_cpairs);
 	    TValue np = kcons(K, cars, KNIL);
-	    krooted_tvs_pop(K);
 	    kset_cdr(lp, np);
 	    lp = np;
 	}
@@ -359,6 +362,8 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 	}
     }
 
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
     return kcutoff_dummy3(K);
 }
 
