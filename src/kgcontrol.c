@@ -164,16 +164,14 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
     }
 
     unmark_list(K, clauses);
+
+    TValue cars = kcutoff_dummy1(K);
+    TValue cdrs = kcutoff_dummy2(K);
     
     if (!ttispair(tail) && !ttisnil(tail)) {
-	UNUSED(kcutoff_dummy1(K));
-	UNUSED(kcutoff_dummy2(K));
 	klispE_throw(K, "$cond: expected list (clauses)");
 	return KNIL;
     } else {
-
-	TValue cars = kcutoff_dummy1(K);
-	TValue cdrs = kcutoff_dummy2(K);
 	/* check copy list could throw an error
 	   and leave the dummys full, use tvs_push instead */
 	krooted_tvs_push(K, cars);
@@ -258,6 +256,7 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue bodies;
     TValue tests = split_check_cond_clauses(K, ptree, &bodies);
     krooted_tvs_push(K, tests);
+    krooted_tvs_push(K, bodies);
     
     TValue obj;
     if (ttisnil(tests)) {
@@ -275,6 +274,7 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	obj = KFALSE; 
     }
 
+    krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     kapply_cc(K, obj);
 }
