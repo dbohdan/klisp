@@ -76,16 +76,17 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
     /* bindings in an operative are in a child of the static env */
     TValue env = kmake_environment(K, senv);
 
-    /* match & add binding may allocate, protect env */
+    /* protect env */
     krooted_tvs_push(K, env); 
 
     /* TODO use name from operative */
     match(K, "[user-operative]", env, ptree, obj);
     kadd_binding(K, env, penv, denv);
-    
-    krooted_tvs_pop(K); /* make cont will protect it now */
 
+    /* keep env in stack in case a cont has to be constructed */
+    
     if (ttisnil(body)) {
+	krooted_tvs_pop(K);
 	kapply_cc(K, KINERT);
     } else {
 	/* this is needed because seq continuation doesn't check for 
@@ -96,6 +97,7 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
 					     do_seq, 2, tail, env);
 	    kset_cc(K, new_cont);
 	} 
+	krooted_tvs_pop(K);
 	ktail_eval(K, kcar(body), env);
     }
 }
@@ -131,10 +133,12 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$lambda", vptree, KIGNORE);
+    krooted_tvs_push(K, vptree); 
     /* the body should be a list */
-    int32_t dummy;
-    (void)check_list(K, "$lambda", true, vbody, &dummy);
+    UNUSED(check_list(K, "$lambda", true, vbody, NULL));
     vbody = copy_es_immutable_h(K, "$lambda", vbody, false);
+
+    krooted_tvs_push(K, vbody); 
 
     TValue new_app = kmake_applicative(K, do_vau, 4, vptree, KIGNORE, vbody, 
 				       denv);
@@ -155,7 +159,10 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
     TValue env = (get_opt_tpar(K, "apply", K_TENVIRONMENT, &maybe_env))?
 	maybe_env : kmake_empty_environment(K);
 
+    krooted_tvs_push(K, env); 
     TValue expr = kcons(K, kunwrap(app), obj);
+    krooted_tvs_pop(K); 
+
     ktail_eval(K, expr, env);
 }
 
@@ -242,18 +249,18 @@ void map_for_each_get_metrics(klisp_State *K, char *name, TValue lss,
 
 /* Return two lists, isomorphic to lss: one list of cars and one list
    of cdrs (replacing the value of lss) */
+
+/* GC: assumes lss is rooted, and dummy1 & 2 are free in K */
 TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
 				  int32_t apairs, int32_t cpairs)
 {
     TValue tail = *lss;
 
-    TValue dummy_cars = kcons(K, KINERT, KNIL);
-    TValue lp_cars = dummy_cars;
-    TValue lap_cars = dummy_cars;
+    TValue lp_cars = kget_dummy1(K);
+    TValue lap_cars = lp_cars;
 
-    TValue dummy_cdrs = kcons(K, KINERT, KNIL);
-    TValue lp_cdrs = dummy_cdrs;
-    TValue lap_cdrs = dummy_cdrs;
+    TValue lp_cdrs = kget_dummy2(K);
+    TValue lap_cdrs = lp_cdrs;
     
     while(apairs != 0 || cpairs != 0) {
 	int32_t pairs;
@@ -297,21 +304,22 @@ TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss,
 	}
     }
 
-    *lss = kcdr(dummy_cdrs);
-    return kcdr(dummy_cars);
+    *lss = kcutoff_dummy2(K);
+    return kcutoff_dummy1(K);
 }
 
 /* Transpose lss so that the result is a list of lists, each one having
    metrics (app_apairs, app_cpairs). The metrics of the returned list
    should be (res_apairs, res_cpairs) */
+
+/* GC: assumes lss is rooted */
 TValue map_for_each_transpose(klisp_State *K, TValue lss, 
 			      int32_t app_apairs, int32_t app_cpairs, 
 			      int32_t res_apairs, int32_t res_cpairs)
 {
-    /* GC: root intermediate objects */
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue lp = dummy;
-    TValue lap = dummy;
+    /* reserve dummy1 & 2 to get_cars_cdrs */
+    TValue lp = kget_dummy3(K);
+    TValue lap = lp;
 
     TValue tail = lss;
     
@@ -333,8 +341,9 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 	    /* accumulate cars and replace tail with cdrs */
 	    TValue cars = 
 		map_for_each_get_cars_cdrs(K, &tail, app_apairs, app_cpairs);
-
+	    krooted_tvs_push(K, cars);
 	    TValue np = kcons(K, cars, KNIL);
+	    krooted_tvs_pop(K);
 	    kset_cdr(lp, np);
 	    lp = np;
 	}
@@ -350,7 +359,7 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 	}
     }
 
-    return kcdr(dummy);
+    return kcutoff_dummy3(K);
 }
 
 /* Continuation helpers for map */
@@ -430,11 +439,15 @@ void do_map(klisp_State *K, TValue *xparams, TValue obj)
 	TValue first_ptree = check_copy_list(K, "map", kcar(ls), false);
 	ls = kcdr(ls);
 	n = n-1;
+	krooted_tvs_push(K, first_ptree);
 	/* have to unwrap the applicative to avoid extra evaluation of first */
 	TValue new_expr = kcons(K, kunwrap(app), first_ptree);
+	krooted_tvs_push(K, new_expr);
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map, 6, app, 
 			       ls, last_pair, i2tv(n), denv, KFALSE);
+	krooted_tvs_pop(K); 
+	krooted_tvs_pop(K); 
 	kset_cc(K, new_cont);
 	ktail_eval(K, new_expr, denv);
     }
@@ -463,12 +476,14 @@ void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
  	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map_encycle, 2, 
 			   dummy, last_apair);
 
+    krooted_tvs_push(K, encycle_cont);
     /* schedule the mapping of the elements of the cycle, 
        signal dummyp = true to avoid creating a pair for
        the inert value passed to the first continuation */
     TValue new_cont = 
 	kmake_continuation(K, encycle_cont, KNIL, KNIL, do_map, 6, app, ls, 
 			   last_apair, cpairs, denv, KTRUE);
+    krooted_tvs_pop(K); 
     kset_cc(K, new_cont);
     /* this will be like a nop and will continue with do_map */
     kapply_cc(K, KINERT);
@@ -504,20 +519,32 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
        isn't all that great..., but what are the expectations considering
        there is no prescribed order? */
 
+    krooted_tvs_push(K, lss);
     /* This will be the list to be returned, but it will be copied
        before to play a little nicer with continuations */
     TValue dummy = kcons(K, KINERT, KNIL);
     
+    krooted_tvs_push(K, dummy);
+
     TValue ret_cont = (res_cpairs == 0)?
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map_ret, 1, dummy)
 	: kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map_cycle, 4, 
 			     app, dummy, i2tv(res_cpairs), denv);
+
+
+    krooted_tvs_push(K, ret_cont);
+
     /* schedule the mapping of the elements of the acyclic part.
        signal dummyp = true to avoid creating a pair for
        the inert value passed to the first continuation */
     TValue new_cont = 
 	kmake_continuation(K, ret_cont, KNIL, KNIL, do_map, 6, app, lss, dummy,
 			   i2tv(res_apairs), denv, KTRUE);
+
+    krooted_tvs_pop(K); 
+    krooted_tvs_pop(K); 
+    krooted_tvs_pop(K); 
+
     kset_cc(K, new_cont);
     /* this will be a nop, and will continue with do_map */
     kapply_cc(K, KINERT);

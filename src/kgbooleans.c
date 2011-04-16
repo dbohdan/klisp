@@ -147,10 +147,11 @@ void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     TValue ls = check_copy_list(K, ksymbol_buf(sname), ptree, false);
     /* This will work even if ls is empty */
-    /* GC: ls is protected by make cont */
+    krooted_tvs_push(K, ls);
     TValue new_cont = 
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_Sandp_Sorp, 
 			   4, sname, term_bool, ls, denv);
+    krooted_tvs_pop(K);
     /* there's no need to mark it as bool checking, no evaluation
        is done in the dynamic extent of this cont */
     kset_cc(K, new_cont);
