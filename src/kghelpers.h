@@ -392,6 +392,7 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 */
 void do_return_value(klisp_State *K, TValue *xparams, TValue obj);
 
+/* GC: assumes parent & obj are rooted */
 inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
 {
     return kmake_continuation(K, parent, KNIL, KNIL, do_return_value, 1, obj);

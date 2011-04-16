@@ -49,7 +49,6 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
 
     /* write backwards so we can use printf later */
     char *buf = kstring_buf(buf_str) + size - 1;
-    krooted_tvs_push(K, buf_str);
 
     TValue copy = kbigint_copy(K, bigint);
     krooted_vars_push(K, &copy);
@@ -69,9 +68,9 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
 
     kw_printf(K, "%s", buf+1);
 
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
     krooted_vars_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
 }
 
 /*
