@@ -97,18 +97,14 @@ inline void match(klisp_State *K, char *name, TValue env, TValue ptree,
     }
 }
 
+/* GC: assumes ptree & penv are rooted */
 inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree, 
 			       TValue penv)
 {
-    /* 
-    ** GC: ptree is rooted because it is in the stack at all times.
-    ** The copied pair should be kept safe some other way
-    ** the same for ptree
-    */
-
     /* copy is only valid if the state isn't ST_PUSH */
-    /* but init anyways to avoid warning */
+    /* but init anyways for gc (and avoiding warnings) */
     TValue copy = ptree;
+    krooted_vars_push(K, &copy);
 
     /* 
     ** NIL terminated singly linked list of symbols 
@@ -230,6 +226,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 			       "environment parmameter");
     }
     ptree_clear_all(K, sym_ls);
+    krooted_vars_pop(K);
     return copy;
 }
 
