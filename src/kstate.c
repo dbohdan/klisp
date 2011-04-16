@@ -304,14 +304,14 @@ TValue select_interceptor(TValue guard_ls)
 ** Returns a list of entries like the following:
 ** (interceptor-op outer_cont . denv)
 */
-/* TODO: should inline this one, is only called from one place */
-TValue create_interception_list(klisp_State *K, TValue src_cont, 
+
+/* GC: assume src_cont & dst_cont are rooted, uses dummy1 */
+inline TValue create_interception_list(klisp_State *K, TValue src_cont, 
 				       TValue dst_cont)
 {
     /* GC: root intermediate pairs */
     mark_iancestors(dst_cont);
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue tail = dummy;
+    TValue tail = kget_dummy1(K);
     TValue cont = src_cont;
 
     /* exit guards are from the inside to the outside, and
@@ -328,9 +328,13 @@ TValue create_interception_list(klisp_State *K, TValue src_cont,
                 /* TODO make macros */
 		TValue denv = tv2cont(cont)->extra[1]; 
 		TValue outer = tv2cont(cont)->parent;
-		TValue new_entry = kcons(K, interceptor,
-					kcons(K, outer, denv));
+		TValue outer_denv = kcons(K, outer, denv);
+		krooted_tvs_push(K, outer_denv);
+		TValue new_entry = kcons(K, interceptor, outer_denv);
+		krooted_tvs_pop(K); /* already in entry */
+		krooted_tvs_push(K, new_entry);
 		TValue new_pair = kcons(K, new_entry, KNIL);
+		krooted_tvs_pop(K);
 		kset_cdr(tail, new_pair);
 		tail = new_pair;
 	    }
@@ -347,6 +351,7 @@ TValue create_interception_list(klisp_State *K, TValue src_cont,
 
     cont = dst_cont;
     TValue entry_int = KNIL;
+    krooted_vars_push(K, &entry_int);
 
     while(!kis_marked(cont)) {
 	/* only outer conts have entry guards */
@@ -357,9 +362,13 @@ TValue create_interception_list(klisp_State *K, TValue src_cont,
                 /* TODO make macros */
 		TValue denv = tv2cont(cont)->extra[1]; 
 		TValue outer = cont;
-		TValue new_entry = kcons(K, interceptor,
-					 kcons(K, outer, denv));
+		TValue outer_denv = kcons(K, outer, denv);
+		krooted_tvs_push(K, outer_denv);
+		TValue new_entry = kcons(K, interceptor, outer_denv);
+		krooted_tvs_pop(K); /* already in entry */
+		krooted_tvs_push(K, new_entry);
 		entry_int = kcons(K, new_entry, entry_int);
+		krooted_tvs_pop(K);
 	    }
 	}
 	cont = tv2cont(cont)->parent;
@@ -369,7 +378,8 @@ TValue create_interception_list(klisp_State *K, TValue src_cont,
 
     /* all interceptions collected, append the two lists and return */
     kset_cdr(tail, entry_int);
-    return kcdr(dummy);
+    krooted_vars_pop(K);
+    return kcutoff_dummy1(K);
 }
 
 /* this passes the operand tree to the continuation */
@@ -406,18 +416,19 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
 	TValue outer = kcadr(first);
 	TValue denv = kcddr(first);
 	TValue app = kmake_applicative(K, cont_app, 1, outer);
-	TValue ptree = kcons(K, obj, kcons(K, app, KNIL));
-	TValue new_cont = 
-	    kmake_continuation(K, outer, KNIL, KNIL, do_interception,
-			       2, kcdr(ls), dst_cont);
+	krooted_tvs_push(K, app);
+	TValue ptree = klist(K, 2, obj, app);
+	krooted_tvs_pop(K); /* already in ptree */
+	krooted_tvs_push(K, ptree);
+	TValue new_cont = kmake_continuation(K, outer, do_interception,
+					     2, kcdr(ls), dst_cont);
 	kset_cc(K, new_cont);
+	krooted_tvs_pop(K);
 	ktail_call(K, op, ptree, denv);
     }
 }
 
-/* GC: should probably save the cont to retain the objects in 
-   xparams in case of gc (Also useful for source code info)
-   probably a new field in K called active_cont */
+/* GC: assumes obj & dst_cont are rooted */
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 {
     TValue src_cont = kget_cc(K);
@@ -426,11 +437,12 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
     if (ttisnil(int_ls)) {
 	new_cont = dst_cont; /* no interceptions */
     } else {
+	krooted_tvs_push(K, int_ls);
 	/* we have to contruct a continuation to do the interceptions
 	   in order and finally call dst_cont if no divert occurs */
 	new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
 				      do_interception, 2, int_ls, dst_cont);
-
+	krooted_tvs_pop(K);
     }
 
     /*
