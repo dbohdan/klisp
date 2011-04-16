@@ -158,7 +158,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 			kset_mark(top, top);
 		    } else {
 			/* create a new pair as copy, save it in the mark */
-			TValue new_pair = kdummy_imm_cons(K);
+			TValue new_pair = kimm_cons(K, KNIL, KNIL);
 			kset_mark(top, new_pair);
 		    }
 		    /* keep the old pair and continue with the car */

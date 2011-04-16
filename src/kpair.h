@@ -51,13 +51,16 @@
 #define kset_car(p_, v_) (kcar(p_) = (v_))
 #define kset_cdr(p_, v_) (kcdr(p_) = (v_))
 
-#define kdummy_cons(st_) (kcons(st_, KNIL, KNIL))
-#define kdummy_imm_cons(st_) (kimm_cons(st_, KNIL, KNIL))
-
+/* GC: assumes car & cdr are rooted */
 TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr);
+
+/* GC: assumes all argps are rooted */
+TValue klist_g(klisp_State *K, bool m, int32_t n, ...);
 
 #define kcons(K_, car_, cdr_) (kcons_g(K_, true, car_, cdr_))
 #define kimm_cons(K_, car_, cdr_) (kcons_g(K_, false, car_, cdr_))
+#define klist(K_, n_, ...) (klist_g(K_, true, n_, __VA_ARGS__))
+#define kimm_list(K_, n_, ...) (klist_g(K_, false, n_, __VA_ARGS__))
 
 #define kget_source_info(p_) (tv2pair(p_)->si)
 #define kset_source_info(p_, si_) (kget_source_info(p_) = (si_))
