@@ -20,8 +20,9 @@
    file-exists? and a mechanism to truncate or append to a file, or 
    throw error if it exists.
    Should use open, but it is non standard (fcntl.h, POSIX only) */
-TValue kmake_port(klisp_State *K, TValue filename, bool writep, TValue name, 
-			  TValue si)
+
+/* GC: Assumes filename is rooted */
+TValue kmake_port(klisp_State *K, TValue filename, bool writep)
 {
     /* for now always use text mode */
     FILE *f = fopen(kstring_buf(filename), writep? "w": "r");
@@ -29,22 +30,18 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep, TValue name,
 	klispE_throw(K, "Create port: could't open file");
 	return KINERT;
     } else {
-	return kmake_std_port(K, filename, writep, name, si, f);
+	return kmake_std_port(K, filename, writep, KNIL, KNIL, f);
     }
 }
 
 /* this is for creating ports for stdin/stdout/stderr &
  also a helper for the above */
+
+/* GC: Assumes filename, name & si are rooted */
 TValue kmake_std_port(klisp_State *K, TValue filename, bool writep, 
 		      TValue name, TValue si, FILE *file)
 {
-    krooted_tvs_push(K, filename);
-    krooted_tvs_push(K, name);
-    krooted_tvs_push(K, si);
     Port *new_port = klispM_new(K, Port);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_port, K_TPORT, 

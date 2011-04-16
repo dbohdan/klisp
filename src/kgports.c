@@ -65,7 +65,7 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, name, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
+    TValue new_port = kmake_port(K, filename, writep);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
@@ -113,7 +113,7 @@ void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_1tp(K, name, ptree, "string", ttisstring, filename);
 
-    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
+    TValue new_port = kmake_port(K, filename, writep);
     kapply_cc(K, new_port);
 }
 
@@ -356,7 +356,7 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, name, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
+    TValue new_port = kmake_port(K, filename, writep);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
@@ -471,7 +471,7 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the
      last expression is done */
-    TValue port = kmake_port(K, filename, false, KNIL, KNIL);
+    TValue port = kmake_port(K, filename, false);
     krooted_tvs_push(K, port);
 
     TValue inert_cont = make_return_value_cont(K, kget_cc(K), KINERT);
@@ -515,7 +515,7 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1tp(K, "get-module", ptree, "string", ttisstring, filename, 
 	maybe_env);
 
-    TValue port = kmake_port(K, filename, false, KNIL, KNIL);
+    TValue port = kmake_port(K, filename, false);
     krooted_tvs_push(K, port);
 
     TValue env = kmake_environment(K, K->ground_env);
