@@ -234,7 +234,7 @@ inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
 */
 inline void unmark_list(klisp_State *K, TValue obj)
 {
-    (void) K; /* not needed, it's here for consistency */
+    UNUSED(K); /* not needed, it's here for consistency */
     while(ttispair(obj) && kis_marked(obj)) {
 	kunmark(obj);
 	obj = kcdr(obj);
