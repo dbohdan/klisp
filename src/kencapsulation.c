@@ -11,27 +11,17 @@
 #include "kpair.h"
 #include "kgc.h"
 
-TValue kmake_encapsulation(klisp_State *K, TValue name, TValue si,
-			   TValue key, TValue val)
+/* GC: Assumes that key & val are rooted */
+TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val)
 {
-    krooted_tvs_push(K, name);
-    krooted_tvs_push(K, si);
-    krooted_tvs_push(K, key);
-    krooted_tvs_push(K, val);
-    
     Encapsulation *new_enc = klispM_new(K, Encapsulation);
-
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_enc, K_TENCAPSULATION, 0);
 
     /* encapsulation specific fields */
-    new_enc->name = name;
-    new_enc->si = si;
+    new_enc->name = KNIL;
+    new_enc->si = KNIL;
     new_enc->key = key;
     new_enc->value = val;
 
