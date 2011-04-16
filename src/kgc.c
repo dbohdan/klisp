@@ -700,7 +700,6 @@ void klispC_step (klisp_State *K) {
     }
 }
 
-
 void klispC_fullgc (klisp_State *K) {
      if (K->gcstate <= GCSpropagate) {
 	/* reset sweep marks to sweep all elements (returning them to white) */

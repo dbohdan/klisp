@@ -18,6 +18,7 @@
 #include "klimits.h"
 #include "kmem.h"
 #include "kerror.h"
+#include "kgc.h"
 
 /*
 ** About the realloc function:
@@ -44,7 +45,21 @@
 void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) {
   klisp_assert((osize == 0) == (block == NULL));
 
+  /* TEMP: for now only Stop the world GC */
+  #ifdef KUSE_GC
+  if (K->totalbytes - osize + nsize >= K->GCthreshold) {
+      #ifdef KDEBUG_GC
+      printf("GC START, total_bytes: %d\n", K->totalbytes);
+      #endif
+      klispC_fullgc(K);
+      #ifdef KDEBUG_GC
+      printf("GC END, total_bytes: %d\n", K->totalbytes);
+      #endif
+  }
+  #endif
+
   block = (*K->frealloc)(K->ud, block, osize, nsize);
+
   if (block == NULL && nsize > 0) {
       /* TEMP: try GC if there is no more mem */
       /* TODO: make this a catchable error */

@@ -13,6 +13,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/* temp defines till gc is stabilized */
+#define KUSE_GC 1
+/* Print msgs when starting and ending gc */
+#define KDEBUG_GC 1
 
 /*
 #define KTRACK_MARKS (true)
@@ -30,7 +34,10 @@
 ** mean larger pauses which mean slower collection.) You can also change
 ** this value dynamically.
 */
-#define KLISPI_GCPAUSE	200  /* 200% (wait memory to double before next GC) */
+
+/* In lua that has incremental gc this is setted to 200, in
+   klisp as we don't yet have incremental gc, we set it to 400 */
+#define KLISPI_GCPAUSE	400  /* 400% (wait memory to quadruple before next GC) */
 
 
 /*
