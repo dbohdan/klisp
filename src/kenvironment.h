@@ -10,7 +10,6 @@
 #include "kobject.h"
 #include "kstate.h"
 
-/* TEMP: for now allow only a single parent */
 TValue kmake_environment(klisp_State *K, TValue parents);
 #define kmake_empty_environment(kst_) (kmake_environment(kst_, KNIL))
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val);

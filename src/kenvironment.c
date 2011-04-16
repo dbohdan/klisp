@@ -23,12 +23,11 @@
 #define env_is_keyed(env_) (!ttisnil(env_keyed_node(env_)))
 /* env_ should be keyed! */
 #define env_has_key(env_, k_) (tv_equal(env_keyed_key(env_), (k_)))
-/* TEMP: for now allow only a single parent */
+
+/* GC: Assumes that parents is rooted */
 TValue kmake_environment(klisp_State *K, TValue parents)
 {
-    krooted_tvs_push(K, parents);
     Environment *new_env = klispM_new(K, Environment);
-    krooted_tvs_pop(K);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_env, K_TENVIRONMENT, 0);
@@ -106,26 +105,25 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 #define kenv_parents(kst_, env_) (tv2env(env_)->parents)
 #define kenv_bindings(kst_, env_) (tv2env(env_)->bindings)
 
+/* Assumes that env, sym & val are rooted. sym & val need not be
+ right now, but that could change */
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 {
     TValue oldb = kfind_local_binding(K, kenv_bindings(K, env), sym);
 
     if (ttisnil(oldb)) {
-	krooted_tvs_push(K, env); /* keep the env rooted */
 	TValue new_pair = kcons(K, sym, val);
 	kenv_bindings(K, env) = kcons(K, new_pair, kenv_bindings(K, env));
-	krooted_tvs_pop(K);
     } else {
 	kset_cdr(oldb, val);
     }
 }
 
 /* This works no matter if parents is a list or a single environment */
+/* GC: assumes env & sym are rooted */
 inline bool try_get_binding(klisp_State *K, TValue env, TValue sym, 
 			    TValue *value)
 {
-    krooted_tvs_push(K, env); /* keep the env rooted */
-    krooted_tvs_push(K, sym); /* keep the sym rooted */
     /* assume the stack may be in use, keep track of pushed objs */
     int pushed = 1;
     ks_spush(K, env);
@@ -141,8 +139,6 @@ inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 		/* remember to leave the stack as it was */
 		ks_sdiscardn(K, pushed);
 		*value = kcdr(oldb);
-		krooted_tvs_pop(K);
-		krooted_tvs_pop(K);
 		return true;
 	    }
 	    TValue parents = kenv_parents(K, obj);
@@ -154,9 +150,6 @@ inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 	    pushed += 2;
 	}
     }
-
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
 
     *value = KINERT;
     return false;
@@ -183,26 +176,21 @@ bool kbinds(klisp_State *K, TValue env, TValue sym)
 /* keyed dynamic vars */
 
 /* MAYBE: This could be combined with the default constructor */
+/* GC: assumes parent, key & val are rooted */
 TValue kmake_keyed_static_env(klisp_State *K, TValue parent, TValue key, 
 			      TValue val)
 {
-    krooted_tvs_push(K, key); /* keep the key/val rooted */
-    krooted_tvs_push(K, val); 
     TValue new_env = kmake_environment(K, parent);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
     krooted_tvs_push(K, new_env); /* keep the env rooted */
     env_keyed_node(new_env) = kcons(K, key, val);
     krooted_tvs_pop(K);
     return new_env;
 }
 
+/* GC: assumes parent, key & env are rooted */
 inline bool try_get_keyed(klisp_State *K, TValue env, TValue key, 
 			  TValue *value)
 {
-    krooted_tvs_push(K, env); /* keep the env/key rooted */
-    krooted_tvs_push(K, key); 
-
     /* MAYBE: this could be optimized to mark environments to avoid
      repetition */
     /* assume the stack may be in use, keep track of pushed objs */
@@ -222,8 +210,6 @@ inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
 		/* remember to leave the stack as it was */
 		ks_sdiscardn(K, pushed);
 		*value = env_keyed_val(obj);
-		krooted_tvs_pop(K);
-		krooted_tvs_pop(K);
 		return true;
 	    } else {
 		TValue parents = env_keyed_parents(obj);
@@ -236,8 +222,6 @@ inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
 	    pushed += 2;
 	}
     }
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
     *value = KINERT;
     return false;
 }

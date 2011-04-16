@@ -51,17 +51,30 @@
    operand/applicative construction */
 #define add_operative(K_, env_, n_, fn_, ...)		\
     { symbol = ksymbol_new(K_, n_);			\
-	krooted_tvs_push(K, symbol);			\
+	krooted_tvs_push(K_, symbol);			\
 	value = make_operative(K_, fn_, __VA_ARGS__);	\
-	krooted_tvs_pop(K);				\
-	kadd_binding(K_, env_, symbol, value); }
+	krooted_tvs_push(K_, value);			\
+	kadd_binding(K_, env_, symbol, value);		\
+	krooted_tvs_pop(K_);				\
+	krooted_tvs_pop(K_); }
 
 #define add_applicative(K_, env_, n_, fn_, ...)	\
     { symbol = ksymbol_new(K_, n_);			\
-	krooted_tvs_push(K, symbol);			\
+	krooted_tvs_push(K_, symbol);			\
 	value = make_applicative(K_, fn_, __VA_ARGS__); \
-	krooted_tvs_pop(K);				\
-	kadd_binding(K_, env_, symbol, value); }
+	krooted_tvs_push(K_, value);			\
+	kadd_binding(K_, env_, symbol, value);		\
+	krooted_tvs_pop(K_);				\
+	krooted_tvs_pop(K_); }	
+
+#define add_value(K_, env_, n_, v_)			\
+    { value = v_;					\
+	krooted_tvs_push(K_, value);			\
+	symbol = ksymbol_new(K_, n_);			\
+	krooted_tvs_push(K_, symbol);			\
+	kadd_binding(K_, env_, symbol, v_);		\
+	krooted_tvs_pop(K_);				\
+	krooted_tvs_pop(K_); }
 
 /*
 ** This is called once to bind all symbols in the ground environment
@@ -530,14 +543,12 @@ void kinit_ground_env(klisp_State *K)
 		    continuation_applicative, 0);
 
     /* 7.2.6 root-continuation */
-    symbol = ksymbol_new(K, "root-continuation");
-    value = K->root_cont;
-    kadd_binding(K, ground_env, symbol, value);
+    add_value(K, ground_env, "root-continuation",
+	      K->root_cont);
     
     /* 7.2.7 error-continuation */
-    symbol = ksymbol_new(K, "error-continuation");
-    value = K->error_cont;
-    kadd_binding(K, ground_env, symbol, value);
+    add_value(K, ground_env, "error-continuation",
+	      K->root_cont);
 
     /* 
     ** 7.3 Library features

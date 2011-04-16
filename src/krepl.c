@@ -69,8 +69,11 @@ void eval_cfn(klisp_State *K, TValue *xparams, TValue obj)
 void loop_fn(klisp_State *K, TValue *xparams, TValue obj);
 
 /* this is called from both loop_fn and error_fn */
+/* GC: assumes denv is rooted */
 inline void create_loop(klisp_State *K, TValue denv)
 {
+    /* GC: the intermediate conts are protected by the
+       others */
     TValue loop_cont = kmake_continuation(
 	K, K->root_cont, KNIL, KNIL, &loop_fn, 1, denv);
     TValue eval_cont = kmake_continuation(
@@ -119,22 +122,37 @@ void kinit_repl(klisp_State *K)
 {
     TValue std_env = kmake_environment(K, K->ground_env);
 
+    krooted_tvs_push(K, std_env);
+
     /* set up the continuations */
     TValue root_cont = kmake_continuation(K, KNIL, KNIL, KNIL,
 					  exit_fn, 0);
+
+    krooted_tvs_push(K, root_cont);
+
     TValue error_cont = kmake_continuation(K, root_cont, KNIL, KNIL,
 					   error_fn, 1, std_env);
+
+
+    krooted_tvs_push(K, error_cont);
 
     /* update the ground environment with these two conts */
     TValue symbol;
     symbol = ksymbol_new(K, "root-continuation");
+    /* GC: symbol should already be in root */
     kadd_binding(K, K->ground_env, symbol, root_cont);
-    symbol = ksymbol_new(K, "error-continuation");
+    symbol = ksymbol_new(K, "error-continuation"); 
+    /* GC: symbol should already be in root */
     kadd_binding(K, K->ground_env, symbol, error_cont);
 
     /* and save them in the structure */
     K->root_cont = root_cont;
     K->error_cont = error_cont;
 
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    /* don't yet pop std_env */
     create_loop(K, std_env);
+    krooted_tvs_pop(K);
 }

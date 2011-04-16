@@ -50,7 +50,7 @@ void do_sv_bind(klisp_State *K, TValue *xparams, TValue ptree,
 	      "environment", ttisenvironment, env);
     UNUSED(denv); 
     TValue key = xparams[0];
-    /* GC: root intermediate objs */
+    /* GC: all objs are rooted in ptree, or xparams */
     TValue new_env = kmake_keyed_static_env(K, env, key, obj);
     kapply_cc(K, new_env);
 }

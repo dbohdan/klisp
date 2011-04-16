@@ -44,10 +44,15 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$vau", vptree, vpenv);
+    
+    /* GC: root ptree while body is being copied */
+    krooted_tvs_push(K, vptree); /* make op will protect it now */
+
     /* the body should be a list */
-    int32_t dummy;
-    (void)check_list(K, "$vau", true, vbody, &dummy);
+    UNUSED(check_list(K, "$vau", true, vbody, NULL));
     vbody = copy_es_immutable_h(K, "$vau", vbody, false);
+    
+    krooted_tvs_pop(K); /* make op will protect it now */
 
     TValue new_op = make_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
     kapply_cc(K, new_op);
@@ -68,10 +73,16 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
 
     /* bindings in an operative are in a child of the static env */
     TValue env = kmake_environment(K, senv);
+
+    /* match & add binding may allocate, protect env */
+    krooted_tvs_push(K, env); 
+
     /* TODO use name from operative */
     match(K, "[user-operative]", env, ptree, obj);
     kadd_binding(K, env, penv, denv);
     
+    krooted_tvs_pop(K); /* make cont will protect it now */
+
     if (ttisnil(body)) {
 	kapply_cc(K, KINERT);
     } else {

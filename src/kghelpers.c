@@ -193,7 +193,10 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 	tail = kcdr(tail);
 	++pairs;
     }
-    *cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
+    if (cpairs != NULL)
+	*cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
@@ -221,7 +224,10 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 	tail = kcdr(tail);
 	++pairs;
     }
-    *cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
+    if (cpairs != NULL)
+	*cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {

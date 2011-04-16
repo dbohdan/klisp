@@ -50,6 +50,7 @@ inline void ptree_clear_all(klisp_State *K, TValue sym_ls)
     ks_tbclear(K);
 }
 
+/* GC: assumes env, ptree & obj are rooted */
 inline void match(klisp_State *K, char *name, TValue env, TValue ptree, 
 		  TValue obj)
 {

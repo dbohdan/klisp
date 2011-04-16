@@ -233,11 +233,17 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 	kapply_cc(K, KINERT);
     } else {
 	TValue new_env = kmake_environment(K, denv);
+	
+	/* add binding may allocate, protect env */
+	krooted_tvs_push(K, new_env); 
 	kadd_binding(K, new_env, sym, kget_cc(K));
 	
 	/* the list of instructions is copied to avoid mutation */
 	/* MAYBE: copy the evaluation structure, ASK John */
 	TValue ls = check_copy_list(K, "$let/cc", objs, false);
+
+	krooted_tvs_pop(K); /* make cont will protect it now */
+
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
 	TValue tail = kcdr(ls);

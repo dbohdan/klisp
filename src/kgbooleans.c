@@ -42,9 +42,9 @@ void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t dummy; /* don't care about cycle pairs */
+    /* don't care about cycle pairs */
     int32_t pairs = check_typed_list(K, "and?", "boolean", kbooleanp,
-				     true, ptree, &dummy);
+				     true, ptree, NULL);
     TValue res = KTRUE;
     TValue tail = ptree;
     while(pairs--) {
@@ -63,9 +63,9 @@ void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t dummy; /* don't care about cycle pairs */
+    /* don't care about cycle pairs */
     int32_t pairs = check_typed_list(K, "or?", "boolean", kbooleanp,
-				     true, ptree, &dummy);
+				     true, ptree, NULL);
     TValue res = KFALSE;
     TValue tail = ptree;
     while(pairs--) {
@@ -147,6 +147,7 @@ void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     TValue ls = check_copy_list(K, ksymbol_buf(sname), ptree, false);
     /* This will work even if ls is empty */
+    /* GC: ls is protected by make cont */
     TValue new_cont = 
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_Sandp_Sorp, 
 			   4, sname, term_bool, ls, denv);

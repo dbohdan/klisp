@@ -67,7 +67,9 @@ void make_environment(klisp_State *K, TValue *xparams, TValue ptree,
 	/* this is the general case, copy the list but without the
 	   cycle if there is any */
 	TValue parents = check_copy_env_list(K, "make-environment", ptree);
+	krooted_tvs_push(K, parents);
 	new_env = kmake_environment(K, parents);
+	krooted_tvs_pop(K);
 	kapply_cc(K, new_env);
     }
 }
