@@ -36,7 +36,7 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     krooted_tvs_push(K, dptree);
 	
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					 do_match, 3, dptree, denv, 
 					 def_sym);
     kset_cc(K, new_cont);
@@ -73,7 +73,7 @@ void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     krooted_tvs_push(K, formals);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_set_eval_obj, 4, 
+	kmake_continuation(K, kget_cc(K), do_set_eval_obj, 4, 
 			   sname, formals, eval_exp, denv);
     kset_cc(K, new_cont);
 
@@ -103,7 +103,7 @@ void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj)
 	TValue env = obj;
 
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_match, 3, 
+	    kmake_continuation(K, kget_cc(K), do_match, 3, 
 			       formals, env, sname);
 	kset_cc(K, new_cont);
 	ktail_eval(K, eval_exp, denv);
@@ -187,7 +187,7 @@ void do_import(klisp_State *K, TValue *xparams, TValue obj)
     } else {
 	TValue env = obj;
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_match, 3, 
+	    kmake_continuation(K, kget_cc(K), do_match, 3, 
 			       symbols, denv, sname);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcons(K, K->list_app, symbols), env);
@@ -214,13 +214,13 @@ void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* this will copy the bindings from new_env to denv */
     krooted_tvs_push(K, new_env);
     TValue import_cont =
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_import, 3, 
+	kmake_continuation(K, kget_cc(K), do_import, 3, 
 			   sname, symbols, denv);
     kset_cc(K, import_cont); /* this implicitly roots import_cont */
     /* this will ignore the last value and pass the env to the 
        above continuation */
     TValue ret_exp_cont = 
-	kmake_continuation(K, import_cont, KNIL, KNIL, do_return_value, 
+	kmake_continuation(K, import_cont, do_return_value, 
 			   1, new_env);
     kset_cc(K, ret_exp_cont); /* this implicitly roots ret_exp_cont */
 
@@ -234,7 +234,7 @@ void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	   nil sequence */
 	TValue tail = kcdr(body);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 						 do_seq, 2, tail, new_env);
 	    kset_cc(K, new_cont);
 	} 
@@ -276,7 +276,7 @@ void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     krooted_tvs_push(K, symbols);
     TValue new_cont =
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_import, 3, 
+	    kmake_continuation(K, kget_cc(K), do_import, 3, 
 			       sname, symbols, denv);
     kset_cc(K, new_cont);
     krooted_tvs_pop(K);

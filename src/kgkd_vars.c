@@ -101,7 +101,7 @@ inline TValue make_bind_continuation(klisp_State *K, TValue key,
 				     TValue old_flag, TValue old_value, 
 				     TValue new_flag, TValue new_value)
 {
-    TValue unbind_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+    TValue unbind_cont = kmake_continuation(K, kget_cc(K), 
 					    do_unbind, 3, key, old_flag, 
 					    old_value);
     krooted_tvs_push(K, unbind_cont);
@@ -132,11 +132,11 @@ inline TValue make_bind_continuation(klisp_State *K, TValue key,
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, unbind_cont, KNIL, KNIL, 
+    TValue outer_cont = kmake_continuation(K, unbind_cont, 
 					   do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
 

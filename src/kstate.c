@@ -440,8 +440,8 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 	krooted_tvs_push(K, int_ls);
 	/* we have to contruct a continuation to do the interceptions
 	   in order and finally call dst_cont if no divert occurs */
-	new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-				      do_interception, 2, int_ls, dst_cont);
+	new_cont = kmake_continuation(K, kget_cc(K), do_interception, 
+				      2, int_ls, dst_cont);
 	krooted_tvs_pop(K);
     }
 

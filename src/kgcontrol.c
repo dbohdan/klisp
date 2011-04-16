@@ -37,7 +37,7 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_3p(K, "$if", ptree, test, cons_c, alt_c);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, select_clause, 
+	kmake_continuation(K, kget_cc(K), select_clause, 
 			   3, denv, cons_c, alt_c);
     /* 
     ** Mark as a bool checking cont, not necessary but avoids a continuation
@@ -83,8 +83,8 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
 	    krooted_tvs_push(K, ls);
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     do_seq, 2, tail, denv);
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
+						 tail, denv);
 	    kset_cc(K, new_cont);
 	    krooted_tvs_pop(K);
 	} 
@@ -106,8 +106,8 @@ void do_seq(klisp_State *K, TValue *xparams, TValue obj)
     TValue denv = xparams[1];
 
     if (ttispair(tail)) {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     do_seq, 2, tail, denv);
+	TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, tail, 
+					     denv);
 	kset_cc(K, new_cont);
     }
     ktail_eval(K, first, denv);
@@ -210,8 +210,8 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 	} else {
 	    TValue tail = kcdr(this_body);
 	    if (ttispair(tail)) {
-		TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-						     do_seq, 2, tail, denv);
+		TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
+						     tail, denv);
 		kset_cc(K, new_cont);
 	    }
 	    ktail_eval(K, kcar(this_body), denv);
@@ -222,7 +222,7 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 	    kapply_cc(K, KINERT);
 	} else {
 	    TValue new_cont = 
-		kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_cond, 4,
+		kmake_continuation(K, kget_cc(K), do_cond, 4,
 				   kcar(bodies), kcdr(tests), kcdr(bodies), 
 				   denv);
 	    /* 
@@ -254,7 +254,7 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	/* pass a dummy body and a #f to the $cond continuation to 
 	   avoid code repetition here */
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_cond, 4, 
+	    kmake_continuation(K, kget_cc(K), do_cond, 4, 
 			       KNIL, tests, bodies, denv);
 	/* there is no need to mark this continuation with bool check
 	   because it is just a dummy, no evaluation happens in its
@@ -300,7 +300,7 @@ void do_for_each(klisp_State *K, TValue *xparams, TValue obj)
 	/* have to unwrap the applicative to avoid extra evaluation of first */
 	TValue new_expr = kcons(K, kunwrap(app), first_ptree);
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_for_each, 4, 
+	    kmake_continuation(K, kget_cc(K), do_for_each, 4, 
 			       app, ls, i2tv(n), denv);
 	krooted_tvs_pop(K);
 	kset_cc(K, new_cont);
@@ -339,7 +339,7 @@ void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* schedule all elements at once, the cycle is just ignored, this
        will also return #inert once done. */
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_for_each, 4, app, lss,
+	kmake_continuation(K, kget_cc(K), do_for_each, 4, app, lss,
 			   i2tv(res_pairs), denv);
     kset_cc(K, new_cont);
     krooted_tvs_pop(K);

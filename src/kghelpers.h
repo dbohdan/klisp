@@ -395,7 +395,7 @@ void do_return_value(klisp_State *K, TValue *xparams, TValue obj);
 /* GC: assumes parent & obj are rooted */
 inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
 {
-    return kmake_continuation(K, parent, KNIL, KNIL, do_return_value, 1, obj);
+    return kmake_continuation(K, parent, do_return_value, 1, obj);
 }
 
 /* Some helpers for working with fixints (signed 32 bits) */

@@ -74,12 +74,10 @@ inline void create_loop(klisp_State *K, TValue denv)
 {
     /* GC: the intermediate conts are protected by the
        others */
-    TValue loop_cont = kmake_continuation(
-	K, K->root_cont, KNIL, KNIL, &loop_fn, 1, denv);
-    TValue eval_cont = kmake_continuation(
-	K, loop_cont, KNIL, KNIL, &eval_cfn, 1, denv);
-    TValue read_cont = kmake_continuation(
-	K, eval_cont, KNIL, KNIL, &read_fn, 0);
+    TValue loop_cont = 
+	kmake_continuation(K, K->root_cont, &loop_fn, 1, denv);
+    TValue eval_cont = kmake_continuation(K, loop_cont, &eval_cfn, 1, denv);
+    TValue read_cont = kmake_continuation(K, eval_cont, &read_fn, 0);
     kset_cc(K, read_cont);
     kapply_cc(K, KINERT);
 }
@@ -125,15 +123,11 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_push(K, std_env);
 
     /* set up the continuations */
-    TValue root_cont = kmake_continuation(K, KNIL, KNIL, KNIL,
-					  exit_fn, 0);
+    TValue root_cont = kmake_continuation(K, KNIL, exit_fn, 0);
 
     krooted_tvs_push(K, root_cont);
 
-    TValue error_cont = kmake_continuation(K, root_cont, KNIL, KNIL,
-					   error_fn, 1, std_env);
-
-
+    TValue error_cont = kmake_continuation(K, root_cont, error_fn, 1, std_env);
     krooted_tvs_push(K, error_cont);
 
     /* update the ground environment with these two conts */

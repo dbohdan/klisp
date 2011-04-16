@@ -69,7 +69,7 @@ void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 	maybe_env : kmake_empty_environment(K);
 
     krooted_tvs_push(K, env);
-    TValue new_cont = kmake_continuation(K, cont, KNIL, KNIL, 
+    TValue new_cont = kmake_continuation(K, cont, 
 					 do_extended_cont, 2, app, env);
     krooted_tvs_pop(K);
     kapply_cc(K, new_cont);
@@ -177,12 +177,12 @@ void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 				     exit_guards);
     krooted_tvs_push(K, exit_guards);
 
-    TValue outer_cont = kmake_continuation(K, cont, KNIL, KNIL, do_pass_value, 
+    TValue outer_cont = kmake_continuation(K, cont, do_pass_value, 
 					   2, entry_guards, denv);
     krooted_tvs_push(K, outer_cont);
     /* mark it as an outer continuation */
     kset_outer_cont(outer_cont);
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 2, exit_guards, denv);
     /* mark it as an outer continuation */
     kset_inner_cont(inner_cont);
@@ -260,7 +260,7 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 	   nil sequence */
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, new_env);
 	    kset_cc(K, new_cont);
 	} 
@@ -289,12 +289,12 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
     krooted_tvs_push(K, exit_guards);
     /* GC: root continuations */
     /* The current continuation is guarded */
-    TValue outer_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_pass_value, 
+    TValue outer_cont = kmake_continuation(K, kget_cc(K), do_pass_value, 
 					   1, entry_guards);
     kset_outer_cont(outer_cont);
     kset_cc(K, outer_cont); /* this implicitly roots outer_cont */
 
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 1, exit_guards);
     kset_inner_cont(inner_cont);
 

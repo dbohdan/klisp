@@ -50,7 +50,7 @@ void handle_result(klisp_State *K, TValue *xparams, TValue obj)
 	    /* promise was already determined */
 	    kapply_cc(K, expr);
 	} else {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 						 handle_result, 1, prom);
 	    kset_cc(K, new_cont);
 	    ktail_eval(K, expr, maybe_env);
@@ -78,8 +78,7 @@ void force(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     } else {
 	TValue expr = kpromise_exp(obj);
 	TValue env = kpromise_maybe_env(obj);
-	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     handle_result, 1, obj);
+	TValue new_cont = kmake_continuation(K, kget_cc(K), handle_result, 1, obj);
 	kset_cc(K, new_cont);
 	ktail_eval(K, expr, env);
     }

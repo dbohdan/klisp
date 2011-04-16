@@ -183,7 +183,7 @@ void do_let(klisp_State *K, TValue *xparams, TValue obj)
 	       nil sequence */
 	    TValue tail = kcdr(body);
 	    if (ttispair(tail)) {
-		TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+		TValue new_cont = kmake_continuation(K, kget_cc(K),
 						     do_seq, 2, tail, env);
 		kset_cc(K, new_cont);
 	    } 
@@ -193,7 +193,7 @@ void do_let(klisp_State *K, TValue *xparams, TValue obj)
 	TValue new_env = kmake_environment(K, env);
 	krooted_tvs_push(K, new_env);
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			       kcar(bindings), kcdr(bindings), kcdr(exprs), 
 			       new_env, b2tv(false), body);
 	krooted_tvs_pop(K);
@@ -225,7 +225,7 @@ void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue new_env = kmake_environment(K, denv);
     krooted_tvs_push(K, new_env);
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
@@ -281,7 +281,7 @@ void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     symbols = check_copy_list(K, "$binds?", symbols, false);
 
     krooted_tvs_push(K, symbols);
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_bindsp, 
+    TValue new_cont = kmake_continuation(K, kget_cc(K), do_bindsp, 
 					 2, symbols, i2tv(count));
     krooted_tvs_pop(K);
     kset_cc(K, new_cont);
@@ -333,7 +333,7 @@ void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (ttisnil(bptree)) {
 	/* same as $let */
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			       bptree, KNIL, KNIL, new_env, b2tv(false), body);
 	kset_cc(K, new_cont);
 
@@ -345,7 +345,7 @@ void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	ktail_eval(K, expr, denv);
     } else {
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			       kcar(bptree), kcdr(bptree), kcdr(exprs), 
 			       new_env, b2tv(false), body);
 	kset_cc(K, new_cont);
@@ -381,7 +381,7 @@ void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     krooted_tvs_push(K, new_env);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			   bptree, KNIL, KNIL, new_env, b2tv(true), body);
     kset_cc(K, new_cont);
     
@@ -419,7 +419,7 @@ void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (ttisnil(bptree)) {
 	/* same as $letrec */
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			       bptree, KNIL, KNIL, new_env, b2tv(true), body);
 	kset_cc(K, new_cont);
 
@@ -432,7 +432,7 @@ void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	ktail_eval(K, expr, new_env);
     } else {
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			       kcar(bptree), kcdr(bptree), kcdr(exprs), 
 			       new_env, b2tv(true), body);
 	kset_cc(K, new_cont);
@@ -469,7 +469,7 @@ void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj)
     TValue new_env = kmake_environment(K, obj);
     krooted_tvs_push(K, new_env);
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
@@ -500,7 +500,7 @@ void Slet_redirect(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     krooted_tvs_push(K, eexpr);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let_redirect, 5, sname, 
+	kmake_continuation(K, kget_cc(K), do_let_redirect, 5, sname, 
 			   bptree, eexpr, denv, body);
     kset_cc(K, new_cont);
 
@@ -538,7 +538,7 @@ void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue new_env = kmake_environment(K, K->ground_env);
     krooted_tvs_push(K, new_env);
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_let, 7, sname, 
+	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
@@ -559,7 +559,7 @@ void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_2p(K, "$remote-eval", ptree, obj, env_exp);
 
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					 do_remote_eval, 1, obj);
     kset_cc(K, new_cont);
 
@@ -607,7 +607,7 @@ void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree,
     TValue new_env = kmake_environment(K, KNIL);
     krooted_tvs_push(K, new_env);
 
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+    TValue new_cont = kmake_continuation(K, kget_cc(K), 
 					 do_b_to_env, 2, bptree, new_env);
     kset_cc(K, new_cont);
     TValue expr = kcons(K, K->list_app, exprs);

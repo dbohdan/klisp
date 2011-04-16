@@ -119,7 +119,7 @@ void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj)
 	/* This is the important part of tail context + bool check */
 	if (!ttisnil(ls) || !kis_bool_check_cont(kget_cc(K))) {
 	    TValue new_cont = 
-		kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_Sandp_Sorp, 
+		kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 
 				   4, sname, term_bool, ls, denv);
 	    /* 
 	    ** Mark as a bool checking cont this is needed in the last operand
@@ -148,9 +148,8 @@ void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue ls = check_copy_list(K, ksymbol_buf(sname), ptree, false);
     /* This will work even if ls is empty */
     krooted_tvs_push(K, ls);
-    TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_Sandp_Sorp, 
-			   4, sname, term_bool, ls, denv);
+    TValue new_cont = kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 4, 
+					 sname, term_bool, ls, denv);
     krooted_tvs_pop(K);
     /* there's no need to mark it as bool checking, no evaluation
        is done in the dynamic extent of this cont */

@@ -557,7 +557,7 @@ void do_filter(klisp_State *K, TValue *xparams, TValue obj)
 	TValue new_expr = klist(K, 2, kunwrap(app), first, KNIL);
 	krooted_tvs_push(K, new_expr);
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter, 4, app, 
+	    kmake_continuation(K, kget_cc(K), do_filter, 4, app, 
 			       ls, last_pair, new_n);
 	kset_cc(K, new_cont);
 	krooted_tvs_pop(K);
@@ -584,14 +584,14 @@ void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj)
 
     /* this continuation will close the cycle and return the list */
     TValue encycle_cont =
- 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter_encycle, 2, 
+ 	kmake_continuation(K, kget_cc(K), do_filter_encycle, 2, 
 			   dummy, last_apair);
     krooted_tvs_push(K, encycle_cont);
     /* schedule the filtering of the elements of the cycle */
     /* add inert before first element to be discarded when KFALSE 
        is received */
     TValue new_cont = 
-	kmake_continuation(K, encycle_cont, KNIL, KNIL, do_filter, 4, app, 
+	kmake_continuation(K, encycle_cont, do_filter, 4, app, 
 			   kcons(K, KINERT, ls), last_apair, cpairs);
     kset_cc(K, new_cont);
     krooted_tvs_pop(K); 
@@ -623,8 +623,8 @@ void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     krooted_tvs_push(K, dummy);
     
     TValue ret_cont = (cpairs == 0)?
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_ret_cdr, 1, dummy)
-	: kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter_cycle, 3, 
+	kmake_continuation(K, kget_cc(K), do_ret_cdr, 1, dummy)
+	: kmake_continuation(K, kget_cc(K), do_filter_cycle, 3, 
 			     app, dummy, i2tv(cpairs));
 
     krooted_tvs_pop(K); /* already in cont */
@@ -632,7 +632,7 @@ void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* add inert before first element to be discarded when KFALSE 
        is received */
     TValue new_cont = 
-	kmake_continuation(K, ret_cont, KNIL, KNIL, do_filter, 4, app, 
+	kmake_continuation(K, ret_cont, do_filter, 4, app, 
 			   kcons(K, KINERT, ls), dummy, i2tv(pairs-cpairs));
     kset_cc(K, new_cont);
     krooted_tvs_pop(K);
@@ -776,7 +776,7 @@ void do_reduce_prec(klisp_State *K, TValue *xparams, TValue obj)
 	TValue expr = klist(K, 2, kunwrap(prec), kcar(ls));
 	krooted_tvs_push(K, expr);
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_prec,
+	    kmake_continuation(K, kget_cc(K), do_reduce_prec,
 			   5, first_pair, ls, i2tv(cpairs-1), prec, denv);
 	kset_cc(K, new_cont);
 	krooted_tvs_pop(K);
@@ -848,20 +848,20 @@ void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj)
     if (has_acyclic_partp) {
 	TValue acyclic_obj = obj;
 	TValue combine_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_combine,
+	    kmake_continuation(K, kget_cc(K), do_reduce_combine,
 			       3, acyclic_obj, bin, denv);
 	kset_cc(K, combine_cont); /* implitly rooted */
     } /* if there is no acyclic part, just let the result pass through */
 
     TValue post_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_postc,
+	kmake_continuation(K, kget_cc(K), do_reduce_postc,
 			   2, postc, denv);
     kset_cc(K, post_cont); /* implitly rooted */ 
     
     /* pass one less so that pre_cont can pass the first argument
        to the continuation */
     TValue in_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce,
+	kmake_continuation(K, kget_cc(K), do_reduce,
 			   4, kcdr(ls), i2tv(cpairs - 1), inc, denv);
     kset_cc(K, in_cont);
 
@@ -871,7 +871,7 @@ void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj)
     /* pass ls as the first pair to be passed to the do_reduce
        continuation */
     TValue pre_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_prec,
+	kmake_continuation(K, kget_cc(K), do_reduce_prec,
 			   5, ls, dummy, i2tv(cpairs), prec, denv);
     kset_cc(K, pre_cont);
     krooted_tvs_pop(K); 
@@ -905,7 +905,7 @@ void do_reduce(klisp_State *K, TValue *xparams, TValue obj)
 	krooted_tvs_push(K, expr); 
 	
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce, 4, 
+	    kmake_continuation(K, kget_cc(K), do_reduce, 4, 
 			       kcdr(ls), i2tv(pairs-1), bin, denv);
 	kset_cc(K, new_cont);
 	krooted_tvs_pop(K); 
@@ -974,7 +974,7 @@ void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	}
 	/* make cycle reducing cont */
 	TValue cyc_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_cycle, 8, 
+	    kmake_continuation(K, kget_cc(K), do_reduce_cycle, 8, 
 			       first_cycle_pair, i2tv(cpairs), bin, prec, 
 			       inc, postc, denv, b2tv(apairs != 0));
 	kset_cc(K, cyc_cont);
@@ -990,7 +990,7 @@ void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	   and not a regular pair to allow the above case of 
 	   a one element list to signal no acyclic part */
 	TValue acyc_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce, 4, 
+	    kmake_continuation(K, kget_cc(K), do_reduce, 4, 
 			       kcdr(ls), i2tv(apairs-1), bin, denv);
 	kset_cc(K, acyc_cont);
 	res = kcar(ls);

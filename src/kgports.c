@@ -68,7 +68,7 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
     TValue new_port = kmake_port(K, filename, writep);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+    TValue new_cont = kmake_continuation(K, kget_cc(K), 
 					 do_close_file_ret, 1, new_port);
     kset_cc(K, new_cont); /* cont implicitly rooted */
     krooted_tvs_pop(K); /* new_port is in cont */
@@ -359,7 +359,7 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
     TValue new_port = kmake_port(K, filename, writep);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+    TValue new_cont = kmake_continuation(K, kget_cc(K), 
 					 do_close_file_ret, 1, new_port);
     kset_cc(K, new_cont); /* implicit rooting  */
     krooted_tvs_pop(K); /* new_port is in new_cont */
@@ -441,11 +441,11 @@ TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, parent, KNIL, KNIL, 
+    TValue outer_cont = kmake_continuation(K, parent, 
 					   do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
     krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
@@ -497,7 +497,7 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
 	    krooted_tvs_push(K, ls);
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, denv);
 	    kset_cc(K, new_cont);
 	    krooted_tvs_pop(K); /* ls */
@@ -549,7 +549,7 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
 	    krooted_tvs_push(K, ls);
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, env);
 	    kset_cc(K, new_cont);
 	    krooted_tvs_pop(K);
