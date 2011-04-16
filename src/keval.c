@@ -114,7 +114,7 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 	    TValue comb_cont = kmake_continuation(K, kget_cc(K), &combine_cfn, 
 						  2, arg_ls, env);
 
-	    krooted_tvs_pop(K, arg_ls); /* already in cont */
+	    krooted_tvs_pop(K); /* already in cont */
 	    krooted_tvs_push(K, comb_cont);
 	    TValue els_cont = 
 		kmake_continuation(K, comb_cont, &eval_ls_cfn, 4, arg_ls, env, 
