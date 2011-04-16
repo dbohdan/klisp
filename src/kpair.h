@@ -92,4 +92,18 @@ inline TValue kcutoff_dummy2(klisp_State *K)
     return res;
 }
 
+inline TValue kget_dummy3(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair3) && ttisnil(kcdr(K->dummy_pair3)));
+    return K->dummy_pair3; 
+}
+
+inline TValue kcutoff_dummy3(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair3));
+    TValue res = kcdr(K->dummy_pair3);
+    kset_cdr(K->dummy_pair3, KNIL);
+    return res;
+}
+
 #endif

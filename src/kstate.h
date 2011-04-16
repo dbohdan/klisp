@@ -138,12 +138,13 @@ struct klisp_State {
     int32_t rooted_vars_top;
     TValue *rooted_vars_buf[GC_PROTECT_SIZE];
 
-    /* These two are useful for constructing lists by means of set-car &
+    /* These three are useful for constructing lists by means of set-car &
        set-cdr. The idea is that these dummy pairs start as the head of 
        the list (protecting the entire chain from GC) and at the end of the
        construction, the list is cut off from the cdr of the dummy */
     TValue dummy_pair1;
     TValue dummy_pair2;
+    TValue dummy_pair3;
  };
 
 /* some size related macros */

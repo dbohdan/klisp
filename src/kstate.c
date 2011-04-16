@@ -121,6 +121,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     K->dummy_pair1 = kcons(K, KINERT, KNIL);
     K->dummy_pair2 = kcons(K, KINERT, KNIL);
+    K->dummy_pair3 = kcons(K, KINERT, KNIL);
 
     /* initialize strings */
     /* Empty string */
