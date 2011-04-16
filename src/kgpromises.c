@@ -91,7 +91,7 @@ void Slazy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
 
     bind_1p(K, "$lazy", ptree, exp);
-    TValue new_prom = kmake_promise(K, KNIL, KNIL, exp, denv);
+    TValue new_prom = kmake_promise(K, exp, denv);
     kapply_cc(K, new_prom);
 }
 
@@ -102,6 +102,6 @@ void memoize(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
 
     bind_1p(K, "memoize", ptree, exp);
-    TValue new_prom = kmake_promise(K, KNIL, KNIL, exp, KNIL);
+    TValue new_prom = kmake_promise(K, exp, KNIL);
     kapply_cc(K, new_prom);
 }
