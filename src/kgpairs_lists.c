@@ -34,8 +34,8 @@
 /* 4.6.3 cons */
 void cons(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
     bind_2p(K, "cons", ptree, car, cdr);
     
     TValue new_pair = kcons(K, car, cdr);
@@ -48,8 +48,8 @@ void list(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
 /* the underlying combiner of list return the complete ptree, the only list
    checking is implicit in the applicative evaluation */
-    (void) xparams;
-    (void) denv;
+    UNUSED(xparams);
+    UNUSED(denv);
     kapply_cc(K, ptree);
 }
 
@@ -62,16 +62,14 @@ void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
    the last pair, because the list of operands is fresh. Also the type
    check wouldn't be necessary. This optimization technique could be
    used in lots of places to avoid checks and the like. */
-    (void) xparams;
-    (void) denv;
+    UNUSED(xparams);
+    UNUSED(denv);
 
     if (ttisnil(ptree)) {
 	klispE_throw(K, "list*: empty argument list"); 
 	return;
     }
-    /* GC: should root dummy */
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue last_pair = dummy;
+    TValue last_pair = kget_dummy1(K);
     TValue tail = ptree;
     
     /* First copy the list, but remembering the next to last pair */
@@ -92,7 +90,7 @@ void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	   we need at least one pair for this to work. */
 	TValue next_to_last_pair = kcdr(last_pair);
 	kset_cdr(next_to_last_pair, kcar(last_pair));
-	kapply_cc(K, kcdr(dummy));
+	kapply_cc(K, kcutoff_dummy1(K));
     } else if (ttispair(tail)) { /* cyclic argument list */
 	klispE_throw(K, "list*: cyclic argument list"); 
 	return;
@@ -173,27 +171,26 @@ void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n,
 
     unmark_list(K, obj);
 
-    if (p) *p = pairs;
-    if (n) *n = nils;
-    if (a) *a = apairs;
-    if (c) *c = cpairs;
+    if (p != NULL) *p = pairs;
+    if (n != NULL) *n = nils;
+    if (a != NULL) *a = apairs;
+    if (c != NULL) *c = cpairs;
 }
 
 /* 5.7.1 get-list-metrics */
 void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(xparams);
+    UNUSED(denv);
 
     bind_1p(K, "get-list-metrics", ptree, obj);
 
     int32_t pairs, nils, apairs, cpairs;
     get_list_metrics_aux(K, obj, &pairs, &nils, &apairs, &cpairs);
 
-    /* GC: root intermediate pairs */
-    TValue res = kcons(K, i2tv(apairs), kcons(K, i2tv(cpairs), KNIL));
-    res = kcons(K, i2tv(pairs), kcons(K, i2tv(nils), res));
+    TValue res = klist(K, 4, i2tv(pairs), i2tv(nils), 
+	i2tv(apairs), i2tv(cpairs));
     kapply_cc(K, res);
 }
 
@@ -222,9 +219,11 @@ int32_t ksmallest_index(klisp_State *K, char *name, TValue obj,
     kensure_bigint(tv_cpairs);
 	
     TValue idx = kbigint_minus(K, tk, tv_apairs);
+    krooted_tvs_push(K, idx); /* root idx if it is a bigint */
     /* idx may have become a fixint */
     kensure_bigint(idx);
     UNUSED(kbigint_div_mod(K, idx, tv_cpairs, &idx));
+    krooted_tvs_pop(K);
     /* now idx is less than cpairs so it fits in a fixint */
     assert(ttisfixint(idx));
     return ivalue(idx) + apairs; 
@@ -238,8 +237,8 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
 /* ASK John: can the object be a cyclic list? the wording of the report
    seems to indicate that can't be the case, but it makes sense here 
    (cf $encycle!) to allow cyclic lists, so that's what I do */
-    (void) denv;
-    (void) xparams;
+    UNUSED(xparams);
+    UNUSED(denv);
     bind_2tp(K, "list-tail", ptree, "any", anytype, obj,
 	     "integer", kintegerp, tk);
 
@@ -327,6 +326,8 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* Check that ls is an acyclic list, copy it and return both the list
    (as the ret value) and the last_pair. If obj is nil, *last_pair remains
    unmodified (this avoids having to check ttisnil before calling this) */
+
+/* GC: Assumes obj is rooted, uses dummy1 */
 TValue append_check_copy_list(klisp_State *K, char *name, TValue obj, 
 			      TValue *last_pair_ptr)
 {
@@ -334,8 +335,7 @@ TValue append_check_copy_list(klisp_State *K, char *name, TValue obj,
     if (ttisnil(obj))
 	return obj;
 
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue last_pair = dummy;
+    TValue last_pair = kget_dummy1(K);
     TValue tail = obj;
     
     while(ttispair(tail) && !kis_marked(tail)) {
@@ -355,7 +355,7 @@ TValue append_check_copy_list(klisp_State *K, char *name, TValue obj,
 	return KINERT;
     }
     *last_pair_ptr = last_pair;
-    return kcdr(dummy);
+    return kcutoff_dummy1(K);
 }
 
 /* 6.3.3 append */
@@ -368,8 +368,8 @@ void append(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     int32_t pairs = check_list(K, "append", true, ptree, &cpairs);
     int32_t apairs = pairs - cpairs;
 
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue last_pair = dummy;
+    /* use dummy2, append_check_copy uses dummy1 */
+    TValue last_pair = kget_dummy2(K);
     TValue lss = ptree;
     TValue last_apair;
 
@@ -417,7 +417,7 @@ void append(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    kset_cdr(last_cpair, first_cpair); /* encycle! */
 	}
     }
-    kapply_cc(K, kcdr(dummy));
+    kapply_cc(K, kcutoff_dummy2(K));
 }
 
 /* 6.3.4 list-neighbors */
@@ -426,7 +426,7 @@ void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    /* GC: root intermediate pairs */
+
     bind_1p(K, "list_neighbors", ptree, ls);
 
     int32_t cpairs;
@@ -434,17 +434,18 @@ void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree,
 
     TValue tail = ls;
     int32_t count = cpairs? pairs - cpairs : pairs - 1;
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue last_pair = dummy;
-    TValue last_apair = dummy; /* set after first loop */
+    TValue last_pair = kget_dummy1(K);
+    TValue last_apair = last_pair; /* set after first loop */
     bool doing_cycle = false;
 
     while(count > 0 || !doing_cycle) {
 	while(count-- > 0) { /* can be -1 if ls is nil */
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail); /* tail advances one place per iter */
-	    TValue new_car = kcons(K, first, kcons(K, kcar(tail), KNIL));
+	    TValue new_car = klist(K, 2, first, kcar(tail));
+	    krooted_tvs_push(K, new_car);
 	    TValue new_pair = kcons(K, new_car, KNIL);
+	    krooted_tvs_pop(K);
 	    kset_cdr(last_pair, new_pair);
 	    last_pair = new_pair;
 	}
@@ -463,8 +464,7 @@ void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree,
 	    /* this will loop once more */
 	}
     }
-    /* discard dummy pair to obtain the constructed list */
-    kapply_cc(K, kcdr(dummy));
+    kapply_cc(K, kcutoff_dummy1(K));
 }
 
 /* Helpers for filter */
@@ -552,12 +552,16 @@ void do_filter(klisp_State *K, TValue *xparams, TValue obj)
 	TValue new_n = i2tv(n-1);
 	TValue first = kcar(ls);
 	TValue new_env = kmake_empty_environment(K);
+	krooted_tvs_push(K, new_env);
 	/* have to unwrap the applicative to avoid extra evaluation of first */
-	TValue new_expr = kcons(K, kunwrap(app), kcons(K, first, KNIL));
+	TValue new_expr = klist(K, 2, kunwrap(app), first, KNIL);
+	krooted_tvs_push(K, new_expr);
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter, 4, app, 
 			       ls, last_pair, new_n);
 	kset_cc(K, new_cont);
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
 	ktail_eval(K, new_expr, new_env);
     }
 }
@@ -582,7 +586,7 @@ void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj)
     TValue encycle_cont =
  	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter_encycle, 2, 
 			   dummy, last_apair);
-
+    krooted_tvs_push(K, encycle_cont);
     /* schedule the filtering of the elements of the cycle */
     /* add inert before first element to be discarded when KFALSE 
        is received */
@@ -590,6 +594,7 @@ void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj)
 	kmake_continuation(K, encycle_cont, KNIL, KNIL, do_filter, 4, app, 
 			   kcons(K, KINERT, ls), last_apair, cpairs);
     kset_cc(K, new_cont);
+    krooted_tvs_pop(K); 
     /* this will be like a nop and will continue with do_filter */
     kapply_cc(K, KFALSE);
 }
@@ -615,17 +620,22 @@ void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* This will be the list to be returned, but it will be copied
        before to play a little nicer with continuations */
     TValue dummy = kcons(K, KINERT, KNIL);
+    krooted_tvs_push(K, dummy);
     
     TValue ret_cont = (cpairs == 0)?
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_ret_cdr, 1, dummy)
 	: kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_filter_cycle, 3, 
 			     app, dummy, i2tv(cpairs));
+
+    krooted_tvs_pop(K); /* already in cont */
+    krooted_tvs_push(K, ret_cont);
     /* add inert before first element to be discarded when KFALSE 
        is received */
     TValue new_cont = 
 	kmake_continuation(K, ret_cont, KNIL, KNIL, do_filter, 4, app, 
 			   kcons(K, KINERT, ls), dummy, i2tv(pairs-cpairs));
     kset_cc(K, new_cont);
+    krooted_tvs_pop(K);
     /* this will be a nop, and will continue with do_filter */
     kapply_cc(K, KFALSE);
 }
@@ -638,9 +648,8 @@ void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_2p(K, "assoc", ptree, obj, ls);
     /* first pass, check structure */
-    int32_t dummy;
     int32_t pairs = check_typed_list(K, "assoc", "pair", kpairp,
-				     true, ls, &dummy);
+				     true, ls, NULL);
     TValue tail = ls;
     TValue res = KNIL;
     while(pairs--) {
@@ -663,8 +672,7 @@ void memberp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_2p(K, "member?", ptree, obj, ls);
     /* first pass, check structure */
-    int32_t dummy;
-    int32_t pairs = check_list(K, "member?", true, ls, &dummy);
+    int32_t pairs = check_list(K, "member?", true, ls, NULL);
     TValue tail = ls;
     TValue res = KFALSE;
     while(pairs--) {
@@ -685,8 +693,7 @@ void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t dummy;
-    int32_t pairs = check_list(K, "finite-list?", true, ptree, &dummy);
+    int32_t pairs = check_list(K, "finite-list?", true, ptree, NULL);
 
     TValue res = KTRUE;
     TValue tail = ptree;
@@ -715,8 +722,7 @@ void countable_listp(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t dummy;
-    int32_t pairs = check_list(K, "countable-list?", true, ptree, &dummy);
+    int32_t pairs = check_list(K, "countable-list?", true, ptree, NULL);
 
     TValue res = KTRUE;
     TValue tail = ptree;
@@ -767,11 +773,13 @@ void do_reduce_prec(klisp_State *K, TValue *xparams, TValue obj)
 	/* pass the first element to the do_reduce_inc continuation */
 	kapply_cc(K, kcar(first_pair));
     } else {
-	TValue expr = kcons(K, kunwrap(prec), kcons(K, kcar(ls), KNIL));
+	TValue expr = klist(K, 2, kunwrap(prec), kcar(ls));
+	krooted_tvs_push(K, expr);
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_prec,
 			   5, first_pair, ls, i2tv(cpairs-1), prec, denv);
 	kset_cc(K, new_cont);
+	krooted_tvs_pop(K);
 	ktail_eval(K, expr, denv);
     }
 }
@@ -785,7 +793,7 @@ void do_reduce_postc(klisp_State *K, TValue *xparams, TValue obj)
     TValue postc = xparams[0];
     TValue denv = xparams[1];
 
-    TValue expr = kcons(K, kunwrap(postc), kcons(K, obj, KNIL));
+    TValue expr = klist(K, 2, kunwrap(postc), obj);
     ktail_eval(K, expr, denv);
 }
 
@@ -806,8 +814,8 @@ void do_reduce_combine(klisp_State *K, TValue *xparams, TValue obj)
 
     /* obj: cyclic_res */
     TValue cyclic_res = obj;
-    TValue params = kcons(K, acyclic_res, kcons(K, cyclic_res, KNIL));
-    TValue expr = kcons(K, kunwrap(bin), params);
+    TValue expr = klist(K, 3, kunwrap(bin), acyclic_res, 
+			  cyclic_res);
     ktail_eval(K, expr, denv);
 }
 
@@ -842,13 +850,13 @@ void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj)
 	TValue combine_cont = 
 	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_combine,
 			       3, acyclic_obj, bin, denv);
-	kset_cc(K, combine_cont);
+	kset_cc(K, combine_cont); /* implitly rooted */
     } /* if there is no acyclic part, just let the result pass through */
 
     TValue post_cont = 
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_postc,
 			   2, postc, denv);
-    kset_cc(K, post_cont);
+    kset_cc(K, post_cont); /* implitly rooted */ 
     
     /* pass one less so that pre_cont can pass the first argument
        to the continuation */
@@ -859,12 +867,14 @@ void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj)
 
     /* add dummy to allow passing inert to pre_cont */
     TValue dummy = kcons(K, KINERT, ls);
+    krooted_tvs_push(K, dummy); 
     /* pass ls as the first pair to be passed to the do_reduce
        continuation */
     TValue pre_cont = 
 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce_prec,
 			   5, ls, dummy, i2tv(cpairs), prec, denv);
     kset_cc(K, pre_cont);
+    krooted_tvs_pop(K); 
     /* this will overwrite dummy, but that's ok */
     kapply_cc(K, KINERT);
 }
@@ -890,15 +900,15 @@ void do_reduce(klisp_State *K, TValue *xparams, TValue obj)
 	   this will help with error signaling and backtraces */
 	kapply_cc(K, obj);
     } else {
-	/* GC: root intermediate objs */
 	TValue next = kcar(ls);
-	TValue params = kcons(K, obj, kcons(K, next, KNIL));
-	TValue expr = kcons(K, kunwrap(bin), params);
-
+	TValue expr = klist(K, 3, kunwrap(bin), obj, next);
+	krooted_tvs_push(K, expr); 
+	
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_reduce, 4, 
 			       kcdr(ls), i2tv(pairs-1), bin, denv);
 	kset_cc(K, new_cont);
+	krooted_tvs_pop(K); 
 	/* use the dynamic environment of the call to reduce */
 	ktail_eval(K, expr, denv);
     }
