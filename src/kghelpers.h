@@ -285,7 +285,7 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 /* TODO: remove inline */
 /* check that obj is a list and make a copy if it is not immutable or
  force_copy is true */
-
+/* GC: assumes obj is rooted, use dummy3 */
 inline TValue check_copy_list(klisp_State *K, char *name, TValue obj, 
 			      bool force_copy)
 {
@@ -293,12 +293,10 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj,
 	return obj;
 
     if (ttispair(obj) && kis_immutable(obj) && !force_copy) {
-	int32_t dummy;
-	(void)check_list(K, name, true, obj, &dummy);
+	UNUSED(check_list(K, name, true, obj, NULL));
 	return obj;
     } else {
-	TValue dummy = kcons(K, KINERT, KNIL);
-	TValue last_pair = dummy;
+	TValue last_pair = kget_dummy3(K);
 	TValue tail = obj;
     
 	while(ttispair(tail) && !kis_marked(tail)) {
@@ -321,16 +319,16 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj,
 	    klispE_throw_extra(K, name , ": expected list"); 
 	    return KINERT;
 	} 
-	return kcdr(dummy);
+	return kcutoff_dummy3(K);
     }
 }
 
 /* check that obj is a list of environments and make a copy but don't keep 
    the cycles */
+/* GC: assume obj is rooted, uses dummy3 */
 inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 {
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue last_pair = dummy;
+    TValue last_pair = kget_dummy3(K);
     TValue tail = obj;
     
     while(ttispair(tail) && !kis_marked(tail)) {
@@ -353,7 +351,7 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 	klispE_throw_extra(K, name , ": expected list"); 
 	return KINERT;
     } 
-    return kcdr(dummy);
+    return kcutoff_dummy3(K);
 }
 
 /*

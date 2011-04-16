@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "klisp.h"
+#include "kpair.h"
 #include "kstate.h"
 #include "kmem.h"
 #include "kstring.h"
@@ -23,6 +24,11 @@ void clear_buffers(klisp_State *K)
     /* is it okay to do this in all cases? */
     krooted_tvs_clear(K);
     krooted_vars_clear(K);
+
+    /* should also clear dummys right? */
+    UNUSED(kcutoff_dummy1(K));
+    UNUSED(kcutoff_dummy2(K));
+    UNUSED(kcutoff_dummy3(K));
 }
 
 void klispE_throw(klisp_State *K, char *msg)

@@ -100,7 +100,6 @@ inline TValue check_copy_single_entry(klisp_State *K, char *name,
     if (!ttispair(obj) || !ttispair(kcdr(obj)) || 
 	    !ttisnil(kcddr(obj))) {
 	unmark_list(K, root);
-	UNUSED(kcutoff_dummy1(K));
 	klispE_throw_extra(K, name , ": Bad entry (expected "
 			   "list of length 2)");
 	return KINERT;
@@ -110,13 +109,11 @@ inline TValue check_copy_single_entry(klisp_State *K, char *name,
 
     if (!ttiscontinuation(cont)) {
 	unmark_list(K, root);
-	UNUSED(kcutoff_dummy1(K));
 	klispE_throw_extra(K, name, ": Bad type on first element (expected " 
 		     "continuation)");				     
 	return KINERT;
     } else if (!singly_wrapped(app)) { 
 	unmark_list(K, root);
-	UNUSED(kcutoff_dummy1(K));
 	klispE_throw_extra(K, name, ": Bad type on second element (expected " 
 		     "singly wrapped applicative)");				     
 	return KINERT; 
@@ -295,20 +292,17 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
     TValue outer_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_pass_value, 
 					   1, entry_guards);
     kset_outer_cont(outer_cont);
-    krooted_tvs_push(K, outer_cont);
+    kset_cc(K, outer_cont); /* this implicitly roots outer_cont */
 
     TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
 					   do_pass_value, 1, exit_guards);
     kset_inner_cont(inner_cont);
-    krooted_tvs_push(K, inner_cont);
 
     /* call combiner with no operands in the dynamic extent of inner,
      with the dynamic env of this call */
-    kset_cc(K, inner_cont);
+    kset_cc(K, inner_cont); /* this implicitly roots inner_cont */
     TValue expr = kcons(K, comb, KNIL);
 
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
 

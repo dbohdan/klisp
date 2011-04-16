@@ -61,7 +61,7 @@ kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
 	krepl.h kcontinuation.h kapplicative.h kport.h ksymbol.h kport.h \
 	kstring.h kinteger.h kgc.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h kstate.h
-kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h
+kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h kpair.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
 kenvironment.o: kenvironment.c kenvironment.h kpair.h kobject.h kerror.h \
 	kmem.h kstate.h klisp.h kgc.h

@@ -103,8 +103,6 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 	if (!ttispair(first) || !ttispair(kcdr(first)) ||
 	        !ttisnil(kcddr(first))) {
 	    unmark_list(K, bindings);
-	    UNUSED(kcutoff_dummy1(K));
-	    UNUSED(kcutoff_dummy2(K));
 	    klispE_throw_extra(K, name, ": bad structure in bindings");
 	    return KNIL;
 	}
@@ -121,9 +119,6 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 
     unmark_list(K, bindings);
 
-    TValue cars = kcutoff_dummy1(K);
-    TValue cadrs = kcutoff_dummy2(K);
-    
     if (!ttispair(tail) && !ttisnil(tail)) {
 	klispE_throw_extra(K, name, ": expected list");
 	return KNIL;
@@ -131,29 +126,25 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 	klispE_throw_extra(K, name , ": expected finite list"); 
 	return KNIL;
     } else {
-	/* check copy list could throw an error
-	   and leave the dummys full, use tvs_push instead */
-	krooted_tvs_push(K, cars);
-	krooted_tvs_push(K, cadrs);
-
-	*exprs = cadrs;
+	TValue res;
 	if (starp) {
 	    /* all bindings are consider individual ptrees in these 'let's,
 	       replace each ptree with its copy (after checking of course) */
-	    tail = cars;
+	    tail = kget_dummy1_tail(K);
 	    while(!ttisnil(tail)) {
 		TValue first = kcar(tail);
 		TValue copy = check_copy_ptree(K, name, first, KIGNORE);
 		kset_car(tail, copy);
 		tail = kcdr(tail);
 	    }
+	    res = kget_dummy1_tail(K);
 	} else {
 	    /* all bindings are consider one ptree in these 'let's */
-	    cars = check_copy_ptree(K, name, cars, KIGNORE);
+	    res = check_copy_ptree(K, name, kget_dummy1_tail(K), KIGNORE);
 	}
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	return cars;
+	*exprs = kcutoff_dummy2(K);
+	UNUSED(kcutoff_dummy1(K));
+	return res;
     }
 }
 
