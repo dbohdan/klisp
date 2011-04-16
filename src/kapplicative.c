@@ -10,28 +10,17 @@
 #include "kmem.h"
 #include "kgc.h"
 
+/* GC: Assumes underlying is rooted */
 TValue kwrap(klisp_State *K, TValue underlying)
 {
-    return kmake_applicative(K, KNIL, KNIL, underlying);
-}
-
-TValue kmake_applicative(klisp_State *K, TValue name, TValue si, 
-			 TValue underlying)
-{
-    krooted_tvs_push(K, name);
-    krooted_tvs_push(K, si);
-    krooted_tvs_push(K, underlying);
     Applicative *new_app = klispM_new(K, Applicative);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_app, K_TAPPLICATIVE, 0);
 
     /* applicative specific fields */
-    new_app->name = name;
-    new_app->si = si;
+    new_app->name = KNIL;
+    new_app->si = KNIL;
     new_app->underlying = underlying;
     return gc2app(new_app);
 }

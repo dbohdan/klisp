@@ -191,7 +191,7 @@ void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree,
     bind_1tp(K, "continuation->applicative", ptree, "continuation",
 	     ttiscontinuation, cont);
     /* cont_app is from kstate */
-    TValue app = make_applicative(K, cont_app, 1, cont);
+    TValue app = kmake_applicative(K, cont_app, 1, cont);
     kapply_cc(K, app);
 }
 

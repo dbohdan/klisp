@@ -44,6 +44,7 @@
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
 ** "value", both of type TValue. symbol will be bound to a symbol named by
 ** "n_" and can be referrenced in the var_args
+** GC: All of these assume that the extra args are rooted 
 */
 
 /* Right now all symbols are rooted, but when possible, they will
@@ -52,19 +53,19 @@
 #define add_operative(K_, env_, n_, fn_, ...)		\
     { symbol = ksymbol_new(K_, n_);			\
 	krooted_tvs_push(K_, symbol);			\
-	value = make_operative(K_, fn_, __VA_ARGS__);	\
+	value = kmake_operative(K_, fn_, __VA_ARGS__);	\
 	krooted_tvs_push(K_, value);			\
 	kadd_binding(K_, env_, symbol, value);		\
 	krooted_tvs_pop(K_);				\
 	krooted_tvs_pop(K_); }
 
-#define add_applicative(K_, env_, n_, fn_, ...)	\
-    { symbol = ksymbol_new(K_, n_);			\
-	krooted_tvs_push(K_, symbol);			\
-	value = make_applicative(K_, fn_, __VA_ARGS__); \
-	krooted_tvs_push(K_, value);			\
-	kadd_binding(K_, env_, symbol, value);		\
-	krooted_tvs_pop(K_);				\
+#define add_applicative(K_, env_, n_, fn_, ...)			\
+    { symbol = ksymbol_new(K_, n_);				\
+	krooted_tvs_push(K_, symbol);				\
+	value = kmake_applicative(K_, fn_, __VA_ARGS__);	\
+	krooted_tvs_push(K_, value);				\
+	kadd_binding(K_, env_, symbol, value);			\
+	krooted_tvs_pop(K_);					\
 	krooted_tvs_pop(K_); }	
 
 #define add_value(K_, env_, n_, v_)			\

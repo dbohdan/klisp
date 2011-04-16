@@ -45,16 +45,18 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$vau", vptree, vpenv);
     
-    /* GC: root ptree while body is being copied */
-    krooted_tvs_push(K, vptree); /* make op will protect it now */
+    krooted_tvs_push(K, vptree);
 
     /* the body should be a list */
     UNUSED(check_list(K, "$vau", true, vbody, NULL));
     vbody = copy_es_immutable_h(K, "$vau", vbody, false);
-    
-    krooted_tvs_pop(K); /* make op will protect it now */
 
-    TValue new_op = make_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
+    krooted_tvs_push(K, vbody);
+    
+    TValue new_op = kmake_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
     kapply_cc(K, new_op);
 }
 
@@ -134,8 +136,8 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     (void)check_list(K, "$lambda", true, vbody, &dummy);
     vbody = copy_es_immutable_h(K, "$lambda", vbody, false);
 
-    TValue new_app = make_applicative(K, do_vau, 4, vptree, KIGNORE, vbody, 
-				      denv);
+    TValue new_app = kmake_applicative(K, do_vau, 4, vptree, KIGNORE, vbody, 
+				       denv);
     kapply_cc(K, new_app);
 }
 

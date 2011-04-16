@@ -65,8 +65,8 @@ void make_keyed_static_variable(klisp_State *K, TValue *xparams,
     check_0p(K, "make-keyed-static-variable", ptree);
     /* the key is just a dummy pair */
     TValue key = kcons(K, KINERT, KINERT);
-    TValue a = kwrap(K, kmake_operative(K, KNIL, KNIL, do_sv_access, 1, key));
-    TValue b = kwrap(K, kmake_operative(K, KNIL, KNIL, do_sv_bind, 1, key));
+    TValue a = kmake_applicative(K, do_sv_access, 1, key);
+    TValue b = kmake_applicative(K, do_sv_bind, 1, key);
     TValue ls = kcons(K, b, kcons(K, a, KNIL));
     kapply_cc(K, ls);
 }

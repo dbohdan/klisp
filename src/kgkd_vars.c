@@ -104,9 +104,9 @@ inline TValue make_bind_continuation(klisp_State *K, TValue key,
 					    old_value);
     /* create the guards to guarantee that the values remain consistent on
        abnormal passes (in both directions) */
-    TValue exit_int = kmake_operative(K, KNIL, KNIL, do_set_pass, 
+    TValue exit_int = kmake_operative(K, do_set_pass, 
 				      3, key, old_flag, old_value);
-    TValue entry_int = kmake_operative(K, KNIL, KNIL, do_set_pass, 
+    TValue entry_int = kmake_operative(K, do_set_pass, 
 				       3, key, new_flag, new_value);
     TValue exit_guard = kcons(K, K->root_cont, exit_int);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -161,8 +161,8 @@ void make_keyed_dynamic_variable(klisp_State *K, TValue *xparams,
 
     check_0p(K, "make-keyed-dynamic-variable", ptree);
     TValue key = kcons(K, KFALSE, KINERT);
-    TValue a = kwrap(K, kmake_operative(K, KNIL, KNIL, do_access, 1, key));
-    TValue b = kwrap(K, kmake_operative(K, KNIL, KNIL, do_bind, 1, key));
+    TValue a = kmake_applicative(K, do_access, 1, key);
+    TValue b = kmake_applicative(K, do_bind, 1, key);
     TValue ls = kcons(K, b, kcons(K, a, KNIL));
     kapply_cc(K, ls);
 }

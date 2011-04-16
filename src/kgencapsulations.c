@@ -95,9 +95,9 @@ void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
 
     /* GC: root intermediate values & pairs */
     TValue key = kmake_encapsulation_key(K);
-    TValue e = make_applicative(K, enc_wrap, 1, key);
-    TValue p = make_applicative(K, enc_typep, 1, key);
-    TValue d = make_applicative(K, enc_unwrap, 1, key);
+    TValue e = kmake_applicative(K, enc_wrap, 1, key);
+    TValue p = kmake_applicative(K, enc_typep, 1, key);
+    TValue d = kmake_applicative(K, enc_unwrap, 1, key);
 
     TValue ls = kcons(K, e, kcons(K, p, kcons(K, d, KNIL)));
     kapply_cc(K, ls);

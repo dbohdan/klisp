@@ -72,7 +72,7 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
 					 do_close_file_ret, 1, new_port);
     kset_cc(K, new_cont);
 
-    TValue op = kmake_operative(K, KNIL, KNIL, do_bind, 1, key);
+    TValue op = kmake_operative(K, do_bind, 1, key);
     TValue args = kcons(K, new_port, kcons(K, comb, KNIL));
     /* even if we call with denv, do_bind calls comb in an empty env */
     ktail_call(K, op, args, denv);
@@ -413,7 +413,7 @@ void do_int_close_file(klisp_State *K, TValue *xparams, TValue ptree,
 TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
 {
     /* create the guard to close file after read errors */
-    TValue exit_int = kmake_operative(K, KNIL, KNIL, do_int_close_file, 
+    TValue exit_int = kmake_operative(K, do_int_close_file, 
 				      1, port);
     TValue exit_guard = kcons(K, K->error_cont, exit_int);
     TValue exit_guards = kcons(K, exit_guard, KNIL);

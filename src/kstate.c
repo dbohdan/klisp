@@ -168,8 +168,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
 
     /* create the ground environment and the eval operative */
-    K->eval_op = kmake_operative(K, KNIL, KNIL, keval_ofn, 0);
-    K->list_app = kwrap(K, kmake_operative(K, KNIL, KNIL, list, 0));
+    K->eval_op = kmake_operative(K, keval_ofn, 0);
+    K->list_app = kmake_applicative(K, list, 0);
     K->ground_env = kmake_empty_environment(K);
     K->module_params_sym = ksymbol_new(K, "module-parameters");
 
@@ -404,8 +404,7 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
 	TValue op = kcar(first);
 	TValue outer = kcadr(first);
 	TValue denv = kcddr(first);
-	TValue app = kwrap(K, kmake_operative(K, KNIL, KNIL, 
-					      cont_app, 1, outer));
+	TValue app = kmake_applicative(K, cont_app, 1, outer);
 	TValue ptree = kcons(K, obj, kcons(K, app, KNIL));
 	TValue new_cont = 
 	    kmake_continuation(K, outer, KNIL, KNIL, do_interception,

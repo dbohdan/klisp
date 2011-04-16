@@ -219,12 +219,6 @@ inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
 }
 
 
-/* TODO: add name and source info */
-#define make_operative(K_, fn_, ...) \
-    kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__)
-#define make_applicative(K_, fn_, ...) \
-    kwrap(K_, kmake_operative(K_, KNIL, KNIL, fn_, __VA_ARGS__))
-
 /*
 ** This states are useful for traversing trees, saving the state in the
 ** token char buffer

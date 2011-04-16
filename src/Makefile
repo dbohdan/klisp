@@ -70,7 +70,7 @@ kcontinuation.o: kcontinuation.c kcontinuation.h kmem.h kstate.h kobject.h \
 koperative.o: koperative.c koperative.h kmem.h kstate.h kobject.h \
 	klisp.h kgc.h
 kapplicative.o: kapplicative.c kapplicative.h kmem.h kstate.h kobject.h \
-	klisp.h kgc.h
+	klisp.h kgc.h koperative.h
 kencapsulation.o: kencapsulation.c kencapsulation.h kmem.h kstate.h kobject.h \
 	klisp.h kpair.h kgc.h
 kpromise.o: kpromise.c kpromise.h kmem.h kstate.h kobject.h \
