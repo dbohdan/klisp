@@ -90,7 +90,7 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj,
 			   bool mut_flag)
 {
     TValue copy = obj;
-    krooted_vars_push(K, copy);
+    krooted_vars_push(K, &copy);
 
     assert(ks_sisempty(K));
     assert(ks_tbisempty(K));
