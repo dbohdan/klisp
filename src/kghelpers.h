@@ -234,7 +234,7 @@ inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
 */
 inline void unmark_list(klisp_State *K, TValue obj)
 {
-    (void) K; /* not needed, it's here for consistency */
+    UNUSED(K); /* not needed, it's here for consistency */
     while(ttispair(obj) && kis_marked(obj)) {
 	kunmark(obj);
 	obj = kcdr(obj);
@@ -285,7 +285,7 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 /* TODO: remove inline */
 /* check that obj is a list and make a copy if it is not immutable or
  force_copy is true */
-
+/* GC: assumes obj is rooted, use dummy3 */
 inline TValue check_copy_list(klisp_State *K, char *name, TValue obj, 
 			      bool force_copy)
 {
@@ -293,12 +293,10 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj,
 	return obj;
 
     if (ttispair(obj) && kis_immutable(obj) && !force_copy) {
-	int32_t dummy;
-	(void)check_list(K, name, true, obj, &dummy);
+	UNUSED(check_list(K, name, true, obj, NULL));
 	return obj;
     } else {
-	TValue dummy = kcons(K, KINERT, KNIL);
-	TValue last_pair = dummy;
+	TValue last_pair = kget_dummy3(K);
 	TValue tail = obj;
     
 	while(ttispair(tail) && !kis_marked(tail)) {
@@ -321,16 +319,16 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj,
 	    klispE_throw_extra(K, name , ": expected list"); 
 	    return KINERT;
 	} 
-	return kcdr(dummy);
+	return kcutoff_dummy3(K);
     }
 }
 
 /* check that obj is a list of environments and make a copy but don't keep 
    the cycles */
+/* GC: assume obj is rooted, uses dummy3 */
 inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 {
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue last_pair = dummy;
+    TValue last_pair = kget_dummy3(K);
     TValue tail = obj;
     
     while(ttispair(tail) && !kis_marked(tail)) {
@@ -353,7 +351,7 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 	klispE_throw_extra(K, name , ": expected list"); 
 	return KINERT;
     } 
-    return kcdr(dummy);
+    return kcutoff_dummy3(K);
 }
 
 /*
@@ -394,9 +392,10 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 */
 void do_return_value(klisp_State *K, TValue *xparams, TValue obj);
 
+/* GC: assumes parent & obj are rooted */
 inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
 {
-    return kmake_continuation(K, parent, KNIL, KNIL, do_return_value, 1, obj);
+    return kmake_continuation(K, parent, do_return_value, 1, obj);
 }
 
 /* Some helpers for working with fixints (signed 32 bits) */

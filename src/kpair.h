@@ -73,6 +73,12 @@ inline TValue kget_dummy1(klisp_State *K)
     return K->dummy_pair1; 
 }
 
+inline TValue kget_dummy1_tail(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair1));
+    return kcdr(K->dummy_pair1); 
+}
+
 inline TValue kcutoff_dummy1(klisp_State *K) 
 { 
     klisp_assert(ttispair(K->dummy_pair1));
@@ -87,6 +93,12 @@ inline TValue kget_dummy2(klisp_State *K)
     return K->dummy_pair2; 
 }
 
+inline TValue kget_dummy2_tail(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair2));
+    return kcdr(K->dummy_pair2); 
+}
+
 inline TValue kcutoff_dummy2(klisp_State *K) 
 { 
     klisp_assert(ttispair(K->dummy_pair2));
@@ -99,6 +111,12 @@ inline TValue kget_dummy3(klisp_State *K)
 { 
     klisp_assert(ttispair(K->dummy_pair3) && ttisnil(kcdr(K->dummy_pair3)));
     return K->dummy_pair3; 
+}
+
+inline TValue kget_dummy3_tail(klisp_State *K) 
+{ 
+    klisp_assert(ttispair(K->dummy_pair3));
+    return kcdr(K->dummy_pair3); 
 }
 
 inline TValue kcutoff_dummy3(klisp_State *K) 

@@ -24,11 +24,10 @@
 /* NOTE: this does 2 passes but could do it in one */
 void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
 
-    int32_t cpairs;
-    int32_t pairs = check_list(K, "eq?", true, ptree, &cpairs);
+    int32_t pairs = check_list(K, "eq?", true, ptree, NULL);
 
     /* In this case we can get away without comparing the
        first and last element on a cycle because eq? is

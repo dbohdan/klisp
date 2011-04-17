@@ -95,31 +95,56 @@ void do_set_pass(klisp_State *K, TValue *xparams, TValue ptree,
 /* create continuation to set the key on both normal return and
    abnormal passes */
 /* TODO: reuse the code for guards in kgcontinuations.c */
+
+/* GC: this assumes that key is rooted */
 inline TValue make_bind_continuation(klisp_State *K, TValue key,
 				     TValue old_flag, TValue old_value, 
 				     TValue new_flag, TValue new_value)
 {
-    TValue unbind_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+    TValue unbind_cont = kmake_continuation(K, kget_cc(K), 
 					    do_unbind, 3, key, old_flag, 
 					    old_value);
+    krooted_tvs_push(K, unbind_cont);
     /* create the guards to guarantee that the values remain consistent on
        abnormal passes (in both directions) */
     TValue exit_int = kmake_operative(K, do_set_pass, 
 				      3, key, old_flag, old_value);
+    krooted_tvs_push(K, exit_int);
+    TValue exit_guard = kcons(K, K->root_cont, exit_int);
+    krooted_tvs_pop(K); /* already rooted in guard */
+    krooted_tvs_push(K, exit_guard);
+    TValue exit_guards = kcons(K, exit_guard, KNIL);
+    krooted_tvs_pop(K); /* already rooted in guards */
+    krooted_tvs_push(K, exit_guards);
+
     TValue entry_int = kmake_operative(K, do_set_pass, 
 				       3, key, new_flag, new_value);
-    TValue exit_guard = kcons(K, K->root_cont, exit_int);
-    TValue exit_guards = kcons(K, exit_guard, KNIL);
+    krooted_tvs_push(K, entry_int);
     TValue entry_guard = kcons(K, K->root_cont, entry_int);
+    krooted_tvs_pop(K); /* already rooted in guard */
+    krooted_tvs_push(K, entry_guard);
     TValue entry_guards = kcons(K, entry_guard, KNIL);
+    krooted_tvs_pop(K); /* already rooted in guards */
+    krooted_tvs_push(K, entry_guards);
+
+
+    /* NOTE: in the stack now we have the unbind cont & two guard lists */
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
-    TValue outer_cont = kmake_continuation(K, unbind_cont, KNIL, KNIL, 
+    krooted_tvs_push(K, env);
+    TValue outer_cont = kmake_continuation(K, unbind_cont, 
 					   do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    krooted_tvs_push(K, outer_cont);
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
+
+    /* unbind_cont & 2 guard_lists */
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
+    /* env & outer_cont */
+    krooted_tvs_pop(K); krooted_tvs_pop(K);
+    
     return inner_cont;
 }
 
@@ -146,9 +171,11 @@ void do_bind(klisp_State *K, TValue *xparams, TValue ptree,
      normal return and abnormal passes */
     TValue new_cont = make_bind_continuation(K, key, old_flag, old_value,
 					     new_flag, new_value);
-    kset_cc(K, new_cont);
+    kset_cc(K, new_cont); /* implicit rooting */
     TValue env = kmake_empty_environment(K);
+    krooted_tvs_push(K, env);
     TValue expr = kcons(K, comb, KNIL);
+    krooted_tvs_pop(K);
     ktail_eval(K, expr, env)
 }
 
@@ -161,9 +188,15 @@ void make_keyed_dynamic_variable(klisp_State *K, TValue *xparams,
 
     check_0p(K, "make-keyed-dynamic-variable", ptree);
     TValue key = kcons(K, KFALSE, KINERT);
+    krooted_tvs_push(K, key);
     TValue a = kmake_applicative(K, do_access, 1, key);
+    krooted_tvs_push(K, a);
     TValue b = kmake_applicative(K, do_bind, 1, key);
-    TValue ls = kcons(K, b, kcons(K, a, KNIL));
+    krooted_tvs_push(K, b);
+    TValue ls = klist(K, 2, b, a);
+
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
+
     kapply_cc(K, ls);
 }
 

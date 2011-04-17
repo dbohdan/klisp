@@ -341,6 +341,9 @@ typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree,
 */
 inline void klispS_apply_cc(klisp_State *K, TValue val)
 {
+    klisp_assert(K->rooted_tvs_top == 0);
+    klisp_assert(K->rooted_vars_top == 0);
+
     K->next_obj = K->curr_cont; /* save it from GC */
     Continuation *cont = tv2cont(K->curr_cont);
     K->next_func = cont->fn;
@@ -370,6 +373,9 @@ inline void klispS_set_cc(klisp_State *K, TValue new_cont)
 inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree, 
 			     TValue env)
 {
+    klisp_assert(K->rooted_tvs_top == 0);
+    klisp_assert(K->rooted_vars_top == 0);
+
     K->next_obj = top; /* save it from GC */
     Operative *op = tv2op(top);
     K->next_func = op->fn;

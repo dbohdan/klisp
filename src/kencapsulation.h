@@ -10,8 +10,9 @@
 #include "kobject.h"
 #include "kstate.h"
 
-TValue kmake_encapsulation(klisp_State *K, TValue name, TValue si,
-			   TValue key, TValue val);
+/* GC: Assumes that key & val are rooted */
+TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val);
+
 TValue kmake_encapsulation_key(klisp_State *K);
 inline bool kis_encapsulation_type(TValue enc, TValue key);
 

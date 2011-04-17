@@ -34,8 +34,7 @@ void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     bind_1tp(K, "call/cc", ptree, "combiner", ttiscombiner, comb);
 
-    /* GC: root pairs */
-    TValue expr = kcons(K, comb, kcons(K, kget_cc(K), KNIL));
+    TValue expr = klist(K, 2, comb, kget_cc(K));
     ktail_eval(K, expr, denv);
 }
 
@@ -69,8 +68,10 @@ void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree,
     TValue env = (get_opt_tpar(K, "apply", K_TENVIRONMENT, &maybe_env))?
 	maybe_env : kmake_empty_environment(K);
 
-    TValue new_cont = kmake_continuation(K, cont, KNIL, KNIL, 
+    krooted_tvs_push(K, env);
+    TValue new_cont = kmake_continuation(K, cont, 
 					 do_extended_cont, 2, app, env);
+    krooted_tvs_pop(K);
     kapply_cc(K, new_cont);
 }
 
@@ -91,6 +92,8 @@ void do_pass_value(klisp_State *K, TValue *xparams, TValue obj)
 
 /* this unmarks root before throwing any error */
 /* TODO: this isn't very clean, refactor */
+
+/* GC: assumes obj & root are rooted, dummy1 is in use */
 inline TValue check_copy_single_entry(klisp_State *K, char *name,
 				      TValue obj, TValue root)
 {
@@ -116,7 +119,6 @@ inline TValue check_copy_single_entry(klisp_State *K, char *name,
 	return KINERT; 
     }
 
-    /* GC: save intermediate pair */
     /* save the operative directly, don't waste space/time
      with a list, use just a pair */
     return kcons(K, cont, kunwrap(app)); 
@@ -124,20 +126,22 @@ inline TValue check_copy_single_entry(klisp_State *K, char *name,
 
 /* the guards are probably generated on the spot so we don't check
    for immutability and copy it anyways */
+/* GC: Assumes obj is rooted */
 TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
 {
     if (ttisnil(obj)) {
 	return obj;
     } else {
-	TValue dummy = kcons(K, KINERT, KNIL);
-	TValue last_pair = dummy;
+	TValue last_pair = kget_dummy1(K);
 	TValue tail = obj;
     
 	while(ttispair(tail) && !kis_marked(tail)) {
 	    /* this will clear the marks and throw an error if the structure
 	       is incorrect */
 	    TValue entry = check_copy_single_entry(K, name, kcar(tail), obj);
+	    krooted_tvs_push(K, entry);
 	    TValue new_pair = kcons(K, entry, KNIL);
+	    krooted_tvs_pop(K);
 	    kmark(tail);
 	    kset_cdr(last_pair, new_pair);
 	    last_pair = new_pair;
@@ -146,12 +150,12 @@ TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
 
 	/* dont close the cycle (if there is one) */
 	unmark_list(K, obj);
-
+	TValue ret = kcutoff_dummy1(K);
 	if (!ttispair(tail) && !ttisnil(tail)) {
 	    klispE_throw_extra(K, name , ": expected list"); 
 	    return KINERT;
 	} 
-	return kcdr(dummy);
+	return ret;
     }
 }
 
@@ -167,30 +171,39 @@ void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 
     entry_guards = check_copy_guards(K, "guard-continuation: entry guards", 
 				     entry_guards);
+    krooted_tvs_push(K, entry_guards);
+
     exit_guards = check_copy_guards(K, "guard-continuation: exit guards", 
 				     exit_guards);
+    krooted_tvs_push(K, exit_guards);
 
-    TValue outer_cont = kmake_continuation(K, cont, KNIL, KNIL, do_pass_value, 
+    TValue outer_cont = kmake_continuation(K, cont, do_pass_value, 
 					   2, entry_guards, denv);
+    krooted_tvs_push(K, outer_cont);
     /* mark it as an outer continuation */
     kset_outer_cont(outer_cont);
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 2, exit_guards, denv);
     /* mark it as an outer continuation */
     kset_inner_cont(inner_cont);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
     kapply_cc(K, inner_cont);
 }
 
 
 /* 7.2.5 continuation->applicative */
-/* TODO: look out for guards and dynamic variables */
 void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree, 
 			      TValue denv)
 {
     UNUSED(xparams);
     bind_1tp(K, "continuation->applicative", ptree, "continuation",
 	     ttiscontinuation, cont);
-    /* cont_app is from kstate */
+    /* cont_app is from kstate, it handles dynamic vars &
+       interceptions */
     TValue app = kmake_applicative(K, cont_app, 1, cont);
     kapply_cc(K, app);
 }
@@ -215,8 +228,8 @@ void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, "apply-continuation", ptree, "continuation", ttiscontinuation,
 	     cont, "any", anytype, obj);
 
-    /* TODO: look out for guards and dynamic variables */
-    /* should be probably handled in kcall_cont() */
+    /* kcall_cont is from kstate, it handles dynamic vars &
+       interceptions */
     kcall_cont(K, cont, obj);
 }
 
@@ -234,7 +247,8 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
     } else {
 	TValue new_env = kmake_environment(K, denv);
 	
-	/* add binding may allocate, protect env */
+	/* add binding may allocate, protect env, 
+	  keep in stack until continuation is allocated */
 	krooted_tvs_push(K, new_env); 
 	kadd_binding(K, new_env, sym, kget_cc(K));
 	
@@ -242,16 +256,17 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 	/* MAYBE: copy the evaluation structure, ASK John */
 	TValue ls = check_copy_list(K, "$let/cc", objs, false);
 
-	krooted_tvs_pop(K); /* make cont will protect it now */
-
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, new_env);
 	    kset_cc(K, new_cont);
 	} 
+
+	krooted_tvs_pop(K); 
+
 	ktail_eval(K, kcar(ls), new_env);
     }
 }
@@ -268,21 +283,29 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
 
     entry_guards = check_copy_guards(K, "guard-dynamic-extent: entry guards", 
 				     entry_guards);
+    krooted_tvs_push(K, entry_guards);
     exit_guards = check_copy_guards(K, "guard-dynamic-extent: exit guards", 
 				     exit_guards);
+    krooted_tvs_push(K, exit_guards);
     /* GC: root continuations */
     /* The current continuation is guarded */
-    TValue outer_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_pass_value, 
+    TValue outer_cont = kmake_continuation(K, kget_cc(K), do_pass_value, 
 					   1, entry_guards);
     kset_outer_cont(outer_cont);
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    kset_cc(K, outer_cont); /* this implicitly roots outer_cont */
+
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 1, exit_guards);
     kset_inner_cont(inner_cont);
 
     /* call combiner with no operands in the dynamic extent of inner,
      with the dynamic env of this call */
-    kset_cc(K, inner_cont);
+    kset_cc(K, inner_cont); /* this implicitly roots inner_cont */
     TValue expr = kcons(K, comb, KNIL);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
     ktail_eval(K, expr, denv);
 }
 

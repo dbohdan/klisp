@@ -50,7 +50,9 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     new_sym->str = new_str;
 
     TValue new_symv = gc2sym(new_sym);
+    krooted_tvs_push(K, new_symv);
     K->symbol_table = kcons(K, new_symv, K->symbol_table);
+    krooted_tvs_pop(K);
     return new_symv;
 }
 
@@ -68,6 +70,7 @@ TValue ksymbol_new(klisp_State *K, const char *buf)
 }
 
 /* for string->symbol */
+/* GC: assumes str is rooted */
 TValue ksymbol_new_check_i(klisp_State *K, TValue str)
 {
     int32_t size = kstring_size(str);
@@ -104,9 +107,7 @@ TValue ksymbol_new_check_i(klisp_State *K, TValue str)
     size = kstring_size(str);
     buf = kstring_buf(str);
 
-    krooted_tvs_push(K, str);
     TValue new_sym = ksymbol_new_g(K, buf, size, identifierp);
-    krooted_tvs_pop(K);
     return new_sym;
 }
 

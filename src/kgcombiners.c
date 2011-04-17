@@ -93,7 +93,7 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
 	   nil sequence */
 	TValue tail = kcdr(body);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, env);
 	    kset_cc(K, new_cont);
 	} 
@@ -449,7 +449,7 @@ void do_map(klisp_State *K, TValue *xparams, TValue obj)
 	TValue new_expr = kcons(K, kunwrap(app), first_ptree);
 	krooted_tvs_push(K, new_expr);
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map, 6, app, 
+	    kmake_continuation(K, kget_cc(K), do_map, 6, app, 
 			       ls, last_pair, i2tv(n), denv, KFALSE);
 	krooted_tvs_pop(K); 
 	krooted_tvs_pop(K); 
@@ -478,7 +478,7 @@ void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
 
     /* this continuation will close the cycle and return the list */
     TValue encycle_cont =
- 	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map_encycle, 2, 
+ 	kmake_continuation(K, kget_cc(K), do_map_encycle, 2, 
 			   dummy, last_apair);
 
     krooted_tvs_push(K, encycle_cont);
@@ -486,7 +486,7 @@ void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
        signal dummyp = true to avoid creating a pair for
        the inert value passed to the first continuation */
     TValue new_cont = 
-	kmake_continuation(K, encycle_cont, KNIL, KNIL, do_map, 6, app, ls, 
+	kmake_continuation(K, encycle_cont, do_map, 6, app, ls, 
 			   last_apair, cpairs, denv, KTRUE);
     krooted_tvs_pop(K); 
     kset_cc(K, new_cont);
@@ -532,8 +532,8 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     krooted_tvs_push(K, dummy);
 
     TValue ret_cont = (res_cpairs == 0)?
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map_ret, 1, dummy)
-	: kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_map_cycle, 4, 
+	kmake_continuation(K, kget_cc(K), do_map_ret, 1, dummy)
+	: kmake_continuation(K, kget_cc(K), do_map_cycle, 4, 
 			     app, dummy, i2tv(res_cpairs), denv);
 
 
@@ -543,7 +543,7 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
        signal dummyp = true to avoid creating a pair for
        the inert value passed to the first continuation */
     TValue new_cont = 
-	kmake_continuation(K, ret_cont, KNIL, KNIL, do_map, 6, app, lss, dummy,
+	kmake_continuation(K, ret_cont, do_map, 6, app, lss, dummy,
 			   i2tv(res_apairs), denv, KTRUE);
 
     krooted_tvs_pop(K); 

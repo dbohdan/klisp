@@ -84,14 +84,13 @@ void copy_es(klisp_State *K, TValue *xparams,
 ** to keep track of which of car or cdr we were copying,
 ** 0 means just pushed, 1 means return from car, 2 means return from cdr
 */
+
+/* GC: assumes obj is rooted */
 TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj, 
 			   bool mut_flag)
 {
-    /* 
-    ** GC: obj is rooted because it is in the stack at all times.
-    ** The copied pair should be kept safe some other way
-    */
     TValue copy = obj;
+    krooted_vars_push(K, &copy);
 
     assert(ks_sisempty(K));
     assert(ks_tbisempty(K));
@@ -140,6 +139,7 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj,
 	}
     }
     unmark_tree(K, obj);
+    krooted_vars_pop(K);
     return copy;
 }
 
@@ -243,11 +243,12 @@ inline void appendB_clear_last_pairs(klisp_State *K, TValue ls)
    last pair (if not nil), return a list of objects so that the cdr of the odd
    objects (1 based) should be set to the next object in the list (this will
    encycle! the result if necessary) */
+
+/* GC: Assumes lss is rooted, uses dummy1 */
 TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs, 
 				 int32_t cpairs)
 {
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue last_pair = dummy;
+    TValue last_pair = kget_dummy1(K);
     TValue tail = lss;
     /* this is a list of last pairs using the marks to link the pairs) */
     TValue last_pairs = KNIL;
@@ -367,7 +368,7 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
     /* discard the first element (there is always one) because it
      isn't necessary, the list is used to set the last pairs of
      the objects to the correspoding next first pair */
-    return kcddr(dummy);
+    return kcdr(kcutoff_dummy1(K));
 }
 
 /* 6.4.1 append! */
@@ -422,9 +423,8 @@ void assq(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_2p(K, "assq", ptree, obj, ls);
     /* first pass, check structure */
-    int32_t dummy;
     int32_t pairs = check_typed_list(K, "assq", "pair", kpairp,
-				     true, ls, &dummy);
+				     true, ls, NULL);
     TValue tail = ls;
     TValue res = KNIL;
     while(pairs--) {
@@ -448,8 +448,7 @@ void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_2p(K, "memq?", ptree, obj, ls);
     /* first pass, check structure */
-    int32_t dummy;
-    int32_t pairs = check_list(K, "memq?", true, ls, &dummy);
+    int32_t pairs = check_list(K, "memq?", true, ls, NULL);
     TValue tail = ls;
     TValue res = KFALSE;
     while(pairs--) {

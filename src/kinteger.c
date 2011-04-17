@@ -67,7 +67,7 @@ TValue kbigint_copy(klisp_State *K, TValue src)
 /* This algorithm is like a fused multiply add on bignums,
    unlike any other function here it modifies bigint. It is used in read
    and it assumes that bigint is positive */
-/* assumes tv_bigint is rooted */
+/* GC: Assumes tv_bigint is rooted */
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
 		       int32_t digit)
 {
@@ -78,7 +78,7 @@ void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base,
 
 /* This is used by the writer to get the digits of a number 
  tv_bigint must be positive */
-/* assumes tv_bigint is rooted */
+/* GC: Assumes tv_bigint is rooted */
 int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base)
 {
     UNUSED(K);
@@ -97,7 +97,7 @@ bool kbigint_has_digits(klisp_State *K, TValue tv_bigint)
 
 /* Mutate the bigint to have the opposite sign, used in read
    and write*/
-/* assumes tv_bigint is rooted */
+/* GC: Assumes tv_bigint is rooted */
 void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
 {
     Bigint *bigint = tv2bigint(tv_bigint);

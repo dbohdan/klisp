@@ -39,9 +39,8 @@ void eval_ls_cfn(klisp_State *K, TValue *xparams, TValue obj)
     } else {
 	/* more arguments need to be evaluated */
 	/* GC: all objects are rooted at this point */
-	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
-					     &eval_ls_cfn, 4, rest, env, 
-					     tail, combiner);
+	TValue new_cont = kmake_continuation(K, kget_cc(K), &eval_ls_cfn, 4, 
+					     rest, env, tail, combiner);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(rest), env);
     }
@@ -111,13 +110,17 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 	    /* make a copy of the operands (for storing arguments) */
 	    TValue tail;
 	    TValue arg_ls = make_arg_ls(K, operands, &tail);
-	    TValue comb_cont = kmake_continuation(
-		K, kget_cc(K), KNIL, KNIL, &combine_cfn, 2, arg_ls, env);
+	    krooted_tvs_push(K, arg_ls);
+	    TValue comb_cont = kmake_continuation(K, kget_cc(K), &combine_cfn, 
+						  2, arg_ls, env);
 
-	    TValue els_cont = kmake_continuation(
-		K, comb_cont, KNIL, KNIL, &eval_ls_cfn, 
-		4, arg_ls, env, tail, tv2app(obj)->underlying);
+	    krooted_tvs_pop(K); /* already in cont */
+	    krooted_tvs_push(K, comb_cont);
+	    TValue els_cont = 
+		kmake_continuation(K, comb_cont, &eval_ls_cfn, 4, arg_ls, env, 
+				   tail, tv2app(obj)->underlying);
 	    kset_cc(K, els_cont);
+	    krooted_tvs_pop(K);
 	    ktail_eval(K, kcar(arg_ls), env);
 	} else {
 	    klispE_throw(K, "Not a list in applicative combination");
@@ -135,12 +138,12 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 /* the underlying function of the eval operative */
 void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
 {
-    (void) xparams;
+    UNUSED(xparams);
 
     switch(ttype(obj)) {
     case K_TPAIR: {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     &combine_cfn, 2, kcdr(obj), env);
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), &combine_cfn, 2, kcdr(obj), env);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(obj), env);
 	break;

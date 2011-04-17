@@ -117,6 +117,7 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for string and list->string */
+/* GC: Assumes ls is rooted */
 inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
 {
     int32_t dummy;
@@ -342,8 +343,8 @@ void string_to_list(klisp_State *K, TValue *xparams, TValue ptree,
     bind_1tp(K, "string->list", ptree, "string", ttisstring, str);
     int32_t pairs = kstring_size(str);
     char *buf = kstring_buf(str);
-    TValue dummy = kcons(K, KINERT, KNIL);
-    TValue tail = dummy;
+
+    TValue tail = kget_dummy1(K);
 
     while(pairs--) {
 	TValue new_pair = kcons(K, ch2tv(*buf), KNIL);
@@ -351,7 +352,7 @@ void string_to_list(klisp_State *K, TValue *xparams, TValue ptree,
 	kset_cdr(tail, new_pair);
 	tail = new_pair;
     }
-    kapply_cc(K, kcdr(dummy));
+    kapply_cc(K, kcutoff_dummy1(K));
 }
 
 void list_to_string(klisp_State *K, TValue *xparams, TValue ptree, 

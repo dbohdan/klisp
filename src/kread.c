@@ -117,8 +117,10 @@ void try_shared_def(klisp_State *K, TValue def_token, TValue value)
 	tail = kcdr(tail);
     }
     
-    K->shared_dict = kcons(K, kcons(K, kcdr(def_token), value), 
-			   K->shared_dict); /* value is protected by cons */
+    TValue new_tok = kcons(K, kcdr(def_token), value);
+    krooted_tvs_push(K, new_tok);
+    K->shared_dict = kcons(K, new_tok, K->shared_dict); /* value is protected by cons */
+    krooted_tvs_pop(K);
     return;
 }
 
@@ -417,12 +419,14 @@ TValue kread_fsm(klisp_State *K)
 		/* construct the list with the correct type of pair */
 		/* GC: np is rooted by push_data */
 		TValue np = kcons_g(K, K->read_mconsp, obj, KNIL);
+		krooted_tvs_push(K, np);
 		kset_source_info(np, obj_si);
 		kset_cdr(get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */
 		pop_data(K);
 		push_data(K, np);
 		push_state(K, ST_MIDDLE_LIST);
+		krooted_tvs_pop(K);
 		read_next_token = true;
 		break;
 	    }
@@ -461,6 +465,9 @@ TValue kread_fsm(klisp_State *K)
 	    }
 	}
     }
+
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
 
     pop_state(K);
     assert(ks_sisempty(K));

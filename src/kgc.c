@@ -18,6 +18,10 @@
 #include "kport.h"
 #include "imath.h"
 
+/* XXX */
+#include "kwrite.h"
+/* XXX */
+
 #define GCSTEPSIZE	1024u
 #define GCSWEEPMAX	40
 #define GCSWEEPCOST	10
@@ -50,12 +54,12 @@
 	    TValue *array_ = (a);			\
     int32_t size_ = (s);				\
     for(int32_t i_ = 0; i_ < size_; i_++, array_++) {	\
-	TValue o_ = *array_;				\
-	markvalue(k, o_);				\
+	TValue mva_obj_ = *array_;			\
+	markvalue(k, mva_obj_);				\
     }})
 
-#define markvalue(k,o) { checkconsistency(o);				\
-	if (iscollectable(o) && iswhite(gcvalue(o)))			\
+#define markvalue(k,o) { checkconsistency(o);		    \
+	if (iscollectable(o) && iswhite(gcvalue(o)))	    \
 	    reallymarkobject(k,gcvalue(o)); }
 
 #define markobject(k,t) { if (iswhite(obj2gco(t)))	\
@@ -232,6 +236,7 @@ static void traverseproto (global_State *g, Proto *f) {
 */
 static int32_t propagatemark (klisp_State *K) {
     GCObject *o = K->gray;
+    K->gray = o->gch.gclist;
     klisp_assert(isgray(o));
     gray2black(o);
     uint8_t type = o->gch.tt;
@@ -699,7 +704,6 @@ void klispC_step (klisp_State *K) {
 	setthreshold(K);
     }
 }
-
 
 void klispC_fullgc (klisp_State *K) {
      if (K->gcstate <= GCSpropagate) {

@@ -192,9 +192,11 @@ TValue ktok_get_source_info(klisp_State *K)
 		    strlen(K->ktok_source_info.saved_filename));
     krooted_tvs_push(K, filename_str);
     /* TEMP: for now, lines and column names are fixints */
-    TValue res = kcons(K, filename_str, 
-		       kcons(K, i2tv(K->ktok_source_info.saved_line),
-			     i2tv(K->ktok_source_info.saved_col)));
+    TValue res =  kcons(K, i2tv(K->ktok_source_info.saved_line),
+			i2tv(K->ktok_source_info.saved_col));
+    krooted_tvs_push(K, res);
+    res = kcons(K, filename_str, res);
+    krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     return res;
 }

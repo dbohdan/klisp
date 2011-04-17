@@ -11,7 +11,7 @@
 #include "kstate.h"
 
 /* TODO: make some specialized constructors for 0, 1 and 2 parameters */
-TValue kmake_continuation(klisp_State *K, TValue parent, TValue name, 
-			  TValue si, klisp_Cfunc fn, int xcount, ...);
+TValue kmake_continuation(klisp_State *K, TValue parent, klisp_Cfunc fn, 
+			  int xcount, ...);
 
 #endif

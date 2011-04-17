@@ -209,8 +209,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 */
 
 /* NOTE: This is intended for use in switch statements */
-#define ttype(o) ({ TValue o_ = (o);			\
-	    ttisdouble(o_)? K_TDOUBLE : ttype_(o_); })
+#define ttype(o) ({ TValue tto_ = (o);			\
+	    ttisdouble(tto_)? K_TDOUBLE : ttype_(tto_); })
 
 /* This is intended for internal use below. DON'T USE OUTSIDE THIS FILE */
 #define ttag(o) ((o).tv.t)
