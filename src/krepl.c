@@ -68,9 +68,10 @@ void eval_cfn(klisp_State *K, TValue *xparams, TValue obj)
 void loop_fn(klisp_State *K, TValue *xparams, TValue obj);
 
 /* this is called from both loop_fn and error_fn */
-/* GC: assumes denv is rooted */
+/* GC: assumes denv is NOT rooted */
 inline void create_loop(klisp_State *K, TValue denv)
 {
+    krooted_tvs_push(K, denv);
     TValue loop_cont = 
 	kmake_continuation(K, K->root_cont, &loop_fn, 1, denv);
     krooted_tvs_push(K, loop_cont);
@@ -78,8 +79,9 @@ inline void create_loop(klisp_State *K, TValue denv)
     krooted_tvs_pop(K); /* in eval cont */
     krooted_tvs_push(K, eval_cont);
     TValue read_cont = kmake_continuation(K, eval_cont, &read_fn, 0);
-    krooted_tvs_pop(K);
     kset_cc(K, read_cont);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
     kapply_cc(K, KINERT);
 }
 
@@ -144,8 +146,8 @@ void kinit_repl(klisp_State *K)
 
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
-
-    /* don't yet pop std_env */
-    create_loop(K, std_env);
     krooted_tvs_pop(K);
+
+    /* GC: create_loop will root std_env */
+    create_loop(K, std_env);
 }
