@@ -18,6 +18,10 @@
 #include "kport.h"
 #include "imath.h"
 
+/* XXX */
+#include "kwrite.h"
+/* XXX */
+
 #define GCSTEPSIZE	1024u
 #define GCSWEEPMAX	40
 #define GCSWEEPCOST	10
@@ -50,12 +54,12 @@
 	    TValue *array_ = (a);			\
     int32_t size_ = (s);				\
     for(int32_t i_ = 0; i_ < size_; i_++, array_++) {	\
-	TValue o_ = *array_;				\
-	markvalue(k, o_);				\
+	TValue mva_obj_ = *array_;			\
+	markvalue(k, mva_obj_);				\
     }})
 
-#define markvalue(k,o) { checkconsistency(o);				\
-	if (iscollectable(o) && iswhite(gcvalue(o)))			\
+#define markvalue(k,o) { checkconsistency(o);		    \
+	if (iscollectable(o) && iswhite(gcvalue(o)))	    \
 	    reallymarkobject(k,gcvalue(o)); }
 
 #define markobject(k,t) { if (iswhite(obj2gco(t)))	\
@@ -390,6 +394,7 @@ static void cleartable (GCObject *l) {
 static void freeobj (klisp_State *K, GCObject *o) {
     /* TODO use specific functions like in bigint & lua */
     uint8_t type = o->gch.tt;
+    printf("freeobj:  %p (%s)\n", o, ktv_names[type]);
     switch (type) {
 	/* case LUA_TTABLE: luaH_free(L, gco2h(o)); break; */
     case K_TBIGINT: {
