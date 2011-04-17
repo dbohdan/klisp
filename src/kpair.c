@@ -29,23 +29,32 @@ TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr)
     return gc2pair(new_pair);
 }
 
+#define MAX_LIST_N 16
+
 /* GC: assumes all argps are rooted */
 TValue klist_g(klisp_State *K, bool m, int32_t n, ...)
 {
     va_list argp;
-    TValue tail = KNIL;
-    
-    krooted_vars_push(K, &tail);
+
+    klisp_assert(n < MAX_LIST_N);
+
+    /* don't use any of the klisp dummys, because this is 
+       called from many places */
+    TValue dummy = kcons_g(K, m, KINERT, KNIL);
+    krooted_tvs_push(K, dummy);
+    TValue tail = dummy;
 
     va_start(argp, n);
     for (int i = 0; i < n; i++) {
 	TValue next_car = va_arg(argp, TValue);
-	tail = kcons_g(K, m, next_car, tail); 
+	TValue np = kcons_g(K, m, next_car, KNIL); 
+	kset_cdr(tail, np);
+	tail = np;
     }
     va_end(argp);
 
-    krooted_vars_pop(K);
-    return tail;
+    krooted_tvs_pop(K);
+    return kcdr(dummy);
 }
 
 
