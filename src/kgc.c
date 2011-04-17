@@ -79,7 +79,6 @@ static void removeentry (Node *n) {
 
 static void reallymarkobject (klisp_State *K, GCObject *o) 
 {
-    printf("mark:  %p (%s)\n", o, ktv_names[o->gch.tt]);
     klisp_assert(iswhite(o) && !isdead(K, o));
     white2gray(o);
     /* klisp: most of klisp have the same structure, but conserve the switch
@@ -237,7 +236,6 @@ static void traverseproto (global_State *g, Proto *f) {
 */
 static int32_t propagatemark (klisp_State *K) {
     GCObject *o = K->gray;
-    printf("propagate:  %p (%s)\n", o, ktv_names[o->gch.tt]);
     K->gray = o->gch.gclist;
     klisp_assert(isgray(o));
     gray2black(o);
@@ -394,7 +392,6 @@ static void cleartable (GCObject *l) {
 static void freeobj (klisp_State *K, GCObject *o) {
     /* TODO use specific functions like in bigint & lua */
     uint8_t type = o->gch.tt;
-    printf("freeobj:  %p (%s)\n", o, ktv_names[type]);
     switch (type) {
 	/* case LUA_TTABLE: luaH_free(L, gco2h(o)); break; */
     case K_TBIGINT: {

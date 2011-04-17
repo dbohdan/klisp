@@ -177,9 +177,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     kinit_ground_env(K);
 
     /* set the threshold for gc start now that we have allocated all mem */ 
-/*    K->GCthreshold = 4*K->totalbytes; */
-    /* TEST */
-    K->GCthreshold = K->totalbytes + 1000; 
+    K->GCthreshold = 4*K->totalbytes;
 
     return K;
 }

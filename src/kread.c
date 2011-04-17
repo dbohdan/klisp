@@ -466,6 +466,9 @@ TValue kread_fsm(klisp_State *K)
 	}
     }
 
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
+
     pop_state(K);
     assert(ks_sisempty(K));
     return obj;
