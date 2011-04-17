@@ -9,22 +9,19 @@
 #include "kstate.h"
 #include "kencapsulation.h"
 #include "kpair.h"
+#include "kgc.h"
 
-TValue kmake_encapsulation(klisp_State *K, TValue name, TValue si,
-			   TValue key, TValue val)
+/* GC: Assumes that key & val are rooted */
+TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val)
 {
     Encapsulation *new_enc = klispM_new(K, Encapsulation);
 
     /* header + gc_fields */
-    new_enc->next = K->root_gc;
-    K->root_gc = (GCObject *)new_enc;
-    new_enc->gct = 0;
-    new_enc->tt = K_TENCAPSULATION;
-    new_enc->flags = 0;
+    klispC_link(K, (GCObject *) new_enc, K_TENCAPSULATION, 0);
 
     /* encapsulation specific fields */
-    new_enc->name = name;
-    new_enc->si = si;
+    new_enc->name = KNIL;
+    new_enc->si = KNIL;
     new_enc->key = key;
     new_enc->value = val;
 

@@ -12,14 +12,11 @@
 #ifndef kstate_h
 #define kstate_h
 
-/* TEMP: for error signaling */
-#include <assert.h>
-
 #include <stdio.h>
 #include <setjmp.h>
 
-#include "kobject.h"
 #include "klimits.h"
+#include "kobject.h"
 #include "klisp.h"
 #include "ktoken.h"
 #include "kmem.h"
@@ -37,6 +34,10 @@ typedef struct {
     int32_t saved_col;
 } ksource_info_t;
 
+#define GC_PROTECT_SIZE 32
+
+/* NOTE: when adding TValues here, remember to add them to
+   markroot in kgc.c!! */
 struct klisp_State {
     TValue symbol_table;
     TValue curr_cont;
@@ -46,6 +47,8 @@ struct klisp_State {
     ** (from a continuation) and otherwise next_func is of type
     ** klisp_Ofunc (from an operative)
     */
+    TValue next_obj; /* this is the operative or continuation to call
+			must be here to protect it from gc */
     void *next_func; /* the next function to call (operative or cont) */
     TValue next_value;     /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
@@ -64,9 +67,22 @@ struct klisp_State {
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;         /* auxiliary data to `frealloc' */
 
-    /* TODO: gc info */
-    GCObject *root_gc; /* list of all collectable objects */
-    int32_t totalbytes;
+    /* GC */
+    uint16_t currentwhite; /* the one of the two whites that is in use in
+			      this collection cycle */
+    uint8_t gcstate;  /* state of garbage collector */
+    GCObject *rootgc; /* list of all collectable objects */
+    GCObject **sweepgc;  /* position of sweep in `rootgc' */
+    GCObject *gray;  /* list of gray objects */
+    GCObject *grayagain;  /* list of objects to be traversed atomically */
+    GCObject *weak;  /* list of weak tables (to be cleared) */
+    GCObject *tmudata;  /* last element of list of userdata to be GC */
+    uint32_t GCthreshold;
+    uint32_t totalbytes;  /* number of bytes currently allocated */
+    uint32_t estimate;  /* an estimate of number of bytes actually in use */
+    uint32_t gcdept;  /* how much GC is `behind schedule' */
+    int32_t gcpause;  /* size of pause between successive GCs */
+    int32_t gcstepmul;  /* GC `granularity' */
 
     /* TEMP: error handling */
     jmp_buf error_jb;
@@ -111,6 +127,24 @@ struct klisp_State {
     int32_t ssize; /* total size of array */
     int32_t stop; /* top of the stack (all elements are below this index) */
     TValue *sbuf;
+
+    /* TValue stack to protect values from gc, must not grow, otherwise 
+       it may call the gc */
+    int32_t rooted_tvs_top;
+    TValue rooted_tvs_buf[GC_PROTECT_SIZE];
+
+    /* TValue * stack to protect c variables from gc. This is used when the
+       object pointed to by a variable may change */
+    int32_t rooted_vars_top;
+    TValue *rooted_vars_buf[GC_PROTECT_SIZE];
+
+    /* These three are useful for constructing lists by means of set-car &
+       set-cdr. The idea is that these dummy pairs start as the head of 
+       the list (protecting the entire chain from GC) and at the end of the
+       construction, the list is cut off from the cdr of the dummy */
+    TValue dummy_pair1;
+    TValue dummy_pair2;
+    TValue dummy_pair3;
  };
 
 /* some size related macros */
@@ -149,10 +183,13 @@ inline bool ks_sisempty(klisp_State *K);
 
 inline void ks_spush(klisp_State *K, TValue obj)
 {
-    if (ks_stop(K) == ks_ssize(K))
-	ks_sgrow(K, ks_stop(K)+1);
     ks_selem(K, ks_stop(K)) = obj;
     ++ks_stop(K);
+    /* put check after so that there is always space for one obj, and if 
+       realloc is needed, obj is already rooted */
+    if (ks_stop(K) == ks_ssize(K)) {
+	ks_sgrow(K, ks_stop(K)+1);
+    }
 }
 
 
@@ -239,7 +276,7 @@ inline char ks_tbpop(klisp_State *K)
 
 inline char *ks_tbget_buffer(klisp_State *K)
 {
-    assert(ks_tbelem(K, ks_tbidx(K) - 1) == '\0');
+    klisp_assert(ks_tbelem(K, ks_tbidx(K) - 1) == '\0');
     return ks_tbuf(K);
 }
 
@@ -255,6 +292,40 @@ inline bool ks_tbisempty(klisp_State *K)
     return ks_tbidx(K) == 0;
 }
 
+/*
+** Functions to protect values from GC
+** TODO: add write barriers
+*/
+inline void krooted_tvs_push(klisp_State *K, TValue tv)
+{
+    klisp_assert(K->rooted_tvs_top < GC_PROTECT_SIZE);
+    K->rooted_tvs_buf[K->rooted_tvs_top++] = tv;
+}
+
+inline void krooted_tvs_pop(klisp_State *K)
+{
+    klisp_assert(K->rooted_tvs_top > 0);
+    --(K->rooted_tvs_top);
+}
+
+inline void krooted_tvs_clear(klisp_State *K) { K->rooted_tvs_top = 0; }
+
+inline void krooted_vars_push(klisp_State *K, TValue *v)
+{
+    klisp_assert(K->rooted_vars_top < GC_PROTECT_SIZE);
+    K->rooted_vars_buf[K->rooted_vars_top++] = v;
+}
+
+inline void krooted_vars_pop(klisp_State *K)
+{
+    klisp_assert(K->rooted_vars_top > 0);
+    --(K->rooted_vars_top);
+}
+
+inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
+
+/* dummy functions will be in kpair.h, because we can't include
+   it from here */
 
 /*
 ** prototypes for underlying c functions of continuations &
@@ -270,6 +341,10 @@ typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree,
 */
 inline void klispS_apply_cc(klisp_State *K, TValue val)
 {
+    klisp_assert(K->rooted_tvs_top == 0);
+    klisp_assert(K->rooted_vars_top == 0);
+
+    K->next_obj = K->curr_cont; /* save it from GC */
     Continuation *cont = tv2cont(K->curr_cont);
     K->next_func = cont->fn;
     K->next_value = val;
@@ -298,6 +373,10 @@ inline void klispS_set_cc(klisp_State *K, TValue new_cont)
 inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree, 
 			     TValue env)
 {
+    klisp_assert(K->rooted_tvs_top == 0);
+    klisp_assert(K->rooted_vars_top == 0);
+
+    K->next_obj = top; /* save it from GC */
     Operative *op = tv2op(top);
     K->next_func = op->fn;
     K->next_value = ptree;

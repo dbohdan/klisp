@@ -13,6 +13,7 @@
 #include "kerror.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 /* keyed dynamic vars */
 #define env_keyed_parents(env_) (tv2env(env_)->keyed_parents)
@@ -22,24 +23,25 @@
 #define env_is_keyed(env_) (!ttisnil(env_keyed_node(env_)))
 /* env_ should be keyed! */
 #define env_has_key(env_, k_) (tv_equal(env_keyed_key(env_), (k_)))
-/* TEMP: for now allow only a single parent */
+
+/* GC: Assumes that parents is rooted */
 TValue kmake_environment(klisp_State *K, TValue parents)
 {
     Environment *new_env = klispM_new(K, Environment);
 
     /* header + gc_fields */
-    new_env->next = K->root_gc;
-    K->root_gc = (GCObject *) new_env;
-    new_env->gct = 0;
-    new_env->tt = K_TENVIRONMENT;
-    new_env->flags = 0;
+    klispC_link(K, (GCObject *) new_env, K_TENVIRONMENT, 0);
 
     /* environment specific fields */
     new_env->mark = KFALSE;    
-    new_env->parents = parents;
+    new_env->parents = parents; /* save them here */
     /* TEMP: for now the bindings are an alist */
     new_env->bindings = KNIL;
-    /* TEMP: this could be passed in by the contructor */
+
+    /* set these here to avoid problems if gc gets called */
+    new_env->keyed_parents = KNIL;
+    new_env->keyed_node = KNIL;
+
     /* Contruct the list of keyed parents */
     /* MAYBE: this could be optimized to avoid repetition of parents */
     TValue kparents;
@@ -49,9 +51,8 @@ TValue kmake_environment(klisp_State *K, TValue parents)
 	kparents = env_is_keyed(parents)? parents : env_keyed_parents(parents);
     } else {
 	/* list of parents, for now, just append them */
-	/* GC: root intermediate objs */
-	TValue dummy = kcons(K, KNIL, KNIL);
-	TValue tail = dummy;
+	krooted_tvs_push(K, gc2env(new_env)); /* keep the new env rooted */
+	TValue tail = kget_dummy1(K); /* keep the list rooted */
 	while(!ttisnil(parents)) {
 	    TValue parent = kcar(parents);
 	    TValue pkparents = env_keyed_parents(parent);
@@ -70,14 +71,14 @@ TValue kmake_environment(klisp_State *K, TValue parents)
 	    }
 	    parents = kcdr(parents);
 	}
-	kparents = kcdr(dummy);
+       /* all alocation done */
+	kparents = kcutoff_dummy1(K); 
+	krooted_tvs_pop(K); 
 	/* if it's just one env switch from (env) to env. */
 	if (ttispair(kparents) && ttisnil(kcdr(kparents)))
 	    kparents = kcar(kparents);
     }
-    new_env->keyed_parents = kparents;
-    new_env->keyed_node = KNIL;
-
+    new_env->keyed_parents = kparents; /* overwrite with the proper value */
     return gc2env(new_env);
 }
 
@@ -104,12 +105,13 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 #define kenv_parents(kst_, env_) (tv2env(env_)->parents)
 #define kenv_bindings(kst_, env_) (tv2env(env_)->bindings)
 
+/* Assumes that env, sym & val are rooted. sym & val need not be
+ right now, but that could change */
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 {
     TValue oldb = kfind_local_binding(K, kenv_bindings(K, env), sym);
 
     if (ttisnil(oldb)) {
-	/* XXX: unrooted pair */
 	TValue new_pair = kcons(K, sym, val);
 	kenv_bindings(K, env) = kcons(K, new_pair, kenv_bindings(K, env));
     } else {
@@ -118,6 +120,7 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 }
 
 /* This works no matter if parents is a list or a single environment */
+/* GC: assumes env & sym are rooted */
 inline bool try_get_binding(klisp_State *K, TValue env, TValue sym, 
 			    TValue *value)
 {
@@ -147,6 +150,7 @@ inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 	    pushed += 2;
 	}
     }
+
     *value = KINERT;
     return false;
 }
@@ -172,14 +176,18 @@ bool kbinds(klisp_State *K, TValue env, TValue sym)
 /* keyed dynamic vars */
 
 /* MAYBE: This could be combined with the default constructor */
+/* GC: assumes parent, key & val are rooted */
 TValue kmake_keyed_static_env(klisp_State *K, TValue parent, TValue key, 
 			      TValue val)
 {
     TValue new_env = kmake_environment(K, parent);
+    krooted_tvs_push(K, new_env); /* keep the env rooted */
     env_keyed_node(new_env) = kcons(K, key, val);
+    krooted_tvs_pop(K);
     return new_env;
 }
 
+/* GC: assumes parent, key & env are rooted */
 inline bool try_get_keyed(klisp_State *K, TValue env, TValue key, 
 			  TValue *value)
 {

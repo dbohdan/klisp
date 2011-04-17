@@ -33,11 +33,14 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue def_sym = xparams[0];
 
     dptree = check_copy_ptree(K, "$define!", dptree, KIGNORE);
+
+    krooted_tvs_push(K, dptree);
 	
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					 do_match, 3, dptree, denv, 
 					 def_sym);
     kset_cc(K, new_cont);
+    krooted_tvs_pop(K);
     ktail_eval(K, expr, denv);
 }
 
@@ -67,11 +70,14 @@ void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_3p(K, "$set!", ptree, env_exp, raw_formals, eval_exp);
 
     TValue formals = check_copy_ptree(K, "$set!", raw_formals, KIGNORE);
+    krooted_tvs_push(K, formals);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_set_eval_obj, 4, 
+	kmake_continuation(K, kget_cc(K), do_set_eval_obj, 4, 
 			   sname, formals, eval_exp, denv);
     kset_cc(K, new_cont);
+
+    krooted_tvs_pop(K);
     ktail_eval(K, env_exp, denv);
 }
 
@@ -97,7 +103,7 @@ void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj)
 	TValue env = obj;
 
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_match, 3, 
+	    kmake_continuation(K, kget_cc(K), do_match, 3, 
 			       formals, env, sname);
 	kset_cc(K, new_cont);
 	ktail_eval(K, eval_exp, denv);
@@ -122,13 +128,13 @@ inline void unmark_maybe_symbol_list(klisp_State *K, TValue ls)
 ** Check that obj is a finite list of symbols with no duplicates and
 ** returns a copy of the list (cf. check_copy_ptree)
 */
+/* GC: Assumes obj is rooted, uses dummy1 */
 TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
 {
     TValue tail = obj;
     bool type_errorp = false;
     bool repeated_errorp = false;
-    TValue dummy = kcons(K, KNIL, KNIL);
-    TValue last_pair = dummy;
+    TValue last_pair = kget_dummy1(K);
 
     while(ttispair(tail) && !kis_marked(tail)) {
 	/* even if there is a type error continue checking the structure */
@@ -160,7 +166,7 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
     } else if (repeated_errorp) {
 	klispE_throw_extra(K, name , ": repeated symbols");
     }
-    return kcdr(dummy);
+    return kcutoff_dummy1(K);
 }
 
 void do_import(klisp_State *K, TValue *xparams, TValue obj)
@@ -181,7 +187,7 @@ void do_import(klisp_State *K, TValue *xparams, TValue obj)
     } else {
 	TValue env = obj;
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_match, 3, 
+	    kmake_continuation(K, kget_cc(K), do_match, 3, 
 			       symbols, denv, sname);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcons(K, K->list_app, symbols), env);
@@ -200,31 +206,41 @@ void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1p(K, name, ptree, symbols, body);
 
     symbols = check_copy_symbol_list(K, name, symbols);
+    krooted_tvs_push(K, symbols);
     body = check_copy_list(K, name, body, false);
+    krooted_tvs_push(K, body);
     
     TValue new_env = kmake_environment(K, denv);
     /* this will copy the bindings from new_env to denv */
+    krooted_tvs_push(K, new_env);
     TValue import_cont =
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_import, 3, 
+	kmake_continuation(K, kget_cc(K), do_import, 3, 
 			   sname, symbols, denv);
+    kset_cc(K, import_cont); /* this implicitly roots import_cont */
     /* this will ignore the last value and pass the env to the 
        above continuation */
     TValue ret_exp_cont = 
-	kmake_continuation(K, import_cont, KNIL, KNIL, do_return_value, 
+	kmake_continuation(K, import_cont, do_return_value, 
 			   1, new_env);
-    kset_cc(K, ret_exp_cont);
+    kset_cc(K, ret_exp_cont); /* this implicitly roots ret_exp_cont */
 
     if (ttisnil(body)) {
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
 	kapply_cc(K, KINERT);
     } else {
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
 	TValue tail = kcdr(body);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 						 do_seq, 2, tail, new_env);
 	    kset_cc(K, new_cont);
 	} 
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
 	ktail_eval(K, kcar(body), new_env);
     }
 }
@@ -258,9 +274,11 @@ void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
        of the symbol list (other operatives that could use this model to
        avoid copying are $set!, $define! & $binds?) */
 
+    krooted_tvs_push(K, symbols);
     TValue new_cont =
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_import, 3, 
+	    kmake_continuation(K, kget_cc(K), do_import, 3, 
 			       sname, symbols, denv);
     kset_cc(K, new_cont);
+    krooted_tvs_pop(K);
     ktail_eval(K, env_expr, denv);
 }

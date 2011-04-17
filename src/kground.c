@@ -44,23 +44,45 @@
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
 ** "value", both of type TValue. symbol will be bound to a symbol named by
 ** "n_" and can be referrenced in the var_args
+** GC: All of these assume that the extra args are rooted 
 */
-#define add_operative(K_, env_, n_, fn_, ...)	\
-    { symbol = ksymbol_new(K_, n_); \
-    value = make_operative(K_, fn_, __VA_ARGS__); \
-    kadd_binding(K_, env_, symbol, value); }
 
-#define add_applicative(K_, env_, n_, fn_, ...)	\
-    { symbol = ksymbol_new(K_, n_); \
-    value = make_applicative(K_, fn_, __VA_ARGS__); \
-    kadd_binding(K_, env_, symbol, value); }
+/* Right now all symbols are rooted, but when possible, they will
+   be moved to a weak hashtable, so just in case root symbols during
+   operand/applicative construction */
+#define add_operative(K_, env_, n_, fn_, ...)		\
+    { symbol = ksymbol_new(K_, n_);			\
+	krooted_tvs_push(K_, symbol);			\
+	value = kmake_operative(K_, fn_, __VA_ARGS__);	\
+	krooted_tvs_push(K_, value);			\
+	kadd_binding(K_, env_, symbol, value);		\
+	krooted_tvs_pop(K_);				\
+	krooted_tvs_pop(K_); }
+
+#define add_applicative(K_, env_, n_, fn_, ...)			\
+    { symbol = ksymbol_new(K_, n_);				\
+	krooted_tvs_push(K_, symbol);				\
+	value = kmake_applicative(K_, fn_, __VA_ARGS__);	\
+	krooted_tvs_push(K_, value);				\
+	kadd_binding(K_, env_, symbol, value);			\
+	krooted_tvs_pop(K_);					\
+	krooted_tvs_pop(K_); }	
+
+#define add_value(K_, env_, n_, v_)			\
+    { value = v_;					\
+	krooted_tvs_push(K_, value);			\
+	symbol = ksymbol_new(K_, n_);			\
+	krooted_tvs_push(K_, symbol);			\
+	kadd_binding(K_, env_, symbol, v_);		\
+	krooted_tvs_pop(K_);				\
+	krooted_tvs_pop(K_); }
 
 /*
 ** This is called once to bind all symbols in the ground environment
 */
 void kinit_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = K->ground_env; /* this is already rooted */
     TValue symbol, value;
 
     /*
@@ -522,14 +544,12 @@ void kinit_ground_env(klisp_State *K)
 		    continuation_applicative, 0);
 
     /* 7.2.6 root-continuation */
-    symbol = ksymbol_new(K, "root-continuation");
-    value = K->root_cont;
-    kadd_binding(K, ground_env, symbol, value);
+    add_value(K, ground_env, "root-continuation",
+	      K->root_cont);
     
     /* 7.2.7 error-continuation */
-    symbol = ksymbol_new(K, "error-continuation");
-    value = K->error_cont;
-    kadd_binding(K, ground_env, symbol, value);
+    add_value(K, ground_env, "error-continuation",
+	      K->root_cont);
 
     /* 
     ** 7.3 Library features

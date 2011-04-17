@@ -62,7 +62,7 @@ void enc_wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ** xparams[0]: encapsulation key
     */
     TValue key = xparams[0];
-    TValue enc = kmake_encapsulation(K, KNIL, KNIL, key, obj);
+    TValue enc = kmake_encapsulation(K, key, obj);
     kapply_cc(K, enc);
 }
 
@@ -95,10 +95,19 @@ void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
 
     /* GC: root intermediate values & pairs */
     TValue key = kmake_encapsulation_key(K);
-    TValue e = make_applicative(K, enc_wrap, 1, key);
-    TValue p = make_applicative(K, enc_typep, 1, key);
-    TValue d = make_applicative(K, enc_unwrap, 1, key);
+    krooted_tvs_push(K, key);
+    TValue e = kmake_applicative(K, enc_wrap, 1, key);
+    krooted_tvs_push(K, e);
+    TValue p = kmake_applicative(K, enc_typep, 1, key);
+    krooted_tvs_push(K, p);
+    TValue d = kmake_applicative(K, enc_unwrap, 1, key);
+    krooted_tvs_push(K, d);
 
-    TValue ls = kcons(K, e, kcons(K, p, kcons(K, d, KNIL)));
+    TValue ls = klist(K, 3, e, p, d);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
     kapply_cc(K, ls);
 }

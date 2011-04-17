@@ -13,6 +13,7 @@
 #include "kpair.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size, 
 		     bool identifierp)
@@ -36,22 +37,22 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     /* NOTE: there are no embedded '\0's in symbols */
     /* GC: root new_str */
     TValue new_str = kstring_new(K, buf, size); /* this copies the buf */
+    krooted_tvs_push(K, new_str);
     Symbol *new_sym = klispM_new(K, Symbol);
+    krooted_tvs_pop(K);
     
     /* header + gc_fields */
-    new_sym->next = K->root_gc;
-    K->root_gc = (GCObject *)new_sym;
-    new_sym->gct = 0;
-    new_sym->tt = K_TSYMBOL;
-    new_sym->flags = identifierp? K_FLAG_EXT_REP : 0; 
+    klispC_link(K, (GCObject *) new_sym, K_TSYMBOL, 
+	identifierp? K_FLAG_EXT_REP : 0);
 
     /* symbol specific fields */
     new_sym->mark = KFALSE;
     new_sym->str = new_str;
 
     TValue new_symv = gc2sym(new_sym);
-    /* GC: root new_symb */
+    krooted_tvs_push(K, new_symv);
     K->symbol_table = kcons(K, new_symv, K->symbol_table);
+    krooted_tvs_pop(K);
     return new_symv;
 }
 
@@ -69,6 +70,7 @@ TValue ksymbol_new(klisp_State *K, const char *buf)
 }
 
 /* for string->symbol */
+/* GC: assumes str is rooted */
 TValue ksymbol_new_check_i(klisp_State *K, TValue str)
 {
     int32_t size = kstring_size(str);
@@ -104,7 +106,9 @@ TValue ksymbol_new_check_i(klisp_State *K, TValue str)
     /* recover size & buf*/
     size = kstring_size(str);
     buf = kstring_buf(str);
-    return ksymbol_new_g(K, buf, size, identifierp);
+
+    TValue new_sym = ksymbol_new_g(K, buf, size, identifierp);
+    return new_sym;
 }
 
 bool ksymbolp(TValue obj) { return ttissymbol(obj); }

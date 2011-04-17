@@ -19,11 +19,11 @@
 
 void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) denv;
     /*
     ** xparams[0]: name symbol
     ** xparams[1]: type tag (as by i2tv)
     */
+    UNUSED(denv);
     int32_t tag = ivalue(xparams[1]);
 
     /* check the ptree is a list while checking the predicate.
@@ -176,7 +176,6 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, b2tv(res));
 }
 
-/* TODO: allow NULL as argument to cpairs and avoid writing it in that case */
 /* typed finite list. Structure error should be throw before type errors */
 int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 			 bool (*typep)(TValue), bool allow_infp, TValue obj,
@@ -193,7 +192,10 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 	tail = kcdr(tail);
 	++pairs;
     }
-    *cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
+    if (cpairs != NULL)
+	*cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
@@ -221,7 +223,10 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 	tail = kcdr(tail);
 	++pairs;
     }
-    *cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
+    if (cpairs != NULL)
+	*cpairs = ttispair(tail)? (pairs - ivalue(kget_mark(tail))) : 0;
+
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {

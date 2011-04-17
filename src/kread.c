@@ -69,6 +69,12 @@ void kread_error(klisp_State *K, char *str)
     ks_tbclear(K);
     ks_sclear(K);
     clear_shared_dict(K);
+    
+    /* this is needed because it would be too complicated to 
+       pop manually on each kind of error */
+    krooted_tvs_clear(K);
+    krooted_vars_clear(K);
+
     klispE_throw(K, str);
 }
 
@@ -95,7 +101,8 @@ TValue try_shared_ref(klisp_State *K, TValue ref_token)
     return KINERT;
 }
 
-TValue try_shared_def(klisp_State *K, TValue def_token, TValue value)
+/* GC: def token is rooted */
+void try_shared_def(klisp_State *K, TValue def_token, TValue value)
 {
     /* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
     int32_t ref_num = ivalue(kcdr(def_token));
@@ -105,15 +112,16 @@ TValue try_shared_def(klisp_State *K, TValue def_token, TValue value)
 	if (ref_num == ivalue(kcar(head))) {
 	    kread_error(K, "duplicate shared def found");
 	    /* avoid warning */
-	    return KINERT;
+	    return;
 	}
 	tail = kcdr(tail);
     }
     
-    /* XXX: what happens on out of mem? & gc? (inner cons is not rooted) */
-    K->shared_dict = kcons(K, kcons(K, kcdr(def_token), value), 
-			   K->shared_dict);
-    return KINERT;
+    TValue new_tok = kcons(K, kcdr(def_token), value);
+    krooted_tvs_push(K, new_tok);
+    K->shared_dict = kcons(K, new_tok, K->shared_dict); /* value is protected by cons */
+    krooted_tvs_pop(K);
+    return;
 }
 
 /* This overwrites a previouly made def, it is used in '() */
@@ -152,9 +160,13 @@ TValue kread_fsm(klisp_State *K)
     /* the source code information of that obj */
     TValue obj_si; 
 
+    krooted_vars_push(K, &obj);
+    krooted_vars_push(K, &obj_si);
+
     while (!(get_state(K) == ST_READ && !read_next_token)) {
 	if (read_next_token) {
-	    TValue tok = ktok_read_token(K);
+	    TValue tok = ktok_read_token(K); /* only root it when necessary */
+
 	    if (ttispair(tok)) { /* special token */
 		switch (chvalue(kcar(tok))) {
 		case '(': {
@@ -166,6 +178,7 @@ TValue kread_fsm(klisp_State *K)
 		    }
 		    /* construct the list with the correct type of pair */
 		    TValue np = kcons_g(K, K->read_mconsp, KINERT, KNIL);
+		    krooted_tvs_push(K, np);
 		    /* 
 		    ** NOTE: the source info of the '(' is temporarily saved 
 		    ** in np (later it will be replace by the source info
@@ -187,6 +200,8 @@ TValue kread_fsm(klisp_State *K)
 		    push_data(K, np);
 		    push_state(K, ST_FIRST_LIST);
 		    read_next_token = true;
+
+		    krooted_tvs_pop(K);
 		    break;
 		}
 		case ')': {
@@ -289,18 +304,15 @@ TValue kread_fsm(klisp_State *K)
 			/* avoid warning */
 			return KINERT;
 		    default: {
-			TValue res = try_shared_def(K, tok, KNIL);
-			/* TEMP: while error returns EOF */
-			if (ttiseof(res)) {
-			    return res;
-			} else {
-			    /* token ok, read defined object */
-			    /* NOTE: save the source info to return it 
-			     after the defined object is read */
-			    push_data(K, kcons(K, tok, ktok_get_source_info(K)));
-			    push_state(K, ST_SHARED_DEF);
-			    read_next_token = true;
-			}
+			krooted_tvs_push(K, tok);
+			try_shared_def(K, tok, KNIL);
+			/* token ok, read defined object */
+			/* NOTE: save the source info to return it 
+			   after the defined object is read */
+			push_data(K, kcons(K, tok, ktok_get_source_info(K)));
+			push_state(K, ST_SHARED_DEF);
+			read_next_token = true;
+			krooted_tvs_pop(K);
 		    }
 		    }
 		    break;
@@ -319,16 +331,11 @@ TValue kread_fsm(klisp_State *K)
 			return KINERT;
 		    default: {
 			TValue res = try_shared_ref(K, tok);
-			/* TEMP: while error returns EOF */
-			if (ttiseof(res)) {
-			    return res;
-			} else {
-			    /* ref ok, process it in next iteration */
-			    obj = res;
-			    /* NOTE: use source info of ref token */
-			    obj_si = ktok_get_source_info(K);
-			    read_next_token = false;
-			}
+			/* ref ok, process it in next iteration */
+			obj = res;
+			/* NOTE: use source info of ref token */
+			obj_si = ktok_get_source_info(K);
+			read_next_token = false;
 		    }
 		    }
 		    break;
@@ -390,6 +397,8 @@ TValue kread_fsm(klisp_State *K)
 		TValue fp = get_data(K);
 		/* replace source info in fp with the saved one */
 		/* NOTE: the old one will be returned when list is complete */
+		/* GC: the way things are done here fp is rooted at all
+		   times */
 		TValue fp_old_si = kget_source_info(fp);
 		kset_source_info(fp, obj_si);
 		kset_car(fp, obj);
@@ -408,13 +417,16 @@ TValue kread_fsm(klisp_State *K)
 		/* get the state out of the way */
 		pop_state(K);
 		/* construct the list with the correct type of pair */
+		/* GC: np is rooted by push_data */
 		TValue np = kcons_g(K, K->read_mconsp, obj, KNIL);
+		krooted_tvs_push(K, np);
 		kset_source_info(np, obj_si);
 		kset_cdr(get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */
 		pop_data(K);
 		push_data(K, np);
 		push_state(K, ST_MIDDLE_LIST);
+		krooted_tvs_pop(K);
 		read_next_token = true;
 		break;
 	    }
@@ -453,6 +465,9 @@ TValue kread_fsm(klisp_State *K)
 	    }
 	}
     }
+
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
 
     pop_state(K);
     assert(ks_sisempty(K));

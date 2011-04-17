@@ -50,7 +50,7 @@ void do_sv_bind(klisp_State *K, TValue *xparams, TValue ptree,
 	      "environment", ttisenvironment, env);
     UNUSED(denv); 
     TValue key = xparams[0];
-    /* GC: root intermediate objs */
+    /* GC: all objs are rooted in ptree, or xparams */
     TValue new_env = kmake_keyed_static_env(K, env, key, obj);
     kapply_cc(K, new_env);
 }
@@ -65,8 +65,14 @@ void make_keyed_static_variable(klisp_State *K, TValue *xparams,
     check_0p(K, "make-keyed-static-variable", ptree);
     /* the key is just a dummy pair */
     TValue key = kcons(K, KINERT, KINERT);
-    TValue a = kwrap(K, kmake_operative(K, KNIL, KNIL, do_sv_access, 1, key));
-    TValue b = kwrap(K, kmake_operative(K, KNIL, KNIL, do_sv_bind, 1, key));
-    TValue ls = kcons(K, b, kcons(K, a, KNIL));
+    krooted_tvs_push(K, key);
+    TValue a = kmake_applicative(K, do_sv_access, 1, key);
+    krooted_tvs_push(K, a);
+    TValue b = kmake_applicative(K, do_sv_bind, 1, key);
+    krooted_tvs_push(K, b);
+    TValue ls = klist(K, 2, b, a);
+
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
+
     kapply_cc(K, ls);
 }

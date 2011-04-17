@@ -11,8 +11,8 @@
 #include "kstate.h"
 #include "kpair.h"
 
-TValue kmake_promise(klisp_State *K, TValue name, TValue si,
-		     TValue exp, TValue maybe_env);
+/* GC: Assumes exp & maybe_env are roooted */
+TValue kmake_promise(klisp_State *K, TValue exp, TValue maybe_env);
 
 #define kpromise_node(p_) (tv2prom(p_)->node)
 #define kpromise_exp(p_) (kcar(kpromise_node(p_)))

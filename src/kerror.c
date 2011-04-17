@@ -4,9 +4,14 @@
 #include <stdlib.h>
 
 #include "klisp.h"
+#include "kpair.h"
 #include "kstate.h"
 #include "kmem.h"
 #include "kstring.h"
+
+/* XXX: the msg buffers should be statically allocated and msgs
+   should be copied there, otherwise problems may occur if
+   the objects whose buffers were passed as parameters get GCted */
 
 void clear_buffers(klisp_State *K)
 {
@@ -15,6 +20,15 @@ void clear_buffers(klisp_State *K)
     ks_sclear(K);
     ks_tbclear(K);
     K->shared_dict = KNIL;
+
+    /* is it okay to do this in all cases? */
+    krooted_tvs_clear(K);
+    krooted_vars_clear(K);
+
+    /* should also clear dummys right? */
+    UNUSED(kcutoff_dummy1(K));
+    UNUSED(kcutoff_dummy2(K));
+    UNUSED(kcutoff_dummy3(K));
 }
 
 void klispE_throw(klisp_State *K, char *msg)
@@ -37,7 +51,8 @@ void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg) {
     char *msg_buf = klispM_malloc(K, tl);
     strcpy(msg_buf, msg);
     strcpy(msg_buf+l1, extra_msg);
-
+    /* if the mem allocator could throw errors, this
+       could potentially leak msg_buf */
     TValue error_msg = kstring_new(K, msg_buf, tl);
     klispM_freemem(K, msg_buf, tl);
 

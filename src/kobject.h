@@ -31,12 +31,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <assert.h>
 
-/* This should be in a configuration .h */
-/*
-#define KTRACK_MARKS (true)
-*/
+#include "klimits.h"
+#include "klispconf.h"
 
 /*
 ** Union of all collectible objects
@@ -47,8 +44,38 @@ typedef union GCObject GCObject;
 ** Common Header for all collectible objects (in macro form, to be
 ** included in other objects)
 */
-#define CommonHeader GCObject *next; uint8_t tt; uint8_t flags; uint16_t gct; 
+#define CommonHeader GCObject *next; uint8_t tt; uint8_t flags; \
+    uint16_t gct; uint32_t padding; GCObject *gclist;
+    
+/* NOTE: the gc flags are called marked in lua, but we reserve that them
+   for marks used in cycle traversal. The field flags is also missing
+   from lua, they serve as compact bool fields for certain types */
 
+/* 
+** NOTE: this is next pointer comes from lua. This is a byproduct of the 
+** lua allocator. Because objects come from an arbitrary allocator, they
+** can't be assumed to be contiguous; but in the sweep phase of garbage 
+** collection there has to be a way to iterate over all allocated objects
+** and that is the function of the next pointer: for storing the white
+** list. Upon allocation objects are added to this white list, all linked
+** together by a succession of next pointers starting in a field of the
+** state struct. Likewise, during the tracing phase, gray objects are linked
+** by means of the gclist pointer. Technically this is necessary only for
+** objects that have references, but in klisp all objects except strings
+** have them so it is easier to just put it here. Re the use of the padding,
+** this is necessary (TODO add 32-bit check) in 32 bits because of the packed
+** attribute. Otherwise, all TValues would be misaligned. All of this, 
+** assuming the compiler complies with it, but if not the padding doesn't
+** hurt.
+*/
+
+/* 
+** MAYBE/REFACTOR: other way to do it would be to have a packed GCHeader 
+** struct inside each object, but would have to change all references to 
+** header objects from 'obj.*' to 'obj.h.*', or something like that. I 
+** think the next C standard (C1X at this point) allows the use of
+** anonymous inner struct and unions for this use case
+*/
 
 /*
 ** Common header in struct form
@@ -74,6 +101,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 ** so tttt tttt tttt tttt is actually ffff ffff tttt tttt
 ** This gives us 256 types and as many as 8 flags per type.
 */
+
+/* TODO eliminate flags */
 
 /*
 ** Macros for manipulating tags directly
@@ -135,6 +164,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 /* this is used to test for numbers, as returned by ttype */
 #define K_LAST_NUMBER_TYPE K_TCOMPLEX
 
+/* this is used to if the object is collectable */
+#define K_FIRST_GC_TYPE K_TPAIR
+
 #define K_MAKE_VTAG(t) (K_TAG_TAGGED | (t))
 
 /*
@@ -177,8 +209,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 */
 
 /* NOTE: This is intended for use in switch statements */
-#define ttype(o) ({ TValue o_ = (o);			\
-	    ttisdouble(o_)? K_TDOUBLE : ttype_(o_); })
+#define ttype(o) ({ TValue tto_ = (o);			\
+	    ttisdouble(tto_)? K_TDOUBLE : ttype_(tto_); })
 
 /* This is intended for internal use below. DON'T USE OUTSIDE THIS FILE */
 #define ttag(o) ((o).tv.t)
@@ -192,6 +224,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_FIXINT)
 #define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+#define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
 #define ttisnil(o)	(tbasetype_(o) == K_TAG_NIL)
@@ -202,7 +235,13 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttischar(o)	(tbasetype_(o) == K_TAG_CHAR)
 #define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 
-/* Complex types (value in heap) */
+/* Complex types (value in heap), 
+   (bigints, rationals, etc could be collectable)
+   maybe we should use a better way for this, to speed up checks, maybe use
+   a flag? */
+#define iscollectable(o)  ({ uint8_t t = ttype(o);			\
+	    (t == K_TBIGINT || t == K_TBIGRAT || t >= K_FIRST_GC_TYPE); })
+
 #define ttisstring(o)	(tbasetype_(o) == K_TAG_STRING)
 #define ttissymbol(o)	(tbasetype_(o) == K_TAG_SYMBOL)
 #define ttispair(o)	(tbasetype_(o) == K_TAG_PAIR)
@@ -579,5 +618,16 @@ bool kis_output_port(TValue o);
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)
+
+/*
+** for internal debug only
+*/
+#define checkconsistency(obj) \
+  klisp_assert(!iscollectable(obj) || (ttype_(obj) == gcvalue(obj)->gch.tt))
+
+#define checkliveness(k,obj) \
+  klisp_assert(!iscollectable(obj) || \
+  ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(k, gcvalue(obj))))
+
 
 #endif

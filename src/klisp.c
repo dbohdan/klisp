@@ -10,8 +10,6 @@
 
 #include <setjmp.h>
 
-/* turn on assertions for internal checking */
-#define klisp_assert (assert)
 #include "klimits.h"
 
 #include "klisp.h"

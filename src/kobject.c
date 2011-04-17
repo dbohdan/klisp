@@ -45,9 +45,18 @@ char *ktv_names[] = {
     [K_TBOOLEAN] = "boolean", 
     [K_TCHAR] = "char", 
 
+    [K_TUSER] = "user pointer", 
+
     [K_TPAIR] = "pair", 
     [K_TSTRING] = "string", 
-    [K_TSYMBOL] = "symbol"
+    [K_TSYMBOL] = "symbol",
+    [K_TENVIRONMENT] = "environment",
+    [K_TCONTINUATION] = "continuation",
+    [K_TOPERATIVE] = "operative",
+    [K_TAPPLICATIVE] = "applicative",
+    [K_TENCAPSULATION] = "encapsulation",
+    [K_TPROMISE] = "promise",
+    [K_TPORT] = "port"
 };
 
 bool kis_input_port(TValue o)

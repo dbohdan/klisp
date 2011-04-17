@@ -47,6 +47,9 @@ bool kintegerp(TValue obj) { return ttisinteger(obj); }
 
 /* this will come handy when there are more numeric types,
    it is intended to be used in switch */
+/* MAYBE: change to return -1, 0, 1 to indicate which type is bigger, and
+   return min & max in two extra pointers passed in. Change name to
+   classify_types */
 inline int32_t max_ttype(TValue obj1, TValue obj2)
 {
     int32_t t1 = ttype(obj1);
@@ -114,6 +117,7 @@ bool knum_gep(TValue n1, TValue n2) { return !knum_ltp(n1, n2); }
    first tries fixint addition and if that fails calls knum_plus */
 
 /* May throw an error */
+/* GC: assumes n1 & n2 rooted */
 TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
 {
     switch(max_ttype(n1, n2)) {
@@ -147,6 +151,7 @@ TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
 }
 
 /* May throw an error */
+/* GC: assumes n1 & n2 rooted */
 TValue knum_times(klisp_State *K, TValue n1, TValue n2)
 {
     switch(max_ttype(n1, n2)) {
@@ -179,6 +184,7 @@ TValue knum_times(klisp_State *K, TValue n1, TValue n2)
 }
 
 /* May throw an error */
+/* GC: assumes n1 & n2 rooted */
 TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
 {
     switch(max_ttype(n1, n2)) {
@@ -210,6 +216,7 @@ TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
     }
 }
 
+/* GC: assumes n rooted */
 TValue knum_abs(klisp_State *K, TValue n)
 {
     switch(ttype(n)) {
@@ -238,6 +245,7 @@ TValue knum_abs(klisp_State *K, TValue n)
 
 /* unlike the kernel gcd this returns |n| for gcd(n, 0) and gcd(0, n) and
  0 for gcd(0, 0) */
+/* GC: assumes n1 & n2 rooted */
 TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 {
     switch(max_ttype(n1, n2)) {
@@ -268,6 +276,7 @@ TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 }
 
 /* may throw an error if one of the arguments if zero */
+/* GC: assumes n1 & n2 rooted */
 TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
 {
     /* get this out of the way first */
@@ -313,6 +322,7 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* first the acyclic part */
     TValue ares = i2tv(0);
+    krooted_vars_push(K, &ares);
     TValue tail = ptree;
 
     while(apairs--) {
@@ -324,14 +334,16 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 
     /* next the cyclic part */
-    TValue cres = i2tv(0);
+    TValue cres = i2tv(0); /* push it only if needed */
 
     if (cpairs == 0) {
 	/* speed things up if there is no cycle */
 	res = ares;
+	krooted_vars_pop(K);
     } else {
 	bool all_zero = true;
 
+	krooted_vars_push(K, &cres);
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
@@ -350,6 +362,8 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	} else
 	    cres = knegativep(cres)? KEMINF : KEPINF;
 	res = knum_plus(K, ares, cres);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
     }
     kapply_cc(K, res);
 }
@@ -371,6 +385,7 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue ares = i2tv(1);
     TValue tail = ptree;
 
+    krooted_vars_push(K, &ares);
     while(apairs--) {
 	TValue first = kcar(tail);
 	tail = kcdr(tail);
@@ -383,9 +398,11 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (cpairs == 0) {
 	/* speed things up if there is no cycle */
 	res = ares;
+	krooted_vars_pop(K);
     } else {
 	bool all_one = true;
 
+	krooted_vars_push(K, &cres);
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
@@ -416,6 +433,8 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	}
 
 	res = knum_times(K, ares, cres);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
     } 
     kapply_cc(K, res);
 }
@@ -447,6 +466,8 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue ares = i2tv(0);
     TValue tail = kcdr(ptree);
 
+    krooted_vars_push(K, &ares);
+
     while(apairs--) {
 	TValue first = kcar(tail);
 	tail = kcdr(tail);
@@ -459,9 +480,11 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (cpairs == 0) {
 	/* speed things up if there is no cycle */
 	res = ares;
+	krooted_vars_pop(K);
     } else {
 	bool all_zero = true;
 
+	krooted_vars_push(K, &cres);
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
@@ -478,10 +501,14 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	} else
 	    cres = knegativep(cres)? KEMINF : KEPINF;
 	res = knum_plus(K, ares, cres);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
     } 
     /* now substract the sum of all the elements in the list to the first 
        value */
+    krooted_tvs_push(K, res);
     res = knum_minus(K, first_val, res);
+    krooted_tvs_pop(K);
 
     kapply_cc(K, res);
 }
@@ -640,7 +667,11 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue res;
     if (flags & FDIV_DIV) {
 	if (flags & FDIV_MOD) { /* return both div and mod */
-	    res =  kcons(K, tv_div, kcons(K, tv_mod, KNIL));
+	    krooted_tvs_push(K, tv_div);
+	    krooted_tvs_push(K, tv_mod);
+	    res = klist(K, 2, tv_div, tv_mod);
+	    krooted_tvs_pop(K);
+	    krooted_tvs_pop(K);
 	} else {
 	    res = tv_div;
 	}
@@ -778,14 +809,15 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     int32_t pairs = check_typed_list(K, "gcd", "number", kimp_intp, true,
 				     ptree, &dummy);
 
-    TValue res;
+    TValue res = i2tv(0);
+    krooted_vars_push(K, &res);
 
     if (pairs == 0) {
 	res = KEPINF; /* report: (gcd) = #e+infinity */
     } else {
 	TValue tail = ptree;
 	bool seen_finite_non_zero = false; 
-	res = i2tv(0);
+	/* res = 0 */
 
 	while(pairs--) {
 	    TValue first = kcar(tail);
@@ -802,6 +834,7 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	}
     }
 
+    krooted_vars_pop(K);
     kapply_cc(K, res);
 }
 
@@ -816,6 +849,7 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* report: this will cover the case of (lcm) = 1 */
     TValue res = i2tv(1);
+    krooted_vars_push(K, &res);
     
     TValue tail = ptree;
     while(pairs--) {
@@ -824,6 +858,8 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	/* This will check that neither is zero */
 	res = knum_lcm(K, res, first);
     }
+
+    krooted_vars_pop(K);
     kapply_cc(K, res);
 }
 

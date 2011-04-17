@@ -65,15 +65,21 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, name, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    /* gc: root intermediate values */
-    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
+    TValue new_port = kmake_port(K, filename, writep);
+    krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+    TValue new_cont = kmake_continuation(K, kget_cc(K), 
 					 do_close_file_ret, 1, new_port);
-    kset_cc(K, new_cont);
+    kset_cc(K, new_cont); /* cont implicitly rooted */
+    krooted_tvs_pop(K); /* new_port is in cont */
 
-    TValue op = kmake_operative(K, KNIL, KNIL, do_bind, 1, key);
-    TValue args = kcons(K, new_port, kcons(K, comb, KNIL));
+    TValue op = kmake_operative(K, do_bind, 1, key);
+    krooted_tvs_push(K, op);
+
+    TValue args = klist(K, 2, new_port, comb);
+
+    krooted_tvs_pop(K);
+
     /* even if we call with denv, do_bind calls comb in an empty env */
     ktail_call(K, op, args, denv);
 }
@@ -107,7 +113,7 @@ void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_1tp(K, name, ptree, "string", ttisstring, filename);
 
-    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
+    TValue new_port = kmake_port(K, filename, writep);
     kapply_cc(K, new_port);
 }
 
@@ -350,21 +356,25 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, name, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    /* gc: root intermediate values */
-    TValue empty_env = kmake_empty_environment(K);
-    TValue new_port = kmake_port(K, filename, writep, KNIL, KNIL);
-    TValue expr = kcons(K, comb, kcons(K, new_port, KNIL));
-
+    TValue new_port = kmake_port(K, filename, writep);
+    krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
-    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL, 
+    TValue new_cont = kmake_continuation(K, kget_cc(K), 
 					 do_close_file_ret, 1, new_port);
-    kset_cc(K, new_cont);
+    kset_cc(K, new_cont); /* implicit rooting  */
+    krooted_tvs_pop(K); /* new_port is in new_cont */
+    TValue empty_env = kmake_empty_environment(K);
+    krooted_tvs_push(K, empty_env);
+    TValue expr = klist(K, 2, comb, new_port);
+
+    krooted_tvs_pop(K);
     ktail_eval(K, expr, empty_env);
 }
 
 /* helpers for load */
 
 /* read all expressions in a file, as immutable pairs */
+/* GC: assume port is rooted */
 TValue read_all_expr(klisp_State *K, TValue port)
 {
     /* TEMP: for now set this by hand */
@@ -373,14 +383,15 @@ TValue read_all_expr(klisp_State *K, TValue port)
     K->read_mconsp = false; /* read immutable pairs */
 
     /* GC: root dummy and obj */
-    TValue dummy = kimm_cons(K, KNIL, KNIL);
-    TValue tail = dummy;
+    TValue tail = kget_dummy1(K);
     TValue obj = KINERT;
+    krooted_vars_push(K, &obj);
 
     while(true) {
 	obj = kread(K);
 	if (ttiseof(obj)) {
-	    return kcdr(dummy);
+	    krooted_vars_pop(K);
+	    return kcutoff_dummy1(K);
 	} else {
 	    TValue new_pair = kimm_cons(K, obj, KNIL);
 	    kset_cdr(tail, new_pair);
@@ -410,22 +421,34 @@ void do_int_close_file(klisp_State *K, TValue *xparams, TValue ptree,
 /*
 ** guarded continuation making for read seq
 */
+
+/* GC: assumes parent & port are rooted */
 TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
 {
     /* create the guard to close file after read errors */
-    TValue exit_int = kmake_operative(K, KNIL, KNIL, do_int_close_file, 
+    TValue exit_int = kmake_operative(K, do_int_close_file, 
 				      1, port);
+    krooted_tvs_push(K, exit_int);
     TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    krooted_tvs_pop(K); /* alread in guard */
+    krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
+    krooted_tvs_pop(K); /* alread in guards */
+    krooted_tvs_push(K, exit_guards);
+
     TValue entry_guards = KNIL;
+
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
-    TValue outer_cont = kmake_continuation(K, parent, KNIL, KNIL, 
+    krooted_tvs_push(K, env);
+    TValue outer_cont = kmake_continuation(K, parent, 
 					   do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
-    TValue inner_cont = kmake_continuation(K, outer_cont, KNIL, KNIL, 
+    krooted_tvs_push(K, outer_cont);
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
 					   do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
     return inner_cont;
 }
 
@@ -448,29 +471,38 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the
      last expression is done */
-    TValue port = kmake_port(K, filename, false, KNIL, KNIL);
+    TValue port = kmake_port(K, filename, false);
+    krooted_tvs_push(K, port);
+
+    TValue inert_cont = make_return_value_cont(K, kget_cc(K), KINERT);
+    krooted_tvs_push(K, inert_cont);
+
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
     /* this will be used later, but contruct it now to use the 
        current continuation as parent 
     GC: root this obj */
-    TValue inert_cont = make_return_value_cont(K, kget_cc(K), KINERT);
-
-    kset_cc(K, guarded_cont);
+    kset_cc(K, guarded_cont); /* implicit rooting */
     TValue ls = read_all_expr(K, port); /* any error will close the port */
 
     /* now the sequence of expresions should be evaluated in denv
        and #inert returned after all are done */
-    kset_cc(K, inert_cont);
+    kset_cc(K, inert_cont); /* implicit rooting */
+    krooted_tvs_pop(K); /* already rooted */
+
 
     if (ttisnil(ls)) {
+	krooted_tvs_pop(K); /* port */
 	kapply_cc(K, KINERT);
     } else {
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    krooted_tvs_push(K, ls);
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, denv);
 	    kset_cc(K, new_cont);
+	    krooted_tvs_pop(K); /* ls */
 	} 
+	krooted_tvs_pop(K); /* port */
 	ktail_eval(K, kcar(ls), denv);
     }
 }
@@ -483,38 +515,46 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1tp(K, "get-module", ptree, "string", ttisstring, filename, 
 	maybe_env);
 
+    TValue port = kmake_port(K, filename, false);
+    krooted_tvs_push(K, port);
+
     TValue env = kmake_environment(K, K->ground_env);
+    krooted_tvs_push(K, env);
 
     if (get_opt_tpar(K, "", K_TENVIRONMENT, &maybe_env)) {
 	kadd_binding(K, env, K->module_params_sym, maybe_env);
     }
 
+    TValue ret_env_cont = make_return_value_cont(K, kget_cc(K), env);
+    krooted_tvs_pop(K); /* env alread in cont */
+    krooted_tvs_push(K, ret_env_cont);
+
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the
      last expression is done */
-    TValue port = kmake_port(K, filename, false, KNIL, KNIL);
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
-    /* this will be used later, but contruct it now to use the 
-       current continuation as parent 
-    GC: root this obj */
-    TValue ret_env_cont = make_return_value_cont(K, kget_cc(K), env);
+    kset_cc(K, guarded_cont); /* implicit roooting */
 
-    kset_cc(K, guarded_cont);
     TValue ls = read_all_expr(K, port); /* any error will close the port */
 
     /* now the sequence of expresions should be evaluated in the created env
        and the environment returned after all are done */
-    kset_cc(K, ret_env_cont);
+    kset_cc(K, ret_env_cont); /* implicit rooting */
+    krooted_tvs_pop(K); /* implicitly rooted */
 
     if (ttisnil(ls)) {
+	krooted_tvs_pop(K); /* port */
 	kapply_cc(K, KINERT);
     } else {
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
+	    krooted_tvs_push(K, ls);
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, env);
 	    kset_cc(K, new_cont);
+	    krooted_tvs_pop(K);
 	} 
+	krooted_tvs_pop(K); /* port */
 	ktail_eval(K, kcar(ls), env);
     }
 }

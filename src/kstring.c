@@ -11,6 +11,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "kgc.h"
 
 /* TEMP: this is for initializing the above value, for now, from ktoken.h */
 TValue kstring_new_empty(klisp_State *K)
@@ -20,11 +21,7 @@ TValue kstring_new_empty(klisp_State *K)
     new_str = klispM_malloc(K, sizeof(String) + 1);
 
     /* header + gc_fields */
-    new_str->next = K->root_gc;
-    K->root_gc = (GCObject *)new_str;
-    new_str->gct = 0;
-    new_str->tt = K_TSTRING;
-    new_str->flags = 0;
+    klispC_link(K, (GCObject *) new_str, K_TSTRING, 0);
 
     /* string specific fields */
     new_str->mark = KFALSE;
@@ -46,11 +43,7 @@ TValue kstring_new_g(klisp_State *K, uint32_t size)
     new_str = klispM_malloc(K, sizeof(String) + size + 1);
 
     /* header + gc_fields */
-    new_str->next = K->root_gc;
-    K->root_gc = (GCObject *)new_str;
-    new_str->gct = 0;
-    new_str->tt = K_TSTRING;
-    new_str->flags = 0;
+    klispC_link(K, (GCObject *) new_str, K_TSTRING, 0);
 
     /* string specific fields */
     new_str->mark = KFALSE;

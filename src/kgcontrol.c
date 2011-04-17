@@ -37,14 +37,14 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_3p(K, "$if", ptree, test, cons_c, alt_c);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, select_clause, 
+	kmake_continuation(K, kget_cc(K), select_clause, 
 			   3, denv, cons_c, alt_c);
     /* 
     ** Mark as a bool checking cont, not necessary but avoids a continuation
     ** in the last evaluation in the common use of ($if ($or?/$and? ...) ...) 
     */
     kset_bool_check_cont(new_cont);
-    klispS_set_cc(K, new_cont);
+    kset_cc(K, new_cont);
     ktail_eval(K, test, denv);
 }
 
@@ -68,7 +68,7 @@ void select_clause(klisp_State *K, TValue *xparams, TValue obj)
 /* 5.1.1 $sequence */
 void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) xparams;
+    UNUSED(xparams);
 
     if (ttisnil(ptree)) {
 	kapply_cc(K, KINERT);
@@ -82,9 +82,11 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	   allow used from $lambda, $vau, $let family, load, etc */
 	TValue tail = kcdr(ls);
 	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     do_seq, 2, tail, denv);
+	    krooted_tvs_push(K, ls);
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
+						 tail, denv);
 	    kset_cc(K, new_cont);
+	    krooted_tvs_pop(K);
 	} 
 	ktail_eval(K, kcar(ls), denv);
     }
@@ -104,8 +106,8 @@ void do_seq(klisp_State *K, TValue *xparams, TValue obj)
     TValue denv = xparams[1];
 
     if (ttispair(tail)) {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-					     do_seq, 2, tail, denv);
+	TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, tail, 
+					     denv);
 	kset_cc(K, new_cont);
     }
     ktail_eval(K, first, denv);
@@ -121,13 +123,12 @@ void do_seq(klisp_State *K, TValue *xparams, TValue obj)
 ** on $sequence, cf. $let, $vau and $lambda)
 ** Throw errors if any of the above mentioned checks fail.
 */
+/* GC: assumes clauses is rooted, uses dummy 1 & 2 */
 TValue split_check_cond_clauses(klisp_State *K, TValue clauses, 
 				TValue *bodies)
 {
-    TValue dummy_cars = kcons(K, KNIL, KNIL);
-    TValue last_car_pair = dummy_cars;
-    TValue dummy_cdrs = kcons(K, KNIL, KNIL);
-    TValue last_cdr_pair = dummy_cdrs;
+    TValue last_car_pair = kget_dummy1(K);
+    TValue last_cdr_pair = kget_dummy2(K);
 
     TValue tail = clauses;
     int32_t count = 0;
@@ -166,22 +167,23 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
 	klispE_throw(K, "$cond: expected list (clauses)");
 	return KNIL;
     } else {
-
-	tail = kcdr(dummy_cdrs);
 	/* 
 	   check all the bodies (should be lists), and
 	   make a copy of the list structure.
 	   couldn't be done before because this uses
 	   marks, count is used because it may be a cyclic list
 	*/
+	tail = kget_dummy2_tail(K);
 	while(count--) {
 	    TValue first = kcar(tail);
+	    /* this uses dummy3 */
 	    TValue copy = check_copy_list(K, "$cond", first, false);
 	    kset_car(tail, copy);
 	    tail = kcdr(tail);
 	}
-	*bodies = kcdr(dummy_cdrs);
-	return kcdr(dummy_cars);
+
+	*bodies = kcutoff_dummy2(K);
+	return  kcutoff_dummy1(K);
     }
 }
 
@@ -208,8 +210,8 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 	} else {
 	    TValue tail = kcdr(this_body);
 	    if (ttispair(tail)) {
-		TValue new_cont = kmake_continuation(K, kget_cc(K), KNIL, KNIL,
-						     do_seq, 2, tail, denv);
+		TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
+						     tail, denv);
 		kset_cc(K, new_cont);
 	    }
 	    ktail_eval(K, kcar(this_body), denv);
@@ -220,7 +222,7 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 	    kapply_cc(K, KINERT);
 	} else {
 	    TValue new_cont = 
-		kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_cond, 4,
+		kmake_continuation(K, kget_cc(K), do_cond, 4,
 				   kcar(bodies), kcdr(tests), kcdr(bodies), 
 				   denv);
 	    /* 
@@ -242,7 +244,9 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     TValue bodies;
     TValue tests = split_check_cond_clauses(K, ptree, &bodies);
-
+    krooted_tvs_push(K, tests);
+    krooted_tvs_push(K, bodies);
+    
     TValue obj;
     if (ttisnil(tests)) {
 	obj = KINERT;
@@ -250,7 +254,7 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	/* pass a dummy body and a #f to the $cond continuation to 
 	   avoid code repetition here */
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_cond, 4, 
+	    kmake_continuation(K, kget_cc(K), do_cond, 4, 
 			       KNIL, tests, bodies, denv);
 	/* there is no need to mark this continuation with bool check
 	   because it is just a dummy, no evaluation happens in its
@@ -258,6 +262,9 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	kset_cc(K, new_cont);
 	obj = KFALSE; 
     }
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
     kapply_cc(K, obj);
 }
 
@@ -286,13 +293,16 @@ void do_for_each(klisp_State *K, TValue *xparams, TValue obj)
 	/* XXX: no check necessary, could just use copy_list if there
 	 was such a procedure */
 	TValue first_ptree = check_copy_list(K, "for-each", kcar(ls), false);
+	krooted_tvs_push(K, first_ptree);
 	ls = kcdr(ls);
 	n = n-1;
+
 	/* have to unwrap the applicative to avoid extra evaluation of first */
 	TValue new_expr = kcons(K, kunwrap(app), first_ptree);
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_for_each, 4, 
+	    kmake_continuation(K, kget_cc(K), do_for_each, 4, 
 			       app, ls, i2tv(n), denv);
+	krooted_tvs_pop(K);
 	kset_cc(K, new_cont);
 	ktail_eval(K, new_expr, denv);
     }
@@ -324,12 +334,15 @@ void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     lss = map_for_each_transpose(K, lss, app_apairs, app_cpairs, 
 				 res_apairs, res_cpairs);
 
+    krooted_tvs_push(K, lss);
+
     /* schedule all elements at once, the cycle is just ignored, this
        will also return #inert once done. */
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), KNIL, KNIL, do_for_each, 4, app, lss,
+	kmake_continuation(K, kget_cc(K), do_for_each, 4, app, lss,
 			   i2tv(res_pairs), denv);
     kset_cc(K, new_cont);
+    krooted_tvs_pop(K);
     /* this will be a nop */
     kapply_cc(K, KINERT);
 }

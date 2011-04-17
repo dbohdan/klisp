@@ -13,14 +13,16 @@
 #include "kmem.h"
 #include "kerror.h"
 #include "kstring.h"
+#include "kgc.h"
 
 /* XXX: per the c spec, this truncates the file if it extists! */
 /* Ask John: what would be best? Probably should also include delete,
    file-exists? and a mechanism to truncate or append to a file, or 
    throw error if it exists.
    Should use open, but it is non standard (fcntl.h, POSIX only) */
-TValue kmake_port(klisp_State *K, TValue filename, bool writep, TValue name, 
-			  TValue si)
+
+/* GC: Assumes filename is rooted */
+TValue kmake_port(klisp_State *K, TValue filename, bool writep)
 {
     /* for now always use text mode */
     FILE *f = fopen(kstring_buf(filename), writep? "w": "r");
@@ -28,25 +30,24 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep, TValue name,
 	klispE_throw(K, "Create port: could't open file");
 	return KINERT;
     } else {
-	return kmake_std_port(K, filename, writep, name, si, f);
+	return kmake_std_port(K, filename, writep, KNIL, KNIL, f);
     }
 }
 
 /* this is for creating ports for stdin/stdout/stderr &
  also a helper for the above */
+
+/* GC: Assumes filename, name & si are rooted */
 TValue kmake_std_port(klisp_State *K, TValue filename, bool writep, 
 		      TValue name, TValue si, FILE *file)
 {
     Port *new_port = klispM_new(K, Port);
 
     /* header + gc_fields */
-    new_port->next = K->root_gc;
-    K->root_gc = (GCObject *)new_port;
-    new_port->gct = 0;
-    new_port->tt = K_TPORT;
-    new_port->flags = writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT;
+    klispC_link(K, (GCObject *) new_port, K_TPORT, 
+	writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT);
 
-    /* portinuation specific fields */
+    /* port specific fields */
     new_port->name = name;
     new_port->si = si;
     new_port->filename = filename;

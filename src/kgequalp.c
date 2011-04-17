@@ -36,11 +36,10 @@
 */
 void equalp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
 
-    int32_t cpairs;
-    int32_t pairs = check_list(K, "equal?", true, ptree, &cpairs);
+    int32_t pairs = check_list(K, "equal?", true, ptree, NULL);
 
     /* In this case we can get away without comparing the
        first and last element on a cycle because equal? is
@@ -76,6 +75,8 @@ void equalp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 ** if the node is not the root, and (#t . n) where n is the number 
 ** of elements in the set, if the node is the root. 
 ** This pair also doubles as the "name" of the set in [2].
+**
+** GC: all of these assume that arguments are rooted.
 */
 
 /* find "name" of the set of this obj, if there isn't one create it,
