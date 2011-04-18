@@ -756,13 +756,13 @@ void klispC_barrierback (lua_State *L, Table *t) {
 }
 #endif
 
-/* NOTE: flags is added for klisp */
-void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t flags) {
+/* NOTE: kflags is added for klisp */
+void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
     o->gch.next = K->rootgc;
     K->rootgc = o;
     o->gch.gct = klispC_white(K);
     o->gch.tt = tt;
-    o->gch.flags = flags;
+    o->gch.kflags = kflags;
     /* NOTE that o->gch.gclist doesn't need to be setted */
 }
 

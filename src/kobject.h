@@ -44,11 +44,11 @@ typedef union GCObject GCObject;
 ** Common Header for all collectible objects (in macro form, to be
 ** included in other objects)
 */
-#define CommonHeader GCObject *next; uint8_t tt; uint8_t flags; \
+#define CommonHeader GCObject *next; uint8_t tt; uint8_t kflags; \
     uint16_t gct; uint32_t padding; GCObject *gclist;
     
 /* NOTE: the gc flags are called marked in lua, but we reserve that them
-   for marks used in cycle traversal. The field flags is also missing
+   for marks used in cycle traversal. The field kflags is also missing
    from lua, they serve as compact bool fields for certain types */
 
 /* 
@@ -160,6 +160,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TENCAPSULATION 37
 #define K_TPROMISE      38
 #define K_TPORT         39
+#define K_TTABLE        40
 
 /* this is used to test for numbers, as returned by ttype */
 #define K_LAST_NUMBER_TYPE K_TCOMPLEX
@@ -202,6 +203,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_ENCAPSULATION K_MAKE_VTAG(K_TENCAPSULATION)
 #define K_TAG_PROMISE K_MAKE_VTAG(K_TPROMISE)
 #define K_TAG_PORT K_MAKE_VTAG(K_TPORT)
+#define K_TAG_TABLE K_MAKE_VTAG(K_TTABLE)
 
 
 /*
@@ -254,6 +256,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisencapsulation(o) (tbasetype_(o) == K_TAG_ENCAPSULATION)
 #define ttispromise(o) (tbasetype_(o) == K_TAG_PROMISE)
 #define ttisport(o) (tbasetype_(o) == K_TAG_PORT)
+#define ttistable(o) (tbasetype_(o) == K_TAG_TABLE)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -384,7 +387,7 @@ typedef struct __attribute__ ((__packed__)) {
        sharing the pair */
 } Promise;
 
-/* input/output direction and open/close status are in flags */
+/* input/output direction and open/close status are in kflags */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue name;
@@ -392,6 +395,47 @@ typedef struct __attribute__ ((__packed__)) {
     TValue filename;
     FILE *file;
 } Port;
+
+/* input/output direction and open/close status are in kflags */
+
+/*
+** Hashtables
+*/
+
+typedef union TKey {
+  struct {
+      TValue this; /* different from lua because of the tagging scheme */
+      struct Node *next;  /* for chaining */
+  } nk;
+  TValue tvk;
+} TKey;
+
+typedef struct Node {
+  TValue i_val;
+  TKey i_key;
+} Node;
+
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    uint8_t flags;  /* 1<<p means tagmethod(p) is not present */ 
+    uint8_t lsizenode;  /* log2 of size of `node' array */
+    uint16_t tpadding; /* to avoid disturbing the alignment */
+    struct Table *metatable; /* is this necessary in klisp? */
+    TValue *array;  /* array part */
+    Node *node;
+    Node *lastfree;  /* any free position is before this position */
+    int32_t sizearray;  /* size of `array' array */
+} Table;
+
+/*
+** `module' operation for hashing (size is always a power of 2)
+*/
+#define lmod(s,size) \
+	(check_exp((size&(size-1))==0, (cast(int32_t, (s) & ((size)-1)))))
+
+
+#define twoto(x)	(1<<(x))
+#define sizenode(t)	(twoto((t)->lsizenode))
 
 /* 
 ** RATIONALE: 
@@ -433,6 +477,7 @@ union GCObject {
     Encapsulation enc;
     Promise prom;
     Port port;
+    Table table;
 };
 
 
@@ -504,6 +549,7 @@ const TValue knewline;
 #define gc2enc(o_) (gc2tv(K_TAG_ENCAPSULATION, o_))
 #define gc2prom(o_) (gc2tv(K_TAG_PROMISE, o_))
 #define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
+#define gc2table(o_) (gc2tv(K_TAG_TABLE, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2bigint(v_) ((Bigint *) gcvalue(v_))
@@ -517,6 +563,7 @@ const TValue knewline;
 #define tv2enc(v_) ((Encapsulation *) gcvalue(v_))
 #define tv2prom(v_) ((Promise *) gcvalue(v_))
 #define tv2port(v_) ((Port *) gcvalue(v_))
+#define tv2table(v_) ((Table *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
@@ -568,48 +615,48 @@ int32_t kmark_count;
 #define kis_marked(p_) (!kis_unmarked(p_))
 #define kis_unmarked(p_) (tv_equal(kget_mark(p_), KFALSE))
 
-/* Macros to access flags & type in GCHeader */
+/* Macros to access kflags & type in GCHeader */
 #define gch_get_type(o_) (obj2gch(o_)->tt)
-#define gch_get_flags(o_) (obj2gch(o_)->flags)
-#define tv_get_flags(o_) (gch_get_flags(tv2gch(o_)))
+#define gch_get_kflags(o_) (obj2gch(o_)->kflags)
+#define tv_get_kflags(o_) (gch_get_kflags(tv2gch(o_)))
 
-/* Flags for symbols */
+/* KFlags for symbols */
 /* has external representation (identifiers) */
 #define K_FLAG_EXT_REP 0x01
-#define khas_ext_rep(s_) ((tv_get_flags(s_) & K_FLAG_EXT_REP) != 0)
+#define khas_ext_rep(s_) ((tv_get_kflags(s_) & K_FLAG_EXT_REP) != 0)
 
-/* Flags for marking continuations */
+/* KFlags for marking continuations */
 #define K_FLAG_OUTER 0x01
 #define K_FLAG_INNER 0x02
 #define K_FLAG_DYNAMIC 0x04
 #define K_FLAG_BOOL_CHECK 0x08
 
 /* evaluate c_ more than once */
-#define kset_inner_cont(c_) (tv_get_flags(c_) |= K_FLAG_INNER)
-#define kset_outer_cont(c_) (tv_get_flags(c_) |= K_FLAG_OUTER)
-#define kset_dyn_cont(c_) (tv_get_flags(c_) |= K_FLAG_DYNAMIC)
-#define kset_bool_check_cont(c_) (tv_get_flags(c_) |= K_FLAG_BOOL_CHECK)
+#define kset_inner_cont(c_) (tv_get_kflags(c_) |= K_FLAG_INNER)
+#define kset_outer_cont(c_) (tv_get_kflags(c_) |= K_FLAG_OUTER)
+#define kset_dyn_cont(c_) (tv_get_kflags(c_) |= K_FLAG_DYNAMIC)
+#define kset_bool_check_cont(c_) (tv_get_kflags(c_) |= K_FLAG_BOOL_CHECK)
 
-#define kis_inner_cont(c_) ((tv_get_flags(c_) & K_FLAG_INNER) != 0)
-#define kis_outer_cont(c_) ((tv_get_flags(c_) & K_FLAG_OUTER) != 0)
-#define kis_dyn_cont(c_) ((tv_get_flags(c_) & K_FLAG_DYNAMIC) != 0)
-#define kis_bool_check_cont(c_) ((tv_get_flags(c_) & K_FLAG_BOOL_CHECK) != 0)
+#define kis_inner_cont(c_) ((tv_get_kflags(c_) & K_FLAG_INNER) != 0)
+#define kis_outer_cont(c_) ((tv_get_kflags(c_) & K_FLAG_OUTER) != 0)
+#define kis_dyn_cont(c_) ((tv_get_kflags(c_) & K_FLAG_DYNAMIC) != 0)
+#define kis_bool_check_cont(c_) ((tv_get_kflags(c_) & K_FLAG_BOOL_CHECK) != 0)
 
 #define K_FLAG_IMMUTABLE 0x01
-#define kis_mutable(o_) ((tv_get_flags(o_) & K_FLAG_IMMUTABLE) == 0)
+#define kis_mutable(o_) ((tv_get_kflags(o_) & K_FLAG_IMMUTABLE) == 0)
 #define kis_immutable(o_) (!kis_mutable(o_))
 
 #define K_FLAG_OUTPUT_PORT 0x01
 #define K_FLAG_INPUT_PORT 0x02
 #define K_FLAG_CLOSED_PORT 0x04
 
-#define kport_set_input(o_) (tv_get_flags(o_) |= K_FLAG_INPUT_PORT)
-#define kport_set_output(o_) (tv_get_flags(o_) |= K_FLAG_INPUT_PORT)
-#define kport_set_closed(o_) (tv_get_flags(o_) |= K_FLAG_CLOSED_PORT)
+#define kport_set_input(o_) (tv_get_kflags(o_) |= K_FLAG_INPUT_PORT)
+#define kport_set_output(o_) (tv_get_kflags(o_) |= K_FLAG_INPUT_PORT)
+#define kport_set_closed(o_) (tv_get_kflags(o_) |= K_FLAG_CLOSED_PORT)
 
-#define kport_is_input(o_) ((tv_get_flags(o_) & K_FLAG_INPUT_PORT) != 0)
-#define kport_is_output(o_) ((tv_get_flags(o_) & K_FLAG_OUTPUT_PORT) != 0)
-#define kport_is_closed(o_) ((tv_get_flags(o_) & K_FLAG_CLOSED_PORT) != 0)
+#define kport_is_input(o_) ((tv_get_kflags(o_) & K_FLAG_INPUT_PORT) != 0)
+#define kport_is_output(o_) ((tv_get_kflags(o_) & K_FLAG_OUTPUT_PORT) != 0)
+#define kport_is_closed(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) != 0)
 
 /* can't be inline because we also use pointers to them,
  (at least gcc doesn't bother to create them and the linker fails) */
