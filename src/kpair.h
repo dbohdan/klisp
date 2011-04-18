@@ -69,7 +69,7 @@ bool kpairp(TValue obj);
 
 inline TValue kget_dummy1(klisp_State *K) 
 { 
-    klisp_assert(ttispair(K->dummy_pair2) && ttisnil(kcdr(K->dummy_pair2)));
+    klisp_assert(ttispair(K->dummy_pair1) && ttisnil(kcdr(K->dummy_pair1)));
     return K->dummy_pair1; 
 }
 

@@ -335,14 +335,26 @@ typedef void (*klisp_Cfunc) (klisp_State*K, TValue *ud, TValue val);
 typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree, 
 			     TValue env);
 
+/* XXX: this is ugly but we can't include kpair.h here so... */
+/* MAYBE: move car & cdr to kobject.h */
+#define kstate_car(p_) (tv2pair(p_)->car)
+#define kstate_cdr(p_) (tv2pair(p_)->cdr)
+
 /*
 ** Functions to manipulate the current continuation and calling 
 ** operatives
 */
 inline void klispS_apply_cc(klisp_State *K, TValue val)
 {
+    /* various assert to check the freeing of gc protection methods */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
+    klisp_assert(ttispair(K->dummy_pair1) && 
+		 ttisnil(kstate_cdr(K->dummy_pair1)));
+    klisp_assert(ttispair(K->dummy_pair2) && 
+		 ttisnil(kstate_cdr(K->dummy_pair2)));
+    klisp_assert(ttispair(K->dummy_pair3) && 
+		 ttisnil(kstate_cdr(K->dummy_pair3)));
 
     K->next_obj = K->curr_cont; /* save it from GC */
     Continuation *cont = tv2cont(K->curr_cont);
@@ -373,8 +385,15 @@ inline void klispS_set_cc(klisp_State *K, TValue new_cont)
 inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree, 
 			     TValue env)
 {
+    /* various assert to check the freeing of gc protection methods */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
+    klisp_assert(ttispair(K->dummy_pair1) && 
+		 ttisnil(kstate_cdr(K->dummy_pair1)));
+    klisp_assert(ttispair(K->dummy_pair2) && 
+		 ttisnil(kstate_cdr(K->dummy_pair2)));
+    klisp_assert(ttispair(K->dummy_pair3) && 
+		 ttisnil(kstate_cdr(K->dummy_pair3)));
 
     K->next_obj = top; /* save it from GC */
     Operative *op = tv2op(top);
