@@ -223,7 +223,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 
 /* Simple types (value in TValue struct) */
 #define ttisfixint(o)	(tbasetype_(o) == K_TAG_FIXINT)
-#define ttisbigint(o)	(tbasetype_(o) == K_TAG_FIXINT)
+#define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
 #define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
@@ -449,6 +449,7 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for cycle/sharing aware algorithms */
     uint32_t size; 
+    uint32_t hash; /* only used for immutable strings */
     char b[]; // buffer
 } String;
 
