@@ -273,9 +273,15 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
 
-	    /* skip over nils */
-	    if (ttisnil(first))
+	    /* skip over non final nils, but final nil
+	     should be added as last pair to let the result
+	     be even */
+	    if (ttisnil(first)) {
+		if (ttisnil(tail)) {
+		    kset_cdr(last_pair, kcons(K, first, KNIL));
+		}
 		continue; 
+	    }
 
 	    TValue ftail = first;
 	    TValue flastp = first;
@@ -313,6 +319,7 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
 		    if (kis_immutable(flastp)) {
 			appendB_clear_last_pairs(K, last_pairs);
 			klispE_throw(K, "append!: immutable pair found");
+			return KINERT;
 		    }
 		    /* add the last pair to the list of last pairs */
 		    kset_mark(flastp, last_pairs);
