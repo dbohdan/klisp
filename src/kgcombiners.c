@@ -142,6 +142,8 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     TValue new_app = kmake_applicative(K, do_vau, 4, vptree, KIGNORE, vbody, 
 				       denv);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
     kapply_cc(K, new_app);
 }
 
