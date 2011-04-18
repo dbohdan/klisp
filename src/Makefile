@@ -41,7 +41,7 @@ clean:
 
 klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
 	kerror.h kauxlib.h koperative.h kenvironment.h kcontinuation.h \
-	kapplicative.h koperative.h keval.h krepl.h
+	kapplicative.h koperative.h keval.h krepl.h kground.h
 kobject.o: kobject.c kobject.h klimits.h klispconf.h
 ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
 	kerror.h klisp.h kinteger.h
@@ -57,7 +57,7 @@ kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h \
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
 	klisp.h kport.h kinteger.h
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
-	kground.h kenvironment.h kpair.h keval.h koperative.h kground.h \
+	kenvironment.h kpair.h keval.h koperative.h kground.h \
 	krepl.h kcontinuation.h kapplicative.h kport.h ksymbol.h kport.h \
 	kstring.h kinteger.h kgc.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h kstate.h kgc.h klispconf.h
@@ -77,6 +77,7 @@ kpromise.o: kpromise.c kpromise.h kmem.h kstate.h kobject.h \
 	klisp.h kpair.h kgc.h
 kport.o: kport.c kport.h kmem.h kstate.h kobject.h klisp.h kerror.h kstring.h \
 	kgc.h
+#ktable.o: ktable.c ktable.h kobject.h kstate.h kmem.h klisp.h kgc.h
 keval.o: keval.c keval.h kcontinuation.h kenvironment.h kstate.h kobject.h \
 	kpair.h kerror.h klisp.h
 krepl.o: krepl.c krepl.h kcontinuation.h kstate.h kobject.h keval.h klisp.h \
@@ -93,7 +94,8 @@ kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 kgbooleans.o: kgbooleans.c kgbooleans.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h ksymbol.h
 kgeqp.o: kgeqp.c kgeqp.c kghelpers.h kstate.h klisp.h \
-	kobject.h kerror.h kpair.h kcontinuation.h
+	kobject.h kerror.h kpair.h kcontinuation.h kapplicative.h \
+	kinteger.h
 kgequalp.o: kgequalp.c kgequalp.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h kgeqp.h kstring.h
 kgsymbols.o: kgsymbols.c kgsymbols.c kghelpers.h kstate.h klisp.h \
