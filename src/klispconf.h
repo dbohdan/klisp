@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 /* temp defines till gc is stabilized */
-/* #define KUSE_GC 1 */
+#define KUSE_GC 1
 /* Print msgs when starting and ending gc */
 /* #define KDEBUG_GC 1 */
 
