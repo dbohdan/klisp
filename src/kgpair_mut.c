@@ -153,8 +153,8 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
    of the result would differ with the expected ones (cf list-tail). 
    So here an error is signaled if the improper list cyclic with less pairs
    than needed */
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
 
     bind_3tp(K, "encycle!", ptree, "any", anytype, obj,
 	     "integer", kintegerp, tk1,
@@ -177,7 +177,7 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 
     TValue tail = obj;
 
-    while(k1) {
+    while(k1 != 0) {
 	if (!ttispair(tail)) {
 	    unmark_list(K, obj);
 	    klispE_throw(K, "encycle!: non pair found while traversing "
@@ -199,7 +199,9 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
        has at least k1 pairs */
     if (k2 != 0) {
 	--k2; /* to have cycle length k2 we should discard k2-1 pairs */
-	while(k2) {
+	/* REFACTOR: should probably refactor this to avoid the 
+	   duplicated checks */
+	while(k2 != 0) {
 	    if (!ttispair(tail)) {
 		unmark_list(K, obj);
 		klispE_throw(K, "encycle!: non pair found while traversing "
@@ -214,7 +216,16 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 	    tail = kcdr(tail);
 	    --k2;
 	}
-	if (!kis_mutable(tail)) {
+	if (!ttispair(tail)) {
+	    unmark_list(K, obj);
+	    klispE_throw(K, "encycle!: non pair found while traversing "
+			 "object");
+	    return;
+	} else if (kis_marked(tail)) {
+	    unmark_list(K, obj);
+	    klispE_throw(K, "encycle!: too few pairs in cyclic list");
+	    return;
+	} else if (!kis_mutable(tail)) {
 	    unmark_list(K, obj);
 	    klispE_throw(K, "encycle!: immutable pair");
 	    return;
