@@ -382,14 +382,14 @@ static void rehash (klisp_State *K, Table *t, const TValue ek) {
 ** }=============================================================
 */
 
-
-TValue klispH_new (klisp_State *K, int32_t narray, int32_t nhash) 
+/* wflags should be either or both of K_FLAG_WEAK_KEYS or K_FLAG_WEAK VALUES */
+TValue klispH_new (klisp_State *K, int32_t narray, int32_t nhash, 
+		   int32_t wflags)  
 {
+    klisp_assert((wflags & (K_FLAG_WEAK_KEYS | K_FLAG_WEAK_VALUES)) ==
+		 wflags);
     Table *t = klispM_new(K, Table);
-    /* MAYBE I could use kflags instead of flags? */
-    klispC_link(K, (GCObject *) t, K_TTABLE, 0);
-    t->metatable = NULL;
-    t->flags = (uint8_t) (~0);
+    klispC_link(K, (GCObject *) t, K_TTABLE, wflags);
     /* temporary values (kept only if some malloc fails) */
     t->array = NULL;
     t->sizearray = 0;
@@ -526,7 +526,6 @@ const TValue *klispH_get (Table *t, TValue key)
 TValue *klispH_set (klisp_State *K, Table *t, TValue key) 
 {
     const TValue *p = klispH_get(t, key);
-    t->flags = 0; /* ???: klisp: what's the purpose of this?? */
     if (p != &knil)
 	return cast(TValue *, p);
     else {

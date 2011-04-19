@@ -166,27 +166,17 @@ size_t klispC_separateudata (lua_State *L, int all) {
 
 static int32_t traversetable (klisp_State *K, Table *h) {
     int32_t i;
-    int32_t weakkey = 0;
-    int32_t weakvalue = 0;
-//    const TValue *mode;
-    if (h->metatable) /* Never happens in klisp */
-	markobject(K, h->metatable);
-/*klisp:    mode = gfasttm(g, h->metatable, TM_MODE); *//* ??? */
-    /* TODO use other way of marking tables as weak or whatever */
-//    if (mode && ttisstring(mode)) {  /* is there a weak mode? */
-//	weakkey = (strchr(svalue(mode), 'k') != NULL);
-//	weakvalue = (strchr(svalue(mode), 'v') != NULL);
-    weakkey = h->flags & 1;
-    weakkey = (h->flags & 2) >> 1; /* XXX: this is just to compile
-				    */
-	if (weakkey || weakvalue) {  /* is really weak? */
-	    h->gct &= ~(KEYWEAK | VALUEWEAK);  /* clear bits */
-	    h->gct |= cast(uint16_t, (weakkey << KEYWEAKBIT) |
-			   (weakvalue << VALUEWEAKBIT));
-	    h->gclist = K->weak;  /* must be cleared after GC, ... */
-	    K->weak = obj2gco(h);  /* ... so put in the appropriate list */
-	}
-//    }
+    TValue tv = gc2table(h);
+    int32_t weakkey = ktable_has_weak_keys(tv)? 1 : 0;
+    int32_t weakvalue = ktable_has_weak_values(tv)? 1 : 0;
+
+    if (weakkey || weakvalue) {  /* is really weak? */
+	h->gct &= ~(KEYWEAK | VALUEWEAK);  /* clear bits */
+	h->gct |= cast(uint16_t, (weakkey << KEYWEAKBIT) |
+		       (weakvalue << VALUEWEAKBIT));
+	h->gclist = K->weak;  /* must be cleared after GC, ... */
+	K->weak = obj2gco(h);  /* ... so put in the appropriate list */
+    }
     if (weakkey && weakvalue) return 1;
     if (!weakvalue) {
 	i = h->sizearray;
@@ -542,19 +532,11 @@ void klispC_freeall (klisp_State *K) {
 }
 
 
-#if 0 /* klisp: keep this around */
-static void markmt (global_State *g) {
-    int i;
-    for (i=0; i<NUM_TAGS; i++)
-	if (g->mt[i]) markobject(g, g->mt[i]);
-}
-#endif
-
 /* mark root set */
 static void markroot (klisp_State *K) {
     K->gray = NULL;
-    K->grayagain = NULL; /* for now in klisp this isn't used */
-    K->weak = NULL; /* for now in klisp this isn't used */
+    K->grayagain = NULL; 
+    K->weak = NULL; 
 
     /* TEMP: this is quite awfull, think of other way to do this */
     /* MAYBE: some of these could be FIXED */
@@ -594,7 +576,6 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->dummy_pair1);
     markvalue(K, K->dummy_pair2);
     markvalue(K, K->dummy_pair3);
-/*    markmt(g); */
     K->gcstate = GCSpropagate;
 }
 
@@ -607,11 +588,7 @@ static void atomic (klisp_State *K) {
     /* remark weak tables */
     K->gray = K->weak; 
     K->weak = NULL;
-#if 0 /* keep around */
-    markmt(g);  /* mark basic metatables (again) */
-    propagateall(g);
-#endif
-    /* klisp: for now in klisp this isn't used */
+
     /* remark gray again */
     K->gray = K->grayagain;
     K->grayagain = NULL;

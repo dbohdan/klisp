@@ -421,15 +421,16 @@ typedef struct Node {
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    uint8_t flags;  /* 1<<p means tagmethod(p) is not present */ 
     uint8_t lsizenode;  /* log2 of size of `node' array */
-    uint16_t tpadding; /* to avoid disturbing the alignment */
-    struct Table *metatable; /* is this necessary in klisp? */
+    uint8_t t1padding; 
+    uint16_t t2padding; /* to avoid disturbing the alignment */
     TValue *array;  /* array part */
     Node *node;
     Node *lastfree;  /* any free position is before this position */
     int32_t sizearray;  /* size of `array' array */
 } Table;
+
+/* The weak flags are in kflags */
 
 /*
 ** `module' operation for hashing (size is always a power of 2)
@@ -667,6 +668,16 @@ int32_t kmark_count;
 #define kport_is_input(o_) ((tv_get_kflags(o_) & K_FLAG_INPUT_PORT) != 0)
 #define kport_is_output(o_) ((tv_get_kflags(o_) & K_FLAG_OUTPUT_PORT) != 0)
 #define kport_is_closed(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) != 0)
+
+#define K_FLAG_WEAK_KEYS 0x01
+#define K_FLAG_WEAK_VALUES 0x02
+
+#define ktable_has_weak_keys(o_) \
+    ((tv_get_kflags(o_) & K_FLAG_WEAK_KEYS) != 0)
+#define ktable_has_weak_values(o_) \
+    ((tv_get_kflags(o_) & K_FLAG_WEAK_VALUES) != 0)
+
+
 
 /* can't be inline because we also use pointers to them,
  (at least gcc doesn't bother to create them and the linker fails) */
