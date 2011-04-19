@@ -33,7 +33,7 @@ void clear_buffers(klisp_State *K)
 
 void klispE_throw(klisp_State *K, char *msg)
 {
-    TValue error_msg = kstring_new(K, msg, strlen(msg));
+    TValue error_msg = kstring_new_b_imm(K, msg);
     /* TEMP */
     clear_buffers(K);
 
@@ -53,7 +53,7 @@ void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg) {
     strcpy(msg_buf+l1, extra_msg);
     /* if the mem allocator could throw errors, this
        could potentially leak msg_buf */
-    TValue error_msg = kstring_new(K, msg_buf, tl);
+    TValue error_msg = kstring_new_bs_imm(K, msg_buf, tl);
     klispM_freemem(K, msg_buf, tl);
 
     clear_buffers(K);

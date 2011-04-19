@@ -4,15 +4,6 @@
 ** See Copyright Notice in klisp.h
 */
 
-
-/*
-** TODO:
-**
-** - Read mutable/immutable objects (cons function should be a parameter)
-**    this is needed because some functions (like load) return immutable objs
-**
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

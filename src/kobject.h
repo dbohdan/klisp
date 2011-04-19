@@ -627,6 +627,7 @@ int32_t kmark_count;
 #define kis_unmarked(p_) (tv_equal(kget_mark(p_), KFALSE))
 
 /* Macros to access kflags & type in GCHeader */
+/* TODO: 1 should always be reserved for mutability flag */
 #define gch_get_type(o_) (obj2gch(o_)->tt)
 #define gch_get_kflags(o_) (obj2gch(o_)->kflags)
 #define tv_get_kflags(o_) (gch_get_kflags(tv2gch(o_)))
@@ -653,6 +654,7 @@ int32_t kmark_count;
 #define kis_dyn_cont(c_) ((tv_get_kflags(c_) & K_FLAG_DYNAMIC) != 0)
 #define kis_bool_check_cont(c_) ((tv_get_kflags(c_) & K_FLAG_BOOL_CHECK) != 0)
 
+/* for now only used in pairs and strings */
 #define K_FLAG_IMMUTABLE 0x01
 #define kis_mutable(o_) ((tv_get_kflags(o_) & K_FLAG_IMMUTABLE) == 0)
 #define kis_immutable(o_) (!kis_mutable(o_))
@@ -671,6 +673,7 @@ int32_t kmark_count;
 
 #define K_FLAG_WEAK_KEYS 0x01
 #define K_FLAG_WEAK_VALUES 0x02
+#define K_FLAG_WEAK_NOTHING 0x00
 
 #define ktable_has_weak_keys(o_) \
     ((tv_get_kflags(o_) & K_FLAG_WEAK_KEYS) != 0)

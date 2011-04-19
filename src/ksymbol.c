@@ -33,10 +33,8 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
 	    tbl = kcdr(tbl);
     }
 
-    /* Didn't find it, alloc new string and save in symbol table */
-    /* NOTE: there are no embedded '\0's in symbols */
-    /* GC: root new_str */
-    TValue new_str = kstring_new(K, buf, size); /* this copies the buf */
+    /* Didn't find it, alloc new immutable string and save in symbol table */
+    TValue new_str = kstring_new_bs_imm(K, buf, size); 
     krooted_tvs_push(K, new_str);
     Symbol *new_sym = klispM_new(K, Symbol);
     krooted_tvs_pop(K);

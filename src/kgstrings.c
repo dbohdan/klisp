@@ -49,7 +49,7 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
 
-    TValue new_str = kstring_new_sc(K, ivalue(tv_s), fill);
+    TValue new_str = kstring_new_sf(K, ivalue(tv_s), fill);
     kapply_cc(K, new_str);
 }
 
@@ -102,6 +102,9 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	/* TODO show index */
 	klispE_throw(K, "string-set!: index out of bounds");
 	return;
+    } else if (kstring_immutablep(str)) {
+	klispE_throw(K, "string-set!: immutable string");
+	return;
     }
 
     int32_t i = ivalue(tv_i);
@@ -130,7 +133,7 @@ inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
     if (pairs == 0) {
 	return K->empty_string; 
     } else {
-	new_str = kstring_new_g(K, pairs);
+	new_str = kstring_new_s(K, pairs);
 	char *buf = kstring_buf(new_str);
 	TValue tail = ls;
 	while(pairs--) {
@@ -162,14 +165,9 @@ void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* Helpers for binary predicates */
 /* XXX: this should probably be in file kstring.h */
-bool kstring_eqp(TValue str1, TValue str2)
-{
-    int32_t size = kstring_size(str1);
-    if (kstring_size(str2) != size)
-	return false;
-    else
-	return ((size == 0) || 
-		memcmp(kstring_buf(str1), kstring_buf(str2), size) == 0);
+
+bool kstring_eqp(TValue str1, TValue str2) { 
+    return tv_equal(str1, str2) || kstring_equalp(str1, str2);
 }
 
 bool kstring_ci_eqp(TValue str1, TValue str2)
@@ -241,6 +239,7 @@ bool kstring_ci_gep(TValue str1, TValue str2)
 }
 
 /* 13.2.5? substring */
+/* TEMP: at least for now this always returns mutable strings */
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
@@ -278,12 +277,13 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (size == 0) {
 	new_str = K->empty_string;
     } else {
-	new_str = kstring_new(K, kstring_buf(str)+start, size);
+	new_str = kstring_new_bs(K, kstring_buf(str)+start, size);
     }
     kapply_cc(K, new_str);
 }
 
 /* 13.2.6? string-append */
+/* TEMP: at least for now this always returns mutable strings */
 /* TEMP: this does 3 passes over the list */
 void string_append(klisp_State *K, TValue *xparams, TValue ptree, 
 		   TValue denv)
@@ -314,7 +314,7 @@ void string_append(klisp_State *K, TValue *xparams, TValue ptree,
     if (size == 0) {
 	new_str = K->empty_string; 
     } else {
-	new_str = kstring_new_g(K, size);
+	new_str = kstring_new_s(K, size);
 	char *buf = kstring_buf(new_str);
 	/* loop again to copy the chars of each string */
 	tail = ptree;
@@ -369,6 +369,7 @@ void list_to_string(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 13.2.8? string-copy */
+/* TEMP: at least for now this always returns mutable strings */
 void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
@@ -380,12 +381,29 @@ void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (tv_equal(str, K->empty_string)) {
 	new_str = str; 
     } else {
-	new_str = kstring_new(K, kstring_buf(str), kstring_size(str));
+	new_str = kstring_new_bs(K, kstring_buf(str), kstring_size(str));
     }
     kapply_cc(K, new_str);
 }
 
-/* 13.2.9? string-fill! */
+/* 13.2.9? string->immutable-string */
+void string_to_immutable_string(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, "string->immutable-string", ptree, "string", ttisstring, str);
+
+    TValue res_str;
+    if (kstring_immutablep(str)) {/* this includes the empty list */
+	res_str = str;
+    } else {
+	res_str = kstring_new_bs_imm(K, kstring_buf(str), kstring_size(str));
+    }
+    kapply_cc(K, res_str);
+}
+
+/* 13.2.10? string-fill! */
 void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
@@ -393,22 +411,26 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_2tp(K, "string-fill!", ptree, "string", ttisstring, str,
 	     "char", ttischar, tv_ch);
 
+    if (kstring_immutablep(str)) {
+	klispE_throw(K, "string-fill!: immutable string");
+	return;
+    } 
+
     memset(kstring_buf(str), chvalue(tv_ch), kstring_size(str));
     kapply_cc(K, KINERT);
 }
 
 
 /* 13.3.1? symbol->string */
-/* TEMP: for now all strings are mutable, this returns a new object
-   each time */
+/* The strings in symbols are immutable so we can just return that */
 void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, "symbol->string", ptree, "symbol", ttissymbol, sym);
-    TValue new_str = kstring_new(K, ksymbol_buf(sym), ksymbol_size(sym));
-    kapply_cc(K, new_str);
+    TValue str = ksymbol_str(sym);
+    kapply_cc(K, str);
 }
 
 /* 13.3.2? string->symbol */
@@ -421,6 +443,7 @@ void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree,
    because the report only says that read objects when written and read 
    again must be equal? which happens here 
 */
+/* If the string is mutable it is copied */
 void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {

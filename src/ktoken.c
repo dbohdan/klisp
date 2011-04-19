@@ -188,8 +188,7 @@ TValue ktok_get_source_info(klisp_State *K)
 {
     /* NOTE: the filename doesn't contains embedded '\0's */
     TValue filename_str = 
-	kstring_new(K, K->ktok_source_info.saved_filename,
-		    strlen(K->ktok_source_info.saved_filename));
+	kstring_new_b_imm(K, K->ktok_source_info.saved_filename);
     krooted_tvs_push(K, filename_str);
     /* TEMP: for now, lines and column names are fixints */
     TValue res =  kcons(K, i2tv(K->ktok_source_info.saved_line),
@@ -521,7 +520,10 @@ TValue ktok_read_string(klisp_State *K)
 	    i++;
 	}
     }
-    TValue new_str = kstring_new(K, ks_tbget_buffer(K), i); 
+    /* TEMP: for now strings "read" are mutable but strings "loaded" are
+       not */
+    TValue new_str = kstring_new_bs_g(K, K->read_mconsp, 
+				      ks_tbget_buffer(K), i); 
     krooted_tvs_push(K, new_str);
     ks_tbclear(K); /* shouldn't cause gc, but still */
     krooted_tvs_pop(K);

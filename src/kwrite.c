@@ -44,7 +44,7 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
 	((kbigint_negativep(bigint))? 1 : 0);
 	
     krooted_tvs_push(K, bigint);
-    TValue buf_str = kstring_new_g(K, size);
+    TValue buf_str = kstring_new_s(K, size);
     krooted_tvs_push(K, buf_str);
 
     /* write backwards so we can use printf later */
@@ -338,7 +338,7 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 		break;
 	    }
 	    case K_TSTRING: {
-		if (kstring_is_empty(obj)) {
+		if (kstring_emptyp(obj)) {
 		    kw_printf(K, "\"\"");
 		} else {
 		    TValue mark = kget_mark(obj);
