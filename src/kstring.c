@@ -4,6 +4,8 @@
 ** See Copyright Notice in klisp.h
 */
 
+/* SOURCE NOTE: the string table & hashing code is from lua */
+
 #include <string.h>
 #include <stdbool.h>
 
@@ -12,6 +14,47 @@
 #include "kstate.h"
 #include "kmem.h"
 #include "kgc.h"
+
+/* for immutable string/symbols table */
+void klispS_resize (klisp_State *K, int32_t newsize)
+{
+    GCObject **newhash;
+    stringtable *tb;
+    int32_t i;
+    if (K->gcstate == GCSsweepstring)
+	return;  /* cannot resize during GC traverse */
+    newhash = klispM_newvector(K, newsize, GCObject *);
+    tb = &K->strt;
+    for (i = 0; i < newsize; i++) newhash[i] = NULL;
+    /* rehash */
+    for (i = 0; i < tb->size; i++) {
+	GCObject *p = tb->hash[i];
+	while (p) {  /* for each node in the list */
+	    /* imm string & symbols aren't chained with all other
+	       objs, but with each other in strt */
+	    GCObject *next = p->gch.next;  /* save next */
+	    
+	    uint32_t h = 0;
+
+	    if (p->gch.tt == K_TSYMBOL) {
+		h = ((Symbol *) p)->hash;
+	    } else if (p->gch.tt == K_TSTRING) {
+		h = ((String *) p)->hash;
+	    } else {
+		klisp_assert(0);
+	    }
+
+	    int32_t h1 = lmod(h, newsize);  /* new position */
+	    klisp_assert((int32_t) (h%newsize) == lmod(h, newsize));
+	    p->gch.next = newhash[h1];  /* chain it */
+	    newhash[h1] = p;
+	    p = next;
+	}
+    }
+    klispM_freearray(K, tb->hash, tb->size, GCObject *);
+    tb->size = newsize;
+    tb->hash = newhash;
+}
 
 /* TEMP: this is for initializing the above value */
 TValue kstring_new_empty(klisp_State *K)

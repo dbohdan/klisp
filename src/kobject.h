@@ -330,6 +330,9 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for cycle/sharing aware algorithms */
     TValue str; /* could use String * here, but for now... */
+    uint32_t hash; /* this is different from the str hash to
+		      avoid having both the string and the symbol
+		      from always falling in the same bucket */
 } Symbol;
 
 typedef struct __attribute__ ((__packed__)) {

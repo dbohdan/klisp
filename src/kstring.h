@@ -4,6 +4,8 @@
 ** See Copyright Notice in klisp.h
 */
 
+/* SOURCE NOTE: the string table & hashing code is from lua */
+
 #ifndef kstring_h
 #define kstring_h
 
@@ -11,6 +13,9 @@
 
 #include "kobject.h"
 #include "kstate.h"
+
+/* for immutable string table */
+void klispS_resize (klisp_State *K, int32_t newsize);
 
 /* used for initialization */
 TValue kstring_new_empty(klisp_State *K);

@@ -34,12 +34,20 @@ typedef struct {
     int32_t saved_col;
 } ksource_info_t;
 
+/* in klisp this has both the immutable strings & the symbols */
+typedef struct stringtable {
+  GCObject **hash;
+  uint32_t nuse;  /* number of elements */
+  int32_t size;
+} stringtable;
+
 #define GC_PROTECT_SIZE 32
 
 /* NOTE: when adding TValues here, remember to add them to
    markroot in kgc.c!! */
 struct klisp_State {
-    TValue symbol_table;
+    TValue symbol_table; /* TO BE DELETED */
+    stringtable strt;  /* hash table for immutable strings & symbols */
     TValue curr_cont;
 
     /*
