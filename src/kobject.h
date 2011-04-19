@@ -162,6 +162,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TPORT         39
 #define K_TTABLE        40
 
+/* for tables */
 #define K_TDEADKEY        60
 
 /* this is used to test for numbers, as returned by ttype */
@@ -190,6 +191,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_EOF	K_MAKE_VTAG(K_TEOF)
 #define K_TAG_BOOLEAN	K_MAKE_VTAG(K_TBOOLEAN)
 #define K_TAG_CHAR	K_MAKE_VTAG(K_TCHAR)
+#define K_TAG_DEADKEY	K_MAKE_VTAG(K_TDEADKEY)
 
 #define K_TAG_USER	K_MAKE_VTAG(K_TUSER)
 
@@ -557,6 +559,7 @@ const TValue knewline;
 #define gc2prom(o_) (gc2tv(K_TAG_PROMISE, o_))
 #define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
 #define gc2table(o_) (gc2tv(K_TAG_TABLE, o_))
+#define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2bigint(v_) ((Bigint *) gcvalue(v_))
