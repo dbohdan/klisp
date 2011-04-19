@@ -124,9 +124,16 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->dummy_pair3 = kcons(K, KINERT, KNIL);
 
     /* initialize strings */
+
+    /* initial size of string/symbol table */
+    K->strt.size = 0;
+    K->strt.nuse = 0;
+    K->strt.hash = NULL;
+    klispS_resize(K, MINSTRTABSIZE); 
+
     /* Empty string */
-    /* TODO: make it uncollectible */
-    K->empty_string = kstring_new_empty(K);
+    /* MAYBE: fix it so we can remove empty_string from roots */
+    K->empty_string = kstring_new_b_imm(K, "");
 
     /* initialize tokenizer */
 
@@ -172,6 +179,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->eval_op = kmake_operative(K, keval_ofn, 0);
     K->list_app = kmake_applicative(K, list, 0);
     K->ground_env = kmake_empty_environment(K);
+    /* MAYBE: fix it so we can remove module_params_sym from roots */
     K->module_params_sym = ksymbol_new(K, "module-parameters");
 
     kinit_ground_env(K);

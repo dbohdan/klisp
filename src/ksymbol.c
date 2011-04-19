@@ -34,7 +34,8 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     }
 
     /* Didn't find it, alloc new immutable string and save in symbol table */
-    TValue new_str = kstring_new_bs_imm(K, buf, size); 
+    TValue new_str = kstring_new_bs_imm(K, buf, size);
+    printf("new symbol. buf: %s, str: %s\n", buf, kstring_buf(new_str));
     krooted_tvs_push(K, new_str);
     Symbol *new_sym = klispM_new(K, Symbol);
     krooted_tvs_pop(K);

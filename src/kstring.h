@@ -17,19 +17,37 @@
 /* for immutable string table */
 void klispS_resize (klisp_State *K, int32_t newsize);
 
-/* used for initialization */
-TValue kstring_new_empty(klisp_State *K);
-/* general string constructor, buf remains uninit
- (except for an extra trailing zero used for printing */
-TValue kstring_new_s_g(klisp_State *K, bool m, uint32_t size);
+/* 
+** Constructors for immutable strings
+*/
+
+/* General constructor for strings */
+TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf, 
+			uint32_t size);
+
+/* main immutable string constructor */
 /* with buffer & size */
-TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf, uint32_t size);
-/* with buffer but no size, no embedded '\0's */
-TValue kstring_new_b_g(klisp_State *K, bool m, const char *buf);
+TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size);
+
+/* with just buffer, no embedded '\0's */
+TValue kstring_new_b_imm(klisp_State *K, const char *buf);
+
+/* 
+** Constructors for mutable strings
+*/
+
+/* main mutable string constructor */
+/* with just size */
+TValue kstring_new_s(klisp_State *K, uint32_t size);
+/* with buffer & size */
+TValue kstring_new_bs(klisp_State *K, const char *buf, uint32_t size);
+/* with just buffer, no embedded '\0's */
+TValue kstring_new_b(klisp_State *K, const char *buf);
 /* with size & fill char */
-TValue kstring_new_sf_g(klisp_State *K, bool m, uint32_t size, char fill);
+TValue kstring_new_sf(klisp_State *K, uint32_t size, char fill);
 
 /* macros for mutable & immutable versions of the above */
+#if 0
 #define kstring_new_s(K_, size_)		\
     kstring_new_s_g(K_, true, size_)
 #define kstring_new_bs(K_, buf_, size_)		\
@@ -47,7 +65,7 @@ TValue kstring_new_sf_g(klisp_State *K, bool m, uint32_t size, char fill);
     kstring_new_b_g(K_, false, buf_)
 #define kstring_new_sf_imm(K_, size_, fill_)	\
     kstring_new_sf_g(K_, false, size_, fill_)
-
+#endif
 /* some macros to access the parts of the string */
 #define kstring_buf(tv_) (tv2str(tv_)->b)
 #define kstring_size(tv_) (tv2str(tv_)->size)

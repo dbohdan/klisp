@@ -143,6 +143,6 @@ kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
 	ksymbol.h kinteger.h
 kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
-	ksymbol.h kgnumbers.h
+	kstring.h ksymbol.h kgnumbers.h
 imath.o: kobject.h kstate.h kmem.h kerror.h
 kgc.o: kgc.c kgc.h kobject.h kmem.h kstate.h kport.h imath.h ktable.h

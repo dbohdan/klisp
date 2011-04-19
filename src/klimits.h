@@ -49,4 +49,9 @@
 */
 #define IntPoint(p)  ((uint32_t)(p))
 
+/* minimum size for the string table (must be power of 2) */
+#ifndef MINSTRTABSIZE
+#define MINSTRTABSIZE	32
+#endif
+
 #endif
