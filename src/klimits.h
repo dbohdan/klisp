@@ -42,4 +42,11 @@
 #define cast(t, exp)	((t)(exp))
 #endif
 
+/*
+** conversion of pointer to integer
+** this is for hashing only; there is no problem if the integer
+** cannot hold the whole pointer value
+*/
+#define IntPoint(p)  ((uint32_t)(p))
+
 #endif

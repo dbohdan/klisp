@@ -162,6 +162,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TPORT         39
 #define K_TTABLE        40
 
+#define K_TDEADKEY        60
+
 /* this is used to test for numbers, as returned by ttype */
 #define K_LAST_NUMBER_TYPE K_TCOMPLEX
 
@@ -436,6 +438,10 @@ typedef struct __attribute__ ((__packed__)) {
 
 #define twoto(x)	(1<<(x))
 #define sizenode(t)	(twoto((t)->lsizenode))
+
+#define ceillog2(x)	(klispO_log2((x)-1) + 1)
+
+int32_t klispO_log2 (uint32_t x);
 
 /* 
 ** RATIONALE: 
