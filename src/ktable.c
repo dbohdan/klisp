@@ -141,85 +141,56 @@ static int32_t arrayindex (const TValue key) {
 }
 
 
-#if 0 /* no iteration for now */
 /*
 ** returns the index of a `key' for table traversals. First goes all
 ** elements in the array part, then elements in the hash part. The
 ** beginning of a traversal is signalled by -1.
 */
-static int findindex (lua_State *L, Table *t, StkId key) {
-  int i;
-  if (ttisnil(key)) return -1;  /* first iteration */
-  i = arrayindex(key);
-  if (0 < i && i <= t->sizearray)  /* is `key' inside array part? */
-    return i-1;  /* yes; that's the index (corrected to C) */
-  else {
-    Node *n = mainposition(t, key);
-    do {  /* check whether `key' is somewhere in the chain */
-      /* key may be dead already, but it is ok to use it in `next' */
-      if (luaO_rawequalObj(key2tval(n), key) ||
-            (ttype(gkey(n)) == LUA_TDEADKEY && iscollectable(key) &&
-             gcvalue(gkey(n)) == gcvalue(key))) {
-        i = cast_int(n - gnode(t, 0));  /* key index in hash table */
-        /* hash elements are numbered after array ones */
-        return i + t->sizearray;
-      }
-      else n = gnext(n);
-    } while (n);
-    luaG_runerror(L, "invalid key to " LUA_QL("next"));  /* key not found */
-    return 0;  /* to avoid warnings */
-  }
-}
-
-/* klisp try, incomplete */
-
-static int32_t findindex (klisp_State *K, Table *t, TValue key) {
-  int32_t i;
-  /* klisp: XXX ??? what's this ??? XXX */
-  if (ttisnil(key)) return -1;  /* first iteration */
-  i = arrayindex(key);
-  if (0 <= i && i < t->sizearray)  /* is `key' inside array part? */
-    return i;  /* yes; that's the index */
-  else {
-    Node *n = mainposition(t, key);
-    do {  /* check whether `key' is somewhere in the chain */
-      /* key may be dead already, but it is ok to use it in `next' */
-	/* klisp: what is this dark magic here?, CHECK THIS OUT */
-      if (kgeq2p(key2tval(n), key) ||
-	  (ttype(gkey(n)) == K_TDEADKEY && iscollectable(key) &&
-	   gcvalue(gkey(n)) == gcvalue(key))) {
-	  i = (int32_t) (n - gnode(t, 0));  /* key index in hash table */
-        /* hash elements are numbered after array ones */
-	  return i + t->sizearray; /* klisp: is this ok, of off by 1? */
-      }
-      else n = gnext(n);
-    } while (n);
-    klispE_throw(K, "invalid key to next");  /* key not found */
-    return 0;  /* to avoid warnings */
-  }
-}
-
-
-int klispH_next (lua_State *L, Table *t, StkId key) {
-  int i = findindex(L, t, key);  /* find original element */
-  for (i++; i < t->sizearray; i++) {  /* try first array part */
-    if (!ttisnil(&t->array[i])) {  /* a non-nil value? */
-      setnvalue(key, cast_num(i+1));
-      setobj2s(L, key+1, &t->array[i]);
-      return 1;
+static int32_t findindex (klisp_State *K, Table *t, TValue key) 
+{
+    int32_t i;
+    if (ttisnil(key)) return -1;  /* first iteration */
+    i = arrayindex(key);
+    if (0 <= i && i < t->sizearray)  /* is `key' inside array part? */
+	return i;  /* yes; that's the index */
+    else {
+	Node *n = mainposition(t, key);
+	do {  /* check whether `key' is somewhere in the chain */
+	    /* key may be dead already, but it is ok to use it in `next' */
+/* klisp: i'm not so sure about this... */
+	    if (eq2p(K, key2tval(n), key) || 
+		(ttype(gkey(n)->this) == K_TDEADKEY && iscollectable(key) &&
+		 gcvalue(gkey(n)->this) == gcvalue(key))) { 
+		i = (int32_t) (n - gnode(t, 0));  /* key index in hash table */
+		/* hash elements are numbered after array ones */
+		return i + t->sizearray;
+	    }
+	    else n = gnext(n);
+	} while (n);
+	klispE_throw(K, "invalid key to next");  /* key not found */
+	return 0;  /* to avoid warnings */
     }
-  }
-  for (i -= t->sizearray; i < sizenode(t); i++) {  /* then hash part */
-    if (!ttisnil(gval(gnode(t, i)))) {  /* a non-nil value? */
-      setobj2s(L, key, key2tval(gnode(t, i)));
-      setobj2s(L, key+1, gval(gnode(t, i)));
-      return 1;
-    }
-  }
-  return 0;  /* no more elements */
 }
 
-#endif /* no iteration for now */
+int32_t klispH_next (klisp_State *K, Table *t, TValue *key, TValue *data) 
+{
+    int32_t i = findindex(K, t, *key);  /* find original element */
+    for (i++; i < t->sizearray; i++) {  /* try first array part */
+	if (!ttisnil(t->array[i])) {  /* a non-nil value? */
+	    *key = i2tv(i);
+	    *data = t->array[i];
+	    return 1;
+	}
+    }
+    for (i -= t->sizearray; i < sizenode(t); i++) {  /* then hash part */
+	if (!ttisnil(gval(gnode(t, i)))) {  /* a non-nil value? */
+	    *key = key2tval(gnode(t, i));
+	    *data = gval(gnode(t, i));
+	    return 1;
+	}
+    }
+    return 0;  /* no more elements */
+}
 
 
 /*
@@ -598,11 +569,11 @@ static int32_t unbound_search (Table *t, int32_t j) {
   /* find `i' and `j' such that i is present and j is not */
   while (!ttisnil(*klispH_getfixint(t, j))) {
     i = j;
-    if (j <= INT32_MAX / 2)
+    if (j <= (INT32_MAX - i) / 2)
 	j *= 2;
     else {  /* overflow? */
       /* table was built with bad purposes: resort to linear search */
-      i = 1;
+      i = 0;
       while (!ttisnil(*klispH_getfixint(t, i))) i++;
       return i-1;
     }

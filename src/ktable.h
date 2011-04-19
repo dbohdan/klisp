@@ -31,9 +31,7 @@ TValue *klispH_set (klisp_State *K, Table *t, TValue key);
 TValue klispH_new (klisp_State *K, int32_t narray, int32_t lnhash);
 void klispH_resizearray (klisp_State *K, Table *t, int32_t nasize);
 void klispH_free (klisp_State *K, Table *t);
-#if 0 /* not for now */
-int32_t klispH_next (klisp_State *K, Table *t, StkId key);
+int32_t klispH_next (klisp_State *K, Table *t, TValue *key, TValue *data);
 int32_t klispH_getn (Table *t);
-#endif
 
 #endif
