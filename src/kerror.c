@@ -36,7 +36,6 @@ void klispE_throw(klisp_State *K, char *msg)
     TValue error_msg = kstring_new_b_imm(K, msg);
     /* TEMP */
     clear_buffers(K);
-
     kcall_cont(K, K->error_cont, error_msg);
 }
 
@@ -46,15 +45,16 @@ void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg) {
     int32_t l1 = strlen(msg);
     int32_t l2 = strlen(extra_msg);
 
-    int32_t tl = l1+l2+1;
+    int32_t tl = l1+l2;
 
-    char *msg_buf = klispM_malloc(K, tl);
+    char *msg_buf = klispM_malloc(K, tl+1);
     strcpy(msg_buf, msg);
     strcpy(msg_buf+l1, extra_msg);
+    msg_buf[tl] = '\0';
     /* if the mem allocator could throw errors, this
        could potentially leak msg_buf */
     TValue error_msg = kstring_new_bs_imm(K, msg_buf, tl);
-    klispM_freemem(K, msg_buf, tl);
+    klispM_freemem(K, msg_buf, tl+1);
 
     clear_buffers(K);
 

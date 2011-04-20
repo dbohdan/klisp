@@ -17,6 +17,7 @@
 #include <setjmp.h>
 
 #include "klisp.h"
+#include "klimits.h"
 #include "kstate.h"
 #include "kobject.h"
 #include "kstring.h"
@@ -178,7 +179,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->eval_op = kmake_operative(K, keval_ofn, 0);
     K->list_app = kmake_applicative(K, list, 0);
     /* ground environment has a hashtable for bindings */
-    K->ground_env = kmake_table_environment(K, KNIL);
+//    K->ground_env = kmake_table_environment(K, KNIL);
+    K->ground_env = kmake_environment(K, KNIL);
     /* MAYBE: fix it so we can remove module_params_sym from roots */
     K->module_params_sym = ksymbol_new(K, "module-parameters");
 

@@ -59,7 +59,7 @@ kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
 	kenvironment.h kpair.h keval.h koperative.h kground.h \
 	krepl.h kcontinuation.h kapplicative.h kport.h ksymbol.h kport.h \
-	kstring.h kinteger.h kgc.h
+	kstring.h kinteger.h kgc.h klimits.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h kstate.h kgc.h klispconf.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h kpair.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
