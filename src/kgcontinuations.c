@@ -290,12 +290,12 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
     /* GC: root continuations */
     /* The current continuation is guarded */
     TValue outer_cont = kmake_continuation(K, kget_cc(K), do_pass_value, 
-					   1, entry_guards);
+					   2, entry_guards, denv);
     kset_outer_cont(outer_cont);
     kset_cc(K, outer_cont); /* this implicitly roots outer_cont */
 
-    TValue inner_cont = kmake_continuation(K, outer_cont, 
-					   do_pass_value, 1, exit_guards);
+    TValue inner_cont = kmake_continuation(K, outer_cont, do_pass_value, 2, 
+					   exit_guards, denv);
     kset_inner_cont(inner_cont);
 
     /* call combiner with no operands in the dynamic extent of inner,
