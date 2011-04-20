@@ -323,7 +323,6 @@ typedef struct __attribute__ ((__packed__)) {
     TValue mark; /* for cycle/sharing aware algorithms */
     TValue car;
     TValue cdr;
-    TValue si; /* source code info (either () or (filename line col) */
 } Pair;
 
 typedef struct __attribute__ ((__packed__)) {
@@ -350,8 +349,6 @@ typedef struct __attribute__ ((__packed__)) {
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for guarding continuation */
-    TValue name; /* cont name/type */
-    TValue si; /* source code info (either () or (filename line col) */
     TValue parent; /* may be () for root continuation */
     void *fn; /* the function that does the work */
     int32_t extra_size;
@@ -360,8 +357,6 @@ typedef struct __attribute__ ((__packed__)) {
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue name;
-    TValue si; /* source code info (either () or (filename line col) */
     void *fn; /* the function that does the work */
     int32_t extra_size;
     TValue extra[];
@@ -369,23 +364,17 @@ typedef struct __attribute__ ((__packed__)) {
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue name; 
-    TValue si; /* source code info (either () or (filename line col) */
     TValue underlying; /* underlying operative/applicative */
 } Applicative;
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue name; 
-    TValue si; /* source code info (either () or (filename line col) */
     TValue key; /* unique pair identifying this type of encapsulation */
     TValue value; /* encapsulated object */
 } Encapsulation;
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue name; 
-    TValue si; /* source code info (either () or (filename line col) */
     TValue node; /* pair (exp . maybe-env) */
     /* if maybe-env is nil, then the promise has determined exp,
        otherwise the promise should eval exp in maybe-env when forced 
@@ -397,8 +386,6 @@ typedef struct __attribute__ ((__packed__)) {
 /* input/output direction and open/close status are in kflags */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue name;
-    TValue si; /* source code info (either () or (filename line col) */
     TValue filename;
     FILE *file;
 } Port;
@@ -464,6 +451,8 @@ typedef struct __attribute__ ((__packed__)) {
     uint32_t hash; /* only used for immutable strings */
     char b[]; // buffer
 } String;
+
+/* MAYBE: mark fields could be replaced by a hashtable or a bit + a hashtable */
 
 /*
 ** Common header for markable objects

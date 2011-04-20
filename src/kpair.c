@@ -21,7 +21,6 @@ TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr)
     klispC_link(K, (GCObject *) new_pair, K_TPAIR, (m? 0 : K_FLAG_IMMUTABLE));
 
     /* pair specific fields */
-    new_pair->si = KNIL;
     new_pair->mark = KFALSE;
     new_pair->car = car;
     new_pair->cdr = cdr;

@@ -240,7 +240,6 @@ static int32_t propagatemark (klisp_State *K) {
 	markvalue(K, p->mark);
 	markvalue(K, p->car);
 	markvalue(K, p->cdr);
-	markvalue(K, p->si);
 	return sizeof(Pair);
     }
     case K_TSYMBOL: {
@@ -266,45 +265,33 @@ static int32_t propagatemark (klisp_State *K) {
     case K_TCONTINUATION: {
 	Continuation *c = cast(Continuation *, o);
 	markvalue(K, c->mark);
-	markvalue(K, c->name);
-	markvalue(K, c->si);
 	markvalue(K, c->parent);
 	markvaluearray(K, c->extra, c->extra_size);
 	return sizeof(Continuation) + sizeof(TValue) * c->extra_size;
     }
     case K_TOPERATIVE: {
 	Operative *op = cast(Operative *, o);
-	markvalue(K, op->name);
-	markvalue(K, op->si);
 	markvaluearray(K, op->extra, op->extra_size);
 	return sizeof(Operative) + sizeof(TValue) * op->extra_size;
     }
     case K_TAPPLICATIVE: {
 	Applicative *a = cast(Applicative *, o);
-	markvalue(K, a->name);
-	markvalue(K, a->si);
 	markvalue(K, a->underlying);
 	return sizeof(Applicative);
     }
     case K_TENCAPSULATION: {
 	Encapsulation *e = cast(Encapsulation *, o);
-	markvalue(K, e->name);
-	markvalue(K, e->si);
 	markvalue(K, e->key);
 	markvalue(K, e->value);
 	return sizeof(Encapsulation);
     }
     case K_TPROMISE: {
 	Promise *p = cast(Promise *, o);
-	markvalue(K, p->name);
-	markvalue(K, p->si);
 	markvalue(K, p->node);
 	return sizeof(Promise);
     }
     case K_TPORT: {
 	Port *p = cast(Port *, o);
-	markvalue(K, p->name);
-	markvalue(K, p->si);
 	markvalue(K, p->filename);
 	return sizeof(Port);
     }

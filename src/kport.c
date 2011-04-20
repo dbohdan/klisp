@@ -48,8 +48,6 @@ TValue kmake_std_port(klisp_State *K, TValue filename, bool writep,
 	writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT);
 
     /* port specific fields */
-    new_port->name = name;
-    new_port->si = si;
     new_port->filename = filename;
     new_port->file = file;
 

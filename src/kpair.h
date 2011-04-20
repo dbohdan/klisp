@@ -62,8 +62,9 @@ TValue klist_g(klisp_State *K, bool m, int32_t n, ...);
 #define klist(K_, n_, ...) (klist_g(K_, true, n_, __VA_ARGS__))
 #define kimm_list(K_, n_, ...) (klist_g(K_, false, n_, __VA_ARGS__))
 
-#define kget_source_info(p_) (tv2pair(p_)->si)
-#define kset_source_info(p_, si_) (kget_source_info(p_) = (si_))
+/* TODO use a source info table */
+#define kget_source_info(p_) (UNUSED(p_), KNIL)
+#define kset_source_info(K_, p_, si_) (UNUSED(K_), UNUSED(p_), UNUSED(si_))
 
 bool kpairp(TValue obj);
 

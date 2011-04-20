@@ -175,7 +175,7 @@ TValue kread_fsm(klisp_State *K)
 		    ** in np (later it will be replace by the source info
 		    ** of the car of the list
 		    */
-		    kset_source_info(np, ktok_get_source_info(K));
+		    kset_source_info(K, np, ktok_get_source_info(K));
 
 		    /* update the shared def to point to the new list */
 		    /* NOTE: this is necessary for self referencing lists */
@@ -391,7 +391,7 @@ TValue kread_fsm(klisp_State *K)
 		/* GC: the way things are done here fp is rooted at all
 		   times */
 		TValue fp_old_si = kget_source_info(fp);
-		kset_source_info(fp, obj_si);
+		kset_source_info(K, fp, obj_si);
 		kset_car(fp, obj);
 		
 		/* continue reading objects of list */
@@ -411,7 +411,7 @@ TValue kread_fsm(klisp_State *K)
 		/* GC: np is rooted by push_data */
 		TValue np = kcons_g(K, K->read_mconsp, obj, KNIL);
 		krooted_tvs_push(K, np);
-		kset_source_info(np, obj_si);
+		kset_source_info(K, np, obj_si);
 		kset_cdr(get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */
 		pop_data(K);
