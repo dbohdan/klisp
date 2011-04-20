@@ -92,6 +92,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* GC */
     K->currentwhite = bit2mask(WHITE0BIT, FIXEDBIT);
     K->gcstate = GCSpause;
+    K->sweepstrgc = 0;
     K->rootgc = NULL;
     K->sweepgc = &(K->rootgc);
     K->gray = NULL;
@@ -500,6 +501,12 @@ void klisp_close (klisp_State *K)
     /* free helper buffers */
     klispM_freemem(K, ks_sbuf(K), ks_ssize(K) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
+
+    /* there should be no pending strings */
+    klisp_assert(K->strt.nuse == 0);
+
+    /* free string/symbol table */
+    klispM_freearray(K, K->strt.hash, K->strt.size, GCObject *);
 
     /* only remaining mem should be of the state struct */
     klisp_assert(K->totalbytes == state_size());

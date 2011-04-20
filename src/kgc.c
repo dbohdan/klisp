@@ -18,10 +18,7 @@
 #include "kport.h"
 #include "imath.h"
 #include "ktable.h"
-
-/* XXX */
-#include "kwrite.h"
-/* XXX */
+#include "kstring.h"
 
 #define GCSTEPSIZE	1024u
 #define GCSWEEPMAX	40
@@ -385,10 +382,9 @@ static void cleartable (GCObject *l) {
 }
 
 static void freeobj (klisp_State *K, GCObject *o) {
-    /* TODO use specific functions like in bigint & lua */
+    /* TODO use specific functions like in bigint & table */
     uint8_t type = o->gch.tt;
     switch (type) {
-	/* case LUA_TTABLE: luaH_free(L, gco2h(o)); break; */
     case K_TBIGINT: {
 	mp_int_free(K, (Bigint *)o);
 	break;
@@ -397,10 +393,15 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	klispM_free(K, (Pair *)o);
 	break;
     case K_TSYMBOL:
+	/* symbols are in the string/symbol table */
 	/* The string will be freed before/after */
+	K->strt.nuse--;
 	klispM_free(K, (Symbol *)o);
 	break;
     case K_TSTRING:
+	/* immutable strings are in the string/symbol table */
+	if (kstring_immutablep(gc2str(o)))
+	    K->strt.nuse--;
 	klispM_freemem(K, o, sizeof(String)+o->str.size+1);
 	break;
     case K_TENVIRONMENT:
@@ -468,20 +469,19 @@ static GCObject **sweeplist (klisp_State *K, GCObject **p, uint32_t count)
     return p;
 }
 
-#if 0 /* klisp: keep this around */
-static void checkSizes (lua_State *L) {
-    global_State *g = G(L);
-    /* check size of string hash */
-    if (g->strt.nuse < cast(lu_int32, g->strt.size/4) &&
-	g->strt.size > MINSTRTABSIZE*2)
-	luaS_resize(L, g->strt.size/2);  /* table is too big */
+static void checkSizes (klisp_State *K) {
+    /* check size of string/symbol hash */
+    if (K->strt.nuse < cast(uint32_t , K->strt.size/4) &&
+	    K->strt.size > MINSTRTABSIZE*2)
+	klispS_resize(K, K->strt.size/2);  /* table is too big */
+#if 0 /* not used in klisp */
     /* check size of buffer */
     if (luaZ_sizebuffer(&g->buff) > LUA_MINBUFFER*2) {  /* buffer too big? */
 	size_t newsize = luaZ_sizebuffer(&g->buff) / 2;
 	luaZ_resizebuffer(L, &g->buff, newsize);
     }
-}
 #endif
+}
 
 #if 0 /* klisp: keep this around */
 static void GCTM (lua_State *L) {
@@ -529,6 +529,9 @@ void klispC_freeall (klisp_State *K) {
     K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT); /* in klisp this may not be
 							 necessary */
     sweepwholelist(K, &K->rootgc);
+    /* free all symbol/string lists */
+    for (int32_t i = 0; i < K->strt.size; i++)  
+	sweepwholelist(K, &K->strt.hash[i]);
 }
 
 
@@ -603,6 +606,7 @@ static void atomic (klisp_State *K) {
 
     /* flip current white */
     K->currentwhite = cast(uint16_t, otherwhite(K));
+    K->sweepstrgc = 0;
     K->sweepgc = &K->rootgc;
     K->gcstate = GCSsweepstring;
     K->estimate = K->totalbytes - udsize;  /* first estimate */
@@ -624,16 +628,19 @@ static int32_t singlestep (klisp_State *K) {
 	}
     }
     case GCSsweepstring: {
-	/* No need to do anything in klisp, we just kept it
-	   to avoid eliminating a state in the GC */
-	K->gcstate = GCSsweep;  /* end sweep-string phase */
-	return 0;
+	uint32_t old = K->totalbytes;
+	sweepwholelist(K, &K->strt.hash[K->sweepstrgc++]);
+	if (K->sweepstrgc >= K->strt.size)  /* nothing more to sweep? */
+	    K->gcstate = GCSsweep;  /* end sweep-string phase */
+	klisp_assert(old >= K->totalbytes);
+	K->estimate -= old - K->totalbytes;
+	return GCSWEEPCOST;
     }
     case GCSsweep: {
 	uint32_t old = K->totalbytes;
 	K->sweepgc = sweeplist(K, K->sweepgc, GCSWEEPMAX);
 	if (*K->sweepgc == NULL) {  /* nothing more to sweep? */
-	    /* checkSizes(K); */ /* klisp: keep this around */
+	    checkSizes(K);
 	    K->gcstate = GCSfinalize;  /* end sweep phase */
 	}
 	klisp_assert(old >= K->totalbytes);
@@ -678,8 +685,8 @@ void klispC_step (klisp_State *K) {
 
     if (K->gcstate != GCSpause) {
 	if (K->gcdept < GCSTEPSIZE) {
-            /* - lim/g->gcstepmul;*/     
 	    K->GCthreshold = K->totalbytes + GCSTEPSIZE; 
+            /* - lim/g->gcstepmul;*/     
 	} else {
 	    K->gcdept -= GCSTEPSIZE;
 	    K->GCthreshold = K->totalbytes;
@@ -692,25 +699,26 @@ void klispC_step (klisp_State *K) {
 
 void klispC_fullgc (klisp_State *K) {
      if (K->gcstate <= GCSpropagate) {
-	/* reset sweep marks to sweep all elements (returning them to white) */
-	K->sweepgc = &K->rootgc;
-	/* reset other collector lists */
-	K->gray = NULL;
-	K->grayagain = NULL;
-	K->weak = NULL;
-	K->gcstate = GCSsweepstring;
-    }
-    klisp_assert(K->gcstate != GCSpause && K->gcstate != GCSpropagate);
-    /* finish any pending sweep phase */
-    while (K->gcstate != GCSfinalize) {
-	klisp_assert(K->gcstate == GCSsweepstring || K->gcstate == GCSsweep);
-	singlestep(K);
-    }
-    markroot(K);
-    while (K->gcstate != GCSpause) {
-	singlestep(K);
-    }
-    setthreshold(K);
+	 /* reset sweep marks to sweep all elements (returning them to white) */
+	 K->sweepstrgc = 0;
+	 K->sweepgc = &K->rootgc;
+	 /* reset other collector lists */
+	 K->gray = NULL;
+	 K->grayagain = NULL;
+	 K->weak = NULL;
+	 K->gcstate = GCSsweepstring;
+     }
+     klisp_assert(K->gcstate != GCSpause && K->gcstate != GCSpropagate);
+     /* finish any pending sweep phase */
+     while (K->gcstate != GCSfinalize) {
+	 klisp_assert(K->gcstate == GCSsweepstring || K->gcstate == GCSsweep);
+	 singlestep(K);
+     }
+     markroot(K);
+     while (K->gcstate != GCSpause) {
+	 singlestep(K);
+     }
+     setthreshold(K);
 }
 
 /* TODO: make all code using mutation to call these,
@@ -722,7 +730,7 @@ guarded stack! */
 void klispC_barrierf (klisp_State *K, GCObject *o, GCObject *v) {
     klisp_assert(isblack(o) && iswhite(v) && !isdead(K, v) && !isdead(K, o));
     klisp_assert(K->gcstate != GCSfinalize && K->gcstate != GCSpause);
-/*    klisp_assert(ttype(&o->gch) != LUA_TTABLE); */
+    klisp_assert(o->gch.tt != K_TTABLE);
     /* must keep invariant? */
     if (K->gcstate == GCSpropagate)
 	reallymarkobject(K, v);  /* restore invariant */
@@ -730,16 +738,14 @@ void klispC_barrierf (klisp_State *K, GCObject *o, GCObject *v) {
 	makewhite(K, o);  /* mark as white just to avoid other barriers */
 }
 
-#if 0 /* keep around */
-void klispC_barrierback (lua_State *L, Table *t) {
+void klispC_barrierback (klisp_State *K, Table *t) {
     GCObject *o = obj2gco(t);
-    klisp_assert(isblack(o) && !isdead(g, o));
-    klisp_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
+    klisp_assert(isblack(o) && !isdead(K, o));
+    klisp_assert(K->gcstate != GCSfinalize && K->gcstate != GCSpause);
     black2gray(o);  /* make table gray (again) */
-    t->gclist = g->grayagain;
-    g->grayagain = o;
+    t->gclist = K->grayagain;
+    K->grayagain = o;
 }
-#endif
 
 /* NOTE: kflags is added for klisp */
 void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {

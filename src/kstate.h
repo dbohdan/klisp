@@ -78,6 +78,7 @@ struct klisp_State {
     uint16_t currentwhite; /* the one of the two whites that is in use in
 			      this collection cycle */
     uint8_t gcstate;  /* state of garbage collector */
+    int32_t sweepstrgc;  /* position of sweep in `strt' */
     GCObject *rootgc; /* list of all collectable objects */
     GCObject **sweepgc;  /* position of sweep in `rootgc' */
     GCObject *gray;  /* list of gray objects */
