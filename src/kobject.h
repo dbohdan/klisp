@@ -339,7 +339,7 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for cycle/sharing aware algorithms */
     TValue parents; /* may be (), a list, or a single env */
-    TValue bindings; /* TEMP: for now alist of (binding . value) */
+    TValue bindings; /* alist of (binding . value) or table */
     /* for keyed static vars */
     TValue keyed_node; /* (key . value) pair or KNIL */
     /* this is a different field from parents to jump over non keyed

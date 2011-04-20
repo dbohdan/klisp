@@ -177,7 +177,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* create the ground environment and the eval operative */
     K->eval_op = kmake_operative(K, keval_ofn, 0);
     K->list_app = kmake_applicative(K, list, 0);
-    K->ground_env = kmake_empty_environment(K);
+    /* ground environment has a hashtable for bindings */
+    K->ground_env = kmake_table_environment(K, KNIL);
     /* MAYBE: fix it so we can remove module_params_sym from roots */
     K->module_params_sym = ksymbol_new(K, "module-parameters");
 

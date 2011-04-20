@@ -54,4 +54,8 @@
 #define MINSTRTABSIZE	32
 #endif
 
+/* starting size for ground environment hashtable */
+/* at last count, there were about 200 bindings in ground env */
+#define ENVTABSIZE	512
+
 #endif
