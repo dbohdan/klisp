@@ -10,10 +10,27 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "klimits.h"
+#include "kgc.h"
 
-/* TODO: add type assertions */
-#define kcar(p_) (tv2pair(p_)->car)
-#define kcdr(p_) (tv2pair(p_)->cdr)
+/* can't be inlined... */
+bool kpairp(TValue obj);
+
+inline bool kmutable_pairp(TValue obj)
+{ 
+    return ttispair(obj) && kis_mutable(obj); 
+}
+
+inline TValue kcar(TValue p)
+{
+    klisp_assert(kpairp(p));
+    return tv2pair(p)->car;
+}
+
+inline TValue kcdr(TValue p)
+{
+    klisp_assert(kpairp(p));
+    return tv2pair(p)->cdr;
+}
 
 #define kcaar(p_) (kcar(kcar(p_)))
 #define kcadr(p_) (kcar(kcdr(p_)))
@@ -48,8 +65,35 @@
 #define kcddddr(p_) (kcdr(kcdr(kcdr(kcdr(p_)))))
 
 /* these will also work with immutable pairs */
-#define kset_car(p_, v_) (kcar(p_) = (v_))
-#define kset_cdr(p_, v_) (kcdr(p_) = (v_))
+inline void kset_car(TValue p, TValue v)
+{
+    klisp_assert(kmutable_pairp(p));
+    tv2pair(p)->car = v;
+}
+
+inline void kset_cdr(TValue p, TValue v)
+{
+    klisp_assert(kmutable_pairp(p));
+    tv2pair(p)->cdr = v;
+}
+
+/* These two are the same but can write immutable pairs,
+ use with care */
+inline void kset_car_unsafe(klisp_State *K, TValue p, TValue v)
+{
+    klisp_assert(kpairp(p));
+    UNUSED(K);
+/*    klispC_barrier(K, gcvalue(p), v); */
+    tv2pair(p)->car = v;
+}
+
+inline void kset_cdr_unsafe(klisp_State *K, TValue p, TValue v)
+{
+    klisp_assert(kpairp(p));
+    UNUSED(K);
+/*    klispC_barrier(K, gcvalue(p), v); */
+    tv2pair(p)->cdr = v;
+}
 
 /* GC: assumes car & cdr are rooted */
 TValue kcons_g(klisp_State *K, bool m, TValue car, TValue cdr);
@@ -65,8 +109,6 @@ TValue klist_g(klisp_State *K, bool m, int32_t n, ...);
 /* TODO use a source info table */
 #define kget_source_info(p_) (UNUSED(p_), KNIL)
 #define kset_source_info(K_, p_, si_) (UNUSED(K_), UNUSED(p_), UNUSED(si_))
-
-bool kpairp(TValue obj);
 
 inline TValue kget_dummy1(klisp_State *K) 
 { 

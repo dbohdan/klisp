@@ -125,7 +125,8 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj,
 	} else { /* last action was a pop */
 	    TValue new_pair = kget_mark(top);
 	    if (state == ST_CAR) {
-		kset_car(new_pair, copy);
+		/* new_pair may be immutable */
+		kset_car_unsafe(K, new_pair, copy);
 		/* leave the pair on the stack, continue with the cdr */
 		ks_spush(K, top);
 		ks_tbpush(K, ST_CDR);
@@ -133,7 +134,8 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj,
 		ks_spush(K, kcdr(top));
 		ks_tbpush(K, ST_PUSH);
 	    } else {
-		kset_cdr(new_pair, copy);
+		/* new_pair may be immutable */
+		kset_cdr_unsafe(K, new_pair, copy);
 		copy = new_pair;
 	    }
 	}

@@ -190,7 +190,8 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 		/* only car was checked (not yet copied) */
 		if (kis_mutable(top)) {
 		    TValue copied_pair = kget_mark(top);
-		    kset_car(copied_pair, copy);
+		    /* copied_pair may be immutable */
+		    kset_car_unsafe(K, copied_pair, copy);
 		}
 		/* put the copied pair again, continue with the cdr */
 		ks_tbpush(K, ST_CDR);
@@ -205,7 +206,8 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 		kunmark(top);
 
 		if (kis_mutable(top)) {
-		    kset_cdr(copied_pair, copy);
+		    /* copied_pair may be immutable */
+		    kset_cdr_unsafe(K, copied_pair, copy);
 		}
 		copy = copied_pair;
 	    }

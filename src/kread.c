@@ -110,7 +110,7 @@ void try_shared_def(klisp_State *K, TValue def_token, TValue value)
     
     TValue new_tok = kcons(K, kcdr(def_token), value);
     krooted_tvs_push(K, new_tok);
-    K->shared_dict = kcons(K, new_tok, K->shared_dict); /* value is protected by cons */
+    K->shared_dict = kcons(K, new_tok, K->shared_dict);
     krooted_tvs_pop(K);
     return;
 }
@@ -392,7 +392,7 @@ TValue kread_fsm(klisp_State *K)
 		   times */
 		TValue fp_old_si = kget_source_info(fp);
 		kset_source_info(K, fp, obj_si);
-		kset_car(fp, obj);
+		kset_car_unsafe(K, fp, obj);
 		
 		/* continue reading objects of list */
 		/* save first & last pair of the (still incomplete) list */
@@ -412,7 +412,7 @@ TValue kread_fsm(klisp_State *K)
 		TValue np = kcons_g(K, K->read_mconsp, obj, KNIL);
 		krooted_tvs_push(K, np);
 		kset_source_info(K, np, obj_si);
-		kset_cdr(get_data(K), np);
+		kset_cdr_unsafe(K, get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */
 		pop_data(K);
 		push_data(K, np);
@@ -425,7 +425,7 @@ TValue kread_fsm(klisp_State *K)
 		/* only change the state, keep the pair data to simplify 
 		   the close paren code (same as for ST_MIDDLE_LIST) */
 		pop_state(K);
-		kset_cdr(get_data(K), obj);
+		kset_cdr_unsafe(K, get_data(K), obj);
 		push_state(K, ST_PAST_LAST_ILIST);
 		read_next_token = true;
 		break;

@@ -500,7 +500,7 @@ void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
 /* 5.9.1 map */
 void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) xparams;
+    UNUSED(xparams);
 
     bind_al1tp(K, "map", ptree, "applicative", ttisapplicative, app, lss);
     

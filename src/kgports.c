@@ -394,7 +394,7 @@ TValue read_all_expr(klisp_State *K, TValue port)
 	    return kcutoff_dummy1(K);
 	} else {
 	    TValue new_pair = kimm_cons(K, obj, KNIL);
-	    kset_cdr(tail, new_pair);
+	    kset_cdr_unsafe(K, tail, new_pair);
 	    tail = new_pair;
 	}
     }
