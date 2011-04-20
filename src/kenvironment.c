@@ -90,7 +90,8 @@ TValue kmake_environment(klisp_State *K, TValue parents)
 */
 TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 {
-    (void) K;
+    UNUSED(K);
+
     while(!ttisnil(bindings)) {
 	TValue first = kcar(bindings);
 	TValue first_sym = kcar(first);
@@ -111,6 +112,9 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
  right now, but that could change */
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 {
+    klisp_assert(ttisenvironment(env));
+    klisp_assert(ttissymbol(sym));
+
     TValue bindings = kenv_bindings(K, env);
     if (ttistable(bindings)) {
 	TValue *cell = klispH_setsym(K, tv2table(bindings), tv2sym(sym));
@@ -179,6 +183,8 @@ inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 
 TValue kget_binding(klisp_State *K, TValue env, TValue sym)
 {
+    klisp_assert(ttisenvironment(env));
+    klisp_assert(ttissymbol(sym));
     TValue value;
     if (try_get_binding(K, env, sym, &value)) {
 	return value;
