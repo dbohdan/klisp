@@ -121,7 +121,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     }
     new_str->b[size] = '\0'; /* final 0 for printing */
 
-    /* add to the string table (and link it) */
+    /* add to the string/symbol table (and link it) */
     stringtable *tb;
     tb = &K->strt;
     h = lmod(h, tb->size);

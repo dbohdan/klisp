@@ -46,7 +46,6 @@ typedef struct stringtable {
 /* NOTE: when adding TValues here, remember to add them to
    markroot in kgc.c!! */
 struct klisp_State {
-    TValue symbol_table; /* TO BE DELETED */
     stringtable strt;  /* hash table for immutable strings & symbols */
     TValue curr_cont;
 

@@ -59,8 +59,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     K = (klisp_State *) k;
 
-    K->symbol_table = KNIL;
-    /* TODO: create a continuation */
     K->curr_cont = KNIL;
 
     K->next_obj = KINERT;
