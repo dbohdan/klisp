@@ -20,8 +20,6 @@ TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val)
     klispC_link(K, (GCObject *) new_enc, K_TENCAPSULATION, 0);
 
     /* encapsulation specific fields */
-    new_enc->name = KNIL;
-    new_enc->si = KNIL;
     new_enc->key = key;
     new_enc->value = val;
 

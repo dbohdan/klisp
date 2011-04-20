@@ -25,8 +25,6 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_Cfunc fn,
 
     /* continuation specific fields */
     new_cont->mark = KFALSE;    
-    new_cont->name = KNIL;
-    new_cont->si = KNIL;
     new_cont->parent = parent;
     new_cont->fn = fn;
     new_cont->extra_size = xcount;

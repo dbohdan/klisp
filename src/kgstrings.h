@@ -78,12 +78,14 @@ void string_to_list(klisp_State *K, TValue *xparams, TValue ptree,
 /* 13.2.8? string-copy */
 void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
-/* 13.2.9? string-fill! */
+/* 13.2.9? string->immutable-string */
+void string_to_immutable_string(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv);
+
+/* 13.2.10? string-fill! */
 void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 13.3.1? symbol->string */
-/* TEMP: for now all strings are mutable, this returns a new object
-   each time */
 void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv);
 

@@ -17,10 +17,8 @@
 #include "kmem.h"
 #include "kport.h"
 #include "imath.h"
-
-/* XXX */
-#include "kwrite.h"
-/* XXX */
+#include "ktable.h"
+#include "kstring.h"
 
 #define GCSTEPSIZE	1024u
 #define GCSWEEPMAX	40
@@ -68,14 +66,11 @@
 
 #define setthreshold(g)  (g->GCthreshold = (g->estimate/100) * g->gcpause)
 
-/* klisp no need for it yet */
-#if 0
 static void removeentry (Node *n) {
-    klisp_assert(ttisnil(gval(n)));
-    if (iscollectable(gkey(n)))
-	setttype(gkey(n), LUA_TDEADKEY);  /* dead key; remove it */
+    klisp_assert(ttisfree(gval(n)));
+    if (iscollectable(gkey(n)->this))/* dead key; remove it */
+	gkey(n)->this = gc2deadkey(gcvalue(gkey(n)->this));  
 }
-#endif
 
 static void reallymarkobject (klisp_State *K, GCObject *o) 
 {
@@ -108,6 +103,7 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TENCAPSULATION:
     case K_TPROMISE:
     case K_TPORT:
+    case K_TTABLE:
 	o->gch.gclist = K->gray;
 	K->gray = o;
 	break;
@@ -163,48 +159,44 @@ size_t klispC_separateudata (lua_State *L, int all) {
     return deadmem;
 }
 
+#endif
 
-static int traversetable (global_State *g, Table *h) {
-    int i;
-    int weakkey = 0;
-    int weakvalue = 0;
-    const TValue *mode;
-    if (h->metatable)
-	markobject(g, h->metatable);
-    mode = gfasttm(g, h->metatable, TM_MODE);
-    if (mode && ttisstring(mode)) {  /* is there a weak mode? */
-	weakkey = (strchr(svalue(mode), 'k') != NULL);
-	weakvalue = (strchr(svalue(mode), 'v') != NULL);
-	if (weakkey || weakvalue) {  /* is really weak? */
-	    h->gct &= ~(KEYWEAK | VALUEWEAK);  /* clear bits */
-	    h->gct |= cast(uint16_t, (weakkey << KEYWEAKBIT) |
-			   (weakvalue << VALUEWEAKBIT));
-	    h->gclist = g->weak;  /* must be cleared after GC, ... */
-	    g->weak = obj2gco(h);  /* ... so put in the appropriate list */
-	}
+static int32_t traversetable (klisp_State *K, Table *h) {
+    int32_t i;
+    TValue tv = gc2table(h);
+    int32_t weakkey = ktable_has_weak_keys(tv)? 1 : 0;
+    int32_t weakvalue = ktable_has_weak_values(tv)? 1 : 0;
+
+    if (weakkey || weakvalue) {  /* is really weak? */
+	h->gct &= ~(KEYWEAK | VALUEWEAK);  /* clear bits */
+	h->gct |= cast(uint16_t, (weakkey << KEYWEAKBIT) |
+		       (weakvalue << VALUEWEAKBIT));
+	h->gclist = K->weak;  /* must be cleared after GC, ... */
+	K->weak = obj2gco(h);  /* ... so put in the appropriate list */
     }
     if (weakkey && weakvalue) return 1;
     if (!weakvalue) {
 	i = h->sizearray;
 	while (i--)
-	    markvalue(g, &h->array[i]);
+	    markvalue(K, h->array[i]);
     }
     i = sizenode(h);
     while (i--) {
 	Node *n = gnode(h, i);
-	klisp_assert(ttype(gkey(n)) != LUA_TDEADKEY || ttisnil(gval(n)));
-	if (ttisnil(gval(n)))
+	klisp_assert(ttype(gkey(n)->this) != K_TDEADKEY || 
+		     ttisfree(gval(n)));
+	if (ttisfree(gval(n)))
 	    removeentry(n);  /* remove empty entries */
 	else {
-	    klisp_assert(!ttisnil(gkey(n)));
-	    if (!weakkey) markvalue(g, gkey(n));
-	    if (!weakvalue) markvalue(g, gval(n));
+	    klisp_assert(!ttisfree(gkey(n)->this));
+	    if (!weakkey) markvalue(K, gkey(n)->this);
+	    if (!weakvalue) markvalue(K, gval(n));
 	}
     }
     return weakkey || weakvalue;
 }
 
-
+#if 0
 /*
 ** All marks are conditional because a GC may happen while the
 ** prototype is still being created
@@ -242,23 +234,12 @@ static int32_t propagatemark (klisp_State *K) {
     uint8_t type = o->gch.tt;
 
     switch (type) {
-#if 0 /* klisp: keep around */
-    case LUA_TTABLE: {
-	Table *h = gco2h(o);
-	K->gray = h->gclist;
-	if (traversetable(K, h))  /* table is weak? */
-	    black2gray(o);  /* keep it gray */
-	return sizeof(Table) + sizeof(TValue) * h->sizearray +
-	    sizeof(Node) * sizenode(h);
-    }
-#endif
 /*    case K_TBIGINT: bigints are never gray */
     case K_TPAIR: {
 	Pair *p = cast(Pair *, o);
 	markvalue(K, p->mark);
 	markvalue(K, p->car);
 	markvalue(K, p->cdr);
-	markvalue(K, p->si);
 	return sizeof(Pair);
     }
     case K_TSYMBOL: {
@@ -284,47 +265,42 @@ static int32_t propagatemark (klisp_State *K) {
     case K_TCONTINUATION: {
 	Continuation *c = cast(Continuation *, o);
 	markvalue(K, c->mark);
-	markvalue(K, c->name);
-	markvalue(K, c->si);
 	markvalue(K, c->parent);
 	markvaluearray(K, c->extra, c->extra_size);
 	return sizeof(Continuation) + sizeof(TValue) * c->extra_size;
     }
     case K_TOPERATIVE: {
 	Operative *op = cast(Operative *, o);
-	markvalue(K, op->name);
-	markvalue(K, op->si);
 	markvaluearray(K, op->extra, op->extra_size);
 	return sizeof(Operative) + sizeof(TValue) * op->extra_size;
     }
     case K_TAPPLICATIVE: {
 	Applicative *a = cast(Applicative *, o);
-	markvalue(K, a->name);
-	markvalue(K, a->si);
 	markvalue(K, a->underlying);
 	return sizeof(Applicative);
     }
     case K_TENCAPSULATION: {
 	Encapsulation *e = cast(Encapsulation *, o);
-	markvalue(K, e->name);
-	markvalue(K, e->si);
 	markvalue(K, e->key);
 	markvalue(K, e->value);
 	return sizeof(Encapsulation);
     }
     case K_TPROMISE: {
 	Promise *p = cast(Promise *, o);
-	markvalue(K, p->name);
-	markvalue(K, p->si);
 	markvalue(K, p->node);
 	return sizeof(Promise);
     }
     case K_TPORT: {
 	Port *p = cast(Port *, o);
-	markvalue(K, p->name);
-	markvalue(K, p->si);
 	markvalue(K, p->filename);
 	return sizeof(Port);
+    }
+    case K_TTABLE: {
+	Table *h = cast(Table *, o);
+	if (traversetable(K, h))  /* table is weak? */
+	    black2gray(o);  /* keep it gray */
+	return sizeof(Table) + sizeof(TValue) * h->sizearray +
+	    sizeof(Node) * sizenode(h);
     }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
@@ -340,7 +316,6 @@ static size_t propagateall (klisp_State *K) {
     return m;
 }
 
-#if 0 /* klisp: keep around */
 /*
 ** The next function tells whether a key or value can be cleared from
 ** a weak table. Non-collectable objects are never removed from weak
@@ -348,14 +323,19 @@ static size_t propagateall (klisp_State *K) {
 ** other objects: if really collected, cannot keep them; for userdata
 ** being finalized, keep them in keys, but not in values
 */
-static int iscleared (const TValue *o, int iskey) {
+static int32_t iscleared (TValue o, int iskey) {
     if (!iscollectable(o)) return 0;
+#if 0 /* klisp: strings may be mutable... */
     if (ttisstring(o)) {
 	stringmark(rawtsvalue(o));  /* strings are `values', so are never weak */
 	return 0;
     }
-    return iswhite(gcvalue(o)) ||
-	(ttisuserdata(o) && (!iskey && isfinalized(uvalue(o))));
+#endif
+    return iswhite(gcvalue(o));
+
+/* klisp: keep around for later
+	|| (ttisuserdata(o) && (!iskey && isfinalized(uvalue(o))));
+*/
 }
 
 
@@ -364,36 +344,34 @@ static int iscleared (const TValue *o, int iskey) {
 */
 static void cleartable (GCObject *l) {
     while (l) {
-	Table *h = gco2h(l);
-	int i = h->sizearray;
+	Table *h = (Table *) (l);
+	int32_t i = h->sizearray;
 	klisp_assert(testbit(h->gct, VALUEWEAKBIT) ||
 		     testbit(h->gct, KEYWEAKBIT));
 	if (testbit(h->gct, VALUEWEAKBIT)) {
 	    while (i--) {
 		TValue *o = &h->array[i];
-		if (iscleared(o, 0))  /* value was collected? */
-		    setnilvalue(o);  /* remove value */
+		if (iscleared(*o, 0))  /* value was collected? */
+		    *o = KFREE;  /* remove value */
 	    }
 	}
 	i = sizenode(h);
 	while (i--) {
 	    Node *n = gnode(h, i);
-	    if (!ttisnil(gval(n)) &&  /* non-empty entry? */
+	    if (!ttisfree(gval(n)) &&  /* non-empty entry? */
 		(iscleared(key2tval(n), 1) || iscleared(gval(n), 0))) {
-		setnilvalue(gval(n));  /* remove value ... */
+		gval(n) = KFREE;  /* remove value ... */
 		removeentry(n);  /* remove entry from table */
 	    }
 	}
 	l = h->gclist;
     }
 }
-#endif
 
 static void freeobj (klisp_State *K, GCObject *o) {
-    /* TODO use specific functions like in bigint & lua */
+    /* TODO use specific functions like in bigint & table */
     uint8_t type = o->gch.tt;
     switch (type) {
-	/* case LUA_TTABLE: luaH_free(L, gco2h(o)); break; */
     case K_TBIGINT: {
 	mp_int_free(K, (Bigint *)o);
 	break;
@@ -402,10 +380,15 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	klispM_free(K, (Pair *)o);
 	break;
     case K_TSYMBOL:
+	/* symbols are in the string/symbol table */
 	/* The string will be freed before/after */
+	K->strt.nuse--;
 	klispM_free(K, (Symbol *)o);
 	break;
     case K_TSTRING:
+	/* immutable strings are in the string/symbol table */
+	if (kstring_immutablep(gc2str(o)))
+	    K->strt.nuse--;
 	klispM_freemem(K, o, sizeof(String)+o->str.size+1);
 	break;
     case K_TENVIRONMENT:
@@ -436,6 +419,9 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	   point */
 	kclose_port(K, gc2port(o));
 	klispM_free(K, (Port *)o);
+	break;
+    case K_TTABLE:
+	klispH_free(K, (Table *)o);
 	break;
     default:
 	/* shouldn't happen */
@@ -470,20 +456,19 @@ static GCObject **sweeplist (klisp_State *K, GCObject **p, uint32_t count)
     return p;
 }
 
-#if 0 /* klisp: keep this around */
-static void checkSizes (lua_State *L) {
-    global_State *g = G(L);
-    /* check size of string hash */
-    if (g->strt.nuse < cast(lu_int32, g->strt.size/4) &&
-	g->strt.size > MINSTRTABSIZE*2)
-	luaS_resize(L, g->strt.size/2);  /* table is too big */
+static void checkSizes (klisp_State *K) {
+    /* check size of string/symbol hash */
+    if (K->strt.nuse < cast(uint32_t , K->strt.size/4) &&
+	    K->strt.size > MINSTRTABSIZE*2)
+	klispS_resize(K, K->strt.size/2);  /* table is too big */
+#if 0 /* not used in klisp */
     /* check size of buffer */
     if (luaZ_sizebuffer(&g->buff) > LUA_MINBUFFER*2) {  /* buffer too big? */
 	size_t newsize = luaZ_sizebuffer(&g->buff) / 2;
 	luaZ_resizebuffer(L, &g->buff, newsize);
     }
-}
 #endif
+}
 
 #if 0 /* klisp: keep this around */
 static void GCTM (lua_State *L) {
@@ -531,26 +516,20 @@ void klispC_freeall (klisp_State *K) {
     K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT); /* in klisp this may not be
 							 necessary */
     sweepwholelist(K, &K->rootgc);
+    /* free all symbol/string lists */
+    for (int32_t i = 0; i < K->strt.size; i++)  
+	sweepwholelist(K, &K->strt.hash[i]);
 }
 
-
-#if 0 /* klisp: keep this around */
-static void markmt (global_State *g) {
-    int i;
-    for (i=0; i<NUM_TAGS; i++)
-	if (g->mt[i]) markobject(g, g->mt[i]);
-}
-#endif
 
 /* mark root set */
 static void markroot (klisp_State *K) {
     K->gray = NULL;
-    K->grayagain = NULL; /* for now in klisp this isn't used */
-    K->weak = NULL; /* for now in klisp this isn't used */
+    K->grayagain = NULL; 
+    K->weak = NULL; 
 
     /* TEMP: this is quite awfull, think of other way to do this */
     /* MAYBE: some of these could be FIXED */
-    markvalue(K, K->symbol_table);
     markvalue(K, K->curr_cont);
     markvalue(K, K->next_obj);
     markvalue(K, K->next_value);
@@ -586,7 +565,6 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->dummy_pair1);
     markvalue(K, K->dummy_pair2);
     markvalue(K, K->dummy_pair3);
-/*    markmt(g); */
     K->gcstate = GCSpropagate;
 }
 
@@ -599,11 +577,7 @@ static void atomic (klisp_State *K) {
     /* remark weak tables */
     K->gray = K->weak; 
     K->weak = NULL;
-#if 0 /* keep around */
-    markmt(g);  /* mark basic metatables (again) */
-    propagateall(g);
-#endif
-    /* klisp: for now in klisp this isn't used */
+
     /* remark gray again */
     K->gray = K->grayagain;
     K->grayagain = NULL;
@@ -614,10 +588,12 @@ static void atomic (klisp_State *K) {
     udsize = klispC_separateudata(L, 0);  /* separate userdata to be finalized */
     marktmu(g);  /* mark `preserved' userdata */
     udsize += propagateall(g);  /* remark, to propagate `preserveness' */
-    cleartable(g->weak);  /* remove collected objects from weak tables */
 #endif
+    cleartable(K->weak);  /* remove collected objects from weak tables */
+
     /* flip current white */
     K->currentwhite = cast(uint16_t, otherwhite(K));
+    K->sweepstrgc = 0;
     K->sweepgc = &K->rootgc;
     K->gcstate = GCSsweepstring;
     K->estimate = K->totalbytes - udsize;  /* first estimate */
@@ -639,16 +615,19 @@ static int32_t singlestep (klisp_State *K) {
 	}
     }
     case GCSsweepstring: {
-	/* No need to do anything in klisp, we just kept it
-	   to avoid eliminating a state in the GC */
-	K->gcstate = GCSsweep;  /* end sweep-string phase */
-	return 0;
+	uint32_t old = K->totalbytes;
+	sweepwholelist(K, &K->strt.hash[K->sweepstrgc++]);
+	if (K->sweepstrgc >= K->strt.size)  /* nothing more to sweep? */
+	    K->gcstate = GCSsweep;  /* end sweep-string phase */
+	klisp_assert(old >= K->totalbytes);
+	K->estimate -= old - K->totalbytes;
+	return GCSWEEPCOST;
     }
     case GCSsweep: {
 	uint32_t old = K->totalbytes;
 	K->sweepgc = sweeplist(K, K->sweepgc, GCSWEEPMAX);
 	if (*K->sweepgc == NULL) {  /* nothing more to sweep? */
-	    /* checkSizes(K); */ /* klisp: keep this around */
+	    checkSizes(K);
 	    K->gcstate = GCSfinalize;  /* end sweep phase */
 	}
 	klisp_assert(old >= K->totalbytes);
@@ -693,8 +672,8 @@ void klispC_step (klisp_State *K) {
 
     if (K->gcstate != GCSpause) {
 	if (K->gcdept < GCSTEPSIZE) {
-            /* - lim/g->gcstepmul;*/     
 	    K->GCthreshold = K->totalbytes + GCSTEPSIZE; 
+            /* - lim/g->gcstepmul;*/     
 	} else {
 	    K->gcdept -= GCSTEPSIZE;
 	    K->GCthreshold = K->totalbytes;
@@ -707,25 +686,26 @@ void klispC_step (klisp_State *K) {
 
 void klispC_fullgc (klisp_State *K) {
      if (K->gcstate <= GCSpropagate) {
-	/* reset sweep marks to sweep all elements (returning them to white) */
-	K->sweepgc = &K->rootgc;
-	/* reset other collector lists */
-	K->gray = NULL;
-	K->grayagain = NULL;
-	K->weak = NULL;
-	K->gcstate = GCSsweepstring;
-    }
-    klisp_assert(K->gcstate != GCSpause && K->gcstate != GCSpropagate);
-    /* finish any pending sweep phase */
-    while (K->gcstate != GCSfinalize) {
-	klisp_assert(K->gcstate == GCSsweepstring || K->gcstate == GCSsweep);
-	singlestep(K);
-    }
-    markroot(K);
-    while (K->gcstate != GCSpause) {
-	singlestep(K);
-    }
-    setthreshold(K);
+	 /* reset sweep marks to sweep all elements (returning them to white) */
+	 K->sweepstrgc = 0;
+	 K->sweepgc = &K->rootgc;
+	 /* reset other collector lists */
+	 K->gray = NULL;
+	 K->grayagain = NULL;
+	 K->weak = NULL;
+	 K->gcstate = GCSsweepstring;
+     }
+     klisp_assert(K->gcstate != GCSpause && K->gcstate != GCSpropagate);
+     /* finish any pending sweep phase */
+     while (K->gcstate != GCSfinalize) {
+	 klisp_assert(K->gcstate == GCSsweepstring || K->gcstate == GCSsweep);
+	 singlestep(K);
+     }
+     markroot(K);
+     while (K->gcstate != GCSpause) {
+	 singlestep(K);
+     }
+     setthreshold(K);
 }
 
 /* TODO: make all code using mutation to call these,
@@ -737,7 +717,7 @@ guarded stack! */
 void klispC_barrierf (klisp_State *K, GCObject *o, GCObject *v) {
     klisp_assert(isblack(o) && iswhite(v) && !isdead(K, v) && !isdead(K, o));
     klisp_assert(K->gcstate != GCSfinalize && K->gcstate != GCSpause);
-/*    klisp_assert(ttype(&o->gch) != LUA_TTABLE); */
+    klisp_assert(o->gch.tt != K_TTABLE);
     /* must keep invariant? */
     if (K->gcstate == GCSpropagate)
 	reallymarkobject(K, v);  /* restore invariant */
@@ -745,24 +725,22 @@ void klispC_barrierf (klisp_State *K, GCObject *o, GCObject *v) {
 	makewhite(K, o);  /* mark as white just to avoid other barriers */
 }
 
-#if 0 /* keep around */
-void klispC_barrierback (lua_State *L, Table *t) {
+void klispC_barrierback (klisp_State *K, Table *t) {
     GCObject *o = obj2gco(t);
-    klisp_assert(isblack(o) && !isdead(g, o));
-    klisp_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
+    klisp_assert(isblack(o) && !isdead(K, o));
+    klisp_assert(K->gcstate != GCSfinalize && K->gcstate != GCSpause);
     black2gray(o);  /* make table gray (again) */
-    t->gclist = g->grayagain;
-    g->grayagain = o;
+    t->gclist = K->grayagain;
+    K->grayagain = o;
 }
-#endif
 
-/* NOTE: flags is added for klisp */
-void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t flags) {
+/* NOTE: kflags is added for klisp */
+void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
     o->gch.next = K->rootgc;
     K->rootgc = o;
     o->gch.gct = klispC_white(K);
     o->gch.tt = tt;
-    o->gch.flags = flags;
+    o->gch.kflags = kflags;
     /* NOTE that o->gch.gclist doesn't need to be setted */
 }
 

@@ -18,42 +18,69 @@
 TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size, 
 		     bool identifierp)
 {
-    /* TODO: replace symbol list with hashtable */
     /* First look for it in the symbol table */
-    TValue tbl = K->symbol_table;
+    GCObject *o;
+    uint32_t h = size; /* seed */
+    size_t step = (size>>5)+1; /* if string is too long, don't hash all 
+			       its chars */
+    size_t size1;
+    for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
+	h = h ^ ((h<<5)+(h>>2)+ ((unsigned char) buf[size1-1]));
 
-    while (!ttisnil(tbl)) {
-	TValue first = kcar(tbl);
-	/* NOTE: there are no embedded '\0's in identifiers but 
-	 they could be in other symbols */
-	if (size == ksymbol_size(first) && 
-	    memcmp(buf, ksymbol_buf(first), size) == 0) {
-	    return first;
-	} else
-	    tbl = kcdr(tbl);
-    }
+    h = ~h; /* symbol hash should be different from string hash
+	       otherwise symbols and their respective immutable string
+	       would always fall in the same bucket */
 
-    /* Didn't find it, alloc new string and save in symbol table */
-    /* NOTE: there are no embedded '\0's in symbols */
-    /* GC: root new_str */
-    TValue new_str = kstring_new(K, buf, size); /* this copies the buf */
+    for (o = K->strt.hash[lmod(h, K->strt.size)];
+	            o != NULL; o = o->gch.next) {
+	String *ts = NULL;
+	if (o->gch.tt == K_TSTRING) {
+	    continue; 
+	} else if (o->gch.tt == K_TSYMBOL) {
+	    ts = tv2str(((Symbol *) o)->str);
+	} else {
+	    klisp_assert(0); /* only symbols and immutable strings */
+	}
+	if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
+	    /* symbol may be dead */
+	    if (isdead(K, o)) changewhite(o);
+	    return gc2sym(o);
+	}
+    } 
+    /* REFACTOR: move this to a new function */
+    /* Didn't find it, alloc new immutable string and save in symbol table,
+     note that the hash value remained in h */
+    TValue new_str = kstring_new_bs_imm(K, buf, size);
     krooted_tvs_push(K, new_str);
     Symbol *new_sym = klispM_new(K, Symbol);
     krooted_tvs_pop(K);
     
     /* header + gc_fields */
-    klispC_link(K, (GCObject *) new_sym, K_TSYMBOL, 
-	identifierp? K_FLAG_EXT_REP : 0);
+    /* can't use klispC_link, because strings use the next pointer
+       differently */
+    new_sym->gct = klispC_white(K);
+    new_sym->tt = K_TSYMBOL;
+    new_sym->kflags = identifierp? K_FLAG_EXT_REP : 0;
 
     /* symbol specific fields */
     new_sym->mark = KFALSE;
     new_sym->str = new_str;
+    new_sym->hash = h;
 
-    TValue new_symv = gc2sym(new_sym);
-    krooted_tvs_push(K, new_symv);
-    K->symbol_table = kcons(K, new_symv, K->symbol_table);
-    krooted_tvs_pop(K);
-    return new_symv;
+    /* add to the string/symbol table (and link it) */
+    stringtable *tb;
+    tb = &K->strt;
+    h = lmod(h, tb->size);
+    new_sym->next = tb->hash[h];  /* chain new entry */
+    tb->hash[h] = (GCObject *)(new_sym);
+    tb->nuse++;
+    TValue ret_tv = gc2sym(new_sym);
+    if (tb->nuse > ((uint32_t) tb->size) && tb->size <= INT32_MAX / 2) {
+	krooted_tvs_push(K, ret_tv); /* save in case of gc */
+	klispS_resize(K, tb->size*2);  /* too crowded */
+	krooted_tvs_pop(K);
+    }
+    return ret_tv;
 }
 
 /* for indentifiers */

@@ -17,6 +17,7 @@
 #include <setjmp.h>
 
 #include "klisp.h"
+#include "klimits.h"
 #include "kstate.h"
 #include "kobject.h"
 #include "kstring.h"
@@ -59,8 +60,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     K = (klisp_State *) k;
 
-    K->symbol_table = KNIL;
-    /* TODO: create a continuation */
     K->curr_cont = KNIL;
 
     K->next_obj = KINERT;
@@ -94,6 +93,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* GC */
     K->currentwhite = bit2mask(WHITE0BIT, FIXEDBIT);
     K->gcstate = GCSpause;
+    K->sweepstrgc = 0;
     K->rootgc = NULL;
     K->sweepgc = &(K->rootgc);
     K->gray = NULL;
@@ -124,9 +124,16 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->dummy_pair3 = kcons(K, KINERT, KNIL);
 
     /* initialize strings */
+
+    /* initial size of string/symbol table */
+    K->strt.size = 0;
+    K->strt.nuse = 0;
+    K->strt.hash = NULL;
+    klispS_resize(K, MINSTRTABSIZE); 
+
     /* Empty string */
-    /* TODO: make it uncollectible */
-    K->empty_string = kstring_new_empty(K);
+    /* MAYBE: fix it so we can remove empty_string from roots */
+    K->empty_string = kstring_new_b_imm(K, "");
 
     /* initialize tokenizer */
 
@@ -161,9 +168,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->sbuf = (TValue *)s;
 
     /* the dynamic ports and the keys for the dynamic ports */
-    TValue in_port = kmake_std_port(K, kstring_new_ns(K, "*STDIN*"),
+    TValue in_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDIN*"),
 				    false, KNIL, KNIL, stdin);
-    TValue out_port = kmake_std_port(K, kstring_new_ns(K, "*STDOUT*"),
+    TValue out_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDOUT*"),
 				     true, KNIL, KNIL, stdout);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
@@ -171,7 +178,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* create the ground environment and the eval operative */
     K->eval_op = kmake_operative(K, keval_ofn, 0);
     K->list_app = kmake_applicative(K, list, 0);
-    K->ground_env = kmake_empty_environment(K);
+    /* ground environment has a hashtable for bindings */
+    K->ground_env = kmake_table_environment(K, KNIL);
+
+    /* MAYBE: fix it so we can remove module_params_sym from roots */
     K->module_params_sym = ksymbol_new(K, "module-parameters");
 
     kinit_ground_env(K);
@@ -494,6 +504,12 @@ void klisp_close (klisp_State *K)
     /* free helper buffers */
     klispM_freemem(K, ks_sbuf(K), ks_ssize(K) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
+
+    /* there should be no pending strings */
+    klisp_assert(K->strt.nuse == 0);
+
+    /* free string/symbol table */
+    klispM_freearray(K, K->strt.hash, K->strt.size, GCObject *);
 
     /* only remaining mem should be of the state struct */
     klisp_assert(K->totalbytes == state_size());

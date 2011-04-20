@@ -24,8 +24,6 @@ TValue kmake_operative(klisp_State *K, klisp_Ofunc fn, int32_t xcount, ...)
     klispC_link(K, (GCObject *) new_op, K_TOPERATIVE, 0);
 
     /* operative specific fields */
-    new_op->name = KNIL;
-    new_op->si = KNIL;
     new_op->fn = fn;
     new_op->extra_size = xcount;
 

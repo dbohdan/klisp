@@ -22,4 +22,12 @@ TValue kmake_keyed_static_env(klisp_State *K, TValue parent, TValue key,
 			      TValue val);
 TValue kget_keyed_static_var(klisp_State *K, TValue env, TValue key);
 
+/* environments with hashtable bindings */
+/* TEMP: for now only for ground environment
+   TODO: Should profile too see when it makes sense & should add code 
+   to all operatives creating environments to see when it's appropiate 
+   or should add code to add binding to at certain point move over to 
+   hashtable */
+TValue kmake_table_environment(klisp_State *K, TValue parents);
+
 #endif

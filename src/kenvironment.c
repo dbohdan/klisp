@@ -13,6 +13,7 @@
 #include "kerror.h"
 #include "kstate.h"
 #include "kmem.h"
+#include "ktable.h"
 #include "kgc.h"
 
 /* keyed dynamic vars */
@@ -84,11 +85,13 @@ TValue kmake_environment(klisp_State *K, TValue parents)
 
 /* 
 ** Helper function for kadd_binding and kget_binding,
+** Only for list environments, table environments are handled elsewhere
 ** returns KNIL or a pair with sym as car.
 */
 TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 {
-    (void) K;
+    UNUSED(K);
+
     while(!ttisnil(bindings)) {
 	TValue first = kcar(bindings);
 	TValue first_sym = kcar(first);
@@ -109,13 +112,22 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
  right now, but that could change */
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 {
-    TValue oldb = kfind_local_binding(K, kenv_bindings(K, env), sym);
+    klisp_assert(ttisenvironment(env));
+    klisp_assert(ttissymbol(sym));
 
-    if (ttisnil(oldb)) {
-	TValue new_pair = kcons(K, sym, val);
-	kenv_bindings(K, env) = kcons(K, new_pair, kenv_bindings(K, env));
+    TValue bindings = kenv_bindings(K, env);
+    if (ttistable(bindings)) {
+	TValue *cell = klispH_setsym(K, tv2table(bindings), tv2sym(sym));
+	*cell = val;
     } else {
-	kset_cdr(oldb, val);
+	TValue oldb = kfind_local_binding(K, bindings, sym);
+
+	if (ttisnil(oldb)) {
+	    TValue new_pair = kcons(K, sym, val);
+	    kenv_bindings(K, env) = kcons(K, new_pair, bindings);
+	} else {
+	    kset_cdr(oldb, val);
+	}
     }
 }
 
@@ -134,12 +146,24 @@ inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 	if (ttisnil(obj)) {
 	    continue;
 	} else if (ttisenvironment(obj)) {
-	    TValue oldb = kfind_local_binding(K, kenv_bindings(K, obj), sym);
-	    if (!ttisnil(oldb)) {
-		/* remember to leave the stack as it was */
-		ks_sdiscardn(K, pushed);
-		*value = kcdr(oldb);
-		return true;
+	    TValue bindings = kenv_bindings(K, obj);
+	    if (ttistable(bindings)) {
+		const TValue *cell = klispH_getsym(tv2table(bindings), 
+						   tv2sym(sym));
+		if (cell != &kfree) {
+		    /* remember to leave the stack as it was */
+		    ks_sdiscardn(K, pushed);
+		    *value = *cell;
+		    return true;
+		}
+	    } else {
+		TValue oldb = kfind_local_binding(K, bindings, sym);
+		if (!ttisnil(oldb)) {
+		    /* remember to leave the stack as it was */
+		    ks_sdiscardn(K, pushed);
+		    *value = kcdr(oldb);
+		    return true;
+		}
 	    }
 	    TValue parents = kenv_parents(K, obj);
 	    ks_spush(K, parents);
@@ -157,6 +181,8 @@ inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 
 TValue kget_binding(klisp_State *K, TValue env, TValue sym)
 {
+    klisp_assert(ttisenvironment(env));
+    klisp_assert(ttissymbol(sym));
     TValue value;
     if (try_get_binding(K, env, sym, &value)) {
 	return value;
@@ -236,4 +262,16 @@ TValue kget_keyed_static_var(klisp_State *K, TValue env, TValue key)
 	/* avoid warning */
 	return KINERT;
     }
+}
+
+/* environments with hashtable bindings */
+/* TEMP: for now only for ground environment */
+TValue kmake_table_environment(klisp_State *K, TValue parents)
+{
+    TValue new_env = kmake_environment(K, parents);
+    krooted_tvs_push(K, new_env);
+    TValue new_table = klispH_new(K, 0, ENVTABSIZE, K_FLAG_WEAK_NOTHING);
+    tv2env(new_env)->bindings = new_table;
+    krooted_tvs_pop(K);
+    return new_env;
 }

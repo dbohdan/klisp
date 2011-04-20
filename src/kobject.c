@@ -22,6 +22,7 @@ const TValue kepinf = KEPINF_;
 const TValue keminf = KEMINF_;
 const TValue kspace = KSPACE_;
 const TValue knewline = KNEWLINE_;
+const TValue kfree = KFREE_;
 
 /*
 ** The name strings for all TValue types
@@ -44,6 +45,8 @@ char *ktv_names[] = {
     [K_TEOF] = "eof", 
     [K_TBOOLEAN] = "boolean", 
     [K_TCHAR] = "char", 
+    [K_TCHAR] = "free entry", 
+    [K_TDEADKEY] = "dead key", 
 
     [K_TUSER] = "user pointer", 
 
@@ -69,3 +72,18 @@ bool kis_output_port(TValue o)
     return ttisport(o) && kport_is_output(o);
 }
 
+int32_t klispO_log2 (uint32_t x) {
+  static const uint8_t log_2[256] = {
+    0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
+  };
+  int32_t l = -1;
+  while (x >= 256) { l += 8; x >>= 8; }
+  return l + log_2[x];
+}

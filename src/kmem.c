@@ -20,6 +20,8 @@
 #include "kerror.h"
 #include "kgc.h"
 
+#define MINSIZEARRAY	4
+
 /*
 ** About the realloc function:
 ** void * frealloc (void *ud, void *ptr, size_t osize, size_t nsize);
@@ -37,6 +39,31 @@
 ** frealloc returns NULL if it cannot create or reallocate the area
 ** (any reallocation to an equal or smaller size cannot fail!)
 */
+
+void *klispM_growaux_ (klisp_State *K, void *block, int *size, size_t size_elems,
+		       int32_t limit, const char *errormsg) {
+    void *newblock;
+    int32_t newsize;
+    if (*size >= limit/2) {  /* cannot double it? */
+	if (*size >= limit)  /* cannot grow even a little? */
+	    klispE_throw(K, (char *) errormsg); /* XXX */
+	newsize = limit;  /* still have at least one free place */
+    }
+    else {
+	newsize = (*size)*2;
+	if (newsize < MINSIZEARRAY)
+	    newsize = MINSIZEARRAY;  /* minimum size */
+    }
+    newblock = klispM_reallocv(K, block, *size, newsize, size_elems);
+    *size = newsize;  /* update only when everything else is OK */
+    return newblock;
+}
+
+
+void *klispM_toobig (klisp_State *K) {
+  klispE_throw(K, "memory allocation error: block too big");
+  return NULL;  /* to avoid warnings */
+}
 
 
 /*

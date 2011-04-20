@@ -42,4 +42,20 @@
 #define cast(t, exp)	((t)(exp))
 #endif
 
+/*
+** conversion of pointer to integer
+** this is for hashing only; there is no problem if the integer
+** cannot hold the whole pointer value
+*/
+#define IntPoint(p)  ((uint32_t)(p))
+
+/* minimum size for the string table (must be power of 2) */
+#ifndef MINSTRTABSIZE
+#define MINSTRTABSIZE	32
+#endif
+
+/* starting size for ground environment hashtable */
+/* at last count, there were about 200 bindings in ground env */
+#define ENVTABSIZE	512
+
 #endif

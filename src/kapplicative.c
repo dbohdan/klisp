@@ -19,8 +19,6 @@ TValue kwrap(klisp_State *K, TValue underlying)
     klispC_link(K, (GCObject *) new_app, K_TAPPLICATIVE, 0);
 
     /* applicative specific fields */
-    new_app->name = KNIL;
-    new_app->si = KNIL;
     new_app->underlying = underlying;
     return gc2app(new_app);
 }

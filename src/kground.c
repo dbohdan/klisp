@@ -807,7 +807,13 @@ void kinit_ground_env(klisp_State *K)
     /* 13.2.8? string-copy */
     add_applicative(K, ground_env, "string-copy", string_copy, 0);
 
-    /* 13.2.9? string-fill! */
+    /* 13.2.9? string->immutable-string */
+    add_applicative(K, ground_env, "string->immutable-string", 
+		    string_to_immutable_string, 0);
+
+    /* TODO: add string-immutable? or general immutable? */
+
+    /* 13.2.10? string-fill! */
     add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
 
     /*

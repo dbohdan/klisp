@@ -42,8 +42,8 @@
 #define reset2bits(x,b1,b2)	resetbits(x, (bit2mask(b1, b2)))
 #define test2bits(x,b1,b2)	testbits(x, (bit2mask(b1, b2)))
 
-/* NOTE: in klisp there is still no tables, userdata, threads, weak keys,
-   or finalization. Also the field is called gct instead of marked */
+/* NOTE: in klisp there is still no userdata, threads or finalization. 
+   Also the field is called gct instead of marked */
 
 /*
 ** Layout for bit use in `gct' field:
@@ -110,6 +110,6 @@ void klispC_step (klisp_State *K);
 void klispC_fullgc (klisp_State *K);
 void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t flags);
 void klispC_barrierf (klisp_State *K, GCObject *o, GCObject *v);
-/* void klispC_barrierback (klisp_State *K, Table *t); */
+void klispC_barrierback (klisp_State *K, Table *t);
 
 #endif

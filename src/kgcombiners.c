@@ -81,7 +81,8 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
 
     /* TODO use name from operative */
     match(K, "[user-operative]", env, ptree, obj);
-    kadd_binding(K, env, penv, denv);
+    if (!ttisignore(penv))
+	kadd_binding(K, env, penv, denv);
 
     /* keep env in stack in case a cont has to be constructed */
     

@@ -20,8 +20,6 @@ TValue kmake_promise(klisp_State *K, TValue exp, TValue maybe_env)
     klispC_link(K, (GCObject *) new_prom, K_TPROMISE, 0);
 
     /* promise specific fields */
-    new_prom->name = KNIL;
-    new_prom->si = KNIL;
     new_prom->node = KNIL; /* temp in case of GC */
     krooted_tvs_push(K, gc2prom(new_prom));
     new_prom->node = kcons(K, exp, maybe_env);

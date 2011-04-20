@@ -34,12 +34,19 @@ typedef struct {
     int32_t saved_col;
 } ksource_info_t;
 
+/* in klisp this has both the immutable strings & the symbols */
+typedef struct stringtable {
+  GCObject **hash;
+  uint32_t nuse;  /* number of elements */
+  int32_t size;
+} stringtable;
+
 #define GC_PROTECT_SIZE 32
 
 /* NOTE: when adding TValues here, remember to add them to
    markroot in kgc.c!! */
 struct klisp_State {
-    TValue symbol_table;
+    stringtable strt;  /* hash table for immutable strings & symbols */
     TValue curr_cont;
 
     /*
@@ -71,6 +78,7 @@ struct klisp_State {
     uint16_t currentwhite; /* the one of the two whites that is in use in
 			      this collection cycle */
     uint8_t gcstate;  /* state of garbage collector */
+    int32_t sweepstrgc;  /* position of sweep in `strt' */
     GCObject *rootgc; /* list of all collectable objects */
     GCObject **sweepgc;  /* position of sweep in `rootgc' */
     GCObject *gray;  /* list of gray objects */

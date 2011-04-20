@@ -181,7 +181,7 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
     while(!ks_sisempty(K)) {
 	obj2 = ks_spop(K);
 	obj1 = ks_spop(K);
-
+/* REFACTOR these ifs: compare both types first, then switch on type */
 	if (!eq2p(K, obj1, obj2)) {
 	    if (ttispair(obj1) && ttispair(obj2)) {
 		/* if they were already compaired, consider equal for now 
