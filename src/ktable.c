@@ -5,19 +5,12 @@
 */
 
 /*
-** XXX/TODO: allow KNIL values and keys. Use other value
-** to indicate missing entries (also in kgc.c)
-*/
-
-/*
 ** SOURCE NOTE: This is almost textually from lua.
 ** Parts that don't apply, or don't apply yet to klisp are in comments.
 ** In klisp arrays are indexed from 0, (while in Lua they are indexed from
 ** one). So watch out for off by one errors! Andres Navarro
-** XXX: lua uses nil as a marker for obj not present...
-** that's bad, should probably use a sentinel value that is unavailable
-** to the program, and throw an error on get of an unsetted value...
-** for now however stick to the "Lua way"
+** To indicate a missing entry, klisp uses 'free' instead of 'nil'.
+** 'free' is a special type that is unavailable to Kernel programs.
 */
 
 /*
@@ -71,10 +64,9 @@
 
 #define dummynode		(&dummynode_)
 
-/* XXX: maybe knil is not the best choice, but for now this follows lua */
 static const Node dummynode_ = {
-  .i_val = KNIL_,
-  .i_key = { .nk = { .this = KNIL_, .next = NULL}} 
+  .i_val = KFREE_,
+  .i_key = { .nk = { .this = KFREE_, .next = NULL}} 
 };
 
 
@@ -157,7 +149,7 @@ static int32_t arrayindex (const TValue key) {
 static int32_t findindex (klisp_State *K, Table *t, TValue key) 
 {
     int32_t i;
-    if (ttisnil(key)) return -1;  /* first iteration */
+    if (ttisfree(key)) return -1;  /* first iteration */
     i = arrayindex(key);
     if (0 <= i && i < t->sizearray)  /* is `key' inside array part? */
 	return i;  /* yes; that's the index */
@@ -184,14 +176,14 @@ int32_t klispH_next (klisp_State *K, Table *t, TValue *key, TValue *data)
 {
     int32_t i = findindex(K, t, *key);  /* find original element */
     for (i++; i < t->sizearray; i++) {  /* try first array part */
-	if (!ttisnil(t->array[i])) {  /* a non-nil value? */
+	if (!ttisfree(t->array[i])) {  /* a non-nil value? */
 	    *key = i2tv(i);
 	    *data = t->array[i];
 	    return 1;
 	}
     }
     for (i -= t->sizearray; i < sizenode(t); i++) {  /* then hash part */
-	if (!ttisnil(gval(gnode(t, i)))) {  /* a non-nil value? */
+	if (!ttisfree(gval(gnode(t, i)))) {  /* a non-nil value? */
 	    *key = key2tval(gnode(t, i));
 	    *data = gval(gnode(t, i));
 	    return 1;
@@ -259,7 +251,7 @@ static int32_t numusearray (const Table *t, int32_t *nums)
 	}
 	/* count elements in range (2^(lg-1), 2^lg] */
 	for (; i <= lim; i++) {
-	    if (!ttisnil(t->array[i-1]))
+	    if (!ttisfree(t->array[i-1]))
 		lc++;
 	}
 	nums[lg] += lc;
@@ -276,7 +268,7 @@ static int32_t numusehash (const Table *t, int32_t *nums, int32_t *pnasize)
     int32_t i = sizenode(t);
     while (i--) {
 	Node *n = &t->node[i];
-	if (!ttisnil(gval(n))) {
+	if (!ttisfree(gval(n))) {
 	    ause += countint(key2tval(n), nums);
 	    totaluse++;
 	}
@@ -291,7 +283,7 @@ static void setarrayvector (klisp_State *K, Table *t, int32_t size)
     int32_t i;
     klispM_reallocvector(K, t->array, t->sizearray, size, TValue);
     for (i=t->sizearray; i<size; i++)
-	t->array[i] = KNIL;
+	t->array[i] = KFREE;
     t->sizearray = size;
 }
 
@@ -313,8 +305,8 @@ static void setnodevector (klisp_State *K, Table *t, int32_t size)
 	for (i=0; i<size; i++) {
 	    Node *n = gnode(t, i);
 	    gnext(n) = NULL;
-	    gkey(n)->this = KNIL;
-	    gval(n) = KNIL;
+	    gkey(n)->this = KFREE;
+	    gval(n) = KFREE;
 	}
     }
     t->lsizenode = (uint8_t) (lsize);
@@ -336,7 +328,7 @@ static void resize (klisp_State *K, Table *t, int32_t nasize, int32_t nhsize)
 	t->sizearray = nasize;
 	/* re-insert elements from vanishing slice */
 	for (i=nasize; i<oldasize; i++) {
-	    if (!ttisnil(t->array[i])) {
+	    if (!ttisfree(t->array[i])) {
 		TValue v = t->array[i];
 		*klispH_setfixint(K, t, i) = v;
 		checkliveness(K, v);
@@ -348,7 +340,7 @@ static void resize (klisp_State *K, Table *t, int32_t nasize, int32_t nhsize)
     /* re-insert elements from hash part */
     for (i = twoto(oldhsize) - 1; i >= 0; i--) {
 	Node *old = nold+i;
-	if (!ttisnil(gval(old))) {
+	if (!ttisfree(gval(old))) {
 	    TValue v = gval(old);
 	    *klispH_set(K, t, key2tval(old)) = v;
 	    checkliveness(K, v);
@@ -426,7 +418,7 @@ void klispH_free (klisp_State *K, Table *t)
 static Node *getfreepos (Table *t) 
 {
     while (t->lastfree-- > t->node) {
-	if (ttisnil(gkey(t->lastfree)->this)) /* klisp: I think... */
+	if (ttisfree(gkey(t->lastfree)->this))
 	    return t->lastfree;
     }
     return NULL;  /* could not find a free place */
@@ -443,7 +435,7 @@ static Node *getfreepos (Table *t)
 static TValue *newkey (klisp_State *K, Table *t, TValue key) 
 {
     Node *mp = mainposition(t, key);
-    if (!ttisnil(gval(mp)) || mp == dummynode) {
+    if (!ttisfree(gval(mp)) || mp == dummynode) {
 	Node *othern;
 	Node *n = getfreepos(t);  /* get a free place */
 	if (n == NULL) {  /* cannot find a free place? */
@@ -458,7 +450,7 @@ static TValue *newkey (klisp_State *K, Table *t, TValue key)
 	    gnext(othern) = n;  /* redo the chain with `n' in place of `mp' */
 	    *n = *mp;  /* copy colliding node into free pos. (mp->next also goes) */
 	    gnext(mp) = NULL;  /* now `mp' is free */
-	    gval(mp) = KNIL;
+	    gval(mp) = KFREE;
 	} else {  /* colliding node is in its own main position */
 	    /* new node will go into free position */
 	    gnext(n) = gnext(mp);  /* chain new position */
@@ -467,8 +459,8 @@ static TValue *newkey (klisp_State *K, Table *t, TValue key)
 	}
     }
     gkey(mp)->this = key;
-/*    luaC_barriert(L, t, key); */
-    klisp_assert(ttisnil(gval(mp)));
+    klispC_barriert(K, t, key);
+    klisp_assert(ttisfree(gval(mp)));
     return &gval(mp);
 }
 
@@ -487,7 +479,7 @@ const TValue *klispH_getfixint (Table *t, int32_t key)
 		return &gval(n);  /* that's it */
 	    else n = gnext(n);
 	} while (n);
-	return &knil;
+	return &kfree;
     }
 }
 
@@ -503,7 +495,7 @@ const TValue *klispH_getstr (Table *t, String *key) {
 	    return &gval(n);  /* that's it */
 	else n = gnext(n);
     } while (n);
-    return &knil;
+    return &kfree;
 }
 
 /*
@@ -516,7 +508,7 @@ const TValue *klispH_getsym (Table *t, Symbol *key) {
 	    return &gval(n);  /* that's it */
 	else n = gnext(n);
     } while (n);
-    return &knil;
+    return &kfree;
 }
 
 
@@ -526,7 +518,7 @@ const TValue *klispH_getsym (Table *t, Symbol *key) {
 const TValue *klispH_get (Table *t, TValue key) 
 {
     switch (ttype(key)) {
-    case K_TNIL: return &knil;
+    case K_TFREE: return &kfree;
     case K_TSYMBOL: return klispH_getsym(t, tv2sym(key));
     case K_TFIXINT: return klispH_getfixint(t, ivalue(key));
     case K_TSTRING: 
@@ -542,7 +534,7 @@ const TValue *klispH_get (Table *t, TValue key)
 		return &gval(n);  /* that's it */
 	    else n = gnext(n);
 	} while (n);
-	return &knil;
+	return &kfree;
     }
     }
 }
@@ -551,11 +543,11 @@ const TValue *klispH_get (Table *t, TValue key)
 TValue *klispH_set (klisp_State *K, Table *t, TValue key) 
 {
     const TValue *p = klispH_get(t, key);
-    if (p != &knil)
+    if (p != &kfree)
 	return cast(TValue *, p);
     else {
-	if (ttisnil(key)) 
-	    klispE_throw(K, "table index is nil");
+	if (ttisfree(key)) 
+	    klispE_throw(K, "table index is free");
 /*
   else if (ttisnumber(key) && luai_numisnan(nvalue(key)))
   luaG_runerror(L, "table index is NaN");
@@ -568,7 +560,7 @@ TValue *klispH_set (klisp_State *K, Table *t, TValue key)
 TValue *klispH_setfixint (klisp_State *K, Table *t, int32_t key) 
 {
     const TValue *p = klispH_getfixint(t, key);
-    if (p != &knil)
+    if (p != &kfree)
 	return cast(TValue *, p);
     else 
 	return newkey(K, t, i2tv(key));
@@ -579,7 +571,7 @@ TValue *klispH_setstr (klisp_State *K, Table *t, String *key)
 {
     klisp_assert(kstring_immutablep(gc2str(key)));
     const TValue *p = klispH_getstr(t, key);
-    if (p != &knil)
+    if (p != &kfree)
 	return cast(TValue *, p);
     else {
 	return newkey(K, t, gc2str(key));
@@ -590,7 +582,7 @@ TValue *klispH_setstr (klisp_State *K, Table *t, String *key)
 TValue *klispH_setsym (klisp_State *K, Table *t, Symbol *key)
 {
     const TValue *p = klispH_getsym(t, key);
-    if (p != &knil)
+    if (p != &kfree)
 	return cast(TValue *, p);
     else {
 	return newkey(K, t, gc2sym(key));
@@ -603,21 +595,21 @@ static int32_t unbound_search (Table *t, int32_t j) {
   int32_t i = j;  /* i -1 or a present index */
   j++;
   /* find `i' and `j' such that i is present and j is not */
-  while (!ttisnil(*klispH_getfixint(t, j))) {
+  while (!ttisfree(*klispH_getfixint(t, j))) {
     i = j;
     if (j <= (INT32_MAX - i) / 2)
 	j *= 2;
     else {  /* overflow? */
       /* table was built with bad purposes: resort to linear search */
       i = 0;
-      while (!ttisnil(*klispH_getfixint(t, i))) i++;
+      while (!ttisfree(*klispH_getfixint(t, i))) i++;
       return i-1;
     }
   }
   /* now do a binary search between them */
   while (j - i > 1) {
     int32_t m = (i+j)/2;
-    if (ttisnil(*klispH_getfixint(t, m))) j = m;
+    if (ttisfree(*klispH_getfixint(t, m))) j = m;
     else i = m;
   }
   return i;
@@ -628,15 +620,16 @@ static int32_t unbound_search (Table *t, int32_t j) {
 ** Try to find a boundary in table `t'. A `boundary' is an integer index
 ** such that t[i] is non-nil and t[i+1] is nil (and 0 if t[1] is nil).
 ** klisp: in klisp that indexes are from zero, this returns -1 if t[0] is nil 
+** also klisp uses free instead of nil
 */
 int32_t klispH_getn (Table *t) {
     int32_t j = t->sizearray - 1;
-    if (j >= 0 && ttisnil(t->array[j])) {
+    if (j >= 0 && ttisfree(t->array[j])) {
 	/* there is a boundary in the array part: (binary) search for it */
 	int32_t i = -1;
 	while (j - i > 1) {
 	    int32_t m = (i+j)/2;
-	    if (ttisnil(t->array[m])) j = m;
+	    if (ttisfree(t->array[m])) j = m;
 	    else i = m;
 	}
 	return i;

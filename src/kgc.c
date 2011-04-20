@@ -67,7 +67,7 @@
 #define setthreshold(g)  (g->GCthreshold = (g->estimate/100) * g->gcpause)
 
 static void removeentry (Node *n) {
-    klisp_assert(ttisnil(gval(n)));
+    klisp_assert(ttisfree(gval(n)));
     if (iscollectable(gkey(n)->this))/* dead key; remove it */
 	gkey(n)->this = gc2deadkey(gcvalue(gkey(n)->this));  
 }
@@ -184,11 +184,11 @@ static int32_t traversetable (klisp_State *K, Table *h) {
     while (i--) {
 	Node *n = gnode(h, i);
 	klisp_assert(ttype(gkey(n)->this) != K_TDEADKEY || 
-		     ttisnil(gval(n)));
-	if (ttisnil(gval(n)))
+		     ttisfree(gval(n)));
+	if (ttisfree(gval(n)))
 	    removeentry(n);  /* remove empty entries */
 	else {
-	    klisp_assert(!ttisnil(gkey(n)->this));
+	    klisp_assert(!ttisfree(gkey(n)->this));
 	    if (!weakkey) markvalue(K, gkey(n)->this);
 	    if (!weakvalue) markvalue(K, gval(n));
 	}
@@ -352,15 +352,15 @@ static void cleartable (GCObject *l) {
 	    while (i--) {
 		TValue *o = &h->array[i];
 		if (iscleared(*o, 0))  /* value was collected? */
-		    *o = KNIL;  /* remove value */
+		    *o = KFREE;  /* remove value */
 	    }
 	}
 	i = sizenode(h);
 	while (i--) {
 	    Node *n = gnode(h, i);
-	    if (!ttisnil(gval(n)) &&  /* non-empty entry? */
+	    if (!ttisfree(gval(n)) &&  /* non-empty entry? */
 		(iscleared(key2tval(n), 1) || iscleared(gval(n), 0))) {
-		gval(n) = KNIL;  /* remove value ... */
+		gval(n) = KFREE;  /* remove value ... */
 		removeentry(n);  /* remove entry from table */
 	    }
 	}

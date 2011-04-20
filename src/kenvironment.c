@@ -150,9 +150,7 @@ inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 	    if (ttistable(bindings)) {
 		const TValue *cell = klispH_getsym(tv2table(bindings), 
 						   tv2sym(sym));
-		/* TEMP: for now nil can't be bound in table envs,
-		   only used for ground for now */
-		if (cell != &knil) {
+		if (cell != &kfree) {
 		    /* remember to leave the stack as it was */
 		    ks_sdiscardn(K, pushed);
 		    *value = *cell;

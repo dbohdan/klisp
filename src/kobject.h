@@ -147,6 +147,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TEOF 		23
 #define K_TBOOLEAN 	24
 #define K_TCHAR 	25
+#define K_TFREE 	26 /* this is used instead of lua nil in tables */
 /* user pointer */
 #define K_TUSER 	29
 
@@ -191,6 +192,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_EOF	K_MAKE_VTAG(K_TEOF)
 #define K_TAG_BOOLEAN	K_MAKE_VTAG(K_TBOOLEAN)
 #define K_TAG_CHAR	K_MAKE_VTAG(K_TCHAR)
+#define K_TAG_FREE	K_MAKE_VTAG(K_TDEADKEY)
 #define K_TAG_DEADKEY	K_MAKE_VTAG(K_TDEADKEY)
 
 #define K_TAG_USER	K_MAKE_VTAG(K_TUSER)
@@ -239,6 +241,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttiseof(o)	(tbasetype_(o) == K_TAG_EOF)
 #define ttisboolean(o)	(tbasetype_(o) == K_TAG_BOOLEAN)
 #define ttischar(o)	(tbasetype_(o) == K_TAG_CHAR)
+#define ttisfree(o)	(tbasetype_(o) == K_TAG_FREE)
 #define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 
 /* Complex types (value in heap), 
@@ -496,6 +499,7 @@ union GCObject {
 #define KEMINF_ {.tv = {.t = K_TAG_EINF, .v = { .i = -1 }}}
 #define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
 #define KNEWLINE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\n' }}}
+#define KFREE_ {.tv = {.t = K_TAG_FREE, .v = { .i = 0 }}}
 
 
 /* RATIONALE: the ones above can be used in initializers */
@@ -509,6 +513,7 @@ union GCObject {
 #define KEMINF ((TValue) KEMINF_)
 #define KSPACE ((TValue) KSPACE_)
 #define KNEWLINE ((TValue) KNEWLINE_)
+#define KFREE ((TValue) KFREE_)
 
 /* The same constants as global const variables */
 const TValue knil;
@@ -521,6 +526,7 @@ const TValue kepinf;
 const TValue keminf;
 const TValue kspace;
 const TValue knewline;
+const TValue kfree;
 
 /* Macros to create TValues of non-heap allocated types (for initializers) */
 #define ch2tv_(ch_) {.tv = {.t = K_TAG_CHAR, .v = { .ch = (ch_) }}}

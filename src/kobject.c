@@ -22,6 +22,7 @@ const TValue kepinf = KEPINF_;
 const TValue keminf = KEMINF_;
 const TValue kspace = KSPACE_;
 const TValue knewline = KNEWLINE_;
+const TValue kfree = KFREE_;
 
 /*
 ** The name strings for all TValue types
@@ -44,6 +45,8 @@ char *ktv_names[] = {
     [K_TEOF] = "eof", 
     [K_TBOOLEAN] = "boolean", 
     [K_TCHAR] = "char", 
+    [K_TCHAR] = "free entry", 
+    [K_TDEADKEY] = "dead key", 
 
     [K_TUSER] = "user pointer", 
 
