@@ -5,6 +5,11 @@
 */
 
 /*
+** XXX/TODO: allow KNIL values and keys. Use other value
+** to indicate missing entries (also in kgc.c)
+*/
+
+/*
 ** SOURCE NOTE: This is almost textually from lua.
 ** Parts that don't apply, or don't apply yet to klisp are in comments.
 ** In klisp arrays are indexed from 0, (while in Lua they are indexed from
@@ -13,7 +18,6 @@
 ** that's bad, should probably use a sentinel value that is unavailable
 ** to the program, and throw an error on get of an unsetted value...
 ** for now however stick to the "Lua way"
-** GC: check all of this for possible unrooted objects
 */
 
 /*
@@ -40,7 +44,7 @@
 #include "ktable.h"
 #include "kapplicative.h"
 #include "kgeqp.h"
-
+#include "kstring.h"
 
 /*
 ** max size of array part is 2^MAXBITS
@@ -52,6 +56,7 @@
 #define hashpow2(t,n)      (gnode(t, lmod((n), sizenode(t))))
   
 #define hashstr(t,str)  hashpow2(t, (str)->hash)
+#define hashsym(t,sym)  hashpow2(t, (sym)->hash)
 #define hashboolean(t,p)        hashpow2(t, p? 1 : 0)
 
 
@@ -113,9 +118,12 @@ static Node *mainposition (const Table *t, TValue key) {
   case K_TBOOLEAN:
       return hashboolean(t, bvalue(key));
   case K_TSTRING:
-      return hashstr(t, tv2str(key));
+      if (kstring_immutablep(key))
+	  return hashstr(t, tv2str(key));
+      else /* mutable strings are eq iff they are the same object */
+	  return hashpointer(t, gcvalue(key));
   case K_TSYMBOL:
-      return hashstr(t, tv2str(tv2sym(key)->str));
+      return hashsym(t, tv2sym(key));
   case K_TUSER:
       return hashpointer(t, pvalue(key));
   case K_TAPPLICATIVE: 
@@ -485,13 +493,26 @@ const TValue *klispH_getfixint (Table *t, int32_t key)
 
 
 /*
-** search function for strings
-** (TODO check mutability)
+** search function for immutable strings
 */
 const TValue *klispH_getstr (Table *t, String *key) {
+    klisp_assert(kstring_immutablep(gc2str(key)));
     Node *n = hashstr(t, key);
     do {  /* check whether `key' is somewhere in the chain */
 	if (ttisstring(gkey(n)->this) && tv2str(gkey(n)->this) == key)
+	    return &gval(n);  /* that's it */
+	else n = gnext(n);
+    } while (n);
+    return &knil;
+}
+
+/*
+** search function for symbol
+*/
+const TValue *klispH_getsym (Table *t, Symbol *key) {
+    Node *n = hashsym(t, key);
+    do {  /* check whether `key' is somewhere in the chain */
+	if (ttissymbol(gkey(n)->this) && tv2sym(gkey(n)->this) == key)
 	    return &gval(n);  /* that's it */
 	else n = gnext(n);
     } while (n);
@@ -506,8 +527,12 @@ const TValue *klispH_get (Table *t, TValue key)
 {
     switch (ttype(key)) {
     case K_TNIL: return &knil;
-    case K_TSTRING: return klispH_getstr(t, tv2str(key));
+    case K_TSYMBOL: return klispH_getsym(t, tv2sym(key));
     case K_TFIXINT: return klispH_getfixint(t, ivalue(key));
+    case K_TSTRING: 
+	if (kstring_immutablep(key))
+	    return klispH_getstr(t, tv2str(key));
+	/* else fall through */
     default: {
 	Node *n = mainposition(t, key);
 	do {  /* check whether `key' is somewhere in the chain */
@@ -552,11 +577,23 @@ TValue *klispH_setfixint (klisp_State *K, Table *t, int32_t key)
 
 TValue *klispH_setstr (klisp_State *K, Table *t, String *key)
 {
+    klisp_assert(kstring_immutablep(gc2str(key)));
     const TValue *p = klispH_getstr(t, key);
     if (p != &knil)
 	return cast(TValue *, p);
     else {
 	return newkey(K, t, gc2str(key));
+    }
+}
+
+
+TValue *klispH_setsym (klisp_State *K, Table *t, Symbol *key)
+{
+    const TValue *p = klispH_getsym(t, key);
+    if (p != &knil)
+	return cast(TValue *, p);
+    else {
+	return newkey(K, t, gc2sym(key));
     }
 }
 

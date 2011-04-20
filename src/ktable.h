@@ -26,6 +26,8 @@ const TValue *klispH_getfixint (Table *t, int32_t key);
 TValue *klispH_setfixint (klisp_State *K, Table *t, int32_t key);
 const TValue *klispH_getstr (Table *t, String *key);
 TValue *klispH_setstr (klisp_State *K, Table *t, String *key);
+const TValue *klispH_getsym (Table *t, Symbol *key);
+TValue *klispH_setsym (klisp_State *K, Table *t, Symbol *key);
 const TValue *klispH_get (Table *t, TValue key);
 TValue *klispH_set (klisp_State *K, Table *t, TValue key);
 TValue klispH_new (klisp_State *K, int32_t narray, int32_t nhash, 
