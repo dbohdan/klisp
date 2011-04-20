@@ -36,6 +36,7 @@ void klispE_throw(klisp_State *K, char *msg)
     TValue error_msg = kstring_new_b_imm(K, msg);
     /* TEMP */
     clear_buffers(K);
+    /* call_cont protect msg from gc */
     kcall_cont(K, K->error_cont, error_msg);
 }
 
@@ -58,5 +59,6 @@ void klispE_throw_extra(klisp_State *K, char *msg, char *extra_msg) {
 
     clear_buffers(K);
 
+    /* call_cont protect msg from gc */
     kcall_cont(K, K->error_cont, error_msg);
 }

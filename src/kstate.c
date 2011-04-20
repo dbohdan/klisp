@@ -320,7 +320,6 @@ TValue select_interceptor(TValue guard_ls)
 inline TValue create_interception_list(klisp_State *K, TValue src_cont, 
 				       TValue dst_cont)
 {
-    /* GC: root intermediate pairs */
     mark_iancestors(dst_cont);
     TValue tail = kget_dummy1(K);
     TValue cont = src_cont;
@@ -332,6 +331,7 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
     while(!kis_marked(cont)) {
 	/* only inner conts have exit guards */
 	if (kis_inner_cont(cont)) {
+	    klisp_assert(tv2cont(cont)->extra_size > 1);
 	    TValue entries = tv2cont(cont)->extra[0]; /* TODO make a macro */ 
 
 	    TValue interceptor = select_interceptor(entries);
@@ -367,7 +367,9 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
     while(!kis_marked(cont)) {
 	/* only outer conts have entry guards */
 	if (kis_outer_cont(cont)) {
+	    klisp_assert(tv2cont(cont)->extra_size > 1);
 	    TValue entries = tv2cont(cont)->extra[0]; /* TODO make a macro */
+	    /* this is rooted because it's a substructure of entries */
 	    TValue interceptor = select_interceptor(entries);
 	    if (!ttisnil(interceptor)) {
                 /* TODO make macros */
@@ -439,9 +441,14 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-/* GC: assumes obj & dst_cont are rooted */
+/* GC: Don't assume anything about obj & dst_cont, they may not be rooted.
+   In the most common case of apply-continuation & continuation->applicative
+   they are rooted, but in general there's no way to protect them, because
+   this ends in a setjmp */
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 {
+    krooted_tvs_push(K, dst_cont);
+    krooted_tvs_push(K, obj);
     TValue src_cont = kget_cc(K);
     TValue int_ls = create_interception_list(K, src_cont, dst_cont);
     TValue new_cont;
@@ -455,6 +462,9 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
 				      2, int_ls, dst_cont);
 	krooted_tvs_pop(K);
     }
+    /* no more allocation from this point */
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
 
     /*
     ** This may come from an error detected by the interpreter, so we can't
