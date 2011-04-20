@@ -300,10 +300,13 @@ TValue kread_fsm(klisp_State *K)
 			/* token ok, read defined object */
 			/* NOTE: save the source info to return it 
 			   after the defined object is read */
-			push_data(K, kcons(K, tok, ktok_get_source_info(K)));
+			TValue si = ktok_get_source_info(K);
+			krooted_tvs_push(K, si);
+			push_data(K, kcons(K, tok, si));
+			krooted_tvs_pop(K);
+			krooted_tvs_pop(K);
 			push_state(K, ST_SHARED_DEF);
 			read_next_token = true;
-			krooted_tvs_pop(K);
 		    }
 		    }
 		    break;

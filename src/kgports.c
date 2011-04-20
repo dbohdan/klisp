@@ -498,7 +498,7 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	if (ttispair(tail)) {
 	    krooted_tvs_push(K, ls);
 	    TValue new_cont = kmake_continuation(K, kget_cc(K),
-					     do_seq, 2, tail, denv);
+						 do_seq, 2, tail, denv);
 	    kset_cc(K, new_cont);
 	    krooted_tvs_pop(K); /* ls */
 	} 
