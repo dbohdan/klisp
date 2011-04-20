@@ -400,8 +400,10 @@ TValue kread_fsm(klisp_State *K)
 		/* continue reading objects of list */
 		/* save first & last pair of the (still incomplete) list */
 		pop_data(K);
+		krooted_tvs_push(K, fp);
 		krooted_tvs_push(K, fp_old_si);
 		push_data(K, kcons (K, fp, fp_old_si));
+		krooted_tvs_pop(K);
 		krooted_tvs_pop(K);
 		push_state(K, ST_FIRST_LIST);
 		push_data(K, fp);
