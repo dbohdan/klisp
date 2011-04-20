@@ -124,7 +124,9 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 
 	if (ttisnil(oldb)) {
 	    TValue new_pair = kcons(K, sym, val);
+	    krooted_tvs_push(K, new_pair);
 	    kenv_bindings(K, env) = kcons(K, new_pair, bindings);
+	    krooted_tvs_pop(K);
 	} else {
 	    kset_cdr(oldb, val);
 	}

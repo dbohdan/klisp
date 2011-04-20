@@ -16,7 +16,7 @@
 /* XXX: disable the gc till the bug is removed
  (throws a weird error after running (load "tests/test-all.k") twice */
 /* temp defines till gc is stabilized */
-/* #define KUSE_GC 1 */
+#define KUSE_GC 1
 /* Print msgs when starting and ending gc */
 #define KDEBUG_GC 1
 
@@ -39,7 +39,8 @@
 
 /* In lua that has incremental gc this is setted to 200, in
    klisp as we don't yet have incremental gc, we set it to 400 */
-#define KLISPI_GCPAUSE	400  /* 400% (wait memory to quadruple before next GC) */
+//#define KLISPI_GCPAUSE	400  /* 400% (wait memory to quadruple before next GC) */
+#define KLISPI_GCPAUSE	125  
 
 
 /*
