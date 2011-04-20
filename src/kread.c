@@ -147,9 +147,9 @@ TValue kread_fsm(klisp_State *K)
     /* read next token or process obj */
     bool read_next_token = true; 
     /* the obj just read/completed */
-    TValue obj; 
+    TValue obj = KINERT; /* put some value for gc */ 
     /* the source code information of that obj */
-    TValue obj_si; 
+    TValue obj_si = KNIL; /* put some value for gc */ 
 
     krooted_vars_push(K, &obj);
     krooted_vars_push(K, &obj_si);
