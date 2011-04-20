@@ -13,8 +13,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/* XXX: disable the gc till the bug is removed
+ (throws a weird error after running (load "tests/test-all.k") twice */
 /* temp defines till gc is stabilized */
-#define KUSE_GC 1
+/* #define KUSE_GC 1 */
 /* Print msgs when starting and ending gc */
 #define KDEBUG_GC 1
 
