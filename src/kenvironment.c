@@ -117,6 +117,7 @@ void try_set_name(klisp_State *K, TValue obj, TValue sym)
 	   that if this object receives a name it can pass on that
 	   name to other objs, like applicatives to operatives & 
 	   some applicatives to objects */
+	gcvalue(obj)->gch.kflags |= K_FLAG_HAS_NAME;
 	TValue *node = klispH_set(K, tv2table(K->name_table), obj);
 	*node = sym;
     }

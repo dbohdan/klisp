@@ -17,6 +17,7 @@
 #include "ksymbol.h"
 #include "kstate.h"
 #include "kerror.h"
+#include "ktable.h"
 
 /*
 ** Stack for the write FSM
@@ -185,6 +186,14 @@ void kw_set_initial_marks(klisp_State *K, TValue root)
     assert(ks_sisempty(K));
 }
 
+/* Assumes obj has a name */
+TValue kget_name(klisp_State *K, TValue obj)
+{
+    const TValue *node = klispH_get(tv2table(K->name_table),
+				    obj);
+    klisp_assert(node != &kfree);
+    return *node;
+}
 /*
 ** Writes all values except strings and pairs
 */
@@ -251,16 +260,32 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "#[eof]");
 	break;
     case K_TENVIRONMENT:
-	kw_printf(K, "#[environment]");
+	kw_printf(K, "#[environment");
+	if (khas_name(obj)) {
+	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	}
+	kw_printf(K, "]");
 	break;
     case K_TCONTINUATION:
-	kw_printf(K, "#[continuation]");
+	kw_printf(K, "#[continuation");
+	if (khas_name(obj)) {
+	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	}
+	kw_printf(K, "]");
 	break;
     case K_TOPERATIVE:
-	kw_printf(K, "#[operative]");
+	kw_printf(K, "#[operative");
+	if (khas_name(obj)) {
+	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	}
+	kw_printf(K, "]");
 	break;
     case K_TAPPLICATIVE:
-	kw_printf(K, "#[applicative]");
+	kw_printf(K, "#[applicative");
+	if (khas_name(obj)) {
+	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	}
+	kw_printf(K, "]");
 	break;
     case K_TENCAPSULATION:
 	/* TODO try to get the name */
@@ -272,7 +297,11 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	break;
     case K_TPORT:
 	/* TODO try to get the name/ I/O direction / filename */
-	kw_printf(K, "#[port]");
+	kw_printf(K, "#[%s port", kport_is_input(obj)? "input" : "output");
+	if (khas_name(obj)) {
+	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	}
+	kw_printf(K, "]");
 	break;
     default:
 	/* shouldn't happen */
