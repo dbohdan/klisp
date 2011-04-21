@@ -109,13 +109,27 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 #define kenv_parents(kst_, env_) (tv2env(env_)->parents)
 #define kenv_bindings(kst_, env_) (tv2env(env_)->bindings)
 
-/* Assumes that env, sym & val are rooted. sym & val need not be
- right now, but that could change */
+/* GC: Assumes that obj & sym are rooted. */
+void try_set_name(klisp_State *K, TValue obj, TValue sym)
+{
+    if (kcan_have_name(obj) && !khas_name(obj)) {
+	/* TODO: maybe we could have some kind of inheritance so
+	   that if this object receives a name it can pass on that
+	   name to other objs, like applicatives to operatives & 
+	   some applicatives to objects */
+	TValue *node = klispH_set(K, tv2table(K->name_table), obj);
+	*node = sym;
+    }
+}
+
+/* GC: Assumes that env, sym & val are rooted. */
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 {
     klisp_assert(ttisenvironment(env));
     klisp_assert(ttissymbol(sym));
 
+    try_set_name(K, val, sym);
+    
     TValue bindings = kenv_bindings(K, env);
     if (ttistable(bindings)) {
 	TValue *cell = klispH_setsym(K, tv2table(bindings), tv2sym(sym));
