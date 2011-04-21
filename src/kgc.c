@@ -575,10 +575,10 @@ static void atomic (klisp_State *K) {
     /* traverse objects caught by write barrier */
     propagateall(K);
 
-    /* klisp: for now in klisp this isn't used */
     /* remark weak tables */
     K->gray = K->weak; 
     K->weak = NULL;
+    propagateall(K);
 
     /* remark gray again */
     K->gray = K->grayagain;
