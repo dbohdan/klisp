@@ -69,7 +69,7 @@
 static void removeentry (Node *n) {
     klisp_assert(ttisfree(gval(n)));
     if (iscollectable(gkey(n)->this))/* dead key; remove it */
-	gkey(n)->this = gc2deadkey(gcvalue(gkey(n)->this));  
+	gkey(n)->this = gc2deadkey(gcvalue(gkey(n)->this));
 }
 
 static void reallymarkobject (klisp_State *K, GCObject *o) 
@@ -359,7 +359,7 @@ static void cleartable (GCObject *l) {
 	while (i--) {
 	    Node *n = gnode(h, i);
 	    if (!ttisfree(gval(n)) &&  /* non-empty entry? */
-		(iscleared(key2tval(n), 1) || iscleared(gval(n), 0))) {
+		  (iscleared(key2tval(n), 1) || iscleared(gval(n), 0))) {
 		gval(n) = KFREE;  /* remove value ... */
 		removeentry(n);  /* remove entry from table */
 	    }

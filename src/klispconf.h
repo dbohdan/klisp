@@ -16,7 +16,7 @@
 /* temp defines till gc is stabilized */
 #define KUSE_GC 1
 /* Print msgs when starting and ending gc */
-/*#define KDEBUG_GC 1 */
+/* #define KDEBUG_GC 1 */
 
 /*
 #define KTRACK_MARKS true

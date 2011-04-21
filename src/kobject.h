@@ -192,7 +192,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_EOF	K_MAKE_VTAG(K_TEOF)
 #define K_TAG_BOOLEAN	K_MAKE_VTAG(K_TBOOLEAN)
 #define K_TAG_CHAR	K_MAKE_VTAG(K_TCHAR)
-#define K_TAG_FREE	K_MAKE_VTAG(K_TDEADKEY)
+#define K_TAG_FREE	K_MAKE_VTAG(K_TFREE)
 #define K_TAG_DEADKEY	K_MAKE_VTAG(K_TDEADKEY)
 
 #define K_TAG_USER	K_MAKE_VTAG(K_TUSER)
