@@ -54,9 +54,13 @@
 #define MINSTRTABSIZE	32
 #endif
 
-/* minimum size for the name table (must be power of 2) */
+/* minimum size for the name & si table (must be power of 2) */
 #ifndef MINNAMETABSIZE
 #define MINNAMETABSIZE	32
+#endif
+
+#ifndef MINSITABSIZE
+#define MINSITABSIZE	32
 #endif
 
 /* starting size for ground environment hashtable */

@@ -132,10 +132,13 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->strt.hash = NULL;
     klispS_resize(K, MINSTRTABSIZE); 
 
-    /* initialize name table */
-    /* has to have weak keys, otherwise every named object would
+    /* initialize name & source code info tables */
+    /* needs weak keys, otherwise every named object would
        be fixed! */
     K->name_table = klispH_new(K, 0, MINNAMETABSIZE, 
+	K_FLAG_WEAK_KEYS);
+
+    K->si_table = klispH_new(K, 0, MINSITABSIZE, 
 	K_FLAG_WEAK_KEYS);
 
     /* Empty string */
