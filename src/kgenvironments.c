@@ -35,10 +35,12 @@
 void eval(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
-    (void) denv;
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_2tp(K, "eval", ptree, "any", anytype, expr,
 	     "environment", ttisenvironment, env);
-
+    /* TODO: track source code info */
     ktail_eval(K, expr, env);
 }
 
@@ -46,8 +48,9 @@ void eval(klisp_State *K, TValue *xparams, TValue ptree,
 void make_environment(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
+
     TValue new_env;
     if (ttisnil(ptree)) {
 	new_env = kmake_empty_environment(K);

@@ -55,6 +55,14 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     TValue new_op = kmake_operative(K, do_vau, 4, vptree, vpenv, vbody, denv);
 
+    #if KTRACK_SI
+    /* save as source code info the info from the expression whose evaluation
+       got us here */
+    krooted_tvs_push(K, new_op);
+    kset_source_info(K, new_op, kget_csi(K));
+    krooted_tvs_pop(K);
+    #endif
+
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     kapply_cc(K, new_op);
@@ -106,10 +114,18 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
 /* 4.10.4 wrap */
 void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_1tp(K, "wrap", ptree, "combiner", ttiscombiner, comb);
     TValue new_app = kwrap(K, comb);
+    #if KTRACK_SI
+    /* save as source code info the info from the expression whose evaluation
+       got us here */
+    krooted_tvs_push(K, new_app);
+    kset_source_info(K, new_app, kget_csi(K));
+    krooted_tvs_pop(K);
+    #endif
     kapply_cc(K, new_app);
 }
 
@@ -143,6 +159,14 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     TValue new_app = kmake_applicative(K, do_vau, 4, vptree, KIGNORE, vbody, 
 				       denv);
+    #if KTRACK_SI
+    /* save as source code info the info from the expression whose evaluation
+       got us here */
+    krooted_tvs_push(K, new_app);
+    kset_source_info(K, new_app, kget_csi(K));
+    krooted_tvs_pop(K);
+    #endif
+
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     kapply_cc(K, new_app);
@@ -152,8 +176,9 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 void apply(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_al2tp(K, "apply", ptree, 
 	       "applicative", ttisapplicative, app, 
 	       "any", anytype, obj, 
@@ -165,7 +190,7 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
     krooted_tvs_push(K, env); 
     TValue expr = kcons(K, kunwrap(app), obj);
     krooted_tvs_pop(K); 
-
+    /* TODO track source code info */
     ktail_eval(K, expr, env);
 }
 
