@@ -53,7 +53,7 @@ kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h klisp.h kgc.h
 ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstring.h kstate.h kmem.h \
 	klisp.h kgc.h
 kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h \
-	kport.h
+	kport.h ktable.h
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
 	klisp.h kport.h kinteger.h ktable.h
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \

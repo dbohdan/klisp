@@ -19,8 +19,10 @@
 /*#define KDEBUG_GC 1 */
 
 /*
-#define KTRACK_MARKS (true)
+#define KTRACK_MARKS true
 */
+
+#define KTRACK_SI true
 
 /* These are unused for now, but will be once incremental collection is 
    activated */

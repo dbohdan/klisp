@@ -14,6 +14,7 @@
 #include "ktoken.h"
 #include "kstate.h"
 #include "kerror.h"
+#include "ktable.h"
 
 
 /*
@@ -49,6 +50,24 @@ typedef enum {
 #define push_data(kst_, st_) (ks_spush(kst_, st_))
 #define get_data(kst_) (ks_sget(kst_))
 #define pop_data(kst_) (ks_sdpop(kst_))
+
+
+/*
+** Source code tracking
+** MAYBE: add source code tracking to symbols
+*/
+TValue kget_source_info(klisp_State *K, TValue pair)
+{
+    const TValue *node = klispH_get(tv2table(K->si_table), pair);
+    return (node == &kfree)? KNIL : *node;
+}
+
+/* GC: Assumes pair and si are rooted */
+void kset_source_info(klisp_State *K, TValue pair, TValue si)
+{
+//    TValue *node = klispH_set(K, tv2table(K->si_table), pair);
+//    *node = si;
+}
 
 
 /*
@@ -175,7 +194,10 @@ TValue kread_fsm(klisp_State *K)
 		    ** in np (later it will be replace by the source info
 		    ** of the car of the list
 		    */
-		    kset_source_info(K, np, ktok_get_source_info(K));
+		    TValue si = ktok_get_source_info(K);
+		    krooted_tvs_push(K, si);
+		    kset_source_info(K, np, si);
+		    krooted_tvs_pop(K);
 
 		    /* update the shared def to point to the new list */
 		    /* NOTE: this is necessary for self referencing lists */
@@ -208,7 +230,7 @@ TValue kread_fsm(klisp_State *K)
 			pop_data(K);
 
 			obj = KNIL;
-			obj_si = kget_source_info(fp_with_old_si);
+			obj_si = kget_source_info(K, fp_with_old_si);
 			read_next_token = false;
 			break;
 		    }
@@ -393,15 +415,15 @@ TValue kread_fsm(klisp_State *K)
 		/* NOTE: the old one will be returned when list is complete */
 		/* GC: the way things are done here fp is rooted at all
 		   times */
-		TValue fp_old_si = kget_source_info(fp);
+		TValue fp_old_si = kget_source_info(K, fp);
+		krooted_tvs_push(K, fp);
+		krooted_tvs_push(K, fp_old_si);
 		kset_source_info(K, fp, obj_si);
 		kset_car_unsafe(K, fp, obj);
 		
 		/* continue reading objects of list */
 		/* save first & last pair of the (still incomplete) list */
 		pop_data(K);
-		krooted_tvs_push(K, fp);
-		krooted_tvs_push(K, fp_old_si);
 		push_data(K, kcons (K, fp, fp_old_si));
 		krooted_tvs_pop(K);
 		krooted_tvs_pop(K);
