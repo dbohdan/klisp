@@ -92,8 +92,10 @@ void kw_print_string(klisp_State *K, TValue str)
     while (i < size) {
 	/* find the longest printf-able substring to avoid calling printf
 	 for every char */
-	for (ptr = buf; i < size && *ptr != '\0' 
-		 && *ptr != '\\' && *ptr != '"'; i++, ptr++)
+	for (ptr = buf; 
+	     i < size && *ptr != '\0' &&
+		 (K->write_displayp || (*ptr != '\\' && *ptr != '"')); 
+	     i++, ptr++)
 	    ;
 
 	/* NOTE: this work even if ptr == buf (which can only happen the 
@@ -103,7 +105,8 @@ void kw_print_string(klisp_State *K, TValue str)
 	kw_printf(K, "%s", buf);
 	*ptr = ch;
 
-	while(i < size && (*ptr == '\0' || *ptr == '\\' || *ptr == '"')) {
+	while(i < size && (*ptr == '\0' || 
+        	(!K->write_displayp && (*ptr == '\\' || *ptr == '"')))) {
 	    if (*ptr == '\0')
 		kw_printf(K, "%c", '\0'); /* this may not show in the terminal */
 	    else 
