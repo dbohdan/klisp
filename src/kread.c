@@ -65,8 +65,9 @@ TValue kget_source_info(klisp_State *K, TValue pair)
 /* GC: Assumes pair and si are rooted */
 void kset_source_info(klisp_State *K, TValue pair, TValue si)
 {
-//    TValue *node = klispH_set(K, tv2table(K->si_table), pair);
-//    *node = si;
+    gcvalue(pair)->gch.kflags |= K_FLAG_HAS_SI;
+    TValue *node = klispH_set(K, tv2table(K->si_table), pair);
+    *node = si;
 }
 
 
