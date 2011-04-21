@@ -58,9 +58,13 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     #if KTRACK_SI
     /* save as source code info the info from the expression whose evaluation
        got us here */
-    krooted_tvs_push(K, new_op);
-    kset_source_info(K, new_op, kget_csi(K));
-    krooted_tvs_pop(K);
+    TValue si = kget_csi(K);
+    if (!ttisnil(si)) {
+	krooted_tvs_push(K, new_op);
+	gcvalue(new_op)->gch.kflags |= K_FLAG_HAS_SI;
+	kset_source_info(K, new_op, si);
+	krooted_tvs_pop(K);
+    }
     #endif
 
     krooted_tvs_pop(K);
@@ -122,9 +126,13 @@ void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     #if KTRACK_SI
     /* save as source code info the info from the expression whose evaluation
        got us here */
-    krooted_tvs_push(K, new_app);
-    kset_source_info(K, new_app, kget_csi(K));
-    krooted_tvs_pop(K);
+    TValue si = kget_csi(K);
+    if (!ttisnil(si)) {
+	krooted_tvs_push(K, new_app);
+	gcvalue(new_app)->gch.kflags |= K_FLAG_HAS_SI;
+	kset_source_info(K, new_app, si);
+	krooted_tvs_pop(K);
+    }
     #endif
     kapply_cc(K, new_app);
 }
@@ -162,9 +170,13 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     #if KTRACK_SI
     /* save as source code info the info from the expression whose evaluation
        got us here */
-    krooted_tvs_push(K, new_app);
-    kset_source_info(K, new_app, kget_csi(K));
-    krooted_tvs_pop(K);
+    TValue si = kget_csi(K);
+    if (!ttisnil(si)) {
+	krooted_tvs_push(K, new_app);
+	gcvalue(new_app)->gch.kflags |= K_FLAG_HAS_SI;
+	kset_source_info(K, new_app, si);
+	krooted_tvs_pop(K);
+    }
     #endif
 
     krooted_tvs_pop(K);

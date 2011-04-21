@@ -214,3 +214,5 @@ bool kstring_equalp(TValue obj1, TValue obj2)
 	return false;
     }
 }
+
+bool kstringp(TValue obj) { return ttisstring(obj); }

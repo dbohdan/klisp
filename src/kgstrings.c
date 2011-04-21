@@ -453,9 +453,3 @@ void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree,
     TValue new_sym = ksymbol_new_check_i(K, str);
     kapply_cc(K, new_sym);
 }
-
-/* Helpers */
-bool kstringp(TValue obj)
-{
-    return ttisstring(obj);
-}

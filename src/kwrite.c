@@ -186,8 +186,9 @@ void kw_set_initial_marks(klisp_State *K, TValue root)
     assert(ks_sisempty(K));
 }
 
+#if KTRACK_NAMES
 /* Assumes obj has a name */
-TValue kget_name(klisp_State *K, TValue obj)
+TValue kw_get_name(klisp_State *K, TValue obj)
 {
     const TValue *node = klispH_get(tv2table(K->name_table),
 				    obj);
@@ -195,12 +196,43 @@ TValue kget_name(klisp_State *K, TValue obj)
     return *node;
 }
 
+void kw_print_name(klisp_State *K, TValue obj)
+{
+    kw_printf(K, ": %s", ksymbol_buf(kw_get_name(K, obj)));
+}
+#endif /* KTRACK_NAMES */
+
+#if KTRACK_SI
+/* Assumes obj has a si */
+void kw_print_si(klisp_State *K, TValue obj)
+{
+    TValue si = kget_source_info(K, obj);
+    /* should be either a string or an improper list of 2 pairs,
+       with a string and 2 fixints, just check if pair */
+    klisp_assert(kstringp(si) || kpairp(si));
+    
+    kw_printf(K, " @ ");
+    /* this is a hack, would be better to change the interface of 
+       kw_print_string */
+    bool saved_displayp = K->write_displayp; 
+    K->write_displayp = true; /* avoid "s and escapes */
+    if (ttisstring(si)) {
+	kw_print_string(K, si);
+    } else {
+	TValue str = kcar(si);
+	int32_t row = ivalue(kcadr(si));
+	int32_t col = ivalue(kcddr(si));
+	kw_print_string(K, str);
+	kw_printf(K, " (row: %d, col: %d)", row, col);
+    }
+    K->write_displayp = saved_displayp;
+}
+#endif /* KTRACK_SI */
 
 /*
 ** Writes all values except strings and pairs
 */
 
-/* TODO add #if #endif for track names */
 void kwrite_simple(klisp_State *K, TValue obj)
 {
     switch(ttype(obj)) {
@@ -265,30 +297,46 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	break;
     case K_TENVIRONMENT:
 	kw_printf(K, "#[environment");
+	#if KTRACK_NAMES
 	if (khas_name(obj)) {
-	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	    kw_print_name(K, obj);
 	}
+	#endif
 	kw_printf(K, "]");
 	break;
     case K_TCONTINUATION:
 	kw_printf(K, "#[continuation");
+	#if KTRACK_NAMES
 	if (khas_name(obj)) {
-	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	    kw_print_name(K, obj);
 	}
+	#endif
 	kw_printf(K, "]");
 	break;
     case K_TOPERATIVE:
 	kw_printf(K, "#[operative");
+	#if KTRACK_NAMES
 	if (khas_name(obj)) {
-	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	    kw_print_name(K, obj);
 	}
+	#endif
+	#if KTRACK_SI
+	if (khas_si(obj))
+	    kw_print_si(K, obj);
+	#endif
 	kw_printf(K, "]");
 	break;
     case K_TAPPLICATIVE:
 	kw_printf(K, "#[applicative");
+	#if KTRACK_NAMES
 	if (khas_name(obj)) {
-	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	    kw_print_name(K, obj);
 	}
+	#endif
+	#if KTRACK_SI
+	if (khas_si(obj))
+	    kw_print_si(K, obj);
+	#endif
 	kw_printf(K, "]");
 	break;
     case K_TENCAPSULATION:
@@ -302,9 +350,11 @@ void kwrite_simple(klisp_State *K, TValue obj)
     case K_TPORT:
 	/* TODO try to get the name/ I/O direction / filename */
 	kw_printf(K, "#[%s port", kport_is_input(obj)? "input" : "output");
+	#if KTRACK_NAMES
 	if (khas_name(obj)) {
-	    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+	    kw_print_name(K, obj);
 	}
+	#endif
 	kw_printf(K, "]");
 	break;
     default:
