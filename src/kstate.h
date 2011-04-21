@@ -62,6 +62,7 @@ struct klisp_State {
     TValue next_value;     /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
     TValue *next_xparams; 
+    TValue next_si; /* The object with the source code info for this call */
 
     TValue eval_op; /* the operative for evaluation */
     TValue list_app; /* the applicative for list evaluation */
@@ -241,7 +242,6 @@ inline bool ks_sisempty(klisp_State *K)
 /*
 ** Tokenizer char buffer functions
 */
-
 void ks_tbshrink(klisp_State *K, int32_t new_top);
 void ks_tbgrow(klisp_State *K, int32_t new_top);
 
@@ -350,13 +350,29 @@ typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree,
 #define kstate_car(p_) (tv2pair(p_)->car)
 #define kstate_cdr(p_) (tv2pair(p_)->cdr)
 
+
+/*
+** Source code tracking
+** MAYBE: add source code tracking to symbols
+*/
+#if KTRACK_SI
+TValue kget_source_info(klisp_State *K, TValue pair);
+void kset_source_info(klisp_State *K, TValue pair, TValue si);
+TValue kget_csi(klisp_State *K);
+#endif
+
+#define kget_csi_obj(K_) (K_->next_si)
+
 /*
 ** Functions to manipulate the current continuation and calling 
 ** operatives
 */
 inline void klispS_apply_cc(klisp_State *K, TValue val)
 {
+    /* TODO write barriers */
+
     /* various assert to check the freeing of gc protection methods */
+    /* TODO add marks assertions */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
     klisp_assert(ttispair(K->dummy_pair1) && 
@@ -374,6 +390,7 @@ inline void klispS_apply_cc(klisp_State *K, TValue val)
     K->next_env = KNIL;
     K->next_xparams = cont->extra;
     K->curr_cont = cont->parent;
+    K->next_si = K->next_obj;
 }
 
 #define kapply_cc(K_, val_) klispS_apply_cc((K_), (val_)); return
@@ -392,9 +409,11 @@ inline void klispS_set_cc(klisp_State *K, TValue new_cont)
 
 #define kset_cc(K_, c_) (klispS_set_cc(K_, c_))
 
-inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree, 
-			     TValue env)
+inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
+				TValue env, TValue si)
 {
+    /* TODO write barriers */
+    
     /* various assert to check the freeing of gc protection methods */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
@@ -405,21 +424,26 @@ inline void klispS_tail_call(klisp_State *K, TValue top, TValue ptree,
     klisp_assert(ttispair(K->dummy_pair3) && 
 		 ttisnil(kstate_cdr(K->dummy_pair3)));
 
-    K->next_obj = top; /* save it from GC */
+    K->next_obj = top;
     Operative *op = tv2op(top);
     K->next_func = op->fn;
     K->next_value = ptree;
     /* NOTE: this is what differentiates a tail call from a return */
     K->next_env = env;
     K->next_xparams = op->extra;
+    K->next_si = si;
 }
 
-#define ktail_call(K_, op_, p_, e_) \
-    { klispS_tail_call((K_), (op_), (p_), (e_)); return; }
+#define ktail_call_si(K_, op_, p_, e_, si_)				\
+    { klispS_tail_call_si((K_), (op_), (p_), (e_), (si_)); return; }
 
-#define ktail_eval(K_, p_, e_) \
-    { klisp_State *K__ = (K_); \
-	klispS_tail_call(K__, K__->eval_op, (p_), (e_)); return; }
+/* if no source info is needed */
+#define ktail_call(K_, op_, p_, e_)  (ktail_call_si(K_, op_, p_, e_, KNIL))
+
+#define ktail_eval(K_, p_, e_)						\
+    { klisp_State *K__ = (K_);						\
+	TValue p__ = (p_);						\
+    klispS_tail_call_si(K__, K__->eval_op, p__, (e_), p__); return; }
 
 /* helper for continuation->applicative & kcall_cont */
 void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

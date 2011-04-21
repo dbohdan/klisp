@@ -61,7 +61,7 @@ void eval_cfn(klisp_State *K, TValue *xparams, TValue obj)
 	kset_cc(K, K->root_cont);
 	kapply_cc(K, KINERT);
     } else {
-	ktail_call(K, K->eval_op, obj, denv);
+	ktail_eval(K, obj, denv);
     }
 }
 

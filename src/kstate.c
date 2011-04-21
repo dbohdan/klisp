@@ -68,6 +68,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->next_value = KINERT;
     K->next_env = KNIL;
     K->next_xparams = NULL;
+    K->next_si = KNIL;
 
     /* these will be properly initialized later */
     K->eval_op = KINERT;
@@ -446,6 +447,7 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj)
 					     2, kcdr(ls), dst_cont);
 	kset_cc(K, new_cont);
 	krooted_tvs_pop(K);
+	/* XXX: what to pass as si? */
 	ktail_call(K, op, ptree, denv);
     }
 }
@@ -537,3 +539,30 @@ void klisp_close (klisp_State *K)
     /* NOTE: this needs to be done "by hand" */
     (*(K->frealloc))(K->ud, K, state_size(), 0);
 }
+
+#if KTRACK_SI
+/*
+** Source code tracking
+** MAYBE: add source code tracking to symbols
+*/
+TValue kget_source_info(klisp_State *K, TValue obj)
+{
+    const TValue *node = klispH_get(tv2table(K->si_table), obj);
+    return (node == &kfree)? KNIL : *node;
+}
+
+/* GC: Assumes obj and si are rooted */
+void kset_source_info(klisp_State *K, TValue obj, TValue si)
+{
+    klisp_assert(kcan_have_si(obj));
+    gcvalue(obj)->gch.kflags |= K_FLAG_HAS_SI;
+    TValue *node = klispH_set(K, tv2table(K->si_table), obj);
+    *node = si;
+}
+
+TValue kget_csi(klisp_State *K)
+{
+    return (kcan_have_si(K->next_si))? kget_source_info(K, K->next_si) : KNIL;
+}
+
+#endif /* KTRACK_SI */

@@ -94,9 +94,11 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
     /* 
     ** xparams[0]: operand list
     ** xparams[1]: dynamic environment
+    ** xparams[2]: original_obj_with_si
     */
     TValue operands = xparams[0];
     TValue env = xparams[1];
+    TValue si = xparams[2];
 
     switch(ttype(obj)) {
     case K_TAPPLICATIVE: {
@@ -105,19 +107,19 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 	    /* NOTE: the while is needed because it may be multiply wrapped */
 	    while(ttisapplicative(obj))
 		obj = tv2app(obj)->underlying;
-	    ktail_call(K, obj, operands, env);
+	    ktail_call_si(K, obj, operands, env, si);
 	} else if (ttispair(operands)) {
 	    /* make a copy of the operands (for storing arguments) */
 	    TValue tail;
 	    TValue arg_ls = make_arg_ls(K, operands, &tail);
 	    krooted_tvs_push(K, arg_ls);
-	    TValue comb_cont = kmake_continuation(K, kget_cc(K), &combine_cfn, 
-						  2, arg_ls, env);
+	    TValue comb_cont = kmake_continuation(K, kget_cc(K), combine_cfn, 
+						  3, arg_ls, env, si);
 
 	    krooted_tvs_pop(K); /* already in cont */
 	    krooted_tvs_push(K, comb_cont);
 	    TValue els_cont = 
-		kmake_continuation(K, comb_cont, &eval_ls_cfn, 4, arg_ls, env, 
+		kmake_continuation(K, comb_cont, eval_ls_cfn, 4, arg_ls, env, 
 				   tail, tv2app(obj)->underlying);
 	    kset_cc(K, els_cont);
 	    krooted_tvs_pop(K);
@@ -128,7 +130,7 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 	}
     }
     case K_TOPERATIVE:
-	ktail_call(K, obj, operands, env);
+	ktail_call_si(K, obj, operands, env, si);
     default:
 	klispE_throw(K, "Not a combiner in combiner position");
 	return;
@@ -142,8 +144,8 @@ void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
 
     switch(ttype(obj)) {
     case K_TPAIR: {
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), &combine_cfn, 2, kcdr(obj), env);
+	TValue new_cont = kmake_continuation(K, kget_cc(K), combine_cfn, 3, 
+					     kcdr(obj), env, obj);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(obj), env);
 	break;

@@ -22,6 +22,8 @@
 #define KTRACK_MARKS true
 */
 
+/* TODO use this defines */
+#define KTRACK_NAMES true
 #define KTRACK_SI true
 
 /* These are unused for now, but will be once incremental collection is 

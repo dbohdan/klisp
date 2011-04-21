@@ -53,25 +53,6 @@ typedef enum {
 
 
 /*
-** Source code tracking
-** MAYBE: add source code tracking to symbols
-*/
-TValue kget_source_info(klisp_State *K, TValue pair)
-{
-    const TValue *node = klispH_get(tv2table(K->si_table), pair);
-    return (node == &kfree)? KNIL : *node;
-}
-
-/* GC: Assumes pair and si are rooted */
-void kset_source_info(klisp_State *K, TValue pair, TValue si)
-{
-    gcvalue(pair)->gch.kflags |= K_FLAG_HAS_SI;
-    TValue *node = klispH_set(K, tv2table(K->si_table), pair);
-    *node = si;
-}
-
-
-/*
 ** Error management
 */
 void kread_error(klisp_State *K, char *str)
@@ -197,9 +178,10 @@ TValue kread_fsm(klisp_State *K)
 		    */
 		    TValue si = ktok_get_source_info(K);
 		    krooted_tvs_push(K, si);
+		    #if KTRACK_SI
 		    kset_source_info(K, np, si);
+		    #endif
 		    krooted_tvs_pop(K);
-
 		    /* update the shared def to point to the new list */
 		    /* NOTE: this is necessary for self referencing lists */
 		    /* NOTE: the shared def was already checked for errors */
@@ -231,7 +213,11 @@ TValue kread_fsm(klisp_State *K)
 			pop_data(K);
 
 			obj = KNIL;
+                        #if KTRACK_SI
 			obj_si = kget_source_info(K, fp_with_old_si);
+			#else
+			UNUSED(fp_with_old_si);
+		        #endif
 			read_next_token = false;
 			break;
 		    }
@@ -416,10 +402,16 @@ TValue kread_fsm(klisp_State *K)
 		/* NOTE: the old one will be returned when list is complete */
 		/* GC: the way things are done here fp is rooted at all
 		   times */
+                #if KTRACK_SI
 		TValue fp_old_si = kget_source_info(K, fp);
+		#else
+		TValue fp_old_si = KNIL;
+		#endif
 		krooted_tvs_push(K, fp);
 		krooted_tvs_push(K, fp_old_si);
+                #if KTRACK_SI
 		kset_source_info(K, fp, obj_si);
+		#endif
 		kset_car_unsafe(K, fp, obj);
 		
 		/* continue reading objects of list */
@@ -441,7 +433,9 @@ TValue kread_fsm(klisp_State *K)
 		/* GC: np is rooted by push_data */
 		TValue np = kcons_g(K, K->read_mconsp, obj, KNIL);
 		krooted_tvs_push(K, np);
+		#if KTRACK_SI
 		kset_source_info(K, np, obj_si);
+		#endif
 		kset_cdr_unsafe(K, get_data(K), np);
 		/* replace last pair of the (still incomplete) read next obj */
 		pop_data(K);

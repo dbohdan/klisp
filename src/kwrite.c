@@ -194,9 +194,13 @@ TValue kget_name(klisp_State *K, TValue obj)
     klisp_assert(node != &kfree);
     return *node;
 }
+
+
 /*
 ** Writes all values except strings and pairs
 */
+
+/* TODO add #if #endif for track names */
 void kwrite_simple(klisp_State *K, TValue obj)
 {
     switch(ttype(obj)) {

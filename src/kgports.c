@@ -81,6 +81,7 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
     krooted_tvs_pop(K);
 
     /* even if we call with denv, do_bind calls comb in an empty env */
+    /* XXX: what to pass for source info?? */
     ktail_call(K, op, args, denv);
 }
 

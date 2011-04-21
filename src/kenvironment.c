@@ -109,6 +109,7 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 #define kenv_parents(kst_, env_) (tv2env(env_)->parents)
 #define kenv_bindings(kst_, env_) (tv2env(env_)->bindings)
 
+#if KTRACK_NAMES
 /* GC: Assumes that obj & sym are rooted. */
 void try_set_name(klisp_State *K, TValue obj, TValue sym)
 {
@@ -122,6 +123,7 @@ void try_set_name(klisp_State *K, TValue obj, TValue sym)
 	*node = sym;
     }
 }
+#endif
 
 /* GC: Assumes that env, sym & val are rooted. */
 void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
@@ -129,8 +131,10 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
     klisp_assert(ttisenvironment(env));
     klisp_assert(ttissymbol(sym));
 
+#if KTRACK_NAMES
     try_set_name(K, val, sym);
-    
+#endif
+
     TValue bindings = kenv_bindings(K, env);
     if (ttistable(bindings)) {
 	TValue *cell = klispH_setsym(K, tv2table(bindings), tv2sym(sym));

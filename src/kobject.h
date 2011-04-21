@@ -646,6 +646,8 @@ int32_t kmark_count;
 
 #define K_FLAG_HAS_SI 0x20
 
+/* for now only used in assertions to avoid problems */
+#define kcan_have_si(o_) (iscollectable(o_))
 #define khas_si(o_) ((tv_get_kflags(o_)) & K_FLAG_HAS_SI)
 
 #define K_FLAG_IMMUTABLE 0x10
