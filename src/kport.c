@@ -45,7 +45,8 @@ TValue kmake_std_port(klisp_State *K, TValue filename, bool writep,
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_port, K_TPORT, 
-	writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT);
+		K_FLAG_CAN_HAVE_NAME | 
+		(writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT));
 
     /* port specific fields */
     new_port->filename = filename;

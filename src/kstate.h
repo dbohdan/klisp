@@ -47,6 +47,7 @@ typedef struct stringtable {
    markroot in kgc.c!! */
 struct klisp_State {
     stringtable strt;  /* hash table for immutable strings & symbols */
+    TValue name_table; /* hash tables for naming objects */
     TValue curr_cont;
 
     /*

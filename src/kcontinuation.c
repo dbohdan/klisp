@@ -21,7 +21,9 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_Cfunc fn,
 	klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
 
     /* header + gc_fields */
-    klispC_link(K, (GCObject *) new_cont, K_TCONTINUATION, 0);
+    klispC_link(K, (GCObject *) new_cont, K_TCONTINUATION, 
+		K_FLAG_CAN_HAVE_NAME);
+
 
     /* continuation specific fields */
     new_cont->mark = KFALSE;    

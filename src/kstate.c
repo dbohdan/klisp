@@ -33,6 +33,7 @@
 #include "ksymbol.h"
 #include "kstring.h"
 #include "kport.h"
+#include "ktable.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
 
@@ -130,6 +131,12 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->strt.nuse = 0;
     K->strt.hash = NULL;
     klispS_resize(K, MINSTRTABSIZE); 
+
+    /* initialize name table */
+    /* has to have weak keys, otherwise every named object would
+       be fixed! */
+    K->name_table = klispH_new(K, 0, MINNAMETABSIZE, 
+	K_FLAG_WEAK_KEYS);
 
     /* Empty string */
     /* MAYBE: fix it so we can remove empty_string from roots */

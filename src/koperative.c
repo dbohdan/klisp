@@ -21,7 +21,8 @@ TValue kmake_operative(klisp_State *K, klisp_Ofunc fn, int32_t xcount, ...)
 	klispM_malloc(K, sizeof(Operative) + sizeof(TValue) * xcount);
 
     /* header + gc_fields */
-    klispC_link(K, (GCObject *) new_op, K_TOPERATIVE, 0);
+    klispC_link(K, (GCObject *) new_op, K_TOPERATIVE, 
+		K_FLAG_CAN_HAVE_NAME);
 
     /* operative specific fields */
     new_op->fn = fn;

@@ -630,6 +630,26 @@ int32_t kmark_count;
 #define gch_get_kflags(o_) (obj2gch(o_)->kflags)
 #define tv_get_kflags(o_) (gch_get_kflags(tv2gch(o_)))
 
+/* General KFlags */
+/* TODO use bittricks from kgc.h */
+/* MAYBE make flags 16 bits, make gc flags 8 bits */
+/* for now only used in pairs and strings */
+
+#define K_FLAG_CAN_HAVE_NAME 0x80
+#define K_FLAG_HAS_NAME 0x40
+
+#define kcan_have_name(o_) ((tv_get_kflags(o_)) & K_FLAG_CAN_HAVE_NAME)
+#define khas_name(o_) ((tv_get_kflags(o_)) & K_FLAG_HAS_NAME)
+
+#define K_FLAG_HAS_SI 0x20
+
+#define khas_si(o_) ((tv_get_kflags(o_)) & K_FLAG_HAS_SI)
+
+#define K_FLAG_IMMUTABLE 0x10
+
+#define kis_mutable(o_) ((tv_get_kflags(o_) & K_FLAG_IMMUTABLE) == 0)
+#define kis_immutable(o_) (!kis_mutable(o_))
+
 /* KFlags for symbols */
 /* has external representation (identifiers) */
 #define K_FLAG_EXT_REP 0x01
@@ -652,11 +672,6 @@ int32_t kmark_count;
 #define kis_dyn_cont(c_) ((tv_get_kflags(c_) & K_FLAG_DYNAMIC) != 0)
 #define kis_bool_check_cont(c_) ((tv_get_kflags(c_) & K_FLAG_BOOL_CHECK) != 0)
 
-/* for now only used in pairs and strings */
-#define K_FLAG_IMMUTABLE 0x01
-#define kis_mutable(o_) ((tv_get_kflags(o_) & K_FLAG_IMMUTABLE) == 0)
-#define kis_immutable(o_) (!kis_mutable(o_))
-
 #define K_FLAG_OUTPUT_PORT 0x01
 #define K_FLAG_INPUT_PORT 0x02
 #define K_FLAG_CLOSED_PORT 0x04
@@ -677,8 +692,6 @@ int32_t kmark_count;
     ((tv_get_kflags(o_) & K_FLAG_WEAK_KEYS) != 0)
 #define ktable_has_weak_values(o_) \
     ((tv_get_kflags(o_) & K_FLAG_WEAK_VALUES) != 0)
-
-
 
 /* can't be inline because we also use pointers to them,
  (at least gcc doesn't bother to create them and the linker fails) */

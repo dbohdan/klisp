@@ -31,7 +31,8 @@ TValue kmake_environment(klisp_State *K, TValue parents)
     Environment *new_env = klispM_new(K, Environment);
 
     /* header + gc_fields */
-    klispC_link(K, (GCObject *) new_env, K_TENVIRONMENT, 0);
+    klispC_link(K, (GCObject *) new_env, K_TENVIRONMENT, 
+		K_FLAG_CAN_HAVE_NAME);
 
     /* environment specific fields */
     new_env->mark = KFALSE;    

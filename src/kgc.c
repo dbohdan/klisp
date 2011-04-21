@@ -530,6 +530,7 @@ static void markroot (klisp_State *K) {
 
     /* TEMP: this is quite awfull, think of other way to do this */
     /* MAYBE: some of these could be FIXED */
+    markvalue(K, K->name_table);
     markvalue(K, K->curr_cont);
     markvalue(K, K->next_obj);
     markvalue(K, K->next_value);
