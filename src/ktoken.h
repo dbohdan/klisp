@@ -17,11 +17,18 @@
 */
 void ktok_init(klisp_State *K);
 TValue ktok_read_token(klisp_State *K);
-void ktok_reset_source_info(klisp_State *K);
+
+/* return a fresh ilist of the form (filename line . col) */
 TValue ktok_get_source_info(klisp_State *K);
+void ktok_set_source_info(klisp_State *K, TValue filename, int32_t line,
+    int32_t col);
 
 /* This is needed here to allow cleanup of shared dict from tokenizer */
 void clear_shared_dict(klisp_State *K);
+
+/* This is used in for peek-char & read-char */
+int ktok_getc(klisp_State *K);
+int ktok_peekc(klisp_State *K);
 
 /* This is needed for string->symbol to check if a symbol has external
    representation as an identifier */

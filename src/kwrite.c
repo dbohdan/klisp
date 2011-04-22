@@ -18,6 +18,7 @@
 #include "kstate.h"
 #include "kerror.h"
 #include "ktable.h"
+#include "kport.h"
 
 /*
 ** Stack for the write FSM
@@ -29,11 +30,24 @@
 #define data_is_empty(ks_) (ks_sisempty(ks_))
 
 /* macro for printing */
-#define kw_printf(ks_, ...) fprintf((ks_)->curr_out, __VA_ARGS__)
-#define kw_flush(ks_) fflush((ks_)->curr_out)
+#define kw_printf(ks_, ...)						\
+    if (fprintf((ks_)->curr_out, __VA_ARGS__) < 0) {			\
+	clearerr((ks_)->curr_out); /* clear error for next time */	\
+	kwrite_error(ks_, "error writing");				\
+    }
+    
+#define kw_flush(ks_)							\
+    if (fflush((ks_)->curr_out) == EOF) {				\
+	clearerr((ks_)->curr_out); /* clear error for next time */	\
+	kwrite_error(ks_, "error writing");				\
+    }
 
 void kwrite_error(klisp_State *K, char *msg)
 {
+    /* clear up before throwing */
+    ks_tbclear(K);
+    ks_sclear(K);
+
     klispE_throw(K, msg);
 }
 
@@ -107,10 +121,11 @@ void kw_print_string(klisp_State *K, TValue str)
 
 	while(i < size && (*ptr == '\0' || 
         	(!K->write_displayp && (*ptr == '\\' || *ptr == '"')))) {
-	    if (*ptr == '\0')
+	    if (*ptr == '\0') {
 		kw_printf(K, "%c", '\0'); /* this may not show in the terminal */
-	    else 
+	    } else {
 		kw_printf(K, "\\%c", *ptr);
+	    }
 	    i++;
 	    ptr++;
 	}
@@ -222,7 +237,7 @@ void kw_print_si(klisp_State *K, TValue obj)
     int32_t row = ivalue(kcadr(si));
     int32_t col = ivalue(kcddr(si));
     kw_print_string(K, str);
-    kw_printf(K, " (row: %d, col: %d)", row, col);
+    kw_printf(K, " (line: %d, col: %d)", row, col);
 
     K->write_displayp = saved_displayp;
 }
@@ -472,4 +487,36 @@ void kwrite_newline(klisp_State *K)
 {
     kw_printf(K, "\n");
     kw_flush(K);
+}
+
+/*
+** Interface
+*/
+void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj, 
+			    bool displayp)
+{
+    K->curr_port = port;
+    K->curr_out = kport_file(port);
+    K->write_displayp = displayp;
+    kwrite(K, obj);
+}
+
+void kwrite_newline_to_port(klisp_State *K, TValue port)
+{
+    kwrite_char_to_port(K, port, ch2tv('\n'));
+}
+
+void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
+{
+    K->curr_port = port;
+    K->curr_out = kport_file(port);
+    int res = fputc(chvalue(ch), K->curr_out);
+    /* implicit flush, MAYBE add flush call */
+    if (res != EOF)
+	res = fflush(K->curr_out);
+
+    if (res == EOF) {
+	clearerr(K->curr_out); /* clear error for next time */
+	kwrite_error(K, "error writing char");
+    }
 }

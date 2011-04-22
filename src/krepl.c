@@ -17,6 +17,8 @@
 #include "kstring.h"
 #include "krepl.h"
 #include "ksymbol.h"
+#include "kport.h"
+#include "kpair.h"
 
 /* the exit continuation, it exits the loop */
 void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
@@ -38,12 +40,11 @@ void read_fn(klisp_State *K, TValue *xparams, TValue obj)
     /* show prompt */
     fprintf(stdout, "klisp> ");
 
-    /* TEMP: for now set this by hand */
-    K->curr_in = stdin;
-    ktok_reset_source_info(K);
-    K->read_mconsp = true; /* read mutable pairs */
+    TValue port = kcdr(K->kd_in_port_key);
+    klisp_assert(kport_file(port) == stdin);
 
-    obj = kread(K);
+    kport_reset_source_info(port);
+    obj = kread_from_port(K, port, true); /* read mutable pairs */
     kapply_cc(K, obj);
 }
 
@@ -92,11 +93,13 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
     ** xparams[0]: dynamic environment
     */
 
-    /* TEMP: for now set this by hand */
-    K->curr_out = stdout;
-    K->write_displayp = false;
-    kwrite(K, obj);
-    kwrite_newline(K);
+    TValue port = kcdr(K->kd_out_port_key);
+    klisp_assert(kport_file(port) == stdout);
+
+    /* false: quote strings, escape chars */
+    kwrite_display_to_port(K, port, obj, false);
+    kwrite_newline_to_port(K, port);
+
     TValue denv = xparams[0];
     create_loop(K, denv);
 } 

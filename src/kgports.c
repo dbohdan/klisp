@@ -156,13 +156,8 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
 
-    /* TEMP: for now set this by hand */
-    K->curr_in = kport_file(port);
-    ktok_reset_source_info(K); /* this should be saved in the port
-				  and restored before the call to 
-				  read and saved after it */
-    K->read_mconsp = true; /* read mutable pairs */
-    TValue obj = kread(K); /* this may throw an error, that's ok */
+    /* this may throw an error, that's ok */
+    TValue obj = kread_from_port(K, port, true); /* read mutable pairs */ 
     kapply_cc(K, obj);
 }
 
@@ -185,12 +180,9 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	klispE_throw(K, "write: the port is already closed");
 	return;
     }
-    
-    /* TEMP: for now set this by hand */
-    K->curr_out = kport_file(port);
-    K->write_displayp = false;
 
-    kwrite(K, obj);
+    /* false: quote strings, escape chars */
+    kwrite_display_to_port(K, port, obj, false); 
     kapply_cc(K, KINERT);
 }
 
@@ -215,10 +207,7 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
     
-    /* TEMP: for now set this by hand */
-    K->curr_out = kport_file(port);
-
-    kwrite_newline(K);
+    kwrite_newline_to_port(K, port);
     kapply_cc(K, KINERT);
 }
 
@@ -242,15 +231,8 @@ void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
     
-    /* REFACTOR: move this to kwrite, update source info? */
-    FILE *f = K->curr_out = kport_file(port);
-    if (fputc(chvalue(ch), f) == EOF) {
-	/* clear error marker to allow retries later */
-	clearerr(f);
-	klispE_throw(K, "write-char: writing error");
-    } else {
-	kapply_cc(K, KINERT);
-    }
+    kwrite_char_to_port(K, port, ch);
+    kapply_cc(K, KINERT);
 }
 
 /* Helper for read-char and peek-char */
@@ -278,33 +260,7 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
 	return;
     }
 
-    /* TODO update source info on the port */
-    FILE *f = K->curr_in = kport_file(port);
-    int ch = fgetc(f);
-    TValue obj;
-    if (ch == EOF) {
-	if (ferror(f) != 0) {
-	    /* clear error marker to allow retries later */
-	    clearerr(f);
-	    klispE_throw_extra(K, name, ": reading error");
-	    return;
-	} else { /* if (feof(f) != 0) */
-	    /* let the eof marker set */
-	    obj = KEOF;
-	}
-    } else {
-	obj = ch2tv((char) ch);
-	/* check to see if this was a peek-char call */
-	if (ret_charp) {
-	    if (ungetc(ch, f) == EOF)  {
-		/* shouldn't happen, but better be safe than sorry */
-		/* clear error marker to allow retries later */
-		clearerr(f);
-		klispE_throw_extra(K, name, ": error ungetting char");
-		return;
-	    }
-	}
-    }
+    TValue obj = kread_peek_char_from_port(K, port, ret_charp);
     kapply_cc(K, obj);
 }
 
@@ -378,18 +334,13 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
 /* GC: assume port is rooted */
 TValue read_all_expr(klisp_State *K, TValue port)
 {
-    /* TEMP: for now set this by hand */
-    K->curr_in = kport_file(port);
-    ktok_reset_source_info(K);
-    K->read_mconsp = false; /* read immutable pairs */
-
     /* GC: root dummy and obj */
     TValue tail = kget_dummy1(K);
     TValue obj = KINERT;
     krooted_vars_push(K, &obj);
 
     while(true) {
-	obj = kread(K);
+	obj = kread_from_port(K, port, false); /* read immutable pairs */
 	if (ttiseof(obj)) {
 	    krooted_vars_pop(K);
 	    return kcutoff_dummy1(K);
@@ -580,10 +531,7 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
     
-    /* TEMP: for now set this by hand */
-    K->curr_out = kport_file(port);
-    K->write_displayp = true;
-
-    kwrite(K, obj);
+    /* true: don't quote strings, don't escape chars */
+    kwrite_display_to_port(K, port, obj, true); 
     kapply_cc(K, KINERT);
 }

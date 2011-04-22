@@ -82,10 +82,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ud = ud;
 
     /* current input and output */
-    K->curr_in = stdin;
-    K->curr_out = stdout;
-    K->filename_in = "*STDIN*";
-    K->filename_out = "*STDOUT*";
+    K->curr_in = NULL; /* set on each call to read */
+    K->curr_out = NULL; /* set on each call to write */
+    K->curr_port = KINERT; /* set on each call to read/write */
 
     /* input / output for dynamic keys */
     /* these are init later */
@@ -162,16 +161,19 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* TEMP: For now just hardcode it to 8 spaces tab-stop */
     K->ktok_source_info.tab_width = 8;
-    K->ktok_source_info.filename = "*STDIN*";
+    /* all three are set on each call to read */
+    K->ktok_source_info.filename = KINERT; 
+    K->ktok_source_info.line = 1; 
+    K->ktok_source_info.col = 0;
+
     ktok_init(K);
-    ktok_reset_source_info(K);
 
     /* initialize reader */
     K->shared_dict = KNIL;
-    K->read_mconsp = false; /* should be set before calling read */
+    K->read_mconsp = false; /* set on each call to read */
 
     /* initialize writer */
-    K->write_displayp = false; /* should be set before calling write */
+    K->write_displayp = false; /* set on each call to write */
 
     /* initialize temp stack */
     K->ssize = KS_ISSIZE;
@@ -180,9 +182,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* the dynamic ports and the keys for the dynamic ports */
     TValue in_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDIN*"),
-				    false, KNIL, KNIL, stdin);
+				    false, stdin);
     TValue out_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDOUT*"),
-				     true, KNIL, KNIL, stdout);
+				     true, stdout);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
 

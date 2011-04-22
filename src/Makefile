@@ -44,7 +44,7 @@ klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
 	kapplicative.h koperative.h keval.h krepl.h kground.h
 kobject.o: kobject.c kobject.h klimits.h klispconf.h
 ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
-	kerror.h klisp.h kinteger.h
+	kerror.h klisp.h kinteger.h kport.h
 kinteger.o: kinteger.c kinteger.h kobject.h kstate.h kmem.h klisp.h imath.h \
 	kgc.h
 kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h klisp.h kgc.h
@@ -82,7 +82,7 @@ ktable.o: ktable.c ktable.h kobject.h kstate.h kmem.h klisp.h kgc.h \
 keval.o: keval.c keval.h kcontinuation.h kenvironment.h kstate.h kobject.h \
 	kpair.h kerror.h klisp.h klispconf.h
 krepl.o: krepl.c krepl.h kcontinuation.h kstate.h kobject.h keval.h klisp.h \
-	kread.h kwrite.h kenvironment.h ksymbol.h
+	kread.h kwrite.h kenvironment.h ksymbol.h kport.h kpair.h
 kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kapplicative.h koperative.h ksymbol.h kerror.h kghelpers.h \
 	kgbooleans.h kgeqp.h kgequalp.h kgsymbols.h kgpairs_lists.h \

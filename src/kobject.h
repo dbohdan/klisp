@@ -390,6 +390,9 @@ typedef struct __attribute__ ((__packed__)) {
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue filename;
+    /* TEMP: for now source code info is in fixints */
+    int32_t row;
+    int32_t col;
     FILE *file;
 } Port;
 

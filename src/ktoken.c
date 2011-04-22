@@ -40,6 +40,7 @@
 #include "kstring.h"
 #include "ksymbol.h"
 #include "kerror.h"
+#include "kport.h"
 
 /*
 ** Char sets for fast ASCII char classification
@@ -123,8 +124,36 @@ void ktok_init(klisp_State *K)
 }
 
 /*
+** Error management
+*/
+
+void clear_shared_dict(klisp_State *K)
+{
+    K->shared_dict = KNIL;
+}
+
+void ktok_error(klisp_State *K, char *str)
+{
+    /* clear up before throwing */
+    ks_tbclear(K);
+    ks_sclear(K);
+    clear_shared_dict(K);
+
+    krooted_tvs_clear(K);
+    krooted_vars_clear(K);
+
+    /* save the source code info on the port anyways */
+    kport_update_source_info(K->curr_port, K->ktok_source_info.line,
+			     K->ktok_source_info.col);
+
+    klispE_throw(K, str);
+}
+
+/*
 ** Underlying stream interface & source code location tracking
 */
+
+/* TODO check for error if getc returns EOF */
 int ktok_getc(klisp_State *K) {
     /* WORKAROUND: for stdin line buffering & reading of EOF */
     /* Is this really necessary?? double check */
@@ -134,8 +163,16 @@ int ktok_getc(klisp_State *K) {
 	int chi = getc(K->curr_in);
 	if (chi == EOF) {
 	    /* NOTE: eof doesn't change source code location info */
-	    K->ktok_seen_eof = true;
-	    return EOF;
+	    if (ferror(K->curr_in) != 0) {
+		/* clear error marker to allow retries later */
+		clearerr(K->curr_in);
+		ktok_error(K, "reading error");
+		return 0;
+	    } else { /* if (feof(K->curr_in) != 0) */
+		/* let the eof marker set */
+		K->ktok_seen_eof = true;
+		return EOF;
+	    }
 	}
 	
 	/* track source code location before returning the char */
@@ -170,13 +207,6 @@ int ktok_peekc(klisp_State *K) {
     }
 }
 
-void ktok_reset_source_info(klisp_State *K)
-{
-    /* line is 1-base and col is 0-based */
-    K->ktok_source_info.line = 1;
-    K->ktok_source_info.col = 0;
-}
-
 void ktok_save_source_info(klisp_State *K)
 {
     K->ktok_source_info.saved_filename = K->ktok_source_info.filename;
@@ -186,40 +216,22 @@ void ktok_save_source_info(klisp_State *K)
 
 TValue ktok_get_source_info(klisp_State *K)
 {
-    /* NOTE: the filename doesn't contains embedded '\0's */
-    TValue filename_str = 
-	kstring_new_b_imm(K, K->ktok_source_info.saved_filename);
-    krooted_tvs_push(K, filename_str);
     /* TEMP: for now, lines and column names are fixints */
-    TValue res =  kcons(K, i2tv(K->ktok_source_info.saved_line),
+    TValue pos = kcons(K, i2tv(K->ktok_source_info.saved_line),
 			i2tv(K->ktok_source_info.saved_col));
-    krooted_tvs_push(K, res);
-    res = kcons(K, filename_str, res);
-    krooted_tvs_pop(K);
+    krooted_tvs_push(K, pos);
+    /* the filename is rooted in the port */
+    TValue res = kcons(K, K->ktok_source_info.filename, pos);
     krooted_tvs_pop(K);
     return res;
 }
 
-/*
-** Error management
-*/
-
-void clear_shared_dict(klisp_State *K)
+void ktok_set_source_info(klisp_State *K, TValue filename, int32_t line,
+    int32_t col)
 {
-    K->shared_dict = KNIL;
-}
-
-void ktok_error(klisp_State *K, char *str)
-{
-    /* clear up before throwing */
-    ks_tbclear(K);
-    ks_sclear(K);
-    clear_shared_dict(K);
-
-    krooted_tvs_clear(K);
-    krooted_vars_clear(K);
-
-    klispE_throw(K, str);
+    K->ktok_source_info.filename = filename;
+    K->ktok_source_info.line = line;
+    K->ktok_source_info.col = col;
 }
 
 

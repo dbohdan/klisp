@@ -30,7 +30,7 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep)
 	klispE_throw(K, "Create port: could't open file");
 	return KINERT;
     } else {
-	return kmake_std_port(K, filename, writep, KNIL, KNIL, f);
+	return kmake_std_port(K, filename, writep, f);
     }
 }
 
@@ -39,7 +39,7 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep)
 
 /* GC: Assumes filename, name & si are rooted */
 TValue kmake_std_port(klisp_State *K, TValue filename, bool writep, 
-		      TValue name, TValue si, FILE *file)
+		      FILE *file)
 {
     Port *new_port = klispM_new(K, Port);
 
@@ -51,8 +51,12 @@ TValue kmake_std_port(klisp_State *K, TValue filename, bool writep,
     /* port specific fields */
     new_port->filename = filename;
     new_port->file = file;
+    TValue tv_port = gc2port(new_port);
+    /* line is 1-based and col is 0-based */
+    kport_line(tv_port) = 1;
+    kport_col(tv_port) = 0;
 
-    return gc2port(new_port);
+    return tv_port;
 }
 
 /* if the port is already closed do nothing */
@@ -69,4 +73,17 @@ void kclose_port(klisp_State *K, TValue port)
     }
 
     return;
+}
+
+void kport_reset_source_info(TValue port)
+{
+    /* line is 1-based and col is 0-based */
+    kport_line(port) = 1;
+    kport_col(port) = 0;
+}
+
+void kport_update_source_info(TValue port, int32_t line, int32_t col)
+{
+    kport_line(port) = line;
+    kport_col(port) = col;
 }

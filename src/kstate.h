@@ -24,12 +24,12 @@
 /* XXX: for now, lines and column names are fixints */
 /* MAYBE: this should be in tokenizer */
 typedef struct {
-    char *filename;
+    TValue filename;
     int32_t tab_width;
     int32_t line;
     int32_t col;
     
-    char *saved_filename;
+    TValue saved_filename;
     int32_t saved_line;
     int32_t saved_col;
 } ksource_info_t;
@@ -98,12 +98,10 @@ struct klisp_State {
     /* TEMP: error handling */
     jmp_buf error_jb;
 
-     /* standard input and output */
-     /* TODO: eventually these should be ports */
+     /* input and output files in use (for read & write) */
+    TValue curr_port; /* save the port to update source info on errors */
     FILE *curr_in;
     FILE *curr_out;
-    char *filename_in;
-    char *filename_out;
 
     /* for current-input-port, current-output-port */
     TValue kd_in_port_key;

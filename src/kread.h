@@ -13,7 +13,8 @@
 /*
 ** Reader interface
 */
-TValue kread(klisp_State *K);
+TValue kread_from_port(klisp_State *K, TValue port, bool mut);
+TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek);
 
 #endif
 

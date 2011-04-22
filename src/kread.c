@@ -15,6 +15,7 @@
 #include "kstate.h"
 #include "kerror.h"
 #include "ktable.h"
+#include "kport.h"
 
 
 /*
@@ -66,6 +67,10 @@ void kread_error(klisp_State *K, char *str)
        pop manually on each kind of error */
     krooted_tvs_clear(K);
     krooted_vars_clear(K);
+
+    /* save the source code info on the port anyways */
+    kport_update_source_info(K->curr_port, K->ktok_source_info.line,
+			     K->ktok_source_info.col);
 
     klispE_throw(K, str);
 }
@@ -506,4 +511,36 @@ TValue kread(klisp_State *K)
     clear_shared_dict(K);
 
     return obj;
+}
+
+
+TValue kread_from_port(klisp_State *K, TValue port, bool mut)
+{
+    K->curr_port = port;
+    K->curr_in = kport_file(port);
+    K->read_mconsp = mut;
+
+    ktok_set_source_info(K, kport_filename(port), 
+			 kport_line(port), kport_col(port));
+
+    TValue obj = kread(K);
+
+    kport_update_source_info(port, K->ktok_source_info.line, 
+			     K->ktok_source_info.col);
+    return obj;
+}
+
+TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
+{
+    K->curr_port = port;
+    K->curr_in = kport_file(port);
+    /* only needed if not peek, but do it anyways */
+    ktok_set_source_info(K, kport_filename(port), 
+			 kport_line(port), kport_col(port));
+    int ch = peek? ktok_peekc(K) : ktok_getc(K);
+    TValue res = ch == EOF? KEOF : ch2tv((char)ch);
+    /* same as above */
+    kport_update_source_info(port, K->ktok_source_info.line, 
+			     K->ktok_source_info.col);
+    return res;
 }
