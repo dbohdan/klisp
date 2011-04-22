@@ -43,6 +43,9 @@ void read_fn(klisp_State *K, TValue *xparams, TValue obj)
     TValue port = kcdr(K->kd_in_port_key);
     klisp_assert(kport_file(port) == stdin);
 
+    /* workaround to the problem of the dangling '\n' in repl 
+       (from previous line) */
+    kread_ignore_whitespace_and_comments_from_port(K, port);
     kport_reset_source_info(port);
     obj = kread_from_port(K, port, true); /* read mutable pairs */
     kapply_cc(K, obj);

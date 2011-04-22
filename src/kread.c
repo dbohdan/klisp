@@ -534,13 +534,26 @@ TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
 {
     K->curr_port = port;
     K->curr_in = kport_file(port);
-    /* only needed if not peek, but do it anyways */
-    ktok_set_source_info(K, kport_filename(port), 
-			 kport_line(port), kport_col(port));
-    int ch = peek? ktok_peekc(K) : ktok_getc(K);
-    TValue res = ch == EOF? KEOF : ch2tv((char)ch);
-    /* same as above */
-    kport_update_source_info(port, K->ktok_source_info.line, 
-			     K->ktok_source_info.col);
-    return res;
+    int ch;
+    if (peek) {
+	ch = ktok_peekc(K);
+    } else {
+	ktok_set_source_info(K, kport_filename(port), 
+			     kport_line(port), kport_col(port));
+	ch = ktok_getc(K);
+	kport_update_source_info(port, K->ktok_source_info.line, 
+				 K->ktok_source_info.col);    
+    }
+    return ch == EOF? KEOF : ch2tv((char)ch);
+}
+
+/* This is needed by the repl to ignore trailing spaces (especially newlines)
+   that could affect the source info */
+void kread_ignore_whitespace_and_comments_from_port(klisp_State *K, 
+						    TValue port)
+{
+    K->curr_port = port;
+    K->curr_in = kport_file(port);
+    /* source code info isn't important because it will be reset later */
+    ktok_ignore_whitespace_and_comments(K);
 }

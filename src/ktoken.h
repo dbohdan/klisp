@@ -29,6 +29,8 @@ void clear_shared_dict(klisp_State *K);
 /* This is used in for peek-char & read-char */
 int ktok_getc(klisp_State *K);
 int ktok_peekc(klisp_State *K);
+/* needed by the repl */
+void ktok_ignore_whitespace_and_comments(klisp_State *K);
 
 /* This is needed for string->symbol to check if a symbol has external
    representation as an identifier */
