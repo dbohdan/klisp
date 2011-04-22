@@ -187,8 +187,19 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
 
     /* create the ground environment and the eval operative */
-    K->eval_op = kmake_operative(K, keval_ofn, 0);
-    K->list_app = kmake_applicative(K, list, 0);
+    int32_t line_number; 
+    TValue si;
+    K->eval_op = kmake_operative(K, keval_ofn, 0), line_number = __LINE__;
+    si = kcons(K, kstring_new_b_imm(K, __FILE__), 
+		      kcons(K, i2tv(line_number), i2tv(0)));
+    kset_source_info(K, K->eval_op, si);
+    
+    K->list_app = kmake_applicative(K, list, 0), line_number = __LINE__;
+    si = kcons(K, kstring_new_b_imm(K, __FILE__), 
+		      kcons(K, i2tv(__LINE__), i2tv(0)));
+    kset_source_info(K, K->list_app, si);
+    kset_source_info(K, kunwrap(K->list_app), si);
+
     /* ground environment has a hashtable for bindings */
     K->ground_env = kmake_table_environment(K, KNIL);
 
