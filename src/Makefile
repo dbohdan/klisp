@@ -88,7 +88,8 @@ kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kgbooleans.h kgeqp.h kgequalp.h kgsymbols.h kgpairs_lists.h \
 	kgpair_mut.h kgenvironments.h kgenv_mut.h kgcombiners.h \
 	kgcontinuations.h kgencapsulations.h kgpromises.h kgkd_vars.h \
-	kgks_vars.h kgports.h kgchars.h kgnumbers.h kgstrings.o
+	kgks_vars.h kgports.h kgchars.h kgnumbers.h kgstrings.o \
+	klispconf.h
 kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 	kapplicative.h koperative.h kerror.h kobject.h ksymbol.h \
 	kcontinuation.h

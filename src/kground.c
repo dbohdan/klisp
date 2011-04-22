@@ -44,38 +44,44 @@
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
 ** "value", both of type TValue. symbol will be bound to a symbol named by
 ** "n_" and can be referrenced in the var_args
-** GC: All of these assume that the extra args are rooted 
+** GC: All of these should be called when GC is deactivated on startup
 */
 
-/* Right now all symbols are rooted, but when possible, they will
-   be moved to a weak hashtable, so just in case root symbols during
-   operand/applicative construction */
+#if KTRACK_SI
 #define add_operative(K_, env_, n_, fn_, ...)		\
     { symbol = ksymbol_new(K_, n_);			\
-	krooted_tvs_push(K_, symbol);			\
+    value = kmake_operative(K_, fn_, __VA_ARGS__);	\
+    TValue str = kstring_new_b_imm(K_, __FILE__);	\
+    TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),	\
+				    i2tv(0)));		\
+    kset_source_info(K_, value, si);			\
+    kadd_binding(K_, env_, symbol, value); }
+
+#define add_applicative(K_, env_, n_, fn_, ...)				\
+    { symbol = ksymbol_new(K_, n_);					\
+	value = kmake_applicative(K_, fn_, __VA_ARGS__);		\
+	TValue str = kstring_new_b_imm(K_, __FILE__);			\
+	TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),		\
+					i2tv(0)));			\
+	kset_source_info(K_, kunwrap(value), si);			\
+	kset_source_info(K_, value, si);				\
+	kadd_binding(K_, env_, symbol, value); }
+#else /* KTRACK_SI */
+#define add_operative(K_, env_, n_, fn_, ...)		\
+    { symbol = ksymbol_new(K_, n_);			\
 	value = kmake_operative(K_, fn_, __VA_ARGS__);	\
-	krooted_tvs_push(K_, value);			\
-	kadd_binding(K_, env_, symbol, value);		\
-	krooted_tvs_pop(K_);				\
-	krooted_tvs_pop(K_); }
+	kadd_binding(K_, env_, symbol, value); }
 
 #define add_applicative(K_, env_, n_, fn_, ...)			\
     { symbol = ksymbol_new(K_, n_);				\
-	krooted_tvs_push(K_, symbol);				\
 	value = kmake_applicative(K_, fn_, __VA_ARGS__);	\
-	krooted_tvs_push(K_, value);				\
-	kadd_binding(K_, env_, symbol, value);			\
-	krooted_tvs_pop(K_);					\
-	krooted_tvs_pop(K_); }	
+	kadd_binding(K_, env_, symbol, value); }
+#endif /* KTRACK_SI */
 
 #define add_value(K_, env_, n_, v_)			\
     { value = v_;					\
-	krooted_tvs_push(K_, value);			\
 	symbol = ksymbol_new(K_, n_);			\
-	krooted_tvs_push(K_, symbol);			\
-	kadd_binding(K_, env_, symbol, v_);		\
-	krooted_tvs_pop(K_);				\
-	krooted_tvs_pop(K_); }
+	kadd_binding(K_, env_, symbol, v_); }
 
 /*
 ** This is called once to bind all symbols in the ground environment

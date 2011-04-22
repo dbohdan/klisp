@@ -209,25 +209,21 @@ void kw_print_name(klisp_State *K, TValue obj)
 /* Assumes obj has a si */
 void kw_print_si(klisp_State *K, TValue obj)
 {
+    /* should be an improper list of 2 pairs,
+       with a string and 2 fixints */
     TValue si = kget_source_info(K, obj);
-    /* should be either a string or an improper list of 2 pairs,
-       with a string and 2 fixints, just check if pair */
-    klisp_assert(kstringp(si) || kpairp(si));
-    
     kw_printf(K, " @ ");
     /* this is a hack, would be better to change the interface of 
        kw_print_string */
     bool saved_displayp = K->write_displayp; 
     K->write_displayp = true; /* avoid "s and escapes */
-    if (ttisstring(si)) {
-	kw_print_string(K, si);
-    } else {
-	TValue str = kcar(si);
-	int32_t row = ivalue(kcadr(si));
-	int32_t col = ivalue(kcddr(si));
-	kw_print_string(K, str);
-	kw_printf(K, " (row: %d, col: %d)", row, col);
-    }
+
+    TValue str = kcar(si);
+    int32_t row = ivalue(kcadr(si));
+    int32_t col = ivalue(kcddr(si));
+    kw_print_string(K, str);
+    kw_printf(K, " (row: %d, col: %d)", row, col);
+
     K->write_displayp = saved_displayp;
 }
 #endif /* KTRACK_SI */
