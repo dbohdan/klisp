@@ -187,6 +187,7 @@ int ktok_getc(klisp_State *K) {
 	    K->ktok_source_info.col = 0;
 	    return '\n';
 	} else {
+	    K->ktok_source_info.col++;
 	    return chi;
 	}
     }
@@ -209,7 +210,6 @@ int ktok_peekc(klisp_State *K) {
 
 void ktok_save_source_info(klisp_State *K)
 {
-    K->ktok_source_info.saved_filename = K->ktok_source_info.filename;
     K->ktok_source_info.saved_line = K->ktok_source_info.line;
     K->ktok_source_info.saved_col = K->ktok_source_info.col;
 }

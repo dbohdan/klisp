@@ -29,7 +29,6 @@ typedef struct {
     int32_t line;
     int32_t col;
     
-    TValue saved_filename;
     int32_t saved_line;
     int32_t saved_col;
 } ksource_info_t;
