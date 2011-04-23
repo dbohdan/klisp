@@ -19,7 +19,7 @@
 /* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
 TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
 
-/* used in write to destructively get the digits */
+/* used in write to destructively get the digits & in bigrat */
 TValue kbigint_copy(klisp_State *K, TValue src);
 
 /* Check to see if an int64_t fits in a int32_t */

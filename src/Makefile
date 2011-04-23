@@ -48,7 +48,7 @@ ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
 	kerror.h klisp.h kinteger.h krational.h kport.h
 kinteger.o: kinteger.c kinteger.h kobject.h kstate.h kmem.h klisp.h imath.h \
 	kgc.h
-krational.o: krational.c krational.h kinteger.h kobject.h kstate.h kmem.h klisp.h 
+krational.o: krational.c krational.h kinteger.h kobject.h kstate.h kmem.h klisp.h  \
 	imrat.h kgc.h
 kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h klisp.h kgc.h
 kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h klisp.h kgc.h
