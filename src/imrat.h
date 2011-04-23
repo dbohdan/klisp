@@ -42,6 +42,7 @@ typedef struct mpq {
 #define MP_DENOM_P(Q)  (&((Q)->den)) /* Pointer to denominator */
 
 /* Rounding constants */
+/* TODO: klisp add MP_ROUND_HALF_EVEN for compatibility with floating point */
 typedef enum { 
   MP_ROUND_DOWN, 
   MP_ROUND_HALF_UP, 
@@ -63,8 +64,7 @@ mp_result mp_rat_denom(klisp_State *K, mp_rat r, mp_int z);  /* z = den(r)  */
 mp_sign   mp_rat_sign(mp_rat r);
 
 mp_result mp_rat_copy(klisp_State *K, mp_rat a, mp_rat c);  /* c = a       */
-/* NOTE: this doesn't use the allocator */
-void      mp_rat_zero(mp_rat r);                        /* r = 0       */
+void      mp_rat_zero(klisp_State *K, mp_rat r); /* r = 0       */
 mp_result mp_rat_abs(klisp_State *K, mp_rat a, mp_rat c); /* c = |a|     */
 mp_result mp_rat_neg(klisp_State *K, mp_rat a, mp_rat c); /* c = -a      */
 mp_result mp_rat_recip(klisp_State *K, mp_rat a, mp_rat c); /* c = 1 / a   */
@@ -93,9 +93,11 @@ mp_result mp_rat_expt(klisp_State *K, mp_rat a, mp_small b, mp_rat c);
 int       mp_rat_compare(klisp_State *K, mp_rat a, mp_rat b); /* a <=> b */
 /* |a| <=> |b| */
 int       mp_rat_compare_unsigned(klisp_State *K, mp_rat a, mp_rat b);  
+/* NOTE: this doesn't use the allocator */
 int       mp_rat_compare_zero(mp_rat r); /* r <=> 0     */
 int       mp_rat_compare_value(klisp_State *K, mp_rat r, mp_small n, 
 			       mp_small d); /* r <=> n/d */
+/* NOTE: this doesn't use the allocator */
 int       mp_rat_is_integer(mp_rat r);
 
 /* Convert to integers, if representable (returns MP_RANGE if not). */
@@ -104,12 +106,14 @@ mp_result mp_rat_to_ints(mp_rat r, mp_small *num, mp_small *den);
 
 /* Convert to nul-terminated string with the specified radix, writing
    at most limit characters including the nul terminator. */
-mp_result mp_rat_to_string(mp_rat r, mp_size radix, char *str, int limit);
+mp_result mp_rat_to_string(klisp_State *K, mp_rat r, mp_size radix, char *str, 
+			   int limit);
 
 /* Convert to decimal format in the specified radix and precision,
    writing at most limit characters including a nul terminator. */
-mp_result mp_rat_to_decimal(mp_rat r, mp_size radix, mp_size prec,
-                            mp_round_mode round, char *str, int limit);
+mp_result mp_rat_to_decimal(klisp_State *K, mp_rat r, mp_size radix, 
+			    mp_size prec, mp_round_mode round, 
+			    char *str, int limit);
 
 /* Return the number of characters required to represent r in the given
    radix.  May over-estimate. */

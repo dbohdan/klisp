@@ -15,7 +15,7 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
 	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
-	kgstrings.o imath.o kgc.o
+	kgstrings.o imath.o imrat.o kgc.o
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -141,10 +141,11 @@ kgchars.o: kgchars.c kgchars.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h
 kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
-	ksymbol.h kinteger.h
+	ksymbol.h kinteger.h imrat.h
 kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
 	kstring.h ksymbol.h kgnumbers.h
 imath.o: kobject.h kstate.h kmem.h kerror.h
+imrath.o: kobject.h kstate.h kmem.h kerror.h
 kgc.o: kgc.c kgc.h kobject.h kmem.h kstate.h kport.h imath.h ktable.h \
 	kstring.h
