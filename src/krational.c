@@ -6,6 +6,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h> /* for code checking '/' & '.' */
 #include <inttypes.h>
 #include <math.h>
 
@@ -92,6 +93,15 @@ bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out,
 					buf, end) == MP_OK);
     krooted_tvs_pop(K);
     *out = kbigrat_try_integer(K, res);
+
+    /* TODO: ideally this should be incorporated in the read code */
+    /* detect sign after '/', this is allowed by imrat but not in kernel */
+    if (ret_val) {
+	char *slash = strchr(buf, '/');
+	if (slash != NULL && (*(slash+1) == '+' || *(slash+1) == '-'))
+	    ret_val = false;
+    }
+
     return ret_val;
 }
 
@@ -105,6 +115,21 @@ bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out
 					buf, end) == MP_OK);
     krooted_tvs_pop(K);
     *out = kbigrat_try_integer(K, res);
+
+    /* TODO: ideally this should be incorporated in the read code */
+    /* detect sign after '/', or trailing '.'. Those are allowed by 
+       imrat but not by kernel */
+    if (ret_val) {
+	char *ch = strchr(buf, '/');
+	if (ch != NULL && (*(ch+1) == '+' || *(ch+1) == '-'))
+	    ret_val = false;
+	else {
+	    ch = strchr(buf, '.');
+	    if (ch != NULL && *(ch+1) == '\0')
+		ret_val = false;
+	}
+    }
+
     return ret_val;
 }
 
