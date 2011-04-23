@@ -71,6 +71,12 @@ bool kbigint_has_digits(klisp_State *K, TValue tv_bigint);
 /* Mutate the bigint to have the opposite sign, used in read & write */
 void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
 
+/* read/write interface */
+
+/* this works for bigints & fixints, returns true if ok */
+bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
+		   char **end);
+
 /* this is used by write to estimate the number of chars necessary to
    print the number */
 int32_t kbigint_print_size(TValue tv_bigint, int32_t base);

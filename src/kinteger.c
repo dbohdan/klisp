@@ -16,8 +16,10 @@
 #include "kgc.h"
 
 /* This tries to convert a bigint to a fixint */
+/* XXX this doesn't need K really */
 inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
 {
+    UNUSED(K);
     Bigint *b = tv2bigint(n);
     if (MP_USED(b) != 1)
 	return n;
@@ -102,6 +104,21 @@ void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
 {
     Bigint *bigint = tv2bigint(tv_bigint);
     UNUSED(mp_int_neg(K, bigint, bigint));
+}
+
+/* read/write interface */
+
+/* this works for bigints & fixints, returns true if ok */
+bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
+		   char **end)
+{
+    TValue res = kbigint_new(K, false, 0);
+    krooted_tvs_push(K, res);
+    bool ret_val = (mp_int_read_cstring(K, tv2bigint(res), base, 
+					buf, end) == MP_OK);
+    krooted_tvs_pop(K);
+    *out = kbigint_try_fixint(K, res);
+    return ret_val;
 }
 
 /* this is used by write to estimate the number of chars necessary to

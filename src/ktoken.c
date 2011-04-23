@@ -13,8 +13,9 @@
 ** TODO:
 **
 ** From the Report:
-** - Support other number types besides integers and exact infinities
-** - Support for complete number syntax (inexacts, rationals, reals, complex)
+** - Support other number types besides integers, rationals and exact 
+** infinities
+** - Support for complete number syntax (inexacts, reals, complex)
 ** 
 ** NOT from the Report:
 ** - Support for unicode (strings, char and symbols).
@@ -36,6 +37,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kinteger.h"
+#include "krational.h"
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
@@ -393,72 +395,20 @@ int32_t ktok_read_until_delimiter(klisp_State *K)
 ** The digits are in buf, that must be freed after use,
 ** len should be at least one 
 */
-TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
+TValue ktok_read_number(klisp_State *K, char *buf, int32_t len, 
 			bool has_exactp, bool exactp, bool has_radixp, 
 			int32_t radix)
 {
-    /* TODO use IMATH library to do this */
-    uint32_t fixint_res = 0;
-    bool is_fixint = true;
-    TValue bigint_res;
-
-    int32_t i = 0;
-    bool is_pos = true;
-    /* first check the sign */
-    if (buf[i] == '+' || buf[i] == '-') {
-	is_pos = (buf[i] == '+');
-	++i;
-	if (i == len) {
-	    ktok_error(K, "No digit found in number");
-	    /* avoid warning */
+    UNUSED(len); /* not needed really, buf ends with '\0' */
+    TValue n;
+    if (!kinteger_read(K, buf, radix, &n, NULL)) {
+	    /* TODO throw meaningful error msgs, use last param */
+	    ktok_error(K, "Bad format in number");
 	    return KINERT;
-	}
-    }
-
-    while(i < len) {
-	char ch = buf[i++];
-
-	if (!ktok_is_digit(ch, radix)) {
-	    /* TODO show the char */
-	    if (ktok_is_digit(ch, 16)) {
-		ktok_error(K, "Invalid digit in this radix");
-		return KINERT;
-	    } else {
-		ktok_error(K, "Invalid char found in number");
-		return KINERT;
-	    }
-	}
-	int32_t new_digit = ktok_digit_value(ch);
-
-	if (is_fixint && can_add_digit(fixint_res, !is_pos, new_digit,
-		radix)) {
-	    fixint_res = fixint_res * radix + new_digit;
-	} else {
-	    if (is_fixint) {
-		/* up to the last loop was fixint, but can't be anymore.
-		 Create a bigint and mutate to add the new digits. This
-		 avoids unnecessary consing and discarding values that would
-		 occur if it used the regular bigint+ and bigint* */
-		is_fixint = false;
-		bigint_res = kbigint_new(K, false, fixint_res);
-		krooted_vars_push(K, &bigint_res);
-	    }
-	    kbigint_add_digit(K, bigint_res, radix, new_digit);
-	}
     }
 
     ks_tbclear(K);
-
-    if (is_fixint) {
-	int32_t fixint = (is_pos)? (int32_t) fixint_res : 
-	    (int32_t) -((int64_t) fixint_res);
-	return i2tv(fixint);
-    } else {
-	if (!is_pos)
-	    kbigint_invert_sign(K, bigint_res);
-	krooted_vars_pop(K);
-	return bigint_res;
-    }
+    return n;
 }
 
 TValue ktok_read_maybe_signed_numeric(klisp_State *K)
