@@ -49,40 +49,57 @@ typedef enum {
   MP_ROUND_HALF_DOWN 
 } mp_round_mode;
 
-mp_result mp_rat_init(mp_rat r);
-mp_rat    mp_rat_alloc(void);
-mp_result mp_rat_init_size(mp_rat r, mp_size n_prec, mp_size d_prec);
-mp_result mp_rat_init_copy(mp_rat r, mp_rat old);
-mp_result mp_rat_set_value(mp_rat r, int numer, int denom);
-void      mp_rat_clear(mp_rat r);
-void      mp_rat_free(mp_rat r);
-mp_result mp_rat_numer(mp_rat r, mp_int z);             /* z = num(r)  */
-mp_result mp_rat_denom(mp_rat r, mp_int z);             /* z = den(r)  */
+mp_result mp_rat_init(klisp_State *K, mp_rat r);
+mp_rat    mp_rat_alloc(klisp_State *K);
+mp_result mp_rat_init_size(klisp_State *K, mp_rat r, mp_size n_prec, 
+			   mp_size d_prec);
+mp_result mp_rat_init_copy(klisp_State *K, mp_rat r, mp_rat old);
+mp_result mp_rat_set_value(klisp_State *K, mp_rat r, int numer, int denom);
+void      mp_rat_clear(klisp_State *K, mp_rat r);
+void      mp_rat_free(klisp_State *K, mp_rat r);
+mp_result mp_rat_numer(klisp_State *K, mp_rat r, mp_int z);  /* z = num(r)  */
+mp_result mp_rat_denom(klisp_State *K, mp_rat r, mp_int z);  /* z = den(r)  */
+/* NOTE: this doesn't use the allocator */
 mp_sign   mp_rat_sign(mp_rat r);
 
-mp_result mp_rat_copy(mp_rat a, mp_rat c);              /* c = a       */
+mp_result mp_rat_copy(klisp_State *K, mp_rat a, mp_rat c);  /* c = a       */
+/* NOTE: this doesn't use the allocator */
 void      mp_rat_zero(mp_rat r);                        /* r = 0       */
-mp_result mp_rat_abs(mp_rat a, mp_rat c);               /* c = |a|     */
-mp_result mp_rat_neg(mp_rat a, mp_rat c);               /* c = -a      */
-mp_result mp_rat_recip(mp_rat a, mp_rat c);             /* c = 1 / a   */
-mp_result mp_rat_add(mp_rat a, mp_rat b, mp_rat c);     /* c = a + b   */
-mp_result mp_rat_sub(mp_rat a, mp_rat b, mp_rat c);     /* c = a - b   */
-mp_result mp_rat_mul(mp_rat a, mp_rat b, mp_rat c);     /* c = a * b   */
-mp_result mp_rat_div(mp_rat a, mp_rat b, mp_rat c);     /* c = a / b   */
+mp_result mp_rat_abs(klisp_State *K, mp_rat a, mp_rat c); /* c = |a|     */
+mp_result mp_rat_neg(klisp_State *K, mp_rat a, mp_rat c); /* c = -a      */
+mp_result mp_rat_recip(klisp_State *K, mp_rat a, mp_rat c); /* c = 1 / a   */
+/* c = a + b   */
+mp_result mp_rat_add(klisp_State *K, mp_rat a, mp_rat b, mp_rat c);
+/* c = a - b   */
+mp_result mp_rat_sub(klisp_State *K, mp_rat a, mp_rat b, mp_rat c);
+/* c = a * b   */
+mp_result mp_rat_mul(klisp_State *K, mp_rat a, mp_rat b, mp_rat c);
+/* c = a / b   */
+mp_result mp_rat_div(klisp_State *K, mp_rat a, mp_rat b, mp_rat c);
 
-mp_result mp_rat_add_int(mp_rat a, mp_int b, mp_rat c); /* c = a + b   */
-mp_result mp_rat_sub_int(mp_rat a, mp_int b, mp_rat c); /* c = a - b   */
-mp_result mp_rat_mul_int(mp_rat a, mp_int b, mp_rat c); /* c = a * b   */
-mp_result mp_rat_div_int(mp_rat a, mp_int b, mp_rat c); /* c = a / b   */
-mp_result mp_rat_expt(mp_rat a, mp_small b, mp_rat c);  /* c = a ^ b   */
+/* c = a + b   */
+mp_result mp_rat_add_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c);
+/* c = a - b   */
+mp_result mp_rat_sub_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c); 
+/* c = a * b   */
+mp_result mp_rat_mul_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c); 
+/* c = a / b   */
+mp_result mp_rat_div_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c); 
+/* c = a ^ b   */
+mp_result mp_rat_expt(klisp_State *K, mp_rat a, mp_small b, mp_rat c);  
 
-int       mp_rat_compare(mp_rat a, mp_rat b);           /* a <=> b     */
-int       mp_rat_compare_unsigned(mp_rat a, mp_rat b);  /* |a| <=> |b| */
-int       mp_rat_compare_zero(mp_rat r);                /* r <=> 0     */
-int       mp_rat_compare_value(mp_rat r, mp_small n, mp_small d); /* r <=> n/d */
+/* NOTE: because we may need to do multiplications, some of 
+   these take a klisp_State */
+int       mp_rat_compare(klisp_State *K, mp_rat a, mp_rat b); /* a <=> b */
+/* |a| <=> |b| */
+int       mp_rat_compare_unsigned(klisp_State *K, mp_rat a, mp_rat b);  
+int       mp_rat_compare_zero(mp_rat r); /* r <=> 0     */
+int       mp_rat_compare_value(klisp_State *K, mp_rat r, mp_small n, 
+			       mp_small d); /* r <=> n/d */
 int       mp_rat_is_integer(mp_rat r);
 
 /* Convert to integers, if representable (returns MP_RANGE if not). */
+/* NOTE: this doesn't use the allocator */
 mp_result mp_rat_to_ints(mp_rat r, mp_small *num, mp_small *den);
 
 /* Convert to nul-terminated string with the specified radix, writing
@@ -103,16 +120,18 @@ mp_result mp_rat_string_len(mp_rat r, mp_size radix);
 mp_result mp_rat_decimal_len(mp_rat r, mp_size radix, mp_size prec);
 
 /* Read zero-terminated string into r */
-mp_result mp_rat_read_string(mp_rat r, mp_size radix, const char *str);
-mp_result mp_rat_read_cstring(mp_rat r, mp_size radix, const char *str, 
-			      char **end);
-mp_result mp_rat_read_ustring(mp_rat r, mp_size radix, const char *str, 
-			      char **end);
+mp_result mp_rat_read_string(klisp_State *K, mp_rat r, mp_size radix, 
+			     const char *str);
+mp_result mp_rat_read_cstring(klisp_State *K, mp_rat r, mp_size radix, 
+			      const char *str, char **end);
+mp_result mp_rat_read_ustring(klisp_State *K, mp_rat r, mp_size radix, 
+			      const char *str, char **end);
 
 /* Read zero-terminated string in decimal format into r */
-mp_result mp_rat_read_decimal(mp_rat r, mp_size radix, const char *str);
-mp_result mp_rat_read_cdecimal(mp_rat r, mp_size radix, const char *str, 
-			       char **end);
+mp_result mp_rat_read_decimal(klisp_State *K, mp_rat r, mp_size radix, 
+			      const char *str);
+mp_result mp_rat_read_cdecimal(klisp_State *K, mp_rat r, mp_size radix, 
+			       const char *str, char **end);
 
 #ifdef __cplusplus
 }

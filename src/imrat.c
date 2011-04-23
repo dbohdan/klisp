@@ -17,6 +17,12 @@
 #include <ctype.h>
 #include <assert.h>
 
+/* Andres Navarro: klisp includes */
+#include "kobject.h"
+#include "kstate.h"
+#include "kmem.h"
+#include "kerror.h"
+
 /* {{{ Useful macros */
 
 #define TEMP(K) (temp + (K))
@@ -125,7 +131,6 @@ void      mp_rat_clear(mp_rat r)
 {
   mp_int_clear(MP_NUMER_P(r));
   mp_int_clear(MP_DENOM_P(r));
-
 }
 
 /* }}} */

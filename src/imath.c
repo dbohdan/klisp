@@ -23,17 +23,18 @@
 
 #include <assert.h>
 
-#if DEBUG
-#define STATIC /* public */
-#else
-#define STATIC static
-#endif
-
 /* Andres Navarro: klisp includes */
 #include "kobject.h"
 #include "kstate.h"
 #include "kmem.h"
 #include "kerror.h"
+
+
+#if DEBUG
+#define STATIC /* public */
+#else
+#define STATIC static
+#endif
 
 /* {{{ Constants */
 
