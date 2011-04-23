@@ -10,12 +10,13 @@ MYLIBS=
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
-	kencapsulation.o kpromise.o kport.o kinteger.o ktable.o \
+	kencapsulation.o kpromise.o kport.o kinteger.o krational.o \
+	ktable.o kgc.o imath.o imrat.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
 	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
-	kgstrings.o imath.o imrat.o kgc.o
+	kgstrings.o 
 
 KRN_T=	klisp
 KRN_O=	klisp.o
@@ -44,9 +45,11 @@ klisp.o: klisp.c klisp.h kobject.h kread.h kwrite.h klimits.h kstate.h kmem.h \
 	kapplicative.h koperative.h keval.h krepl.h kground.h
 kobject.o: kobject.c kobject.h klimits.h klispconf.h
 ktoken.o: ktoken.c ktoken.h kobject.h kstate.h kpair.h kstring.h ksymbol.h \
-	kerror.h klisp.h kinteger.h kport.h
+	kerror.h klisp.h kinteger.h krational.h kport.h
 kinteger.o: kinteger.c kinteger.h kobject.h kstate.h kmem.h klisp.h imath.h \
 	kgc.h
+krational.o: krational.c krational.h kinteger.h kobject.h kstate.h kmem.h klisp.h 
+	imrat.h kgc.h
 kpair.o: kpair.c kpair.h kobject.h kstate.h kmem.h klisp.h kgc.h
 kstring.o: kstring.c kstring.h kobject.h kstate.h kmem.h klisp.h kgc.h
 # XXX: kpair.h because of use of list as symbol table
@@ -55,11 +58,12 @@ ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstring.h kstate.h kmem.h \
 kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h \
 	kport.h ktable.h klispconf.h
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
-	klisp.h kport.h kinteger.h ktable.h klispconf.h
+	klisp.h kport.h kinteger.h krational.h ktable.h klispconf.h
+# XXX: now that all dealloc code is in gc, many of these are unnecessary
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
 	kenvironment.h kpair.h keval.h koperative.h kground.h \
 	krepl.h kcontinuation.h kapplicative.h kport.h ksymbol.h kport.h \
-	kstring.h kinteger.h kgc.h klimits.h ktable.h klispconf.h
+	kstring.h kinteger.h krational.h kgc.h klimits.h ktable.h klispconf.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h kstate.h kgc.h klispconf.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h kpair.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
@@ -97,7 +101,7 @@ kgbooleans.o: kgbooleans.c kgbooleans.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h ksymbol.h
 kgeqp.o: kgeqp.c kgeqp.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h kapplicative.h \
-	kinteger.h
+	kinteger.h krational.h
 kgequalp.o: kgequalp.c kgequalp.c kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kpair.h kcontinuation.h kgeqp.h kstring.h
 kgsymbols.o: kgsymbols.c kgsymbols.c kghelpers.h kstate.h klisp.h \
@@ -141,7 +145,7 @@ kgchars.o: kgchars.c kgchars.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h
 kgnumbers.o: kgnumbers.c kgnumbers.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
-	ksymbol.h kinteger.h imrat.h
+	ksymbol.h kinteger.h krational.h
 kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kobject.h kerror.h kapplicative.h koperative.h kcontinuation.h \
 	kstring.h ksymbol.h kgnumbers.h

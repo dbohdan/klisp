@@ -566,6 +566,7 @@ const TValue kfree;
 #define gc2tv(t_, o_) ((TValue) {.tv = {.t = (t_),			\
 					.v = { .gc = obj2gco(o_)}}})
 #define gc2bigint(o_) (gc2tv(K_TAG_BIGINT, o_))
+#define gc2bigrat(o_) (gc2tv(K_TAG_BIGRAT, o_))
 #define gc2pair(o_) (gc2tv(K_TAG_PAIR, o_))
 #define gc2str(o_) (gc2tv(K_TAG_STRING, o_))
 #define gc2sym(o_) (gc2tv(K_TAG_SYMBOL, o_))
@@ -581,6 +582,7 @@ const TValue kfree;
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2bigint(v_) ((Bigint *) gcvalue(v_))
+#define tv2bigrat(v_) ((Bigrat *) gcvalue(v_))
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
 #define tv2str(v_) ((String *) gcvalue(v_))
 #define tv2sym(v_) ((Symbol *) gcvalue(v_))
