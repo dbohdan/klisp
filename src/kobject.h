@@ -234,9 +234,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
 #define ttisbigrat(o)	(tbasetype_(o) == K_TAG_BIGRAT)
-#define ttisrational(o)	({ int32_t t_ = tbasetype_(o_); \
+#define ttisrational(o_)	({ int32_t t_ = tbasetype_(o_); \
 	t_ == K_TAG_BIGRAT || t_== K_TAG_BIGINT || \
-	    t == K_TAG_FIXINT;})
+	    t_ == K_TAG_FIXINT;})
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)

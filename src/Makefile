@@ -151,5 +151,5 @@ kgstrings.o: kgstrings.c kgstrings.h kghelpers.h kstate.h klisp.h \
 	kstring.h ksymbol.h kgnumbers.h
 imath.o: kobject.h kstate.h kmem.h kerror.h
 imrath.o: kobject.h kstate.h kmem.h kerror.h
-kgc.o: kgc.c kgc.h kobject.h kmem.h kstate.h kport.h imath.h ktable.h \
-	kstring.h
+kgc.o: kgc.c kgc.h kobject.h kmem.h kstate.h kport.h imath.h imrat.h \
+	ktable.h kstring.h

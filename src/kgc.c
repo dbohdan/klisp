@@ -17,6 +17,7 @@
 #include "kmem.h"
 #include "kport.h"
 #include "imath.h"
+#include "imrat.h"
 #include "ktable.h"
 #include "kstring.h"
 

@@ -34,7 +34,8 @@
  bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
  /* TEMP: for now only fixint & bigints, should also include inexact 
     integers */
- bool kintegerp(TValue obj) { return ttisinteger(obj); }
+bool kintegerp(TValue obj) { return ttisinteger(obj); }
+bool krationalp(TValue obj) { return ttisrational(obj); }
 
  /* 12.5.2 =? */
  /* uses typed_bpredp */

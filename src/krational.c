@@ -21,7 +21,7 @@ inline TValue kbigrat_try_integer(klisp_State *K, TValue n)
 {
     Bigrat *b = tv2bigrat(n);
 
-    if (mp_int_compare_zero(MP_DENOM_P(b)) == 0)
+    if (!mp_rat_is_integer(b))
 	return n;
 
     /* sadly we have to repeat the code from try_fixint here... */
