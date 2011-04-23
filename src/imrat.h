@@ -1,45 +1,42 @@
 /*
-  Name:     imrat.h
-  Purpose:  Arbitrary precision rational arithmetic routines.
-  Author:   M. J. Fromberger <http://spinning-yarns.org/michael/>
-  Info:     $Id: imrat.h 635 2008-01-08 18:19:40Z sting $
+** imrat.h
+** Arbitrary precision rational arithmetic routines.
+** See Copyright Notice in klisp.h
+*/
 
-  Copyright (C) 2002-2007 Michael J. Fromberger, All Rights Reserved.
-
-  Permission is hereby granted, free of charge, to any person
-  obtaining a copy of this software and associated documentation files
-  (the "Software"), to deal in the Software without restriction,
-  including without limitation the rights to use, copy, modify, merge,
-  publish, distribute, sublicense, and/or sell copies of the Software,
-  and to permit persons to whom the Software is furnished to do so,
-  subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-  NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-  BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-  ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
- */
+/*
+** SOURCE NOTE: This is mostly from the IMath library, written by
+** M.J. Fromberger. It is adapted to klisp, mainly in the use of the
+** klisp allocator and fixing of digit size to 32 bits.
+** Imported from version (1.15) updated 01-Feb-2011 at 03:10 PM.
+*/
 
 #ifndef IMRAT_H_
 #define IMRAT_H_
 
 #include "imath.h"
 
+/* Andres Navarro: klisp includes */
+#include "kobject.h"
+#include "kstate.h"
+
+#ifdef USE_C99
+#include <stdint.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Andres Navarro: Use kobject type instead */
+typedef Bigrat mpq_t, *mp_rat;
+
+#if 0
 typedef struct mpq {
   mpz_t   num;    /* Numerator         */
   mpz_t   den;    /* Denominator, <> 0 */
 } mpq_t, *mp_rat;
+#endif
 
 #define MP_NUMER_P(Q)  (&((Q)->num)) /* Pointer to numerator   */
 #define MP_DENOM_P(Q)  (&((Q)->den)) /* Pointer to denominator */

@@ -179,10 +179,11 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 **
 ** - decide if inexact infinities and reals with no
 **    primary values are included in K_TDOUBLE
-** - For now we will only use fixints, bigints and exact infinities 
+** - For now we will only use fixints, bigints, bigrats and exact infinities 
 */
 #define K_TAG_FIXINT	K_MAKE_VTAG(K_TFIXINT)
 #define K_TAG_BIGINT	K_MAKE_VTAG(K_TBIGINT)
+#define K_TAG_BIGRAT	K_MAKE_VTAG(K_TBIGRAT)
 #define K_TAG_EINF	K_MAKE_VTAG(K_TEINF)
 #define K_TAG_IINF	K_MAKE_VTAG(K_TIINF)
 
@@ -232,6 +233,10 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
 #define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+#define ttisbigrat(o)	(tbasetype_(o) == K_TAG_BIGRAT)
+#define ttisrational(o)	({ int32_t t_ = tbasetype_(o_); \
+	t_ == K_TAG_BIGRAT || t_== K_TAG_BIGINT || \
+	    t == K_TAG_FIXINT;})
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
@@ -313,6 +318,17 @@ typedef struct __attribute__ ((__packed__)) {
     uint32_t used;
     unsigned char sign;
 } Bigint;
+
+/* NOTE: Notice that both num and den aren't pointers, so, in general, to get 
+   the denominator or numerator we have to make a copy, this comes from IMath.
+   If written for klisp I would have put pointers. Maybe I'll later change it
+   but for now minimal ammount of modification to IMath is desired */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader; 
+/* This is from IMath */
+    Bigint num; /* Numerator         */
+    Bigint den; /* Denominator, <> 0 */
+} Bigrat;
 
 /* REFACTOR: move these macros somewhere else */
 /* NOTE: The use of the intermediate KCONCAT is needed to allow

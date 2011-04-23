@@ -57,7 +57,9 @@ typedef unsigned int       mp_word;
 #endif /* USE_C99 */
 
 /* Andres Navarro: Use kobject type instead */
-/*
+typedef Bigint mpz_t, *mp_int;
+
+#if 0
 typedef struct mpz {
   mp_digit    single;
   mp_digit   *digits;
@@ -65,8 +67,7 @@ typedef struct mpz {
   mp_size     used;
   mp_sign     sign;
 } mpz_t, *mp_int;
-*/
-typedef Bigint mpz_t, *mp_int;
+#endif
 
 #define MP_SINGLE(Z) ((Z)->single) /* added to correct check in mp_int_clear */
 #define MP_DIGITS(Z) ((Z)->digits)
