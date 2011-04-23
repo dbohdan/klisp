@@ -75,8 +75,40 @@ TValue kbigrat_copy(klisp_State *K, TValue src)
 {
     TValue copy = kbigrat_new(K, false, 0, 1);
     /* arguments are in reverse order with respect to mp_rat_copy */
-    UNUSED(mp_int_init_copy(K, tv2bigrat(copy), tv2bigrat(src)));
+    UNUSED(mp_rat_init_copy(K, tv2bigrat(copy), tv2bigrat(src)));
     return copy;
 }
 
 /* Interface for kgnumbers */
+
+/* The compare predicates take a klisp_State because in general
+   may need to do multiplications */
+bool kbigrat_eqp(klisp_State *K, TValue tv_bigrat1, TValue tv_bigrat2)
+{
+    return (mp_rat_compare(K, tv2bigrat(tv_bigrat1), 
+			   tv2bigrat(tv_bigrat2)) == 0);
+}
+
+bool kbigrat_ltp(klisp_State *K, TValue tv_bigrat1, TValue tv_bigrat2)
+{
+    return (mp_rat_compare(K, tv2bigrat(tv_bigrat1), 
+			   tv2bigrat(tv_bigrat2)) < 0);
+}
+
+bool kbigrat_lep(klisp_State *K, TValue tv_bigrat1, TValue tv_bigrat2)
+{
+    return (mp_rat_compare(K, tv2bigrat(tv_bigrat1), 
+			   tv2bigrat(tv_bigrat2)) <= 0);
+}
+
+bool kbigrat_gtp(klisp_State *K, TValue tv_bigrat1, TValue tv_bigrat2)
+{
+    return (mp_rat_compare(K, tv2bigrat(tv_bigrat1), 
+			   tv2bigrat(tv_bigrat2)) > 0);
+}
+
+bool kbigrat_gep(klisp_State *K, TValue tv_bigrat1, TValue tv_bigrat2)
+{
+    return (mp_rat_compare(K, tv2bigrat(tv_bigrat1), 
+			   tv2bigrat(tv_bigrat2)) >= 0);
+}

@@ -42,7 +42,7 @@ inline bool kfit_int32_t(int64_t n) {
     (KUNIQUE_NAME(bigint)).used = 1;					\
     (KUNIQUE_NAME(bigint)).sign = (KUNIQUE_NAME(i)) < 0?		\
 	MP_NEG : MP_ZPOS;						\
-    Bigint *name = &(KUNIQUE_NAME(bigint));
+    Bigint *name = &(KUNIQUE_NAME(bigint))
     
 /* This can be used prior to calling a bigint functions
    to automatically convert fixints to bigints.

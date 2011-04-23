@@ -39,39 +39,39 @@ TValue kbigrat_copy(klisp_State *K, TValue src);
 	    int64_t temp = (KUNIQUE_NAME(i));				\
 	    (uint32_t) ((temp < 0)? -temp : temp);			\
 	});								\
-    (KUNIQUE_NAME(bigrat_i)).num.digits =					\
-	&((KUNIQUE_NAME(bigrat_i)).single);				\
+    (KUNIQUE_NAME(bigrat_i)).num.digits =				\
+	&((KUNIQUE_NAME(bigrat_i)).num.single);				\
     (KUNIQUE_NAME(bigrat_i)).num.alloc = 1;				\
     (KUNIQUE_NAME(bigrat_i)).num.used = 1;				\
     (KUNIQUE_NAME(bigrat_i)).num.sign = (KUNIQUE_NAME(i)) < 0?		\
 	MP_NEG : MP_ZPOS;						\
     /* denom is 1 */							\
-    (KUNIQUE_NAME(bigrat_i)).num.single = 1;				\
-    (KUNIQUE_NAME(bigrat_i)).num.digits =				\
-	&((KUNIQUE_NAME(bigrat_i)).num.single);				\
-    (KUNIQUE_NAME(bigrat_i)).num.alloc = 1;				\
-    (KUNIQUE_NAME(bigrat_i)).num.used = 1;				\
-    (KUNIQUE_NAME(bigrat_i)).num.sign = MP_ZPOS;			\
+    (KUNIQUE_NAME(bigrat_i)).den.single = 1;				\
+    (KUNIQUE_NAME(bigrat_i)).den.digits =				\
+	&((KUNIQUE_NAME(bigrat_i)).den.single);				\
+    (KUNIQUE_NAME(bigrat_i)).den.alloc = 1;				\
+    (KUNIQUE_NAME(bigrat_i)).den.used = 1;				\
+    (KUNIQUE_NAME(bigrat_i)).den.sign = MP_ZPOS;			\
 									\
-    Bigrat *name = &(KUNIQUE_NAME(bigrat_i));
+    Bigrat *name = &(KUNIQUE_NAME(bigrat_i))
 
 #define kbind_bigrat_bigint(name, bigint)				\
+    Bigint *KUNIQUE_NAME(bi) = tv2bigint(bigint);			\
     Bigrat KUNIQUE_NAME(bigrat);					\
     /* numer is bigint */						\
-    (KUNIQUE_NAME(bigrat)).num.single = bigint.single;			\
-    (KUNIQUE_NAME(bigrat)).num.digits = bigint.digits;			\
-    (KUNIQUE_NAME(bigrat)).num.alloc = bigint.alloc;			\
-    (KUNIQUE_NAME(bigrat)).num.used = bigint.used;			\
-    (KUNIQUE_NAME(bigrat)).num.sign = bigint.sign;			\
+    (KUNIQUE_NAME(bigrat)).num.single = (KUNIQUE_NAME(bi))->single;	\
+    (KUNIQUE_NAME(bigrat)).num.digits = (KUNIQUE_NAME(bi))->digits;	\
+    (KUNIQUE_NAME(bigrat)).num.alloc = (KUNIQUE_NAME(bi))->alloc;	\
+    (KUNIQUE_NAME(bigrat)).num.used = (KUNIQUE_NAME(bi))->used;		\
+    (KUNIQUE_NAME(bigrat)).num.sign = (KUNIQUE_NAME(bi))->sign;		\
     /* denom is 1 */							\
-    (KUNIQUE_NAME(bigrat)).num.single = 1;				\
-    (KUNIQUE_NAME(bigrat)).num.digits =					\
-	&((KUNIQUE_NAME(bigrat)).num.single);				\
-    (KUNIQUE_NAME(bigrat)).num.alloc = 1;				\
-    (KUNIQUE_NAME(bigrat)).num.used = 1;				\
-    (KUNIQUE_NAME(bigrat)).num.sign = MP_ZPOS;				\
-									\
-    Bigrat *name = &(KUNIQUE_NAME(bigrat));
+    (KUNIQUE_NAME(bigrat)).den.single = 1;				\
+    (KUNIQUE_NAME(bigrat)).den.digits =					\
+	&((KUNIQUE_NAME(bigrat)).den.single);				\
+    (KUNIQUE_NAME(bigrat)).den.alloc = 1;				\
+    (KUNIQUE_NAME(bigrat)).den.used = 1;				\
+    (KUNIQUE_NAME(bigrat)).den.sign = MP_ZPOS;				\
+    Bigrat *name = &(KUNIQUE_NAME(bigrat))
     
 /* XXX: Now that I think about it this (and kensure_bigint) could be more 
    cleanly implemented as a function that takes a pointer... (derp derp) */
@@ -92,6 +92,7 @@ TValue kbigrat_copy(klisp_State *K, TValue src);
     (n) = gc2bigrat(KUNIQUE_NAME(brat_i));				\
     goto KUNIQUE_NAME(bigrat_exit_lbl);					\
 KUNIQUE_NAME(bigrat_bigint_lbl):					\
+    ; /* gcc asks for a statement (not a decl) after label */           \
     kbind_bigrat_bigint(KUNIQUE_NAME(brat), (n));                       \
     (n) = gc2bigrat(KUNIQUE_NAME(brat));	                        \
 KUNIQUE_NAME(bigrat_exit_lbl):
