@@ -111,6 +111,16 @@ int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
     return mp_int_string_len(tv2bigint(tv_bigint), base);
 }
 
+/* this is used by write */
+void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
+			   char *buf, int32_t limit)
+{
+    mp_result res = mp_int_to_string(K, tv2bigint(tv_bigint), base, buf, 
+				     limit);
+    /* only possible error is truncation */
+    klisp_assert(res == MP_OK);
+}
+
 /* Interface for kgnumbers */
 bool kbigint_eqp(TValue tv_bigint1, TValue tv_bigint2)
 {

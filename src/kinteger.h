@@ -75,6 +75,10 @@ void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
    print the number */
 int32_t kbigint_print_size(TValue tv_bigint, int32_t base);
 
+/* this is used by write */
+void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
+			   char *buf, int32_t limit);
+
 /* Interface for kgnumbers */
 bool kbigint_eqp(TValue bigint1, TValue bigint2);
 

@@ -12,6 +12,7 @@
 #include "kwrite.h"
 #include "kobject.h"
 #include "kinteger.h"
+#include "krational.h"
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
@@ -52,40 +53,23 @@ void kwrite_error(klisp_State *K, char *msg)
 }
 
 /* TODO: check for return codes and throw error if necessary */
-
+#define KDEFAULT_NUMBER_RADIX 10
 void kw_print_bigint(klisp_State *K, TValue bigint)
 {
-    int32_t size = kbigint_print_size(bigint, 10) + 
-	((kbigint_negativep(bigint))? 1 : 0);
-	
+    int32_t radix = KDEFAULT_NUMBER_RADIX;
+    int32_t size = kbigint_print_size(bigint, radix); 
     krooted_tvs_push(K, bigint);
+    /* here we are using 1 byte extra, because size already includes
+       1 for the terminator, but better be safe than sorry */
     TValue buf_str = kstring_new_s(K, size);
     krooted_tvs_push(K, buf_str);
 
-    /* write backwards so we can use printf later */
-    char *buf = kstring_buf(buf_str) + size - 1;
-
-    TValue copy = kbigint_copy(K, bigint);
-    krooted_vars_push(K, &copy);
-
-    /* must work with positive bigint to get the digits */
-    if (kbigint_negativep(bigint))
-	kbigint_invert_sign(K, copy);
-
-    while(kbigint_has_digits(K, copy)) {
-	int32_t digit = kbigint_remove_digit(K, copy, 10);
-	/* write backwards so we can use printf later */
-	/* XXX: use to_digit function */
-	*buf-- = '0' + digit;
-    }
-    if (kbigint_negativep(bigint))
-	*buf-- = '-';
-
-    kw_printf(K, "%s", buf+1);
+    char *buf = kstring_buf(buf_str);
+    kbigint_print_string(K, bigint, radix, buf, size);
+    kw_printf(K, "%s", buf);
 
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
-    krooted_vars_pop(K);
 }
 
 /*
