@@ -32,7 +32,7 @@ inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
     }
 }
 
-/* for now used only for reading */
+/* It is used for reading and for creating temps and res in all operations */
 /* NOTE: is uint to allow INT32_MIN as positive argument in read */
 TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
 {

@@ -18,9 +18,9 @@
 
 /* TEMP: for now we only implement bigrats (memory allocated) */
 
-/* TODO: how to alloc?? */
-/* TEMP: we'll see about these */
-/* for now used only for reading */
+/* TEMP: we'll see about reading & writing... */
+
+/* used in reading and for res & temps in operations */
 TValue kbigrat_new(klisp_State *K, bool sign, uint32_t num, 
 		   uint32_t den);
 
