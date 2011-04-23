@@ -90,8 +90,9 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
 	return;
     }
 #endif
+    case K_TBIGRAT: /* the n & d are copied in the bigrat, not pointed to */
     case K_TBIGINT:
-	gray2black(o);  /* bigint are never gray */
+	gray2black(o);  /* bigint & bigrats are never gray */
 	break;
     case K_TPAIR:
     case K_TSYMBOL:
@@ -234,7 +235,8 @@ static int32_t propagatemark (klisp_State *K) {
     uint8_t type = o->gch.tt;
 
     switch (type) {
-/*    case K_TBIGINT: bigints are never gray */
+/*    case K_TBIGRAT: 
+      case K_TBIGINT: bigints & bigrats are never gray */
     case K_TPAIR: {
 	Pair *p = cast(Pair *, o);
 	markvalue(K, p->mark);
@@ -369,11 +371,15 @@ static void cleartable (GCObject *l) {
 }
 
 static void freeobj (klisp_State *K, GCObject *o) {
-    /* TODO use specific functions like in bigint & table */
+    /* TODO use specific functions like in bigint, bigrat & table */
     uint8_t type = o->gch.tt;
     switch (type) {
     case K_TBIGINT: {
 	mp_int_free(K, (Bigint *)o);
+	break;
+    }
+    case K_TBIGRAT: {
+	mp_rat_free(K, (Bigrat *)o);
 	break;
     }
     case K_TPAIR:
