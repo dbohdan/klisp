@@ -71,10 +71,13 @@ TValue kbigrat_new(klisp_State *K, bool sign, uint32_t num,
     return gc2bigrat(new_bigrat);
 }
 
+/* macro to create the simplest rational */
+#define kbigrat_make_simple(K_) kbigrat_new(K_, false, 0, 1)
+
 /* assumes src is rooted */
 TValue kbigrat_copy(klisp_State *K, TValue src)
 {
-    TValue copy = kbigrat_new(K, false, 0, 1);
+    TValue copy = kbigrat_make_simple(K);
     /* arguments are in reverse order with respect to mp_rat_copy */
     UNUSED(mp_rat_init_copy(K, tv2bigrat(copy), tv2bigrat(src)));
     return copy;
@@ -87,7 +90,7 @@ TValue kbigrat_copy(klisp_State *K, TValue src)
 bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
 		   char **end)
 {
-    TValue res = kbigrat_new(K, false, 0, 1);
+    TValue res = kbigrat_make_simple(K);
     krooted_tvs_push(K, res);
     bool ret_val = (mp_rat_read_cstring(K, tv2bigrat(res), base, 
 					buf, end) == MP_OK);
@@ -109,7 +112,7 @@ bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out,
 bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out, 
 			    char **end)
 {
-    TValue res = kbigrat_new(K, false, 0, 1);
+    TValue res = kbigrat_make_simple(K);
     krooted_tvs_push(K, res);
     bool ret_val = (mp_rat_read_ustring(K, tv2bigrat(res), base, 
 					buf, end) == MP_OK);
@@ -182,4 +185,29 @@ bool kbigrat_gep(klisp_State *K, TValue tv_bigrat1, TValue tv_bigrat2)
 {
     return (mp_rat_compare(K, tv2bigrat(tv_bigrat1), 
 			   tv2bigrat(tv_bigrat2)) >= 0);
+}
+
+bool kbigrat_negativep(TValue tv_bigrat)
+{
+    return (mp_rat_compare_zero(tv2bigrat(tv_bigrat)) < 0);
+}
+
+bool kbigrat_positivep(TValue tv_bigrat)
+{
+    return (mp_rat_compare_zero(tv2bigrat(tv_bigrat)) > 0);
+}
+
+/* needs the state to create a copy if negative */
+TValue kbigrat_abs(klisp_State *K, TValue tv_bigrat)
+{
+    if (kbigrat_negativep(tv_bigrat)) {
+	TValue copy = kbigrat_make_simple(K);
+	krooted_tvs_push(K, copy);
+	UNUSED(mp_rat_abs(K, tv2bigrat(tv_bigrat), tv2bigrat(copy)));
+	krooted_tvs_pop(K);
+	/* NOTE: this can never be an integer if the parameter was a bigrat */
+	return copy;
+    } else {
+	return tv_bigrat;
+    }
 }

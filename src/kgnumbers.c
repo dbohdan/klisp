@@ -258,6 +258,10 @@ TValue knum_abs(klisp_State *K, TValue n)
 	kensure_bigint(n); 
 	return kbigint_abs(K, n);
     }
+    case K_TBIGRAT: {
+	kensure_bigrat(n); 
+	return kbigrat_abs(K, n);
+    }
     case K_TEINF:
 	return KEPINF;
     default:
@@ -720,6 +724,8 @@ bool kpositivep(TValue n)
 	return ivalue(n) > 0;
     case K_TBIGINT:
 	return kbigint_positivep(n);
+    case K_TBIGRAT:
+	return kbigrat_positivep(n);
     default:
 	/* shouldn't happen */
 	assert(0);
@@ -735,6 +741,8 @@ bool knegativep(TValue n)
 	return ivalue(n) < 0;
     case K_TBIGINT:
 	return kbigint_negativep(n);
+    case K_TBIGRAT:
+	return kbigrat_negativep(n);
     default:
 	/* shouldn't happen */
 	assert(0);
