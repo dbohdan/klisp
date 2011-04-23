@@ -18,24 +18,26 @@
 #include "kerror.h"
 #include "ksymbol.h"
 #include "kinteger.h"
- #include "krational.h"
+#include "krational.h"
 
- #include "kghelpers.h"
- #include "kgnumbers.h"
+#include "kghelpers.h"
+#include "kgnumbers.h"
 
- /* 15.5.1? number?, finite?, integer? */
- /* use ftypep & ftypep_predp */
+/* 15.5.1? number?, finite?, integer? */
+/* use ftypep & ftypep_predp */
 
- /* Helpers for typed predicates */
- bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
- /* This is used in gcd & lcm */
- bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
- /* obj is known to be a number */
- bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
- /* TEMP: for now only fixint & bigints, should also include inexact 
-    integers */
+/* Helpers for typed predicates */
+bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
+/* This is used in gcd & lcm */
+bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
+/* obj is known to be a number */
+bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
+/* TEMP: for now only fixint, bigints & rational, should also include inexact 
+   integers */
 bool kintegerp(TValue obj) { return ttisinteger(obj); }
 bool krationalp(TValue obj) { return ttisrational(obj); }
+/* all real are rationals in klisp */
+bool krealp(TValue obj) { return ttisrational(obj); }
 
  /* 12.5.2 =? */
  /* uses typed_bpredp */
@@ -157,6 +159,11 @@ bool krationalp(TValue obj) { return ttisrational(obj); }
 	 kensure_bigint(n2);
 	 return kbigint_plus(K, n1, n2);
      }
+     case K_TBIGRAT: {
+	 kensure_bigrat(n1);
+	 kensure_bigrat(n2);
+	 return kbigrat_plus(K, n1, n2);
+     }
      case K_TEINF:
 	 if (!ttiseinf(n1))
 	     return n2;
@@ -191,6 +198,11 @@ bool krationalp(TValue obj) { return ttisrational(obj); }
 	 kensure_bigint(n2);
 	 return kbigint_times(K, n1, n2);
      }
+     case K_TBIGRAT: {
+	 kensure_bigrat(n1);
+	 kensure_bigrat(n2);
+	 return kbigrat_times(K, n1, n2);
+     }
      case K_TEINF:
 	 if (!ttiseinf(n1) || !ttiseinf(n2)) {
 	     if (kfast_zerop(n1) || kfast_zerop(n2)) {
@@ -224,6 +236,11 @@ bool krationalp(TValue obj) { return ttisrational(obj); }
 	 kensure_bigint(n2);
 	 return kbigint_minus(K, n1, n2);
      }
+     case K_TBIGRAT: {
+	 kensure_bigrat(n1);
+	 kensure_bigrat(n2);
+	 return kbigrat_minus(K, n1, n2);
+     }
      case K_TEINF:
 	 if (!ttiseinf(n1))
 	     return kneg_inf(n2);
@@ -238,6 +255,48 @@ bool krationalp(TValue obj) { return ttisrational(obj); }
 	klispE_throw(K, "-: unsopported type");
 	return KINERT;
     }
+}
+
+ /* May throw an error */
+ /* GC: assumes n1 & n2 rooted */
+ TValue knum_divided(klisp_State *K, TValue n1, TValue n2)
+ {
+     /* first check the most common error, division by zero */
+     if (kfast_zerop(n2)) {
+	 klispE_throw(K, "/: division by zero (no primary value)");
+	 return KINERT;
+     }
+
+     switch(max_ttype(n1, n2)) {
+     case K_TFIXINT: {
+	 int64_t res = (int64_t) ivalue(n1) / (int64_t) ivalue(n2);
+	 int64_t rem = (int64_t) ivalue(n1) % (int64_t) ivalue(n2);
+	 if (rem == 0 && res >= (int64_t) INT32_MIN &&
+	       res <= (int64_t) INT32_MAX) {
+	     return i2tv((int32_t) res);
+	 } /* else fall through */
+     }
+     case K_TBIGINT: /* just handle it as a rational */
+     case K_TBIGRAT: {
+	 kensure_bigrat(n1);
+	 kensure_bigrat(n2);
+	 return kbigrat_divided(K, n1, n2);
+     }
+     case K_TEINF: {
+	 if (ttiseinf(n1) && ttiseinf(n2)) {
+	     klispE_throw(K, "/: (infinity divided by infinity) "
+			  "no primary value");
+	     return KINERT;
+	 } else if (ttiseinf(n1)) {
+	     return knum_same_signp(n1, n2)? KEPINF : KEMINF;
+	 } else { /* ttiseinf(n2) */
+	     return i2tv(0);
+	 }
+     }
+     default:
+	 klispE_throw(K, "/: unsopported type");
+	 return KINERT;
+     }
 }
 
 /* GC: assumes n rooted */
@@ -623,8 +682,8 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     UNUSED(denv);
 
-    bind_2tp(K, name, ptree, "number", knumberp, tv_n,
-	     "number", knumberp, tv_d);
+    bind_2tp(K, name, ptree, "number", krealp, tv_n,
+	     "number", krealp, tv_d);
 
     TValue tv_div, tv_mod;
 
@@ -895,3 +954,95 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
+
+/* TODO: remaining of rational module */
+
+/* 12.8.1 rational? */
+/* uses ftypep */
+
+/* 12.8.2 / */
+void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+    /* cycles are allowed, loop counting pairs */
+    int32_t cpairs;
+    
+    /* / in kernel (and unlike in scheme) requires at least 2 arguments */
+    if (!ttispair(ptree) || !ttispair(kcdr(ptree))) {
+	klispE_throw(K, "/: at least two values are required");
+	return;
+    } else if (!knumberp(kcar(ptree))) {
+	klispE_throw(K, "/: bad type on first argument (expected number)");
+	return;
+    }
+    TValue first_val = kcar(ptree);
+    int32_t pairs = check_typed_list(K, "/", "number", knumberp, true,
+				     kcdr(ptree), &cpairs);
+    int32_t apairs = pairs - cpairs;
+
+    TValue res;
+
+    /* first the acyclic part */
+    TValue ares = i2tv(1);
+    TValue tail = kcdr(ptree);
+
+    krooted_vars_push(K, &ares);
+
+    while(apairs--) {
+	TValue first = kcar(tail);
+	tail = kcdr(tail);
+	ares = knum_times(K, ares, first);
+    }
+
+    /* next the cyclic part */
+    TValue cres = i2tv(1);
+
+    if (cpairs == 0) {
+	/* speed things up if there is no cycle */
+	res = ares;
+	krooted_vars_pop(K);
+    } else {
+	bool all_one = true;
+
+	krooted_vars_push(K, &cres);
+	while(cpairs--) {
+	    TValue first = kcar(tail);
+	    tail = kcdr(tail);
+	    all_one = all_one && kfast_onep(first);
+	    cres = knum_times(K, cres, first);
+	}
+
+	/* think of cres as the product of an infinite series */
+	if (kfast_zerop(cres)) 
+	    ; /* do nothing */
+	else if (kpositivep(cres) && knum_ltp(K, cres, i2tv(1)))
+	    cres = i2tv(0);
+	else if (kfast_onep(cres)) {
+	    if (all_one)
+		cres = i2tv(1);
+	    else {
+		klispE_throw(K, "/: result has no primary value");
+		return;
+	    }
+	} else if (knum_gtp(K, cres, i2tv(1))) {
+	    /* ASK JOHN: this is as per the report, but maybe we should check
+	       that all elements are positive... */
+	    cres = KEPINF;
+	} else {
+	    /* cycle result less than zero */
+	    klispE_throw(K, "/: result has no primary value");
+	    return;
+	}
+
+	res = knum_times(K, ares, cres);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
+    } 
+    /* now divide first value by the product of all the elements in the list */
+    krooted_tvs_push(K, res);
+    res = knum_divided(K, first_val, res);
+    krooted_tvs_pop(K);
+
+    kapply_cc(K, res);
+}

@@ -123,7 +123,7 @@ bool kbigrat_gep(klisp_State *K, TValue bigrat1, TValue bigrat2);
 TValue kbigrat_plus(klisp_State *K, TValue n1, TValue n2);
 TValue kbigrat_times(klisp_State *K, TValue n1, TValue n2);
 TValue kbigrat_minus(klisp_State *K, TValue n1, TValue n2);
-TValue kbigrat_divide(klisp_State *K, TValue n1, TValue n2);
+TValue kbigrat_divided(klisp_State *K, TValue n1, TValue n2);
 
 /* TODO: Kernel allows arbitrary reals for these... will have to define */
 #if 0

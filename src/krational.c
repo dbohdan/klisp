@@ -187,6 +187,45 @@ bool kbigrat_gep(klisp_State *K, TValue tv_bigrat1, TValue tv_bigrat2)
 			   tv2bigrat(tv_bigrat2)) >= 0);
 }
 
+/*
+** GC: All of these assume the parameters are rooted 
+*/
+TValue kbigrat_plus(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue res = kbigrat_make_simple(K);
+    krooted_tvs_push(K, res);
+    UNUSED(mp_rat_add(K, tv2bigrat(n1), tv2bigrat(n2), tv2bigrat(res)));
+    krooted_tvs_pop(K);
+    return kbigrat_try_integer(K, res);
+}
+
+TValue kbigrat_times(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue res = kbigrat_make_simple(K);
+    krooted_tvs_push(K, res);
+    UNUSED(mp_rat_mul(K, tv2bigrat(n1), tv2bigrat(n2), tv2bigrat(res)));
+    krooted_tvs_pop(K);
+    return kbigrat_try_integer(K, res);
+}
+
+TValue kbigrat_minus(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue res = kbigrat_make_simple(K);
+    krooted_tvs_push(K, res);
+    UNUSED(mp_rat_sub(K, tv2bigrat(n1), tv2bigrat(n2), tv2bigrat(res)));
+    krooted_tvs_pop(K);
+    return kbigrat_try_integer(K, res);
+}
+
+TValue kbigrat_divided(klisp_State *K, TValue n1, TValue n2)
+{
+    TValue res = kbigrat_make_simple(K);
+    krooted_tvs_push(K, res);
+    UNUSED(mp_rat_div(K, tv2bigrat(n1), tv2bigrat(n2), tv2bigrat(res)));
+    krooted_tvs_pop(K);
+    return kbigrat_try_integer(K, res);
+}
+
 bool kbigrat_negativep(TValue tv_bigrat)
 {
     return (mp_rat_compare_zero(tv2bigrat(tv_bigrat)) < 0);

@@ -28,6 +28,7 @@ bool knumberp(TValue obj);
 bool kfinitep(TValue obj);
 bool kintegerp(TValue obj);
 bool krationalp(TValue obj);
+bool krealp(TValue obj);
 
 
 /* 12.5.2 =? */
@@ -110,6 +111,20 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.8.1 rational? */
+/* uses ftypep */
+
+/* 12.8.2 / */
+void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 12.8.3 numerator, denominator */
+/* TODO */
+
+/* 12.8.4 floor, ceiling, truncate, round */
+/* TODO */
+
+/* 12.8.5 rationalize, simplest-rational */
+/* TODO */
 
 /* REFACTOR: These should be in a knumber.h header */
 
