@@ -18,196 +18,219 @@
 #include "kerror.h"
 #include "ksymbol.h"
 #include "kinteger.h"
+ #include "krational.h"
 
-#include "kghelpers.h"
-#include "kgnumbers.h"
+ #include "kghelpers.h"
+ #include "kgnumbers.h"
 
-/* 15.5.1? number?, finite?, integer? */
-/* use ftypep & ftypep_predp */
+ /* 15.5.1? number?, finite?, integer? */
+ /* use ftypep & ftypep_predp */
 
-/* Helpers for typed predicates */
-bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
-/* This is used in gcd & lcm */
-bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
-/* obj is known to be a number */
-bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
-/* TEMP: for now only fixint & bigints, should also include inexact 
-   integers */
-bool kintegerp(TValue obj) { return ttisinteger(obj); }
+ /* Helpers for typed predicates */
+ bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
+ /* This is used in gcd & lcm */
+ bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
+ /* obj is known to be a number */
+ bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
+ /* TEMP: for now only fixint & bigints, should also include inexact 
+    integers */
+ bool kintegerp(TValue obj) { return ttisinteger(obj); }
 
-/* 12.5.2 =? */
-/* uses typed_bpredp */
+ /* 12.5.2 =? */
+ /* uses typed_bpredp */
 
-/* 12.5.3 <?, <=?, >?, >=? */
-/* use typed_bpredp */
+ /* 12.5.3 <?, <=?, >?, >=? */
+ /* use typed_bpredp */
 
-/* Helpers for typed binary predicates */
-/* XXX: this should probably be in a file knumber.h but there is no real need for 
-   that file yet */
+ /* Helpers for typed binary predicates */
+ /* XXX: this should probably be in a file knumber.h but there is no real need for 
+    that file yet */
 
-/* this will come handy when there are more numeric types,
-   it is intended to be used in switch */
-/* MAYBE: change to return -1, 0, 1 to indicate which type is bigger, and
-   return min & max in two extra pointers passed in. Change name to
-   classify_types */
-inline int32_t max_ttype(TValue obj1, TValue obj2)
-{
-    int32_t t1 = ttype(obj1);
-    int32_t t2 = ttype(obj2);
+ /* this will come handy when there are more numeric types,
+    it is intended to be used in switch */
+ /* MAYBE: change to return -1, 0, 1 to indicate which type is bigger, and
+    return min & max in two extra pointers passed in. Change name to
+    classify_types */
+ inline int32_t max_ttype(TValue obj1, TValue obj2)
+ {
+     int32_t t1 = ttype(obj1);
+     int32_t t2 = ttype(obj2);
 
-    return (t1 > t2? t1 : t2);
-}
+     return (t1 > t2? t1 : t2);
+ }
 
-inline int32_t min_ttype(TValue obj1, TValue obj2)
-{
-    int32_t t1 = ttype(obj1);
-    int32_t t2 = ttype(obj2);
+ inline int32_t min_ttype(TValue obj1, TValue obj2)
+ {
+     int32_t t1 = ttype(obj1);
+     int32_t t2 = ttype(obj2);
 
-    return (t1 < t2? t1 : t2);
-}
+     return (t1 < t2? t1 : t2);
+ }
 
-/* TEMP: for now only fixints, bigints and exact infinities */
-bool knum_eqp(TValue n1, TValue n2) 
-{ 
-    switch(max_ttype(n1, n2)) {
-    case K_TFIXINT:
-	return ivalue(n1) == ivalue(n2);
-    case K_TBIGINT:
-	if (min_ttype(n1, n2) != K_TBIGINT) {
-	    /* NOTE: no fixint is =? to a bigint */
-	    return false;
-	} else {
-	    /* both are bigints */
-	    return kbigint_eqp(n1, n2);
-	}
-    case K_TEINF:
-	return (tv_equal(n1, n2));
-    default:
-	/* shouldn't happen */
-	assert(0);
-	return false;
-    }
-}
+ /* TEMP: for now only fixints, bigints, bigrats and exact infinities */
+ bool knum_eqp(klisp_State *K, TValue n1, TValue n2) 
+ { 
+     switch(max_ttype(n1, n2)) {
+     case K_TFIXINT:
+	 return ivalue(n1) == ivalue(n2);
+     case K_TBIGINT:
+	 if (min_ttype(n1, n2) != K_TBIGINT) {
+	     /* NOTE: no fixint is =? to a bigint */
+	     return false;
+	 } else {
+	     /* both are bigints */
+	     return kbigint_eqp(n1, n2);
+	 }
+     case K_TBIGRAT:
+	 if (min_ttype(n1, n2) != K_TBIGRAT) {
+	     /* NOTE: no fixint or bigint is =? to a bigrat */
+	     return false;
+	 } else {
+	     /* both are bigints */
+	     return kbigrat_eqp(K, n1, n2);
+	 }
+     case K_TEINF:
+	 return (tv_equal(n1, n2));
+     default:
+	 /* shouldn't happen */
+	 assert(0);
+	 return false;
+     }
+ }
 
-bool knum_ltp(TValue n1, TValue n2) 
-{ 
-    switch(max_ttype(n1, n2)) {
-    case K_TFIXINT:
-	return ivalue(n1) < ivalue(n2);
-    case K_TBIGINT: {
-	kensure_bigint(n1);
-	kensure_bigint(n2);
-	return kbigint_ltp(n1, n2);
-    }
-    case K_TEINF:
-	return !tv_equal(n1, n2) && (tv_equal(n1, KEMINF) ||
-				     tv_equal(n2, KEPINF));
-    default:
-	/* shouldn't happen */
-	assert(0);
-	return false;
-    }
-}
+ bool knum_ltp(klisp_State *K, TValue n1, TValue n2) 
+ { 
+     switch(max_ttype(n1, n2)) {
+     case K_TFIXINT:
+	 return ivalue(n1) < ivalue(n2);
+     case K_TBIGINT: {
+	 kensure_bigint(n1);
+	 kensure_bigint(n2);
+	 return kbigint_ltp(n1, n2);
+     }
+     case K_TBIGRAT: {
+	 kensure_bigrat(n1);
+	 kensure_bigrat(n2);
+	 return kbigrat_ltp(K, n1, n2);
+     }
+     case K_TEINF:
+	 return !tv_equal(n1, n2) && (tv_equal(n1, KEMINF) ||
+				      tv_equal(n2, KEPINF));
+     default:
+	 /* shouldn't happen */
+	 assert(0);
+	 return false;
+     }
+ }
 
-bool knum_lep(TValue n1, TValue n2) { return !knum_ltp(n2, n1); }
-bool knum_gtp(TValue n1, TValue n2) { return knum_ltp(n2, n1); }
-bool knum_gep(TValue n1, TValue n2) { return !knum_ltp(n1, n2); }
+ bool knum_lep(klisp_State *K, TValue n1, TValue n2) 
+ { 
+     return !knum_ltp(K, n2, n1); 
+ }
+ bool knum_gtp(klisp_State *K, TValue n1, TValue n2) 
+ { 
+     return knum_ltp(K, n2, n1); 
+ }
+ bool knum_gep(klisp_State *K, TValue n1, TValue n2) 
+ { 
+     return !knum_ltp(K, n1, n2); 
+ }
 
-/* REFACTOR/MAYBE: add small inlineable plus that
-   first tries fixint addition and if that fails calls knum_plus */
+ /* REFACTOR/MAYBE: add small inlineable plus that
+    first tries fixint addition and if that fails calls knum_plus */
 
-/* May throw an error */
-/* GC: assumes n1 & n2 rooted */
-TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
-{
-    switch(max_ttype(n1, n2)) {
-    case K_TFIXINT: {
-	int64_t res = (int64_t) ivalue(n1) + (int64_t) ivalue(n2);
-	if (res >= (int64_t) INT32_MIN &&
-	    res <= (int64_t) INT32_MAX) {
-	    return i2tv((int32_t) res);
-	} /* else fall through */
-    }
-    case K_TBIGINT: {
-	kensure_bigint(n1);
-	kensure_bigint(n2);
-	return kbigint_plus(K, n1, n2);
-    }
-    case K_TEINF:
-	if (!ttiseinf(n1))
-	    return n2;
-	else if (!ttiseinf(n2))
-	    return n1;
-	if (tv_equal(n1, n2))
-	    return n1;
-	else {
-	    klispE_throw(K, "+: no primary value");
-	    return KINERT;
-	}
-    default:
-	klispE_throw(K, "+: unsopported type");
-	return KINERT;
-    }
-}
+ /* May throw an error */
+ /* GC: assumes n1 & n2 rooted */
+ TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
+ {
+     switch(max_ttype(n1, n2)) {
+     case K_TFIXINT: {
+	 int64_t res = (int64_t) ivalue(n1) + (int64_t) ivalue(n2);
+	 if (res >= (int64_t) INT32_MIN &&
+	     res <= (int64_t) INT32_MAX) {
+	     return i2tv((int32_t) res);
+	 } /* else fall through */
+     }
+     case K_TBIGINT: {
+	 kensure_bigint(n1);
+	 kensure_bigint(n2);
+	 return kbigint_plus(K, n1, n2);
+     }
+     case K_TEINF:
+	 if (!ttiseinf(n1))
+	     return n2;
+	 else if (!ttiseinf(n2))
+	     return n1;
+	 if (tv_equal(n1, n2))
+	     return n1;
+	 else {
+	     klispE_throw(K, "+: no primary value");
+	     return KINERT;
+	 }
+     default:
+	 klispE_throw(K, "+: unsopported type");
+	 return KINERT;
+     }
+ }
 
-/* May throw an error */
-/* GC: assumes n1 & n2 rooted */
-TValue knum_times(klisp_State *K, TValue n1, TValue n2)
-{
-    switch(max_ttype(n1, n2)) {
-    case K_TFIXINT: {
-	int64_t res = (int64_t) ivalue(n1) * (int64_t) ivalue(n2);
-	if (res >= (int64_t) INT32_MIN &&
-	    res <= (int64_t) INT32_MAX) {
-	    return i2tv((int32_t) res);
-	} /* else fall through */
-    }
-    case K_TBIGINT: {
-	kensure_bigint(n1);
-	kensure_bigint(n2);
-	return kbigint_times(K, n1, n2);
-    }
-    case K_TEINF:
-	if (!ttiseinf(n1) || !ttiseinf(n2)) {
-	    if (kfast_zerop(n1) || kfast_zerop(n2)) {
-		/* report: #e+infinity * 0 has no primary value */
-		klispE_throw(K, "*: result has no primary value");
-		return KINERT;
-	    } else
-		return knum_same_signp(n1, n2)? KEPINF : KEMINF;
-	} else
-	    return (tv_equal(n1, n2))? KEPINF : KEMINF;
-    default:
-	klispE_throw(K, "*: unsopported type");
-	return KINERT;
-    }
-}
+ /* May throw an error */
+ /* GC: assumes n1 & n2 rooted */
+ TValue knum_times(klisp_State *K, TValue n1, TValue n2)
+ {
+     switch(max_ttype(n1, n2)) {
+     case K_TFIXINT: {
+	 int64_t res = (int64_t) ivalue(n1) * (int64_t) ivalue(n2);
+	 if (res >= (int64_t) INT32_MIN &&
+	     res <= (int64_t) INT32_MAX) {
+	     return i2tv((int32_t) res);
+	 } /* else fall through */
+     }
+     case K_TBIGINT: {
+	 kensure_bigint(n1);
+	 kensure_bigint(n2);
+	 return kbigint_times(K, n1, n2);
+     }
+     case K_TEINF:
+	 if (!ttiseinf(n1) || !ttiseinf(n2)) {
+	     if (kfast_zerop(n1) || kfast_zerop(n2)) {
+		 /* report: #e+infinity * 0 has no primary value */
+		 klispE_throw(K, "*: result has no primary value");
+		 return KINERT;
+	     } else
+		 return knum_same_signp(n1, n2)? KEPINF : KEMINF;
+	 } else
+	     return (tv_equal(n1, n2))? KEPINF : KEMINF;
+     default:
+	 klispE_throw(K, "*: unsopported type");
+	 return KINERT;
+     }
+ }
 
-/* May throw an error */
-/* GC: assumes n1 & n2 rooted */
-TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
-{
-    switch(max_ttype(n1, n2)) {
-    case K_TFIXINT: {
-	int64_t res = (int64_t) ivalue(n1) - (int64_t) ivalue(n2);
-	if (res >= (int64_t) INT32_MIN &&
-	    res <= (int64_t) INT32_MAX) {
-	    return i2tv((int32_t) res);
-	} /* else fall through */
-    }
-    case K_TBIGINT: {
-	kensure_bigint(n1);
-	kensure_bigint(n2);
-	return kbigint_minus(K, n1, n2);
-    }
-    case K_TEINF:
-	if (!ttiseinf(n1))
-	    return kneg_inf(n2);
-	else if (!ttiseinf(n2))
-	    return n1;
-	if (tv_equal(n1, n2)) {
-	    klispE_throw(K, "-: no primary value");
-	    return KINERT;
+ /* May throw an error */
+ /* GC: assumes n1 & n2 rooted */
+ TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
+ {
+     switch(max_ttype(n1, n2)) {
+     case K_TFIXINT: {
+	 int64_t res = (int64_t) ivalue(n1) - (int64_t) ivalue(n2);
+	 if (res >= (int64_t) INT32_MIN &&
+	     res <= (int64_t) INT32_MAX) {
+	     return i2tv((int32_t) res);
+	 } /* else fall through */
+     }
+     case K_TBIGINT: {
+	 kensure_bigint(n1);
+	 kensure_bigint(n2);
+	 return kbigint_minus(K, n1, n2);
+     }
+     case K_TEINF:
+	 if (!ttiseinf(n1))
+	     return kneg_inf(n2);
+	 else if (!ttiseinf(n2))
+	     return n1;
+	 if (tv_equal(n1, n2)) {
+	     klispE_throw(K, "-: no primary value");
+	     return KINERT;
 	} else
 	    return n1;
     default:
@@ -413,7 +436,7 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	/* think of cres as the product of an infinite series */
 	if (kfast_zerop(cres)) 
 	    ; /* do nothing */
-	else if (kpositivep(cres) && knum_ltp(cres, i2tv(1)))
+	else if (kpositivep(cres) && knum_ltp(K, cres, i2tv(1)))
 	    cres = i2tv(0);
 	else if (kfast_onep(cres)) {
 	    if (all_one)
@@ -422,7 +445,7 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 		klispE_throw(K, "*: result has no primary value");
 		return;
 	    }
-	} else if (knum_gtp(cres, i2tv(1))) {
+	} else if (knum_gtp(K, cres, i2tv(1))) {
 	    /* ASK JOHN: this is as per the report, but maybe we should check
 	       that all elements are positive... */
 	    cres = KEPINF;
@@ -787,13 +810,13 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 
     TValue tail = ptree;
-    bool (*cmp)(TValue, TValue) = minp? knum_ltp : knum_gtp;
+    bool (*cmp)(klisp_State *K, TValue, TValue) = minp? knum_ltp : knum_gtp;
 
     while(pairs--) {
 	TValue first = kcar(tail);
 	tail = kcdr(tail);
 
-	if ((*cmp)(first, res))
+	if ((*cmp)(K, first, res))
 	    res = first;
     }
     kapply_cc(K, res);

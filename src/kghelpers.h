@@ -385,6 +385,10 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 */
 void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* This is the same, but the comparison predicate takes a klisp_State */
+/* TODO unify them */
+void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 
 /* 
 ** Continuation that ignores the value received and instead returns

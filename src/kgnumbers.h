@@ -27,6 +27,7 @@
 bool knumberp(TValue obj);
 bool kfinitep(TValue obj);
 bool kintegerp(TValue obj);
+bool krationalp(TValue obj);
 
 
 /* 12.5.2 =? */
@@ -38,11 +39,11 @@ bool kintegerp(TValue obj);
 /* Helpers for typed binary predicates */
 /* XXX: this should probably be in a file knumber.h but there is no real need for 
    that file yet */
-bool knum_eqp(TValue n1, TValue n2);
-bool knum_ltp(TValue n1, TValue n2);
-bool knum_lep(TValue n1, TValue n2);
-bool knum_gtp(TValue n1, TValue n2);
-bool knum_gep(TValue n1, TValue n2);
+bool knum_eqp(klisp_State *K, TValue n1, TValue n2);
+bool knum_ltp(klisp_State *K, TValue n1, TValue n2);
+bool knum_lep(klisp_State *K, TValue n1, TValue n2);
+bool knum_gtp(klisp_State *K, TValue n1, TValue n2);
+bool knum_gep(klisp_State *K, TValue n1, TValue n2);
 
 /* 12.5.4 + */
 /* TEMP: for now only accept two arguments */

@@ -666,17 +666,17 @@ void kinit_ground_env(klisp_State *K)
 		    p2tv(kintegerp));
 
     /* 12.5.2 =? */
-    add_applicative(K, ground_env, "=?", ftyped_bpredp, 3,
+    add_applicative(K, ground_env, "=?", ftyped_kbpredp, 3,
 		    symbol, p2tv(knumberp), p2tv(knum_eqp));
     
     /* 12.5.3 <?, <=?, >?, >=? */
-    add_applicative(K, ground_env, "<?", ftyped_bpredp, 3,
+    add_applicative(K, ground_env, "<?", ftyped_kbpredp, 3,
 		    symbol, p2tv(knumberp), p2tv(knum_ltp));
-    add_applicative(K, ground_env, "<=?", ftyped_bpredp, 3,
+    add_applicative(K, ground_env, "<=?", ftyped_kbpredp, 3,
 		    symbol, p2tv(knumberp),  p2tv(knum_lep));
-    add_applicative(K, ground_env, ">?", ftyped_bpredp, 3,
+    add_applicative(K, ground_env, ">?", ftyped_kbpredp, 3,
 		    symbol, p2tv(knumberp), p2tv(knum_gtp));
-    add_applicative(K, ground_env, ">=?", ftyped_bpredp, 3,
+    add_applicative(K, ground_env, ">=?", ftyped_kbpredp, 3,
 		    symbol, p2tv(knumberp), p2tv(knum_gep));
 
     /* 12.5.4 + */

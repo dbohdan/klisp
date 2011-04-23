@@ -176,6 +176,63 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, b2tv(res));
 }
 
+/* This is the same, but the comparison predicate takes a klisp_State */
+/* TODO unify them */
+void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    (void) denv;
+    /*
+    ** xparams[0]: name symbol
+    ** xparams[1]: type fn pointer (as a void * in a user TValue)
+    ** xparams[2]: fn pointer (as a void * in a user TValue)
+    */
+    char *name = ksymbol_buf(xparams[0]);
+    bool (*typep)(TValue obj) = pvalue(xparams[1]);
+    bool (*predp)(klisp_State *K, TValue obj1, TValue obj2) = 
+	pvalue(xparams[2]);
+
+    /* check the ptree is a list first to allow the structure
+       errors to take precedence over the type errors. */
+    int32_t cpairs;
+    int32_t pairs = check_list(K, name, true, ptree, &cpairs);
+
+    /* cyclical list require an extra comparison of the last
+       & first element of the cycle */
+    int32_t comps = cpairs? pairs : pairs - 1;
+
+    TValue tail = ptree;
+    bool res = true;
+
+    /* check the type while checking the predicate.
+       Keep going even if the result is false to catch errors in 
+       type */
+
+    if (comps == 0) {
+	/* this case has to be here because otherwise there is no check
+	   for the type of the lone operand */
+	TValue first = kcar(tail);
+	if (!(*typep)(first)) {
+	    /* TODO show expected type */
+	    klispE_throw_extra(K, name, ": bad argument type");
+	    return;
+	}
+    }
+
+    while(comps-- > 0) { /* comps could be -1 if ptree is () */
+	TValue first = kcar(tail);
+	tail = kcdr(tail); /* tail only advances one place per iteration */
+	TValue second = kcar(tail);
+
+	if (!(*typep)(first) || !(*typep)(second)) {
+	    /* TODO show expected type */
+	    klispE_throw_extra(K, name, ": bad argument type");
+	    return;
+	}
+	res &= (*predp)(K, first, second);
+    }
+    kapply_cc(K, b2tv(res));
+}
+
 /* typed finite list. Structure error should be throw before type errors */
 int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 			 bool (*typep)(TValue), bool allow_infp, TValue obj,
