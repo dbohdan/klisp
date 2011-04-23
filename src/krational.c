@@ -79,6 +79,23 @@ TValue kbigrat_copy(klisp_State *K, TValue src)
     return copy;
 }
 
+/* this is used by write to estimate the number of chars necessary to
+   print the number */
+int32_t kbigrat_print_size(TValue tv_bigint, int32_t base)
+{
+    return mp_rat_string_len(tv2bigrat(tv_bigint), base);
+}
+
+/* this is used by write */
+void  kbigrat_print_string(klisp_State *K, TValue tv_bigrat, int32_t base, 
+			   char *buf, int32_t limit)
+{
+    mp_result res = mp_rat_to_string(K, tv2bigrat(tv_bigrat), base, buf, 
+				     limit);
+    /* only possible error is truncation */
+    klisp_assert(res == MP_OK);
+}
+
 /* Interface for kgnumbers */
 
 /* The compare predicates take a klisp_State because in general

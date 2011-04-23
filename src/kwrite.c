@@ -72,6 +72,24 @@ void kw_print_bigint(klisp_State *K, TValue bigint)
     krooted_tvs_pop(K);
 }
 
+void kw_print_bigrat(klisp_State *K, TValue bigrat)
+{
+    int32_t radix = KDEFAULT_NUMBER_RADIX;
+    int32_t size = kbigrat_print_size(bigrat, radix); 
+    krooted_tvs_push(K, bigrat);
+    /* here we are using 1 byte extra, because size already includes
+       1 for the terminator, but better be safe than sorry */
+    TValue buf_str = kstring_new_s(K, size);
+    krooted_tvs_push(K, buf_str);
+
+    char *buf = kstring_buf(buf_str);
+    kbigrat_print_string(K, bigrat, radix, buf, size);
+    kw_printf(K, "%s", buf);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+}
+
 /*
 ** Helper for printing strings (correcly escapes backslashes and
 ** double quotes & prints embedded '\0's). It includes the surrounding
@@ -247,6 +265,9 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	break;
     case K_TBIGINT:
 	kw_print_bigint(K, obj);
+	break;
+    case K_TBIGRAT:
+	kw_print_bigrat(K, obj);
 	break;
     case K_TNIL:
 	kw_printf(K, "()");

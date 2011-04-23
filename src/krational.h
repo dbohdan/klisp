@@ -97,6 +97,10 @@ KUNIQUE_NAME(bigrat_bigint_lbl):					\
     (n) = gc2bigrat(KUNIQUE_NAME(brat));	                        \
 KUNIQUE_NAME(bigrat_exit_lbl):
 
+/* read/write interface */
+int32_t kbigrat_print_size(TValue tv_bigrat, int32_t base);
+void  kbigrat_print_string(klisp_State *K, TValue tv_bigrat, int32_t base, 
+			   char *buf, int32_t limit);
 #if 0
 /* This is used by the reader to destructively add digits to a number 
  tv_bigrat must be positive */
