@@ -66,47 +66,9 @@ TValue kbigint_copy(klisp_State *K, TValue src)
     return copy;
 }
 
-/* This algorithm is like a fused multiply add on bignums,
-   unlike any other function here it modifies bigint. It is used in read
-   and it assumes that bigint is positive */
-/* GC: Assumes tv_bigint is rooted */
-void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
-		       int32_t digit)
-{
-    Bigint *bigint = tv2bigint(tv_bigint);
-    UNUSED(mp_int_mul_value(K, bigint, base, bigint));
-    UNUSED(mp_int_add_value(K, bigint, digit, bigint));
-}
-
-/* This is used by the writer to get the digits of a number 
- tv_bigint must be positive */
-/* GC: Assumes tv_bigint is rooted */
-int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base)
-{
-    UNUSED(K);
-    Bigint *bigint = tv2bigint(tv_bigint);
-    int32_t r;
-    UNUSED(mp_int_div_value(K, bigint, base, bigint, &r));
-    return r;
-}
-
-/* This is used by write to test if there is any digit left to print */
-bool kbigint_has_digits(klisp_State *K, TValue tv_bigint)
-{
-    UNUSED(K);
-    return (mp_int_compare_zero(tv2bigint(tv_bigint)) != 0);
-}
-
-/* Mutate the bigint to have the opposite sign, used in read
-   and write*/
-/* GC: Assumes tv_bigint is rooted */
-void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
-{
-    Bigint *bigint = tv2bigint(tv_bigint);
-    UNUSED(mp_int_neg(K, bigint, bigint));
-}
-
-/* read/write interface */
+/* 
+** read/write interface 
+*/
 
 /* this works for bigints & fixints, returns true if ok */
 bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 

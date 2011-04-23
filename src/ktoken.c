@@ -599,34 +599,33 @@ TValue ktok_read_special(klisp_State *K)
        token, or a char constant or a number. srfi-38 tokens are a '#' a 
        decimal number and end with a '=' or a '#' */
     if (buf_len > 2 && ktok_is_numeric(buf[1])) {
+	/* NOTE: it's important to check is_numeric to avoid problems with 
+	   sign in kinteger_read */
 	/* srfi-38 type token (can be either a def or ref) */
+	/* TODO: lift this implementation restriction */
 	/* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
-	int32_t res = 0;
-	int32_t i = 1;
-	char ch = buf[i];
-	while(i < buf_len && ch != '#' && ch != '=') {
-	    if (!ktok_is_numeric(ch)) {
-		ktok_error(K, "Invalid char found in srfi-38 token");
-		/* avoid warning */
-		return KINERT;
-	    }
+	char ch = buf[buf_len-1]; /* remember last char */
+	buf[buf_len-1] = '\0'; /* replace last char with 0 to read number */
 
-	    int new_digit = ktok_digit_value(ch);
-	    if (can_add_digit(res, false, new_digit, 10)) {
-		res = res * 10 + new_digit;
-	    } else {
-		ktok_error(K, "IMP. RESTRICTION: shared token too big");
-		/* avoid warning */
-		return KINERT;
-	    }
-	    ch = buf[++i];
-	}
-	if (i == buf_len) {
+	if (ch != '#' && ch != '=') {
 	    ktok_error(K, "Missing last char in srfi-38 token");
 	    return KINERT;
 	} /* else buf[i] == '#' or '=' */
+	TValue n;
+	char *end;
+	/* 10 is the radix for srfi-38 tokens, buf+1 to jump over the '#',
+	 end+1 to count the last char */
+	if (!kinteger_read(K, buf+1, 10, &n, &end) || end+1 - buf != buf_len) {
+	    ktok_error(K, "Bad char in srfi-38 token");
+	    return KINERT;
+	} else if (!ttisfixint(n)) {
+	    ktok_error(K, "IMP. RESTRICTION: shared token too big");
+	    /* avoid warning */
+	    return KINERT;
+	}
 	ks_tbclear(K);
-	return kcons(K, ch2tv(ch), i2tv(res));
+	/* GC: no need to root n, for now it's a fixint */
+	return kcons(K, ch2tv(ch), n);
     }
     
     /* REFACTOR: move to new function */
