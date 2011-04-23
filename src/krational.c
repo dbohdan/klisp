@@ -79,6 +79,35 @@ TValue kbigrat_copy(klisp_State *K, TValue src)
     return copy;
 }
 
+/*
+** read/write interface 
+*/
+/* this works for bigrats, bigints & fixints, returns true if ok */
+bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
+		   char **end)
+{
+    TValue res = kbigrat_new(K, false, 0, 1);
+    krooted_tvs_push(K, res);
+    bool ret_val = (mp_rat_read_cstring(K, tv2bigrat(res), base, 
+					buf, end) == MP_OK);
+    krooted_tvs_pop(K);
+    *out = kbigrat_try_integer(K, res);
+    return ret_val;
+}
+
+/* NOTE: allow decimal for use after #e */
+bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out, 
+			    char **end)
+{
+    TValue res = kbigrat_new(K, false, 0, 1);
+    krooted_tvs_push(K, res);
+    bool ret_val = (mp_rat_read_ustring(K, tv2bigrat(res), base, 
+					buf, end) == MP_OK);
+    krooted_tvs_pop(K);
+    *out = kbigrat_try_integer(K, res);
+    return ret_val;
+}
+
 /* this is used by write to estimate the number of chars necessary to
    print the number */
 int32_t kbigrat_print_size(TValue tv_bigint, int32_t base)

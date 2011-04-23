@@ -401,12 +401,21 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
 {
     UNUSED(len); /* not needed really, buf ends with '\0' */
     TValue n;
-    if (!kinteger_read(K, buf, radix, &n, NULL)) {
+    if (has_exactp) {
+	/* TEMP: while there are no inexacts */
+	/* allow decimals if has #e prefix */
+	if (!krational_read_decimal(K, buf, radix, &n, NULL)) {
 	    /* TODO throw meaningful error msgs, use last param */
 	    ktok_error(K, "Bad format in number");
 	    return KINERT;
+	}
+    } else {
+	if (!krational_read(K, buf, radix, &n, NULL)) {
+	    /* TODO throw meaningful error msgs, use last param */
+	    ktok_error(K, "Bad format in number");
+	    return KINERT;
+	}
     }
-
     ks_tbclear(K);
     return n;
 }

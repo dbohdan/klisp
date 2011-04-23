@@ -97,32 +97,20 @@ KUNIQUE_NAME(bigrat_bigint_lbl):					\
     (n) = gc2bigrat(KUNIQUE_NAME(brat));	                        \
 KUNIQUE_NAME(bigrat_exit_lbl):
 
-/* read/write interface */
+/*
+** read/write interface 
+*/
+/* this works for bigrats, bigints & fixints, returns true if ok */
+/* NOTE: doesn't allow decimal */
+bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
+		   char **end);
+/* NOTE: allow decimal for use after #e */
+bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out, 
+			    char **end);
+
 int32_t kbigrat_print_size(TValue tv_bigrat, int32_t base);
 void  kbigrat_print_string(klisp_State *K, TValue tv_bigrat, int32_t base, 
 			   char *buf, int32_t limit);
-#if 0
-/* This is used by the reader to destructively add digits to a number 
- tv_bigrat must be positive */
-void kbigrat_add_digit(klisp_State *K, TValue tv_bigrat, int32_t base, 
-		       int32_t digit);
-
-/* This is used by the writer to get the digits of a number 
- tv_bigrat must be positive */
-int32_t kbigrat_remove_digit(klisp_State *K, TValue tv_bigrat, int32_t base);
-
-/* This is used by write to test if there is any digit left to print */
-bool kbigrat_has_digits(klisp_State *K, TValue tv_bigrat);
-
-/* Mutate the bigrat to have the opposite sign, used in read & write */
-void kbigrat_invert_sign(klisp_State *K, TValue tv_bigrat);
-
-/* this is used by write to estimate the number of chars necessary to
-   print the number */
-int32_t kbigrat_print_size(TValue tv_bigrat, int32_t base);
-
-#endif /* #if 0 */
-
 
 /* Interface for kgnumbers */
 bool kbigrat_eqp(klisp_State *K, TValue bigrat1, TValue bigrat2);
