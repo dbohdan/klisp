@@ -15,17 +15,37 @@
 #include "kstate.h"
 #include "imath.h"
 
-/* for now used only for reading */
-/* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
-TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
-
-/* used in write to destructively get the digits & in bigrat */
-TValue kbigint_copy(klisp_State *K, TValue src);
-
 /* Check to see if an int64_t fits in a int32_t */
 inline bool kfit_int32_t(int64_t n) {
     return (n >= (int64_t) INT32_MIN && n <= (int64_t) INT32_MAX);
 }
+
+/* This tries to convert a bigint to a fixint */
+/* XXX this doesn't need K really */
+inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
+{
+    UNUSED(K);
+    Bigint *b = tv2bigint(n);
+    if (MP_USED(b) != 1)
+	return n;
+
+    int64_t digit = (int64_t) *(MP_DIGITS(b));
+    if (MP_SIGN(b) == MP_NEG) digit = -digit;
+    if (kfit_int32_t(digit)) {
+	/* n shouln't be reachable but the let the gc do its job */
+	return i2tv((int32_t) digit); 
+    } else {
+	return n;
+    }
+}
+
+/* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
+TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
+
+TValue kbigint_copy(klisp_State *K, TValue src);
+
+/* macro to create the simplest bigint */
+#define kbigint_make_simple(K_) kbigint_new(K_, false, 0)
 
 /* Create a stack allocated bigints from a fixint,
    useful for mixed operations, relatively light weight compared

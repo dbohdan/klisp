@@ -394,6 +394,38 @@ TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
     }
 }
 
+/* GC: assumes n is rooted */
+TValue knum_numerator(klisp_State *K, TValue n)
+{
+    switch(ttype(n)) {
+    case K_TFIXINT:
+    case K_TBIGINT:
+	return n;
+    case K_TBIGRAT:
+	return kbigrat_numerator(K, n);
+/*    case K_TEINF: infinities are not rational! */
+    default:
+	klispE_throw(K, "numerator: unsopported type");
+	return KINERT;
+    }
+}
+
+/* GC: assumes n is rooted */
+TValue knum_denominator(klisp_State *K, TValue n)
+{
+    switch(ttype(n)) {
+    case K_TFIXINT:
+    case K_TBIGINT:
+	return i2tv(1); /* denominator of integer is always (+)1 */
+    case K_TBIGRAT:
+	return kbigrat_denominator(K, n);
+/*    case K_TEINF: infinities are not rational! */
+    default:
+	klispE_throw(K, "denominator: unsopported type");
+	return KINERT;
+    }
+}
+
 /* 12.5.4 + */
 void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -682,7 +714,7 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     UNUSED(denv);
 
-    bind_2tp(K, name, ptree, "number", krealp, tv_n,
+    bind_2tp(K, name, ptree, "real", krealp, tv_n,
 	     "number", krealp, tv_d);
 
     TValue tv_div, tv_mod;
@@ -1046,3 +1078,32 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     kapply_cc(K, res);
 }
+
+/* 12.8.3 numerator, denominator */
+void knumerator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+    
+    bind_1tp(K, "numerator", ptree, "rational", krationalp, n);
+
+    TValue res = knum_numerator(K, n);
+    kapply_cc(K, res);
+}
+
+void kdenominator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+    
+    bind_1tp(K, "denominator", ptree, "rational", krationalp, n);
+
+    TValue res = knum_denominator(K, n);
+    kapply_cc(K, res);
+}
+
+/* 12.8.4 floor, ceiling, truncate, round */
+/* TODO */
+
+/* 12.8.5 rationalize, simplest-rational */
+/* TODO */

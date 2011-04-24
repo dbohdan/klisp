@@ -17,31 +17,6 @@
 #include "kmem.h"
 #include "kgc.h"
 
-/* This tries to convert a bigrat to a fixint or a bigint */
-inline TValue kbigrat_try_integer(klisp_State *K, TValue n)
-{
-    Bigrat *b = tv2bigrat(n);
-
-    if (!mp_rat_is_integer(b))
-	return n;
-
-    /* sadly we have to repeat the code from try_fixint here... */
-    Bigint *i = MP_NUMER_P(b);
-    if (MP_USED(i) == 1) {
-	int64_t digit = (int64_t) *(MP_DIGITS(i));
-	if (MP_SIGN(i) == MP_NEG) digit = -digit;
-	if (kfit_int32_t(digit))
-	    return i2tv((int32_t) digit); 
-	/* else fall through */
-    }
-    /* should alloc a bigint */
-    /* GC: n may not be rooted */
-    krooted_tvs_push(K, n);
-    TValue copy = kbigint_copy(K, gc2bigint(i));
-    krooted_tvs_pop(K);
-    return copy;
-}
-
 /* used for res & temps in operations */
 /* NOTE: This is to be called only with already reduced values */
 TValue kbigrat_new(klisp_State *K, bool sign, uint32_t num, 
@@ -70,9 +45,6 @@ TValue kbigrat_new(klisp_State *K, bool sign, uint32_t num,
 
     return gc2bigrat(new_bigrat);
 }
-
-/* macro to create the simplest rational */
-#define kbigrat_make_simple(K_) kbigrat_new(K_, false, 0, 1)
 
 /* assumes src is rooted */
 TValue kbigrat_copy(klisp_State *K, TValue src)
@@ -236,6 +208,7 @@ bool kbigrat_positivep(TValue tv_bigrat)
     return (mp_rat_compare_zero(tv2bigrat(tv_bigrat)) > 0);
 }
 
+/* GC: These assume tv_bigrat is rooted */
 /* needs the state to create a copy if negative */
 TValue kbigrat_abs(klisp_State *K, TValue tv_bigrat)
 {
@@ -248,5 +221,39 @@ TValue kbigrat_abs(klisp_State *K, TValue tv_bigrat)
 	return copy;
     } else {
 	return tv_bigrat;
+    }
+}
+
+TValue kbigrat_numerator(klisp_State *K, TValue tv_bigrat)
+{
+    int32_t fnum = 0;
+    Bigrat *bigrat = tv2bigrat(tv_bigrat);
+    if (mp_rat_to_ints(bigrat, &fnum, NULL) == MP_OK)
+	return i2tv(fnum);
+    else {
+	TValue copy = kbigint_make_simple(K);
+	krooted_tvs_push(K, copy);
+	UNUSED(mp_rat_numer(K, bigrat, tv2bigint(copy)));
+	krooted_tvs_pop(K);
+	/* NOTE: may still be a fixint because mp_rat_to_ints fails if
+	   either numer or denom isn't a fixint */
+	return kbigint_try_fixint(K, copy);
+    }
+}
+
+TValue kbigrat_denominator(klisp_State *K, TValue tv_bigrat)
+{
+    int32_t fden = 0;
+    Bigrat *bigrat = tv2bigrat(tv_bigrat);
+    if (mp_rat_to_ints(bigrat, NULL, &fden) == MP_OK)
+	return i2tv(fden);
+    else {
+	TValue copy = kbigint_make_simple(K);
+	krooted_tvs_push(K, copy);
+	UNUSED(mp_rat_denom(K, bigrat, tv2bigint(copy)));
+	krooted_tvs_pop(K);
+	/* NOTE: may still be a fixint because mp_rat_to_ints fails if
+	   either numer or denom isn't a fixint */
+	return kbigint_try_fixint(K, copy);
     }
 }

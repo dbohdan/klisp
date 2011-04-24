@@ -735,15 +735,22 @@ void kinit_ground_env(klisp_State *K)
     ** 12.8 Rational features
     */
 
-    /* 12.8.1 rational */
+    /* 12.8.1 rational? */
     add_applicative(K, ground_env, "rational?", ftypep, 2, symbol, 
 		    p2tv(krationalp));
 
     /* 12.8.2 / */
     add_applicative(K, ground_env, "/", kdivided, 0);
 
+    /* 12.8.3 numerator, denominator */
+    add_applicative(K, ground_env, "numerator", knumerator, 0);
+    add_applicative(K, ground_env, "denominator", kdenominator, 0);
+
+    /* 12.8.4 floor, ceiling, truncate, round */
     /* TODO */
-    /* complete module rational */
+
+    /* 12.8.5 rationalize, simplest-rational */
+    /* TODO */
 
     /*
     **

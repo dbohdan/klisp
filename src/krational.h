@@ -18,7 +18,30 @@
 
 /* TEMP: for now we only implement bigrats (memory allocated) */
 
-/* TEMP: we'll see about reading & writing... */
+/* This tries to convert a bigrat to a fixint or a bigint */
+inline TValue kbigrat_try_integer(klisp_State *K, TValue n)
+{
+    Bigrat *b = tv2bigrat(n);
+
+    if (!mp_rat_is_integer(b))
+	return n;
+
+    /* sadly we have to repeat the code from try_fixint here... */
+    Bigint *i = MP_NUMER_P(b);
+    if (MP_USED(i) == 1) {
+	int64_t digit = (int64_t) *(MP_DIGITS(i));
+	if (MP_SIGN(i) == MP_NEG) digit = -digit;
+	if (kfit_int32_t(digit))
+	    return i2tv((int32_t) digit); 
+	/* else fall through */
+    }
+    /* should alloc a bigint */
+    /* GC: n may not be rooted */
+    krooted_tvs_push(K, n);
+    TValue copy = kbigint_copy(K, gc2bigint(i));
+    krooted_tvs_pop(K);
+    return copy;
+}
 
 /* used in reading and for res & temps in operations */
 TValue kbigrat_new(klisp_State *K, bool sign, uint32_t num, 
@@ -26,6 +49,9 @@ TValue kbigrat_new(klisp_State *K, bool sign, uint32_t num,
 
 /* used in write to destructively get the digits */
 TValue kbigrat_copy(klisp_State *K, TValue src);
+
+/* macro to create the simplest rational */
+#define kbigrat_make_simple(K_) kbigrat_new(K_, false, 0, 1)
 
 /* Create a stack allocated bigrat from a bigint,
    useful for mixed operations, relatively light weight compared
@@ -137,8 +163,8 @@ bool kbigrat_positivep(TValue tv_bigrat);
 /* needs the state to create a copy if negative */
 TValue kbigrat_abs(klisp_State *K, TValue tv_bigrat);
 
-bool kbigrat_numerator(TValue tv_bigrat);
-bool kbigrat_denominator(TValue tv_bigrat);
+TValue kbigrat_numerator(klisp_State *K, TValue tv_bigrat);
+TValue kbigrat_denominator(klisp_State *K, TValue tv_bigrat);
 
 /* TODO implement these */
 #if 0

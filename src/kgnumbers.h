@@ -118,7 +118,8 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 12.8.3 numerator, denominator */
-/* TODO */
+void knumerator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void kdenominator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 12.8.4 floor, ceiling, truncate, round */
 /* TODO */
