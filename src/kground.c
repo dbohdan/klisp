@@ -747,7 +747,14 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "denominator", kdenominator, 0);
 
     /* 12.8.4 floor, ceiling, truncate, round */
-    /* TODO */
+    add_applicative(K, ground_env, "floor", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_FLOOR));
+    add_applicative(K, ground_env, "ceiling", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_CEILING));
+    add_applicative(K, ground_env, "truncate", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_TRUNCATE));
+    add_applicative(K, ground_env, "round", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_ROUND_EVEN));
 
     /* 12.8.5 rationalize, simplest-rational */
     /* TODO */

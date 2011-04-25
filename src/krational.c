@@ -257,3 +257,46 @@ TValue kbigrat_denominator(klisp_State *K, TValue tv_bigrat)
 	return kbigint_try_fixint(K, copy);
     }
 }
+
+TValue kbigrat_to_integer(klisp_State *K, TValue tv_bigrat, kround_mode mode)
+{
+    /* do an usigned divide first */
+    TValue tv_quot = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_quot);
+    TValue tv_rest = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_rest);
+    Bigint *quot = tv2bigint(tv_quot);
+    Bigint *rest = tv2bigint(tv_rest);
+    Bigrat *n = tv2bigrat(tv_bigrat);
+
+    UNUSED(mp_int_abs(K, MP_NUMER_P(n), quot));
+    UNUSED(mp_int_div(K, quot, MP_DENOM_P(n), quot, rest));
+
+    if (mp_rat_compare_zero(n) < 0)
+	UNUSED(mp_int_neg(K, quot, quot));
+
+    switch(mode) {
+    case K_TRUNCATE: 
+	/* nothing needs to be done */
+	break;
+    case K_CEILING:
+	if (mp_rat_compare_zero(n) > 0 && mp_int_compare_zero(rest) != 0)
+	    UNUSED(mp_int_add_value(K, quot, 1, quot));
+	break;
+    case K_FLOOR:
+	if (mp_rat_compare_zero(n) < 0 && mp_int_compare_zero(rest) != 0)
+	    UNUSED(mp_int_sub_value(K, quot, 1, quot));
+	break;
+    case K_ROUND_EVEN:
+	UNUSED(mp_int_mul_pow2(K, rest, 1, rest));
+	if (mp_int_compare(rest, MP_DENOM_P(n)) == 0 &&
+	     mp_int_is_odd(quot))
+	    UNUSED(mp_int_add_value(K, quot, mp_rat_compare_zero(n) < 0? 
+				    -1 : 1, quot));
+	break;
+    }
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    return kbigint_try_fixint(K, tv_quot);
+}

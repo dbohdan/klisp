@@ -426,6 +426,24 @@ TValue knum_denominator(klisp_State *K, TValue n)
     }
 }
 
+/* GC: assumes n is rooted */
+TValue knum_real_to_integer(klisp_State *K, TValue n, kround_mode mode)
+{
+    switch(ttype(n)) {
+    case K_TFIXINT:
+    case K_TBIGINT:
+	return n; /* integers are easy */
+    case K_TBIGRAT:
+	return kbigrat_to_integer(K, n, mode);
+    case K_TEINF: 
+	klispE_throw(K, "round: infinite value");
+	return KINERT;
+    default:
+	klispE_throw(K, "denominator: unsopported type");
+	return KINERT;
+    }
+}
+
 /* 12.5.4 + */
 void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -1103,7 +1121,22 @@ void kdenominator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.8.4 floor, ceiling, truncate, round */
-/* TODO */
+void kreal_to_integer(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    /*
+    ** xparams[0]: symbol name
+    ** xparams[1]: bool: true min, false max
+    */
+    UNUSED(denv);
+    char *name = ksymbol_buf(xparams[0]);
+    kround_mode mode = (kround_mode) ivalue(xparams[1]);
+    
+    bind_1tp(K, name, ptree, "real", krealp, n);
+
+    TValue res = knum_real_to_integer(K, n, mode);
+    kapply_cc(K, res);
+}
 
 /* 12.8.5 rationalize, simplest-rational */
 /* TODO */

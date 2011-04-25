@@ -167,12 +167,10 @@ TValue kbigrat_numerator(klisp_State *K, TValue tv_bigrat);
 TValue kbigrat_denominator(klisp_State *K, TValue tv_bigrat);
 
 /* TODO implement these */
-#if 0
-TValue kbigrat_floor(klisp_State *K, TValue n1, TValue n2);
-TValue kbigrat_ceiling(klisp_State *K, TValue n1, TValue n2);
-TValue kbigrat_truncate(klisp_State *K, TValue n1, TValue n2);
-TValue kbigrat_round(klisp_State *K, TValue n1, TValue n2);
+typedef enum { K_FLOOR, K_CEILING, K_TRUNCATE, K_ROUND_EVEN } kround_mode;
+TValue kbigrat_to_integer(klisp_State *K, TValue tv_bigrat, kround_mode mode);
 
+#if 0
 TValue kbigrat_simplest_rational(klisp_State *K, TValue n1, TValue n2);
 TValue kbigrat_rationalize(klisp_State *K, TValue n1, TValue n2);
 #endif
