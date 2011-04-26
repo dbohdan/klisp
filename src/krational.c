@@ -300,3 +300,231 @@ TValue kbigrat_to_integer(klisp_State *K, TValue tv_bigrat, kround_mode mode)
     krooted_tvs_pop(K);
     return kbigint_try_fixint(K, tv_quot);
 }
+
+/*
+** SOURCE NOTE: this implementation is from the Haskell 98 report
+*/
+/*
+approxRational x eps    =  simplest (x-eps) (x+eps)
+        where simplest x y | y < x      =  simplest y x
+                           | x == y     =  xr
+                           | x > 0      =  simplest' n d n' d'
+                           | y < 0      =  - simplest' (-n') d' (-n) d
+                           | otherwise  =  0 :% 1
+                                        where xr@(n:%d) = toRational x
+                                              (n':%d')  = toRational y
+
+              simplest' n d n' d'       -- assumes 0 < n%d < n'%d'
+                        | r == 0     =  q :% 1
+                        | q /= q'    =  (q+1) :% 1
+                        | otherwise  =  (q*n''+d'') :% n''
+                                     where (q,r)      =  quotRem n d
+                                           (q',r')    =  quotRem n' d'
+                                           (n'':%d'') =  simplest' d' r' d r
+
+*/
+
+/* 
+** NOTE: this reads almost like a Haskell commercial.
+** The c code is an order of magnitude longer. Some of this has to do
+** with the representation of values, some because this is iterative, 
+** some because of GC rooting, some because of lack of powerful pattern 
+** matching, and so on, and so on
+*/
+
+/* Assumes 0 < n1/d1 < n2/d2 */
+/* GC: Assumes n1, d1, n2, d2, and res are fresh (can be mutated) and rooted */
+static void simplest(klisp_State *K, TValue tv_n1, TValue tv_d1, 
+		     TValue tv_n2, TValue tv_d2, TValue tv_res)
+{
+    Bigint *n1 = tv2bigint(tv_n1);
+    Bigint *d1 = tv2bigint(tv_d1);
+    Bigint *n2 = tv2bigint(tv_n2);
+    Bigint *d2 = tv2bigint(tv_d2);
+
+    Bigrat *res = tv2bigrat(tv_res);
+
+    /* create vars q1, r1, q2 & r2 */
+    TValue tv_q1 = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_q1);
+    Bigint *q1 = tv2bigint(tv_q1);
+
+    TValue tv_r1 = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_r1);
+    Bigint *r1 = tv2bigint(tv_r1);
+
+    TValue tv_q2 = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_q2);
+    Bigint *q2 = tv2bigint(tv_q2);
+
+    TValue tv_r2 = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_r2);
+    Bigint *r2 = tv2bigint(tv_r2);
+
+    while(true) {
+	UNUSED(mp_int_div(K, n1, d1, q1, r1));
+	UNUSED(mp_int_div(K, n2, d2, q2, r2));
+
+	if (mp_int_compare_zero(r1) == 0) {
+	    /* res = q1 / 1 */
+	    mp_rat_zero(K, res);
+	    mp_rat_add_int(K, res, q1, res);
+	    break;
+	} else if (mp_int_compare(q1, q2) != 0) {
+	    /* res = (q1 + 1) / 1 */
+	    mp_rat_zero(K, res);
+	    mp_int_add_value(K, q1, 1, q1);
+	    mp_rat_add_int(K, res, q1, res);
+	    break;
+	} else {
+	    /* simulate a recursive call */
+	    TValue saved_q1 = kbigint_make_simple(K);
+	    krooted_tvs_push(K, saved_q1);
+	    UNUSED(mp_int_copy(K, q1, tv2bigint(saved_q1)));
+	    ks_spush(K, saved_q1);
+	    krooted_tvs_pop(K);
+
+	    UNUSED(mp_int_copy(K, d2, n1));
+	    UNUSED(mp_int_copy(K, d1, n2));
+	    UNUSED(mp_int_copy(K, r2, d1));
+	    UNUSED(mp_int_copy(K, r1, d2));
+	} /* fall through */
+    }
+
+    /* now, if there were "recursive" calls, complete them */
+    while(!ks_sisempty(K)) {
+	TValue saved_q1 = ks_sget(K);
+	TValue tv_tmp = kbigrat_make_simple(K);
+	krooted_tvs_push(K, tv_tmp);
+	Bigrat *tmp = tv2bigrat(tv_tmp);
+
+	UNUSED(mp_rat_copy(K, res, tmp));
+	/* res = (saved_q * n(res)) + d(res)) / n(res) */
+	UNUSED(mp_rat_zero(K, res));
+	UNUSED(mp_rat_add_int(K, res, tv2bigint(saved_q1), res));
+	UNUSED(mp_rat_mul_int(K, res, MP_NUMER_P(tmp), res));
+	UNUSED(mp_rat_add_int(K, res, MP_DENOM_P(tmp), res));
+	UNUSED(mp_rat_div_int(K, res, MP_NUMER_P(tmp), res));
+	krooted_tvs_pop(K); /* tmp */
+	ks_sdpop(K); /* saved_q1 */
+    }
+
+    krooted_tvs_pop(K); /* q1, r1, q2, r2 */
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    return;
+}
+
+TValue kbigrat_simplest_rational(klisp_State *K, TValue tv_n1, TValue tv_n2)
+{
+    TValue tv_res = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_res);
+    Bigrat *res = tv2bigrat(tv_res);
+    Bigrat *n1 = tv2bigrat(tv_n1);
+    Bigrat *n2 = tv2bigrat(tv_n2);
+
+    int32_t cmp = mp_rat_compare(K, n1, n2);
+    if (cmp > 0) { /* n1 > n2, swap */
+	TValue temp = tv_n1;
+	tv_n1 = tv_n2;
+	tv_n2 = temp;
+	n1 = tv2bigrat(tv_n1);
+	n2 = tv2bigrat(tv_n2);
+	/* fall through */
+    } else if (cmp == 0) { /* n1 == n2 */
+	krooted_tvs_pop(K);
+	return tv_n1;
+    } /* else fall through */
+
+    /* we now know that n1 < n2 */
+    if (mp_rat_compare_zero(n1) > 0) {
+	/* 0 > n1 > n2 */
+	TValue num1 = kbigint_make_simple(K);
+	krooted_tvs_push(K, num1);
+	UNUSED(mp_rat_numer(K, n1, tv2bigint(num1)));
+
+	TValue den1 = kbigint_make_simple(K);
+	krooted_tvs_push(K, den1);
+	UNUSED(mp_rat_denom(K, n1, tv2bigint(den1)));
+
+	TValue num2 = kbigint_make_simple(K);
+	krooted_tvs_push(K, num2);
+	UNUSED(mp_rat_numer(K, n2, tv2bigint(num2)));
+
+	TValue den2 = kbigint_make_simple(K);
+	krooted_tvs_push(K, den2);
+	UNUSED(mp_rat_denom(K, n2, tv2bigint(den2)));
+
+	simplest(K, num1, den1, num2, den2, tv_res);
+
+	krooted_tvs_pop(K); /* num1, num2, den1, den2 */
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
+
+	krooted_tvs_pop(K); /* tv_res */
+	return kbigrat_try_integer(K, tv_res);
+    } else if (mp_rat_compare_zero(n2) < 0) {
+	/* n1 < n2 < 0 */
+
+	/* do -(simplest -n2/d2 -n1/d1) */
+
+	TValue num1 = kbigint_make_simple(K);
+	krooted_tvs_push(K, num1);
+	UNUSED(mp_int_neg(K, MP_NUMER_P(n2), tv2bigint(num1)));
+
+	TValue den1 = kbigint_make_simple(K);
+	krooted_tvs_push(K, den1);
+	UNUSED(mp_rat_denom(K, n2, tv2bigint(den1)));
+
+	TValue num2 = kbigint_make_simple(K);
+	krooted_tvs_push(K, num2);
+	UNUSED(mp_int_neg(K, MP_NUMER_P(n1), tv2bigint(num2)));
+
+	TValue den2 = kbigint_make_simple(K);
+	krooted_tvs_push(K, den2);
+	UNUSED(mp_rat_denom(K, n1, tv2bigint(den2)));
+
+	simplest(K, num1, den1, num2, den2, tv_res);
+	mp_rat_neg(K, res, res);
+
+	krooted_tvs_pop(K); /* num1, num2, den1, den2 */
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
+	krooted_tvs_pop(K);
+
+	krooted_tvs_pop(K); /* tv_res */
+	return kbigrat_try_integer(K, tv_res);
+    } else {
+	/* n1 < 0 < n2 */
+	krooted_tvs_pop(K);
+	return i2tv(0);
+    }
+}
+
+TValue kbigrat_rationalize(klisp_State *K, TValue tv_n1, TValue tv_n2)
+{
+    /* delegate all work to simplest_rational */
+    TValue tv_min = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_min);
+    TValue tv_max = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_max);
+
+    Bigrat *n1 = tv2bigrat(tv_n1);
+    Bigrat *n2 = tv2bigrat(tv_n2);
+    /* it doesn't matter if these are reversed */
+    Bigrat *min = tv2bigrat(tv_min);
+    Bigrat *max = tv2bigrat(tv_max);
+
+    UNUSED(mp_rat_sub(K, n1, n2, min));
+    UNUSED(mp_rat_add(K, n1, n2, max));
+
+    TValue res = kbigrat_simplest_rational(K, tv_min, tv_max);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    return res;
+}

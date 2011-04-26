@@ -442,7 +442,75 @@ TValue knum_real_to_integer(klisp_State *K, TValue n, kround_mode mode)
 	klispE_throw(K, "round: infinite value");
 	return KINERT;
     default:
-	klispE_throw(K, "denominator: unsopported type");
+	klispE_throw(K, "round: unsopported type");
+	return KINERT;
+    }
+}
+
+TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
+{
+    /* first check that case that n1 > n2 */
+    if (knum_gtp(K, n1, n2)) {
+	klispE_throw(K, "simplest_rational: result with no primary value "
+		     "(n1 > n2)");
+	return KINERT;
+    }
+
+    /* we know that n1 <= n2 */
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT:
+    case K_TBIGINT: /* for now do all with bigrat */
+    case K_TBIGRAT: {
+	/* we know that n1 <= n2 */
+	kensure_bigrat(n1);
+	kensure_bigrat(n2);
+	return kbigrat_simplest_rational(K, n1, n2);
+    }
+    case K_TEINF:
+	/* we know that n1 <= n2 */
+	if (tv_equal(n1, n2)) {
+	    klispE_throw(K, "simplest rational: result with no primary value");
+	    return KINERT;
+	} else if (knegativep(n1) && kpositivep(n2)) {
+	    return i2tv(0);
+	} else if (knegativep(n1)) {
+	    /* n1 -inf, n2 finite negative */
+	    /* ASK John: is this behaviour for infinities ok? */
+	    /* Also in the report example both 1/3 & 1/2 are simpler than 
+	       2/5... */
+	    return knum_real_to_integer(K, n2, K_FLOOR);
+	} else {
+	    /* n1 finite positive, n2 +inf */
+	    /* ASK John: is this behaviour for infinities ok? */
+	    return knum_real_to_integer(K, n1, K_CEILING);
+	}
+    default:
+	klispE_throw(K, "simplest rational: unsopported type");
+	return KINERT;
+    }
+}
+
+TValue knum_rationalize(klisp_State *K, TValue n1, TValue n2)
+{
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT:
+    case K_TBIGINT: /* for now do all with bigrat */
+    case K_TBIGRAT: {
+	/* we know that n1 <= n2 */
+	kensure_bigrat(n1);
+	kensure_bigrat(n2);
+	return kbigrat_rationalize(K, n1, n2);
+    }
+    case K_TEINF:
+	if (kfinitep(n1) || !kfinitep(n2)) {
+	    return i2tv(0);
+	} else { /* infinite n1, finite n2 */
+	    /* ASK John: is this behaviour for infinities ok? */
+	    klispE_throw(K, "rationalize: result with no primary value");
+	    return KINERT;
+	}
+    default:
+	klispE_throw(K, "rationalize: unsopported type");
 	return KINERT;
     }
 }
@@ -1142,4 +1210,28 @@ void kreal_to_integer(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 12.8.5 rationalize, simplest-rational */
-/* TODO */
+void krationalize(klisp_State *K, TValue *xparams, TValue ptree, 
+		  TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_2tp(K, "rationalize", ptree, "real", krealp, n1, 
+	     "real", krealp, n2);
+
+    TValue res = knum_rationalize(K, n1, n2);
+    kapply_cc(K, res);
+}
+
+void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree, 
+			TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_2tp(K, "simplest-rational", ptree, "real", krealp, n1, 
+	     "real", krealp, n2);
+
+    TValue res = knum_simplest_rational(K, n1, n2);
+    kapply_cc(K, res);
+}

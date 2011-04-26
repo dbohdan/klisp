@@ -757,7 +757,8 @@ void kinit_ground_env(klisp_State *K)
 		    symbol, i2tv((int32_t) K_ROUND_EVEN));
 
     /* 12.8.5 rationalize, simplest-rational */
-    /* TODO */
+    add_applicative(K, ground_env, "rationalize", krationalize, 0);
+    add_applicative(K, ground_env, "simplest-rational", ksimplest_rational, 0);
 
     /*
     **

@@ -126,7 +126,11 @@ void kreal_to_integer(klisp_State *K, TValue *xparams, TValue ptree,
 		      TValue denv);
 
 /* 12.8.5 rationalize, simplest-rational */
-/* TODO */
+void krationalize(klisp_State *K, TValue *xparams, TValue ptree, 
+		  TValue denv);
+
+void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree, 
+			TValue denv);
 
 /* REFACTOR: These should be in a knumber.h header */
 
