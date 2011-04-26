@@ -1017,9 +1017,8 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
-    int32_t dummy; /* don't care about count of cycle pairs */
-    int32_t pairs = check_typed_list(K, "gcd", "number", kimp_intp, true,
-				     ptree, &dummy);
+    int32_t pairs = check_typed_list(K, "gcd", "improper integer", kimp_intp, 
+				     true, ptree, NULL);
 
     TValue res = i2tv(0);
     krooted_vars_push(K, &res);
@@ -1056,8 +1055,8 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
     int32_t dummy; /* don't care about count of cycle pairs */
-    int32_t pairs = check_typed_list(K, "lcm", "number", kimp_intp, true, 
-				     ptree, &dummy);
+    int32_t pairs = check_typed_list(K, "lcm", "improper integer", kimp_intp, 
+				     true, ptree, NULL);
 
     /* report: this will cover the case of (lcm) = 1 */
     TValue res = i2tv(1);
