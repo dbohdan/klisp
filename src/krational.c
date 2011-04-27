@@ -70,10 +70,13 @@ bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out,
     *out = kbigrat_try_integer(K, res);
 
     /* TODO: ideally this should be incorporated in the read code */
-    /* detect sign after '/', this is allowed by imrat but not in kernel */
+    /* detect sign after '/', and / before numbers, those are allowed 
+       by imrat but not in kernel */
     if (ret_val) {
 	char *slash = strchr(buf, '/');
-	if (slash != NULL && (*(slash+1) == '+' || *(slash+1) == '-'))
+	if (slash != NULL && (slash == 0 || 
+			      (*(slash+1) == '+' || *(slash+1) == '-') ||
+			      (*(slash-1) == '+' || *(slash-1) == '-')))
 	    ret_val = false;
     }
 
@@ -84,6 +87,10 @@ bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out,
 bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out, 
 			    char **end)
 {
+    char *my_end;
+    if (!end) /* always get the last char not read */
+	end = &my_end;
+
     TValue res = kbigrat_make_simple(K);
     krooted_tvs_push(K, res);
     bool ret_val = (mp_rat_read_ustring(K, tv2bigrat(res), base, 
@@ -92,15 +99,20 @@ bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out
     *out = kbigrat_try_integer(K, res);
 
     /* TODO: ideally this should be incorporated in the read code */
-    /* detect sign after '/', or trailing '.'. Those are allowed by 
-       imrat but not by kernel */
+    /* detect sign after '/', or trailing '.' or starting '/' or '.'. 
+       Those are allowed by imrat but not by kernel */
     if (ret_val) {
 	char *ch = strchr(buf, '/');
-	if (ch != NULL && (*(ch+1) == '+' || *(ch+1) == '-'))
+	if (ch != NULL && (ch == 0 || 
+			   (*(ch+1) == '+' || *(ch+1) == '-') ||
+			   (*(ch-1) == '+' || *(ch-1) == '-')))
 	    ret_val = false;
 	else {
 	    ch = strchr(buf, '.');
-	    if (ch != NULL && *(ch+1) == '\0')
+	    if (ch != NULL && (ch == 0 || 
+			       (*(ch+1) == '+' || *(ch+1) == '-') ||
+			       (*(ch-1) == '+' || *(ch-1) == '-') ||
+			       ch == *end - 1))
 		ret_val = false;
 	}
     }
