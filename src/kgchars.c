@@ -49,15 +49,17 @@ void kchar_to_integer(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, i2tv((int32_t) chvalue(ch)));
 }
 
-/* TEMP: this should arbitrary integers (and throw an error if out of 
-   range */
 void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "integer->char", ptree, "finite integer", ttisfixint, itv);
+    bind_1tp(K, "integer->char", ptree, "integer", ttisinteger, itv);
     
+    if (ttisbigint(itv)) {
+	klispE_throw(K, "integer->char: integer out of ASCII range [0 - 127]");
+	return;
+    }
     int32_t i = ivalue(itv);
 
     /* for now only allow ASCII */

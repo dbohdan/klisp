@@ -391,7 +391,7 @@ int32_t ktok_read_until_delimiter(klisp_State *K)
 
 /*
 ** Numbers
-** TEMP: for now, only integers, ignore exactness
+** TEMP: for now, only integers & rationals
 ** The digits are in buf, that must be freed after use,
 ** len should be at least one 
 */

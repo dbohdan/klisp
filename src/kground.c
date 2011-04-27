@@ -651,7 +651,7 @@ void kinit_ground_env(klisp_State *K)
     **
     */
 
-    /* Only integers and exact infinities for now */
+    /* Only integers, rationals and exact infinities for now */
 
     /* 
     ** 12.5 Number features

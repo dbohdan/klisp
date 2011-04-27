@@ -8,7 +8,7 @@ README for klisp 0.1
   that probably won't happen for some time. It is written in C99 under
   the MIT license. It draws heavily from the Lua interpreter source
   code & file structure. It uses the IMath library for arbitrary sized
-  integers and (soon) rationals.
+  integers and rationals.
 
 * What is the Kernel Programming Language?
   ----------------------------------------
