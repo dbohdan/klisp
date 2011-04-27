@@ -15,17 +15,37 @@
 #include "kstate.h"
 #include "imath.h"
 
-/* for now used only for reading */
-/* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
-TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
-
-/* used in write to destructively get the digits */
-TValue kbigint_copy(klisp_State *K, TValue src);
-
 /* Check to see if an int64_t fits in a int32_t */
 inline bool kfit_int32_t(int64_t n) {
     return (n >= (int64_t) INT32_MIN && n <= (int64_t) INT32_MAX);
 }
+
+/* This tries to convert a bigint to a fixint */
+/* XXX this doesn't need K really */
+inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
+{
+    UNUSED(K);
+    Bigint *b = tv2bigint(n);
+    if (MP_USED(b) != 1)
+	return n;
+
+    int64_t digit = (int64_t) *(MP_DIGITS(b));
+    if (MP_SIGN(b) == MP_NEG) digit = -digit;
+    if (kfit_int32_t(digit)) {
+	/* n shouln't be reachable but the let the gc do its job */
+	return i2tv((int32_t) digit); 
+    } else {
+	return n;
+    }
+}
+
+/* NOTE: is uint and has flag to allow INT32_MIN as positive argument */
+TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit);
+
+TValue kbigint_copy(klisp_State *K, TValue src);
+
+/* macro to create the simplest bigint */
+#define kbigint_make_simple(K_) kbigint_new(K_, false, 0)
 
 /* Create a stack allocated bigints from a fixint,
    useful for mixed operations, relatively light weight compared
@@ -42,7 +62,7 @@ inline bool kfit_int32_t(int64_t n) {
     (KUNIQUE_NAME(bigint)).used = 1;					\
     (KUNIQUE_NAME(bigint)).sign = (KUNIQUE_NAME(i)) < 0?		\
 	MP_NEG : MP_ZPOS;						\
-    Bigint *name = &(KUNIQUE_NAME(bigint));
+    Bigint *name = &(KUNIQUE_NAME(bigint))
     
 /* This can be used prior to calling a bigint functions
    to automatically convert fixints to bigints.
@@ -71,9 +91,19 @@ bool kbigint_has_digits(klisp_State *K, TValue tv_bigint);
 /* Mutate the bigint to have the opposite sign, used in read & write */
 void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
 
+/* read/write interface */
+
+/* this works for bigints & fixints, returns true if ok */
+bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
+		   char **end);
+
 /* this is used by write to estimate the number of chars necessary to
    print the number */
 int32_t kbigint_print_size(TValue tv_bigint, int32_t base);
+
+/* this is used by write */
+void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
+			   char *buf, int32_t limit);
 
 /* Interface for kgnumbers */
 bool kbigint_eqp(TValue bigint1, TValue bigint2);

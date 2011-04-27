@@ -17,6 +17,7 @@
 #include "kobject.h"
 #include "kapplicative.h" /* for unwrap */
 #include "kinteger.h" /* for kbigint_eqp */
+#include "krational.h" /* for kbigrat_eqp */
 #include "klisp.h"
 #include "kghelpers.h"
 
@@ -25,7 +26,6 @@
 void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper (also used in equal?) */
-/* TEMP: this will change with immutable strings */
 inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 {
     bool res = (tv_equal(obj1, obj2));
@@ -41,7 +41,12 @@ inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 	       that obj1 is bigint and obj is some other type and
 	       (eq? obj1 obj2) */
 	    res = kbigint_eqp(obj1, obj2);
-	}
+	} else if (ttisbigrat(obj1)) {
+	    /* it's important to know that it can't be the case
+	       that obj1 is bigrat and obj is some other type and
+	       (eq? obj1 obj2) */
+	    res = kbigrat_eqp(K, obj1, obj2);
+	} /* immutable strings are interned so are covered already */
     }
     return res;
 }

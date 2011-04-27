@@ -234,9 +234,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
 #define ttisbigrat(o)	(tbasetype_(o) == K_TAG_BIGRAT)
-#define ttisrational(o)	({ int32_t t_ = tbasetype_(o_); \
+#define ttisrational(o_)	({ int32_t t_ = tbasetype_(o_); \
 	t_ == K_TAG_BIGRAT || t_== K_TAG_BIGINT || \
-	    t == K_TAG_FIXINT;})
+	    t_ == K_TAG_FIXINT;})
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
@@ -566,6 +566,7 @@ const TValue kfree;
 #define gc2tv(t_, o_) ((TValue) {.tv = {.t = (t_),			\
 					.v = { .gc = obj2gco(o_)}}})
 #define gc2bigint(o_) (gc2tv(K_TAG_BIGINT, o_))
+#define gc2bigrat(o_) (gc2tv(K_TAG_BIGRAT, o_))
 #define gc2pair(o_) (gc2tv(K_TAG_PAIR, o_))
 #define gc2str(o_) (gc2tv(K_TAG_STRING, o_))
 #define gc2sym(o_) (gc2tv(K_TAG_SYMBOL, o_))
@@ -581,6 +582,7 @@ const TValue kfree;
 
 /* Macro to convert a TValue into a specific heap allocated object */
 #define tv2bigint(v_) ((Bigint *) gcvalue(v_))
+#define tv2bigrat(v_) ((Bigrat *) gcvalue(v_))
 #define tv2pair(v_) ((Pair *) gcvalue(v_))
 #define tv2str(v_) ((String *) gcvalue(v_))
 #define tv2sym(v_) ((Symbol *) gcvalue(v_))

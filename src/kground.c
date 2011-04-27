@@ -666,29 +666,26 @@ void kinit_ground_env(klisp_State *K)
 		    p2tv(kintegerp));
 
     /* 12.5.2 =? */
-    add_applicative(K, ground_env, "=?", ftyped_bpredp, 3,
+    add_applicative(K, ground_env, "=?", ftyped_kbpredp, 3,
 		    symbol, p2tv(knumberp), p2tv(knum_eqp));
     
     /* 12.5.3 <?, <=?, >?, >=? */
-    add_applicative(K, ground_env, "<?", ftyped_bpredp, 3,
-		    symbol, p2tv(knumberp), p2tv(knum_ltp));
-    add_applicative(K, ground_env, "<=?", ftyped_bpredp, 3,
-		    symbol, p2tv(knumberp),  p2tv(knum_lep));
-    add_applicative(K, ground_env, ">?", ftyped_bpredp, 3,
-		    symbol, p2tv(knumberp), p2tv(knum_gtp));
-    add_applicative(K, ground_env, ">=?", ftyped_bpredp, 3,
-		    symbol, p2tv(knumberp), p2tv(knum_gep));
+    add_applicative(K, ground_env, "<?", ftyped_kbpredp, 3,
+		    symbol, p2tv(krealp), p2tv(knum_ltp));
+    add_applicative(K, ground_env, "<=?", ftyped_kbpredp, 3,
+		    symbol, p2tv(krealp),  p2tv(knum_lep));
+    add_applicative(K, ground_env, ">?", ftyped_kbpredp, 3,
+		    symbol, p2tv(krealp), p2tv(knum_gtp));
+    add_applicative(K, ground_env, ">=?", ftyped_kbpredp, 3,
+		    symbol, p2tv(krealp), p2tv(knum_gep));
 
     /* 12.5.4 + */
-    /* TEMP: for now only accept two arguments */
     add_applicative(K, ground_env, "+", kplus, 0);
 
     /* 12.5.5 * */
-    /* TEMP: for now only accept two arguments */
     add_applicative(K, ground_env, "*", ktimes, 0);
 
     /* 12.5.6 - */
-    /* TEMP: for now only accept two arguments */
     add_applicative(K, ground_env, "-", kminus, 0);
 
     /* 12.5.7 zero? */
@@ -713,9 +710,9 @@ void kinit_ground_env(klisp_State *K)
 
     /* 12.5.10 positive?, negative? */
     add_applicative(K, ground_env, "positive?", ftyped_predp, 3, symbol, 
-		    p2tv(knumberp), p2tv(kpositivep));
+		    p2tv(krealp), p2tv(kpositivep));
     add_applicative(K, ground_env, "negative?", ftyped_predp, 3, symbol, 
-		    p2tv(knumberp), p2tv(knegativep));
+		    p2tv(krealp), p2tv(knegativep));
 
     /* 12.5.11 odd?, even? */
     add_applicative(K, ground_env, "odd?", ftyped_predp, 3, symbol, 
@@ -733,6 +730,35 @@ void kinit_ground_env(klisp_State *K)
     /* 12.5.14 gcd, lcm */
     add_applicative(K, ground_env, "gcd", kgcd, 0);
     add_applicative(K, ground_env, "lcm", klcm, 0);
+
+    /* 
+    ** 12.8 Rational features
+    */
+
+    /* 12.8.1 rational? */
+    add_applicative(K, ground_env, "rational?", ftypep, 2, symbol, 
+		    p2tv(krationalp));
+
+    /* 12.8.2 / */
+    add_applicative(K, ground_env, "/", kdivided, 0);
+
+    /* 12.8.3 numerator, denominator */
+    add_applicative(K, ground_env, "numerator", knumerator, 0);
+    add_applicative(K, ground_env, "denominator", kdenominator, 0);
+
+    /* 12.8.4 floor, ceiling, truncate, round */
+    add_applicative(K, ground_env, "floor", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_FLOOR));
+    add_applicative(K, ground_env, "ceiling", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_CEILING));
+    add_applicative(K, ground_env, "truncate", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_TRUNCATE));
+    add_applicative(K, ground_env, "round", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_ROUND_EVEN));
+
+    /* 12.8.5 rationalize, simplest-rational */
+    add_applicative(K, ground_env, "rationalize", krationalize, 0);
+    add_applicative(K, ground_env, "simplest-rational", ksimplest_rational, 0);
 
     /*
     **

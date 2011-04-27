@@ -15,24 +15,7 @@
 #include "kmem.h"
 #include "kgc.h"
 
-/* This tries to convert a bigint to a fixint */
-inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
-{
-    Bigint *b = tv2bigint(n);
-    if (MP_USED(b) != 1)
-	return n;
-
-    int64_t digit = (int64_t) *(MP_DIGITS(b));
-    if (MP_SIGN(b) == MP_NEG) digit = -digit;
-    if (kfit_int32_t(digit)) {
-	/* n shouln't be reachable but the let the gc do its job */
-	return i2tv((int32_t) digit); 
-    } else {
-	return n;
-    }
-}
-
-/* for now used only for reading */
+/* It is used for reading and for creating temps and res in all operations */
 /* NOTE: is uint to allow INT32_MIN as positive argument in read */
 TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
 {
@@ -58,50 +41,27 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
 /* assumes src is rooted */
 TValue kbigint_copy(klisp_State *K, TValue src)
 {
-    TValue copy = kbigint_new(K, false, 0);
+    TValue copy = kbigint_make_simple(K);
     /* arguments are in reverse order with respect to mp_int_copy */
     UNUSED(mp_int_init_copy(K, tv2bigint(copy), tv2bigint(src)));
     return copy;
 }
 
-/* This algorithm is like a fused multiply add on bignums,
-   unlike any other function here it modifies bigint. It is used in read
-   and it assumes that bigint is positive */
-/* GC: Assumes tv_bigint is rooted */
-void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
-		       int32_t digit)
-{
-    Bigint *bigint = tv2bigint(tv_bigint);
-    UNUSED(mp_int_mul_value(K, bigint, base, bigint));
-    UNUSED(mp_int_add_value(K, bigint, digit, bigint));
-}
+/* 
+** read/write interface 
+*/
 
-/* This is used by the writer to get the digits of a number 
- tv_bigint must be positive */
-/* GC: Assumes tv_bigint is rooted */
-int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base)
+/* this works for bigints & fixints, returns true if ok */
+bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
+		   char **end)
 {
-    UNUSED(K);
-    Bigint *bigint = tv2bigint(tv_bigint);
-    int32_t r;
-    UNUSED(mp_int_div_value(K, bigint, base, bigint, &r));
-    return r;
-}
-
-/* This is used by write to test if there is any digit left to print */
-bool kbigint_has_digits(klisp_State *K, TValue tv_bigint)
-{
-    UNUSED(K);
-    return (mp_int_compare_zero(tv2bigint(tv_bigint)) != 0);
-}
-
-/* Mutate the bigint to have the opposite sign, used in read
-   and write*/
-/* GC: Assumes tv_bigint is rooted */
-void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
-{
-    Bigint *bigint = tv2bigint(tv_bigint);
-    UNUSED(mp_int_neg(K, bigint, bigint));
+    TValue res = kbigint_make_simple(K);
+    krooted_tvs_push(K, res);
+    bool ret_val = (mp_int_read_cstring(K, tv2bigint(res), base, 
+					buf, end) == MP_OK);
+    krooted_tvs_pop(K);
+    *out = kbigint_try_fixint(K, res);
+    return ret_val;
 }
 
 /* this is used by write to estimate the number of chars necessary to
@@ -109,6 +69,16 @@ void kbigint_invert_sign(klisp_State *K, TValue tv_bigint)
 int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
 {
     return mp_int_string_len(tv2bigint(tv_bigint), base);
+}
+
+/* this is used by write */
+void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
+			   char *buf, int32_t limit)
+{
+    mp_result res = mp_int_to_string(K, tv2bigint(tv_bigint), base, buf, 
+				     limit);
+    /* only possible error is truncation */
+    klisp_assert(res == MP_OK);
 }
 
 /* Interface for kgnumbers */
@@ -147,7 +117,7 @@ bool kbigint_gep(TValue tv_bigint1, TValue tv_bigint2)
 */
 TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2)
 {
-    TValue res = kbigint_new(K, false, 0);
+    TValue res = kbigint_make_simple(K);
     krooted_tvs_push(K, res);
     UNUSED(mp_int_add(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
     krooted_tvs_pop(K);
@@ -156,7 +126,7 @@ TValue kbigint_plus(klisp_State *K, TValue n1, TValue n2)
 
 TValue kbigint_times(klisp_State *K, TValue n1, TValue n2)
 {
-    TValue res = kbigint_new(K, false, 0);
+    TValue res = kbigint_make_simple(K);
     krooted_tvs_push(K, res);
     UNUSED(mp_int_mul(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
     krooted_tvs_pop(K);
@@ -165,7 +135,7 @@ TValue kbigint_times(klisp_State *K, TValue n1, TValue n2)
 
 TValue kbigint_minus(klisp_State *K, TValue n1, TValue n2)
 {
-    TValue res = kbigint_new(K, false, 0);
+    TValue res = kbigint_make_simple(K);
     krooted_tvs_push(K, res);
     UNUSED(mp_int_sub(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
     krooted_tvs_pop(K);
@@ -175,9 +145,9 @@ TValue kbigint_minus(klisp_State *K, TValue n1, TValue n2)
 /* NOTE: n2 can't be zero, that case should be checked before calling this */
 TValue kbigint_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 {
-    TValue tv_q = kbigint_new(K, false, 0);
+    TValue tv_q = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_q);
-    TValue tv_r = kbigint_new(K, false, 0);
+    TValue tv_r = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_r);
 
     Bigint *n = tv2bigint(n1);
@@ -209,9 +179,9 @@ TValue kbigint_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 TValue kbigint_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 {
     /* GC: root bigints */
-    TValue tv_q = kbigint_new(K, false, 0);
+    TValue tv_q = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_q);
-    TValue tv_r = kbigint_new(K, false, 0);
+    TValue tv_r = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_r);
 
     Bigint *n = tv2bigint(n1);
@@ -223,12 +193,12 @@ TValue kbigint_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 
     /* Adjust q & r so that -|d/2| <= r < |d/2| */
     /* It seems easier to check -|d| <= 2r < |d| */
-    TValue tv_two_r = kbigint_new(K, false, 0);
+    TValue tv_two_r = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_two_r);
     Bigint *two_r = tv2bigint(tv_two_r);
     /* two_r = r * 2 = r * 2^1 */
     UNUSED(mp_int_mul_pow2(K, r, 1, two_r));
-    TValue tv_abs_d = kbigint_new(K, false, 0);
+    TValue tv_abs_d = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_abs_d);
     /* NOTE: this makes a copy if d >= 0 */
     Bigint *abs_d = tv2bigint(tv_abs_d);
@@ -291,7 +261,7 @@ bool kbigint_evenp(TValue tv_bigint)
 TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
 {
     if (kbigint_negativep(tv_bigint)) {
-	TValue copy = kbigint_new(K, false, 0);
+	TValue copy = kbigint_make_simple(K);
 	krooted_tvs_push(K, copy);
 	UNUSED(mp_int_abs(K, tv2bigint(tv_bigint), tv2bigint(copy)));
 	krooted_tvs_pop(K);
@@ -304,7 +274,7 @@ TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
 
 TValue kbigint_gcd(klisp_State *K, TValue n1, TValue n2)
 {
-    TValue res = kbigint_new(K, false, 0);
+    TValue res = kbigint_make_simple(K);
     krooted_tvs_push(K, res);
     UNUSED(mp_int_gcd(K, tv2bigint(n1), tv2bigint(n2), tv2bigint(res)));
     krooted_tvs_pop(K);
@@ -313,7 +283,7 @@ TValue kbigint_gcd(klisp_State *K, TValue n1, TValue n2)
 
 TValue kbigint_lcm(klisp_State *K, TValue n1, TValue n2)
 {
-    TValue tv_res = kbigint_new(K, false, 0);
+    TValue tv_res = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_res);
     Bigint *res = tv2bigint(tv_res);
     /* unlike in kernel, lcm in IMath can return a negative value
