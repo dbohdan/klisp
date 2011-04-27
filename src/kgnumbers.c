@@ -804,7 +804,7 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
 
     bind_2tp(K, name, ptree, "real", krealp, tv_n,
-	     "number", krealp, tv_d);
+	     "real", krealp, tv_d);
 
     TValue tv_div, tv_mod;
 
@@ -841,6 +841,14 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    tv_div = kbigint_div_mod(K, tv_n, tv_d, &tv_mod);
 	else
 	    tv_div = kbigint_div0_mod0(K, tv_n, tv_d, &tv_mod);
+	break;
+    case K_TBIGRAT:
+	kensure_bigrat(tv_n);
+	kensure_bigrat(tv_d);
+	if ((flags & FDIV_ZERO) == 0)
+	    tv_div = kbigrat_div_mod(K, tv_n, tv_d, &tv_mod);
+	else /* TODO */
+	    tv_div = kbigrat_div0_mod0(K, tv_n, tv_d, &tv_mod);
 	break;
     case K_TEINF:
 	if (ttiseinf(tv_n)) {
@@ -1054,7 +1062,6 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
-    int32_t dummy; /* don't care about count of cycle pairs */
     int32_t pairs = check_typed_list(K, "lcm", "improper integer", kimp_intp, 
 				     true, ptree, NULL);
 

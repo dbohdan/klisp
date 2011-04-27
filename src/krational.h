@@ -151,11 +151,8 @@ TValue kbigrat_times(klisp_State *K, TValue n1, TValue n2);
 TValue kbigrat_minus(klisp_State *K, TValue n1, TValue n2);
 TValue kbigrat_divided(klisp_State *K, TValue n1, TValue n2);
 
-/* TODO: Kernel allows arbitrary reals for these... will have to define */
-#if 0
 TValue kbigrat_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r);
 TValue kbigrat_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r);
-#endif
 
 bool kbigrat_negativep(TValue tv_bigrat);
 bool kbigrat_positivep(TValue tv_bigrat);

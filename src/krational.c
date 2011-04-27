@@ -189,6 +189,64 @@ TValue kbigrat_minus(klisp_State *K, TValue n1, TValue n2)
     return kbigrat_try_integer(K, res);
 }
 
+/* NOTE: n2 can't be zero, that case should be checked before calling this */
+TValue kbigrat_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
+{
+    /* NOTE: quotient is always an integer, remainder may be any rational */
+    /* the remainder is calculated as tv_r * n2 */
+    TValue tv_q = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_q);
+    TValue tv_r = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_r);
+    /* for temp values */
+    TValue tv_true_rem = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_true_rem);
+    TValue tv_div = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_div);
+
+    Bigrat *n = tv2bigrat(n1);
+    Bigrat *d = tv2bigrat(n2);
+
+    Bigint *q = tv2bigint(tv_q);
+    Bigint *r = tv2bigint(tv_r);
+
+    Bigrat *div = tv2bigrat(tv_div);
+    Bigrat *trem = tv2bigrat(tv_true_rem);
+
+    UNUSED(mp_rat_div(K, n, d, div));
+
+    /* Now use the integral part as the quotient and the fractional part times
+       the divisor as the remainder, but then correct the remainder so that it's
+       always positive like in kbigint_div_and_mod */
+       
+    UNUSED(mp_int_div(K, MP_NUMER_P(div), MP_DENOM_P(div), q, r));
+
+    /* NOTE: denom is positive, so div & q & r have the same sign */
+
+    /* first adjust the quotient if necessary,
+       the remainder will just fall into place after this */
+    if (mp_rat_compare_zero(n) < 0)
+	UNUSED(mp_int_add_value(K, q, mp_rat_compare_zero(d) < 0? 1 : -1, q));
+
+    UNUSED(mp_rat_sub_int(K, div, q, trem));
+    UNUSED(mp_rat_mul(K, trem, d, trem));
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    *res_r = kbigrat_try_integer(K, tv_true_rem);
+    return kbigrat_try_integer(K, tv_q);
+}
+
+TValue kbigrat_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
+{
+    /* TODO */
+    return KINERT;
+}
+
+
 TValue kbigrat_divided(klisp_State *K, TValue n1, TValue n2)
 {
     TValue res = kbigrat_make_simple(K);
