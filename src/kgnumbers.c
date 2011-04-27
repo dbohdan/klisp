@@ -847,7 +847,7 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	kensure_bigrat(tv_d);
 	if ((flags & FDIV_ZERO) == 0)
 	    tv_div = kbigrat_div_mod(K, tv_n, tv_d, &tv_mod);
-	else /* TODO */
+	else 
 	    tv_div = kbigrat_div0_mod0(K, tv_n, tv_d, &tv_mod);
 	break;
     case K_TEINF:

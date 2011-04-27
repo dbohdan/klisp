@@ -193,7 +193,6 @@ TValue kbigrat_minus(klisp_State *K, TValue n1, TValue n2)
 TValue kbigrat_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 {
     /* NOTE: quotient is always an integer, remainder may be any rational */
-    /* the remainder is calculated as tv_r * n2 */
     TValue tv_q = kbigint_make_simple(K);
     krooted_tvs_push(K, tv_q);
     TValue tv_r = kbigint_make_simple(K);
@@ -242,8 +241,80 @@ TValue kbigrat_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 
 TValue kbigrat_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 {
-    /* TODO */
-    return KINERT;
+    /* NOTE: quotient is always an integer, remainder may be any rational */
+    TValue tv_q = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_q);
+    TValue tv_r = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_r);
+    /* for temp values */
+    TValue tv_true_rem = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_true_rem);
+    TValue tv_div = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_div);
+
+    Bigrat *n = tv2bigrat(n1);
+    Bigrat *d = tv2bigrat(n2);
+
+    Bigint *q = tv2bigint(tv_q);
+    Bigint *r = tv2bigint(tv_r);
+
+    Bigrat *div = tv2bigrat(tv_div);
+    Bigrat *trem = tv2bigrat(tv_true_rem);
+
+    UNUSED(mp_rat_div(K, n, d, div));
+
+    /* Now use the integral part as the quotient and the fractional part times
+       the divisor as the remainder, but then correct the remainder so that it's
+       in the interval [-|d/2|, |d/2|) */
+       
+    UNUSED(mp_int_div(K, MP_NUMER_P(div), MP_DENOM_P(div), q, r));
+    /* NOTE: denom is positive, so div & q & r have the same sign */
+    UNUSED(mp_rat_sub_int(K, div, q, trem));
+    UNUSED(mp_rat_mul(K, trem, d, trem));
+
+    /* NOTE: temporarily use trem as d/2 */
+    TValue tv_d_2 = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_d_2);
+    Bigrat *d_2 = tv2bigrat(tv_d_2);
+    TValue m2 = i2tv(2);
+    kensure_bigint(m2);
+    UNUSED(mp_rat_div_int(K, d, tv2bigint(m2), d_2));
+    /* adjust remainder and quotient if necessary */
+    /* first check positive side (closed part of the interval) */
+    mp_rat_abs(K, d_2, d_2);
+
+    /* the case analysis is like in bigint (and inverse to that of fixint) */
+    if (mp_rat_compare(K, trem, d_2) >= 0) {
+	if (mp_rat_compare_zero(d) < 0) {
+	    mp_rat_add(K, trem, d, trem);
+	    mp_int_sub_value(K, q, 1, q);
+	} else {
+	    mp_rat_sub(K, trem, d, trem);
+	    mp_int_add_value(K, q, 1, q);
+	}
+    } else {
+	/* now check negative side (open part of the interval) */
+	mp_rat_neg(K, d_2, d_2);
+	if (mp_rat_compare(K, trem, d_2) < 0) {
+	    if (mp_rat_compare_zero(d) < 0) {
+		mp_rat_sub(K, trem, d, trem);
+		mp_int_add_value(K, q, 1, q);
+	    } else {
+		mp_rat_add(K, trem, d, trem);
+		mp_int_sub_value(K, q, 1, q);
+	    }
+	}
+    }
+	   
+    krooted_tvs_pop(K); /* d/2 */
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    *res_r = kbigrat_try_integer(K, tv_true_rem);
+    return kbigrat_try_integer(K, tv_q);
 }
 
 
