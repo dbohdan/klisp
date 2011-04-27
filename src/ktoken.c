@@ -401,7 +401,7 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
 {
     UNUSED(len); /* not needed really, buf ends with '\0' */
     TValue n;
-    if (has_exactp) {
+    if (has_exactp && radix == 10) {
 	/* TEMP: while there are no inexacts */
 	/* allow decimals if has #e prefix */
 	if (!krational_read_decimal(K, buf, radix, &n, NULL)) {
