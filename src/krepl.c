@@ -19,6 +19,8 @@
 #include "ksymbol.h"
 #include "kport.h"
 #include "kpair.h"
+/* for names */
+#include "ktable.h"
 
 /* the exit continuation, it exits the loop */
 void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
@@ -107,18 +109,59 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
     create_loop(K, denv);
 } 
 
+/* XXX move this to a common file (same as in write) */
+#if KTRACK_NAMES
+/* Assumes obj has a name */
+TValue krepl_get_name(klisp_State *K, TValue obj)
+{
+    const TValue *node = klispH_get(tv2table(K->name_table),
+				    obj);
+    klisp_assert(node != &kfree);
+    return *node;
+}
+#endif /* KTRACK_NAMES */
+
 /* the underlying function of the error cont */
 void error_fn(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
     ** xparams[0]: dynamic environment
     */
-    /* TEMP: obj should be a string */
-    /* TODO: create some kind of error object */
-    char *str = ttisstring(obj)?
-	kstring_buf(obj) : "not a string passed to error continuation";
 
-    fprintf(stderr, "\n*ERROR*: %s\n", str);
+    /* TEMP: should be better to have an error port
+       like in scheme r6rs & r7rs (draft) */
+    /* FOR NOW used only for irritant list */
+    TValue port = kcdr(K->kd_out_port_key);
+    klisp_assert(kport_file(port) == stdout);
+
+    /* TEMP: obj should be an error obj */
+    if (ttiserror(obj)) {
+	Error *err_obj = tv2error(obj);
+	TValue who = err_obj->who;
+	char *who_str;
+	if (ttisstring(who)) {
+	    who_str = kstring_buf(who);
+#if KTRACK_NAMES
+	} else if (khas_name(who)) {
+	    TValue name = krepl_get_name(K, who);
+	    who_str = ksymbol_buf(name);
+#endif
+	} else {
+	    who_str = "?";
+	}
+	char *msg = kstring_buf(err_obj->msg);
+	fprintf(stdout, "\n*ERROR*: %s: %s", who_str, msg);
+	if (!ttisnil(err_obj->irritants)) {
+	    fprintf(stdout, ": ");
+	    krooted_tvs_push(K, obj);
+	    kwrite_display_to_port(K, port, err_obj->irritants, false);
+	    krooted_tvs_pop(K);
+	}
+	fprintf(stdout, "\n");
+    } else {
+	fprintf(stdout, "\n*ERROR*: not an error object passed to " 
+		"error continuation");
+    }
 
     TValue denv = xparams[0];
     create_loop(K, denv);

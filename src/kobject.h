@@ -677,7 +677,8 @@ int32_t kmark_count;
 #define kcan_have_name(o_) \
     (iscollectable(o_) && ((tv_get_kflags(o_)) & K_FLAG_CAN_HAVE_NAME) != 0)
 
-#define khas_name(o_) ((tv_get_kflags(o_)) & K_FLAG_HAS_NAME)
+#define khas_name(o_) \
+    (iscollectable(o_) && (tv_get_kflags(o_)) & K_FLAG_HAS_NAME)
 
 #define K_FLAG_HAS_SI 0x20
 
