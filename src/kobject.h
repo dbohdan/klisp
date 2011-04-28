@@ -162,6 +162,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TPROMISE      38
 #define K_TPORT         39
 #define K_TTABLE        40
+#define K_TERROR        41
 
 /* for tables */
 #define K_TDEADKEY        60
@@ -211,6 +212,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_PROMISE K_MAKE_VTAG(K_TPROMISE)
 #define K_TAG_PORT K_MAKE_VTAG(K_TPORT)
 #define K_TAG_TABLE K_MAKE_VTAG(K_TTABLE)
+#define K_TAG_ERROR K_MAKE_VTAG(K_TERROR)
 
 
 /*
@@ -269,6 +271,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttispromise(o) (tbasetype_(o) == K_TAG_PROMISE)
 #define ttisport(o) (tbasetype_(o) == K_TAG_PORT)
 #define ttistable(o) (tbasetype_(o) == K_TAG_TABLE)
+#define ttiserror(o) (tbasetype_(o) == K_TAG_ERROR)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -444,6 +447,15 @@ typedef struct __attribute__ ((__packed__)) {
 
 /* The weak flags are in kflags */
 
+/* Errors */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue creator;  /* either #inert or creating combiner */
+    TValue cont;  /* continuation context */
+    TValue msg;  /* string msg */
+    TValue irritants;  /* list of extra objs */
+} Error;
+
 /*
 ** `module' operation for hashing (size is always a power of 2)
 */
@@ -578,6 +590,7 @@ const TValue kfree;
 #define gc2prom(o_) (gc2tv(K_TAG_PROMISE, o_))
 #define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
 #define gc2table(o_) (gc2tv(K_TAG_TABLE, o_))
+#define gc2error(o_) (gc2tv(K_TAG_ERROR, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -594,6 +607,7 @@ const TValue kfree;
 #define tv2prom(v_) ((Promise *) gcvalue(v_))
 #define tv2port(v_) ((Port *) gcvalue(v_))
 #define tv2table(v_) ((Table *) gcvalue(v_))
+#define tv2error(v_) ((Error *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
