@@ -68,7 +68,7 @@ kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h kstate.h kgc.h klispconf.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h kpair.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
 kenvironment.o: kenvironment.c kenvironment.h kpair.h kobject.h kerror.h \
-	kmem.h kstate.h klisp.h kgc.h ktable.h klispconf.h
+	kmem.h kstate.h klisp.h kgc.h ktable.h klispconf.h kapplicative.h
 kcontinuation.o: kcontinuation.c kcontinuation.h kmem.h kstate.h kobject.h \
 	klisp.h kgc.h
 koperative.o: koperative.c koperative.h kmem.h kstate.h kobject.h \

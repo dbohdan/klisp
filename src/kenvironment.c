@@ -15,6 +15,7 @@
 #include "kmem.h"
 #include "ktable.h"
 #include "kgc.h"
+#include "kapplicative.h"
 
 /* keyed dynamic vars */
 #define env_keyed_parents(env_) (tv2env(env_)->keyed_parents)
@@ -121,6 +122,22 @@ void try_set_name(klisp_State *K, TValue obj, TValue sym)
 	gcvalue(obj)->gch.kflags |= K_FLAG_HAS_NAME;
 	TValue *node = klispH_set(K, tv2table(K->name_table), obj);
 	*node = sym;
+
+	/* TEMP: use this until we have a general mechanism to add
+	   objects to be named after some other obj */
+	if (ttisapplicative(obj)) {
+	    /* underlying is rooted by means of obj */
+	    TValue underlying = kunwrap(obj);
+	    while (kcan_have_name(underlying) && !khas_name(underlying)) {
+		gcvalue(underlying)->gch.kflags |= K_FLAG_HAS_NAME;
+		node = klispH_set(K, tv2table(K->name_table), underlying);
+		*node = sym;
+		if (ttisapplicative(underlying)) 
+		    underlying = kunwrap(underlying);
+		else 
+		    break;
+	    }
+	}
     }
 }
 #endif
