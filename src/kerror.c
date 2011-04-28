@@ -9,6 +9,25 @@
 #include "kmem.h"
 #include "kstring.h"
 
+/* GC: assumes all objs passed are rooted */
+TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg, 
+		  TValue irritants) 
+{
+    Error *new_error = klispM_new(K, Error);
+
+    /* header + gc_fields */
+    klispC_link(K, (GCObject *) new_error, K_TERROR, 0);
+
+    /* error specific fields */
+    new_error->who = who;
+    new_error->cont = cont;
+    new_error->msg = msg;
+    new_error->irritants = irritants;
+
+    return gc2error(new_error);
+}
+
+
 /* XXX: the msg buffers should be statically allocated and msgs
    should be copied there, otherwise problems may occur if
    the objects whose buffers were passed as parameters get GCted */
