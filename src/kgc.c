@@ -20,6 +20,7 @@
 #include "imrat.h"
 #include "ktable.h"
 #include "kstring.h"
+#include "kerror.h"
 
 #define GCSTEPSIZE	1024u
 #define GCSWEEPMAX	40
@@ -106,6 +107,7 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TPROMISE:
     case K_TPORT:
     case K_TTABLE:
+    case K_TERROR:
 	o->gch.gclist = K->gray;
 	K->gray = o;
 	break;
@@ -305,6 +307,14 @@ static int32_t propagatemark (klisp_State *K) {
 	return sizeof(Table) + sizeof(TValue) * h->sizearray +
 	    sizeof(Node) * sizenode(h);
     }
+    case K_TERROR: {
+	Error *e = cast(Error *, o);
+	markvalue(K, e->who);
+	markvalue(K, e->cont);
+	markvalue(K, e->msg);
+	markvalue(K, e->irritants);
+	return sizeof(Error);
+    }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
 		type);
@@ -429,6 +439,9 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	break;
     case K_TTABLE:
 	klispH_free(K, (Table *)o);
+	break;
+    case K_TERROR:
+	klispE_free(K, (Error *)o);
 	break;
     default:
 	/* shouldn't happen */

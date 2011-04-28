@@ -29,6 +29,11 @@ TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg,
     return gc2error(new_error);
 }
 
+void klispE_free(klisp_State *K, Error *error)
+{
+    klispM_free(K, error);
+}
+
 /*
 ** Clear all stacks & buffers 
 */

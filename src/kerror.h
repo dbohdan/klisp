@@ -15,6 +15,9 @@
 
 TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg, 
 		  TValue irritants);
+
+void klispE_free(klisp_State *K, Error *error);
+
 void klispE_throw_simple(klisp_State *K, char *msg);
 void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants);
 
