@@ -44,7 +44,7 @@ void kchar_to_integer(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "char->integer", ptree, "character", ttischar, ch);
+    bind_1tp(K, ptree, "character", ttischar, ch);
 
     kapply_cc(K, i2tv((int32_t) chvalue(ch)));
 }
@@ -54,17 +54,17 @@ void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "integer->char", ptree, "integer", ttisinteger, itv);
+    bind_1tp(K, ptree, "integer", ttisinteger, itv);
     
     if (ttisbigint(itv)) {
-	klispE_throw(K, "integer->char: integer out of ASCII range [0 - 127]");
+	klispE_throw_simple(K, "integer out of ASCII range [0 - 127]");
 	return;
     }
     int32_t i = ivalue(itv);
 
     /* for now only allow ASCII */
     if (i < 0 || i > 127) {
-	klispE_throw(K, "integer->char: integer out of ASCII range [0 - 127]");
+	klispE_throw_simple(K, "integer out of ASCII range [0 - 127]");
 	return;
     }
     kapply_cc(K, ch2tv((char) i));
@@ -76,7 +76,7 @@ void kchar_upcase(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "char-upcase", ptree, "character", ttischar, chtv);
+    bind_1tp(K, ptree, "character", ttischar, chtv);
     char ch = chvalue(chtv);
     ch = toupper(ch);
     kapply_cc(K, ch2tv(ch));
@@ -87,7 +87,7 @@ void kchar_downcase(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "char-downcase", ptree, "character", ttischar, chtv);
+    bind_1tp(K, ptree, "character", ttischar, chtv);
     char ch = chvalue(chtv);
     ch = tolower(ch);
     kapply_cc(K, ch2tv(ch));

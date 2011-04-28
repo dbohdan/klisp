@@ -167,7 +167,7 @@ static int32_t findindex (klisp_State *K, Table *t, TValue key)
 	    }
 	    else n = gnext(n);
 	} while (n);
-	klispE_throw(K, "invalid key to next");  /* key not found */
+	klispE_throw_simple(K, "invalid key to next");  /* key not found */
 	return 0;  /* to avoid warnings */
     }
 }
@@ -299,7 +299,7 @@ static void setnodevector (klisp_State *K, Table *t, int32_t size)
 	int32_t i;
 	lsize = ceillog2(size);
 	if (lsize > MAXBITS)
-	    klispE_throw(K, "table overflow");
+	    klispE_throw_simple(K, "table overflow");
 	size = twoto(lsize);
 	t->node = klispM_newvector(K, size, Node);
 	for (i=0; i<size; i++) {
@@ -547,7 +547,7 @@ TValue *klispH_set (klisp_State *K, Table *t, TValue key)
 	return cast(TValue *, p);
     else {
 	if (ttisfree(key)) 
-	    klispE_throw(K, "table index is free");
+	    klispE_throw_simple(K, "table index is free");
 /*
   else if (ttisnumber(key) && luai_numisnan(nvalue(key)))
   luaG_runerror(L, "table index is NaN");

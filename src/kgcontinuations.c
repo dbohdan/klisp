@@ -32,7 +32,7 @@
 void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
-    bind_1tp(K, "call/cc", ptree, "combiner", ttiscombiner, comb);
+    bind_1tp(K, ptree, "combiner", ttiscombiner, comb);
 
     TValue expr = klist(K, 2, comb, kget_cc(K));
     ktail_eval(K, expr, denv);
@@ -60,7 +60,7 @@ void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_al2tp(K, "extend-continuation", ptree, 
+    bind_al2tp(K, ptree, 
 	       "continuation", ttiscontinuation, cont, 
 	       "applicative", ttisapplicative, app, 
 	       maybe_env);
@@ -100,8 +100,7 @@ inline TValue check_copy_single_entry(klisp_State *K, char *name,
     if (!ttispair(obj) || !ttispair(kcdr(obj)) || 
 	    !ttisnil(kcddr(obj))) {
 	unmark_list(K, root);
-	klispE_throw_extra(K, name , ": Bad entry (expected "
-			   "list of length 2)");
+	klispE_throw_simple(K, "Bad entry (expected list of length 2)");
 	return KINERT;
     } 
     TValue cont = kcar(obj);
@@ -109,12 +108,12 @@ inline TValue check_copy_single_entry(klisp_State *K, char *name,
 
     if (!ttiscontinuation(cont)) {
 	unmark_list(K, root);
-	klispE_throw_extra(K, name, ": Bad type on first element (expected " 
+	klispE_throw_simple(K, "Bad type on first element (expected " 
 		     "continuation)");				     
 	return KINERT;
     } else if (!singly_wrapped(app)) { 
 	unmark_list(K, root);
-	klispE_throw_extra(K, name, ": Bad type on second element (expected " 
+	klispE_throw_simple(K, "Bad type on second element (expected " 
 		     "singly wrapped applicative)");				     
 	return KINERT; 
     }
@@ -152,7 +151,7 @@ TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
 	unmark_list(K, obj);
 	TValue ret = kcutoff_dummy1(K);
 	if (!ttispair(tail) && !ttisnil(tail)) {
-	    klispE_throw_extra(K, name , ": expected list"); 
+	    klispE_throw_simple(K, "expected list"); 
 	    return KINERT;
 	} 
 	return ret;
@@ -165,7 +164,7 @@ void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
 
-    bind_3tp(K, "guard-continuation", ptree, "any", anytype, entry_guards,
+    bind_3tp(K, ptree, "any", anytype, entry_guards,
 	     "continuation", ttiscontinuation, cont,
 	     "any", anytype, exit_guards);
 
@@ -200,7 +199,7 @@ void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree,
 			      TValue denv)
 {
     UNUSED(xparams);
-    bind_1tp(K, "continuation->applicative", ptree, "continuation",
+    bind_1tp(K, ptree, "continuation",
 	     ttiscontinuation, cont);
     /* cont_app is from kstate, it handles dynamic vars &
        interceptions */
@@ -225,7 +224,7 @@ void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2tp(K, "apply-continuation", ptree, "continuation", ttiscontinuation,
+    bind_2tp(K, ptree, "continuation", ttiscontinuation,
 	     cont, "any", anytype, obj);
 
     /* kcall_cont is from kstate, it handles dynamic vars &
@@ -239,7 +238,7 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     /* from the report: #ignore is not ok, only symbol */
-    bind_al1tp(K, "$let/cc", ptree, "symbol", ttissymbol, sym, objs);
+    bind_al1tp(K, ptree, "symbol", ttissymbol, sym, objs);
 
     if (ttisnil(objs)) {
 	/* we don't even bother creating the environment */
@@ -277,7 +276,7 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
 
-    bind_3tp(K, "guard-dynamic-extent", ptree, "any", anytype, entry_guards,
+    bind_3tp(K, ptree, "any", anytype, entry_guards,
 	     "combiner", ttiscombiner, comb,
 	     "any", anytype, exit_guards);
 
@@ -316,7 +315,7 @@ void kgexit(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     UNUSED(xparams);
 
-    check_0p(K, "exit", ptree);
+    check_0p(K, ptree);
 
     /* TODO: look out for guards and dynamic variables */
     /* should be probably handled in kcall_cont() */

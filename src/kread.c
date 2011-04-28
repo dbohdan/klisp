@@ -72,7 +72,7 @@ void kread_error(klisp_State *K, char *str)
     kport_update_source_info(K->curr_port, K->ktok_source_info.line,
 			     K->ktok_source_info.col);
 
-    klispE_throw(K, str);
+    klispE_throw_simple(K, str);
 }
 
 /*

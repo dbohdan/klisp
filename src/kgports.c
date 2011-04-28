@@ -58,11 +58,10 @@ void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj)
 void with_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		    TValue denv)
 {
-    char *name = ksymbol_buf(xparams[0]);
     bool writep = bvalue(xparams[1]);
     TValue key = xparams[2];
 
-    bind_2tp(K, name, ptree, "string", ttisstring, filename,
+    bind_2tp(K, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
     TValue new_port = kmake_port(K, filename, writep);
@@ -95,10 +94,9 @@ void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
     */
     UNUSED(denv);
 
-    char *name = ksymbol_buf(xparams[0]);
     TValue key = xparams[1];
 
-    check_0p(K, name, ptree);
+    check_0p(K, ptree);
 
     /* can access directly, no need to call do_access */
     kapply_cc(K, kcdr(key));
@@ -108,11 +106,10 @@ void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
 /* 15.1.5 open-input-file, open-output-file */
 void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    char *name = ksymbol_buf(xparams[0]);
     bool writep = bvalue(xparams[1]);
     UNUSED(denv);
 
-    bind_1tp(K, name, ptree, "string", ttisstring, filename);
+    bind_1tp(K, ptree, "string", ttisstring, filename);
 
     TValue new_port = kmake_port(K, filename, writep);
     kapply_cc(K, new_port);
@@ -121,11 +118,10 @@ void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 15.1.6 close-input-file, close-output-file */
 void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    char *name = ksymbol_buf(xparams[0]);
     bool writep = bvalue(xparams[1]);
     UNUSED(denv);
 
-    bind_1tp(K, name, ptree, "port", ttisport, port);
+    bind_1tp(K, ptree, "port", ttisport, port);
 
     bool dir_ok = writep? kport_is_output(port) : kport_is_input(port);
 
@@ -133,7 +129,7 @@ void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	kclose_port(K, port);
 	kapply_cc(K, KINERT);
     } else {
-	klispE_throw_extra(K, name, ": wrong input/output direction");
+	klispE_throw_simple(K, "wrong input/output direction");
 	return;
     }
 }
@@ -148,11 +144,11 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!get_opt_tpar(K, "read", K_TPORT, &port)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     } else if (!kport_is_input(port)) {
-	klispE_throw(K, "read: the port should be an input port");
+	klispE_throw_simple(K, "the port should be an input port");
 	return;
     } 
     if (kport_is_closed(port)) {
-	klispE_throw(K, "read: the port is already closed");
+	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
 
@@ -167,17 +163,17 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     
-    bind_al1tp(K, "write", ptree, "any", anytype, obj,
+    bind_al1tp(K, ptree, "any", anytype, obj,
 	       port);
 
     if (!get_opt_tpar(K, "write", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     } else if (!kport_is_output(port)) {
-	klispE_throw(K, "write: the port should be an output port");
+	klispE_throw_simple(K, "the port should be an output port");
 	return;
     } 
     if (kport_is_closed(port)) {
-	klispE_throw(K, "write: the port is already closed");
+	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
 
@@ -199,11 +195,11 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!get_opt_tpar(K, "newline", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     } else if (!kport_is_output(port)) {
-	klispE_throw(K, "write: the port should be an output port");
+	klispE_throw_simple(K, "the port should be an output port");
 	return;
     }
     if (kport_is_closed(port)) {
-	klispE_throw(K, "write: the port is already closed");
+	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
     
@@ -217,17 +213,17 @@ void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     
-    bind_al1tp(K, "write-char", ptree, "char", ttischar, ch,
+    bind_al1tp(K, ptree, "char", ttischar, ch,
 	       port);
 
     if (!get_opt_tpar(K, "write-char", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     } else if (!kport_is_output(port)) {
-	klispE_throw(K, "write-char: the port should be an output port");
+	klispE_throw_simple(K, "the port should be an output port");
 	return;
     } 
     if (kport_is_closed(port)) {
-	klispE_throw(K, "write-char: the port is already closed");
+	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
     
@@ -252,11 +248,11 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
     if (!get_opt_tpar(K, name, K_TPORT, &port)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     } else if (!kport_is_input(port)) {
-	klispE_throw_extra(K, name, ": the port should be an input port");
+	klispE_throw_simple(K, "the port should be an input port");
 	return;
     } 
     if (kport_is_closed(port)) {
-	klispE_throw_extra(K, name, ": the port is already closed");
+	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
 
@@ -285,11 +281,11 @@ void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!get_opt_tpar(K, "char-ready?", K_TPORT, &port)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     } else if (!kport_is_input(port)) {
-	klispE_throw(K, "char-ready?: the port should be an input port");
+	klispE_throw_simple(K, "the port should be an input port");
 	return;
     } 
     if (kport_is_closed(port)) {
-	klispE_throw(K, "char-ready?: the port is already closed");
+	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
 
@@ -306,11 +302,10 @@ void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 void call_with_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		    TValue denv)
 {
-    char *name = ksymbol_buf(xparams[0]);
     bool writep = bvalue(xparams[1]);
     UNUSED(denv);
 
-    bind_2tp(K, name, ptree, "string", ttisstring, filename,
+    bind_2tp(K, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
     TValue new_port = kmake_port(K, filename, writep);
@@ -418,7 +413,7 @@ TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
 void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
-    bind_1tp(K, "load", ptree, "string", ttisstring, filename);
+    bind_1tp(K, ptree, "string", ttisstring, filename);
 
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the
@@ -464,7 +459,7 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_al1tp(K, "get-module", ptree, "string", ttisstring, filename, 
+    bind_al1tp(K, ptree, "string", ttisstring, filename, 
 	maybe_env);
 
     TValue port = kmake_port(K, filename, false);
@@ -517,17 +512,17 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     
-    bind_al1tp(K, "display", ptree, "any", anytype, obj,
+    bind_al1tp(K, ptree, "any", anytype, obj,
 	       port);
 
     if (!get_opt_tpar(K, "display", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     } else if (!kport_is_output(port)) {
-	klispE_throw(K, "display: the port should be an output port");
+	klispE_throw_simple(K, "the port should be an output port");
 	return;
     } 
     if (kport_is_closed(port)) {
-	klispE_throw(K, "display: the port is already closed");
+	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
     

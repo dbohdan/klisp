@@ -42,8 +42,7 @@ void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (ttispair(tail) || ttisnil(tail)) {
 	kapply_cc(K, b2tv(res));
     } else {
-	char *name = ksymbol_buf(xparams[0]);
-	klispE_throw_extra(K, name, ": expected list");
+	klispE_throw_simple(K, "expected list");
 	return;
     }
 }
@@ -73,8 +72,7 @@ void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (ttispair(tail) || ttisnil(tail)) {
 	kapply_cc(K, b2tv(res));
     } else {
-	char *name = ksymbol_buf(xparams[0]);
-	klispE_throw_extra(K, name, ": expected list");
+	klispE_throw_simple(K, "expected list");
 	return;
     }
 }
@@ -110,7 +108,7 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 	if (!(*typep)(first)) {
 	    /* TODO show expected type */
-	    klispE_throw_extra(K, name, ": bad argument type");
+	    klispE_throw_simple(K, "bad argument type");
 	    return;
 	}
 	res &= (*predp)(first);
@@ -156,7 +154,7 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	TValue first = kcar(tail);
 	if (!(*typep)(first)) {
 	    /* TODO show expected type */
-	    klispE_throw_extra(K, name, ": bad argument type");
+	    klispE_throw_simple(K, "bad argument type");
 	    return;
 	}
     }
@@ -168,7 +166,7 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 	if (!(*typep)(first) || !(*typep)(second)) {
 	    /* TODO show expected type */
-	    klispE_throw_extra(K, name, ": bad argument type");
+	    klispE_throw_simple(K, "bad argument type");
 	    return;
 	}
 	res &= (*predp)(first, second);
@@ -213,7 +211,7 @@ void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	TValue first = kcar(tail);
 	if (!(*typep)(first)) {
 	    /* TODO show expected type */
-	    klispE_throw_extra(K, name, ": bad argument type");
+	    klispE_throw_simple(K, "bad argument type");
 	    return;
 	}
     }
@@ -225,7 +223,7 @@ void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 	if (!(*typep)(first) || !(*typep)(second)) {
 	    /* TODO show expected type */
-	    klispE_throw_extra(K, name, ": bad argument type");
+	    klispE_throw_simple(K, "bad argument type");
 	    return;
 	}
 	res &= (*predp)(K, first, second);
@@ -256,15 +254,15 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name , allow_infp? ": expected list": 
-			   ": expected finite list"); 
+	klispE_throw_simple(K, allow_infp? "expected list" :
+			   "expected finite list"); 
 	return 0;
     } else if(ttispair(tail) && !allow_infp) {
-	klispE_throw_extra(K, name , ": expected finite list"); 
+	klispE_throw_simple(K, "expected finite list"); 
 	return 0;
     } else if (type_errorp) {
 	/* TODO put type name too */
-	klispE_throw_extra(K, name , ": bad operand type"); 
+	klispE_throw_simple(K, "bad operand type"); 
 	return 0;
     }
     return pairs;
@@ -287,11 +285,11 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name, allow_infp? ": expected list": 
-			   ": expected finite list"); 
+	klispE_throw_simple(K, allow_infp? "expected list" : 
+			   "expected finite list"); 
 	return 0;
     } else if(ttispair(tail) && !allow_infp) {
-	klispE_throw_extra(K, name , ": expected finite list"); 
+	klispE_throw_simple(K, "expected finite list"); 
 	return 0;
     } else {
 	return pairs;

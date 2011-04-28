@@ -68,7 +68,7 @@ void force(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1p(K, "force", ptree, obj);
+    bind_1p(K, ptree, obj);
     if (!ttispromise(obj)) {
 	/* non promises force to themselves */
 	kapply_cc(K, obj);
@@ -89,7 +89,7 @@ void Slazy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
 
-    bind_1p(K, "$lazy", ptree, exp);
+    bind_1p(K, ptree, exp);
     TValue new_prom = kmake_promise(K, exp, denv);
     kapply_cc(K, new_prom);
 }
@@ -100,7 +100,7 @@ void memoize(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_1p(K, "memoize", ptree, exp);
+    bind_1p(K, ptree, exp);
     TValue new_prom = kmake_promise(K, exp, KNIL);
     kapply_cc(K, new_prom);
 }

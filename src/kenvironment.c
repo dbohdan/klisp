@@ -209,7 +209,7 @@ TValue kget_binding(klisp_State *K, TValue env, TValue sym)
     if (try_get_binding(K, env, sym, &value)) {
 	return value;
     } else {
-	klispE_throw_extra(K, "Unbound symbol: ", ksymbol_buf(sym));
+	klispE_throw_simple_with_irritants(K, "Unbound symbol", 1, sym);
 	/* avoid warning */
 	return KINERT;
     }
@@ -280,7 +280,7 @@ TValue kget_keyed_static_var(klisp_State *K, TValue env, TValue key)
     if (try_get_keyed(K, env, key, &value)) {
 	return value;
     } else {
-	klispE_throw(K, "keyed-static-get: Unbound keyed static variable");
+	klispE_throw_simple(K, "Unbound keyed static variable");
 	/* avoid warning */
 	return KINERT;
     }

@@ -34,7 +34,7 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     (void) denv;
     (void) xparams;
 
-    bind_3p(K, "$if", ptree, test, cons_c, alt_c);
+    bind_3p(K, ptree, test, cons_c, alt_c);
 
     TValue new_cont = 
 	kmake_continuation(K, kget_cc(K), select_clause, 
@@ -60,7 +60,7 @@ void select_clause(klisp_State *K, TValue *xparams, TValue obj)
 	TValue clause = bvalue(obj)? xparams[1] : xparams[2];
 	ktail_eval(K, clause, denv);
     } else {
-	klispE_throw(K, "$if: test is not a boolean");
+	klispE_throw_simple(K, "test is not a boolean");
 	return;
     }
 }
@@ -138,7 +138,7 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
 	TValue first = kcar(tail);
 	if (!ttispair(first)) {
 	    unmark_list(K, clauses);
-	    klispE_throw(K, "$cond: bad structure in clauses");
+	    klispE_throw_simple(K, "bad structure in clauses");
 	    return KNIL;
 	}
 	
@@ -164,7 +164,7 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
     unmark_list(K, clauses);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw(K, "$cond: expected list (clauses)");
+	klispE_throw_simple(K, "expected list (clauses)");
 	return KNIL;
     } else {
 	/* 
@@ -202,7 +202,7 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
     TValue denv = xparams[3];
 
     if (!ttisboolean(obj)) {
-	klispE_throw(K, "$cond: test evaluated to a non boolean value");
+	klispE_throw_simple(K, "test evaluated to a non boolean value");
 	return;
     } else if (bvalue(obj)) {
 	if (ttisnil(this_body)) {
@@ -313,10 +313,10 @@ void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) xparams;
 
-    bind_al1tp(K, "for-each", ptree, "applicative", ttisapplicative, app, lss);
+    bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);
     
     if (ttisnil(lss)) {
-	klispE_throw(K, "for-each: no lists");
+	klispE_throw_simple(K, "no lists");
 	return;
     }
 

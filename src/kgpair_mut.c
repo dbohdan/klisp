@@ -27,11 +27,11 @@ void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
     (void) xparams;
-    bind_2tp(K, "set-car!", ptree, "pair", ttispair, pair, 
+    bind_2tp(K, ptree, "pair", ttispair, pair, 
 	     "any", anytype, new_car);
 
     if(!kis_mutable(pair)) {
-	    klispE_throw(K, "set-car!: immutable pair");
+	    klispE_throw_simple(K, "immutable pair");
 	    return;
     }
     kset_car(pair, new_car);
@@ -42,11 +42,11 @@ void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
     (void) xparams;
-    bind_2tp(K, "set-cdr!", ptree, "pair", ttispair, pair, 
+    bind_2tp(K, ptree, "pair", ttispair, pair, 
 	     "any", anytype, new_cdr);
     
     if(!kis_mutable(pair)) {
-	    klispE_throw(K, "set-cdr!: immutable pair");
+	    klispE_throw_simple(K, "immutable pair");
 	    return;
     }
     kset_cdr(pair, new_cdr);
@@ -63,7 +63,7 @@ void copy_es(klisp_State *K, TValue *xparams,
     */
     char *name = ksymbol_buf(xparams[0]);
     bool mut_flag = bvalue(xparams[1]);
-    bind_1p(K, name, ptree, obj);
+    bind_1p(K, ptree, obj);
 
     TValue copy = copy_es_immutable_h(K, name, obj, mut_flag);
     kapply_cc(K, copy);
@@ -158,18 +158,18 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_3tp(K, "encycle!", ptree, "any", anytype, obj,
+    bind_3tp(K, ptree, "any", anytype, obj,
 	     "integer", kintegerp, tk1,
 	     "integer", kintegerp, tk2);
 
     if (knegativep(tk1) || knegativep(tk2)) {
-	klispE_throw(K, "encycle!: negative index");
+	klispE_throw_simple(K, "negative index");
 	return;
     }
 
     if (!ttisfixint(tk1) || !ttisfixint(tk2)) {
 	/* no list can have that many pairs */
-	klispE_throw(K, "encycle!: non pair found while traversing "
+	klispE_throw_simple(K, "non pair found while traversing "
 		     "object");
 	return;
     }
@@ -182,12 +182,12 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
     while(k1 != 0) {
 	if (!ttispair(tail)) {
 	    unmark_list(K, obj);
-	    klispE_throw(K, "encycle!: non pair found while traversing "
+	    klispE_throw_simple(K, "non pair found while traversing "
 			 "object");
 	    return;
 	} else if (kis_marked(tail)) {
 	    unmark_list(K, obj);
-	    klispE_throw(K, "encycle!: too few pairs in cyclic list");
+	    klispE_throw_simple(K, "too few pairs in cyclic list");
 	    return;
 	}
 	kmark(tail);
@@ -206,12 +206,12 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 	while(k2 != 0) {
 	    if (!ttispair(tail)) {
 		unmark_list(K, obj);
-		klispE_throw(K, "encycle!: non pair found while traversing "
+		klispE_throw_simple(K, "non pair found while traversing "
 			     "object");
 		return;
 	    } else if (kis_marked(tail)) {
 		unmark_list(K, obj);
-		klispE_throw(K, "encycle!: too few pairs in cyclic list");
+		klispE_throw_simple(K, "too few pairs in cyclic list");
 		return;
 	    }
 	    kmark(tail);
@@ -220,16 +220,16 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 	}
 	if (!ttispair(tail)) {
 	    unmark_list(K, obj);
-	    klispE_throw(K, "encycle!: non pair found while traversing "
+	    klispE_throw_simple(K, "non pair found while traversing "
 			 "object");
 	    return;
 	} else if (kis_marked(tail)) {
 	    unmark_list(K, obj);
-	    klispE_throw(K, "encycle!: too few pairs in cyclic list");
+	    klispE_throw_simple(K, "too few pairs in cyclic list");
 	    return;
 	} else if (!kis_mutable(tail)) {
 	    unmark_list(K, obj);
-	    klispE_throw(K, "encycle!: immutable pair");
+	    klispE_throw_simple(K, "immutable pair");
 	    return;
 	} else {
 	    kset_cdr(tail, fcp);
@@ -315,7 +315,7 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
 		       that is done on the last argument */
 		    appendB_clear_last_pairs(K, last_pairs);
 		    unmark_list(K, first);
-		    klispE_throw(K, "append!: repeated last pairs");
+		    klispE_throw_simple(K, "repeated last pairs");
 		    return KINERT;
 		} else {
 		    unmark_list(K, first);
@@ -331,7 +331,7 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
 		    unmark_list(K, first);
 		    if (kis_immutable(flastp)) {
 			appendB_clear_last_pairs(K, last_pairs);
-			klispE_throw(K, "append!: immutable pair found");
+			klispE_throw_simple(K, "immutable pair found");
 			return KINERT;
 		    }
 		    /* add the last pair to the list of last pairs */
@@ -353,13 +353,13 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
 
 		    if (ttispair(ftail)) {
 			if (ttisnil(kcdr(ftail))) {
-			    klispE_throw(K, "append!: repeated last pairs");
+			    klispE_throw_simple(K, "repeated last pairs");
 			} else {
-			    klispE_throw(K, "append!: cyclic list as non last "
+			    klispE_throw_simple(K, "cyclic list as non last "
 					 "argument");
 			}  
 		    } else {
-			klispE_throw(K, "append!: improper list as non last "
+			klispE_throw_simple(K, "improper list as non last "
 				     "argument");
 		    }
 		    return KINERT;
@@ -398,13 +398,13 @@ void appendB(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
     UNUSED(denv);
     if (ttisnil(ptree)) {
-	klispE_throw(K, "append!: no lists");
+	klispE_throw_simple(K, "no lists");
 	return;
     } else if (!ttispair(ptree)) {
-	klispE_throw(K, "append!: bad ptree");
+	klispE_throw_simple(K, "bad ptree");
 	return;
     } else if (ttisnil(kcar(ptree))) {
-	klispE_throw(K, "append!: empty first list");
+	klispE_throw_simple(K, "empty first list");
 	return;
     }
     TValue lss = ptree;
@@ -441,7 +441,7 @@ void assq(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, "assq", ptree, obj, ls);
+    bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
     int32_t pairs = check_typed_list(K, "assq", "pair", kpairp,
 				     true, ls, NULL);
@@ -466,7 +466,7 @@ void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, "memq?", ptree, obj, ls);
+    bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
     int32_t pairs = check_list(K, "memq?", true, ls, NULL);
     TValue tail = ls;

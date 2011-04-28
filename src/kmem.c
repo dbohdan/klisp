@@ -46,7 +46,7 @@ void *klispM_growaux_ (klisp_State *K, void *block, int *size, size_t size_elems
     int32_t newsize;
     if (*size >= limit/2) {  /* cannot double it? */
 	if (*size >= limit)  /* cannot grow even a little? */
-	    klispE_throw(K, (char *) errormsg); /* XXX */
+	    klispE_throw_simple(K, (char *) errormsg); /* XXX */
 	newsize = limit;  /* still have at least one free place */
     }
     else {
@@ -61,7 +61,8 @@ void *klispM_growaux_ (klisp_State *K, void *block, int *size, size_t size_elems
 
 
 void *klispM_toobig (klisp_State *K) {
-  klispE_throw(K, "memory allocation error: block too big");
+    /* TODO better msg */
+  klispE_throw_simple(K, "(mem) block too big");
   return NULL;  /* to avoid warnings */
 }
 

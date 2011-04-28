@@ -27,7 +27,7 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep)
     /* for now always use text mode */
     FILE *f = fopen(kstring_buf(filename), writep? "w": "r");
     if (f == NULL) {
-	klispE_throw(K, "Create port: could't open file");
+	klispE_throw_simple(K, "could't open file");
 	return KINERT;
     } else {
 	return kmake_std_port(K, filename, writep, f);

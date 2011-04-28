@@ -82,7 +82,7 @@ kpromise.o: kpromise.c kpromise.h kmem.h kstate.h kobject.h \
 kport.o: kport.c kport.h kmem.h kstate.h kobject.h klisp.h kerror.h kstring.h \
 	kgc.h
 ktable.o: ktable.c ktable.h kobject.h kstate.h kmem.h klisp.h kgc.h \
-	kapplicative.h kgeqp.h kstring.h
+	kapplicative.h kgeqp.h kstring.h kerror.h
 keval.o: keval.c keval.h kcontinuation.h kenvironment.h kstate.h kobject.h \
 	kpair.h kerror.h klisp.h klispconf.h
 krepl.o: krepl.c krepl.h kcontinuation.h kstate.h kobject.h keval.h klisp.h \

@@ -28,7 +28,7 @@ void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_1tp(K, "not?", ptree, "boolean", ttisboolean, tv_b);
+    bind_1tp(K, ptree, "boolean", ttisboolean, tv_b);
 
     TValue res = kis_true(tv_b)? KFALSE : KTRUE;
     kapply_cc(K, res);
@@ -104,7 +104,7 @@ void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj)
     TValue denv = xparams[3];
 
     if (!ttisboolean(obj)) {
-	klispE_throw_extra(K, ksymbol_buf(sname), ": expected boolean");
+	klispE_throw_simple(K, "expected boolean");
 	return;
     } else if (ttisnil(ls) || tv_equal(obj, term_bool)) {
 	/* in both cases the value to be returned is obj:

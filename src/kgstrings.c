@@ -34,7 +34,7 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_al1tp(K, "make-string", ptree, "integer", kintegerp, tv_s, 
+    bind_al1tp(K, ptree, "integer", kintegerp, tv_s, 
 	       maybe_char);
 
     char fill = ' ';
@@ -42,10 +42,10 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	fill = chvalue(maybe_char);
 
     if (knegativep(tv_s)) {
-	klispE_throw(K, "make-string: negative size");    
+	klispE_throw_simple(K, "negative size");    
 	return;
     } else if (!ttisfixint(tv_s)) {
-	klispE_throw(K, "make-string: size is too big");    
+	klispE_throw_simple(K, "size is too big");    
 	return;
     }
 
@@ -59,7 +59,7 @@ void string_length(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "string-length", ptree, "string", ttisstring, str);
+    bind_1tp(K, ptree, "string", ttisstring, str);
 
     TValue res = i2tv(kstring_size(str));
     kapply_cc(K, res);
@@ -70,19 +70,19 @@ void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_2tp(K, "string-ref", ptree, "string", ttisstring, str,
+    bind_2tp(K, ptree, "string", ttisstring, str,
 	     "integer", kintegerp, tv_i);
 
     if (!ttisfixint(tv_i)) {
 	/* TODO show index */
-	klispE_throw(K, "string-ref: index out of bounds");
+	klispE_throw_simple(K, "index out of bounds");
 	return;
     }
     int32_t i = ivalue(tv_i);
     
     if (i < 0 || i >= kstring_size(str)) {
 	/* TODO show index */
-	klispE_throw(K, "string-ref: index out of bounds");
+	klispE_throw_simple(K, "index out of bounds");
 	return;
     }
 
@@ -95,15 +95,15 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_3tp(K, "string-set!", ptree, "string", ttisstring, str,
+    bind_3tp(K, ptree, "string", ttisstring, str,
 	     "integer", kintegerp, tv_i, "char", ttischar, tv_ch);
 
     if (!ttisfixint(tv_i)) {
 	/* TODO show index */
-	klispE_throw(K, "string-set!: index out of bounds");
+	klispE_throw_simple(K, "index out of bounds");
 	return;
     } else if (kstring_immutablep(str)) {
-	klispE_throw(K, "string-set!: immutable string");
+	klispE_throw_simple(K, "immutable string");
 	return;
     }
 
@@ -111,7 +111,7 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     if (i < 0 || i >= kstring_size(str)) {
 	/* TODO show index */
-	klispE_throw(K, "string-set!: index out of bounds");
+	klispE_throw_simple(K, "index out of bounds");
 	return;
     }
 
@@ -244,14 +244,14 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_3tp(K, "substring", ptree, "string", ttisstring, str,
+    bind_3tp(K, ptree, "string", ttisstring, str,
 	     "integer", kintegerp, tv_start,
 	     "integer", kintegerp, tv_end);
 
     if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
 	  ivalue(tv_start) > kstring_size(str)) {
 	/* TODO show index */
-	klispE_throw(K, "substring: start index out of bounds");
+	klispE_throw_simple(K, "start index out of bounds");
 	return;
     } 
 
@@ -259,7 +259,7 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     if (!ttisfixint(tv_end) || ivalue(tv_end) < 0 || 
 	  ivalue(tv_end) > kstring_size(str)) {
-	klispE_throw(K, "substring: end index out of bounds");
+	klispE_throw_simple(K, "end index out of bounds");
 	return;
     }
 
@@ -267,7 +267,7 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     if (start > end) {
 	/* TODO show indexes */
-	klispE_throw(K, "substring: end index is smaller than start index");
+	klispE_throw_simple(K, "end index is smaller than start index");
 	return;
     }
 
@@ -303,7 +303,7 @@ void string_append(klisp_State *K, TValue *xparams, TValue ptree,
     while(pairs--) {
 	total_size += kstring_size(kcar(tail));
 	if (total_size > INT32_MAX) {
-	    klispE_throw(K, "string-append: resulting string is too big");
+	    klispE_throw_simple(K, "resulting string is too big");
 	    return;
 	}
 	tail = kcdr(tail);
@@ -340,7 +340,7 @@ void string_to_list(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
     UNUSED(denv);
     
-    bind_1tp(K, "string->list", ptree, "string", ttisstring, str);
+    bind_1tp(K, ptree, "string", ttisstring, str);
     int32_t pairs = kstring_size(str);
     char *buf = kstring_buf(str);
 
@@ -362,7 +362,7 @@ void list_to_string(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     
     /* check later in list_to_string_h */
-    bind_1p(K, "list->string", ptree, ls);
+    bind_1p(K, ptree, ls);
 
     TValue new_str = list_to_string_h(K, "list->string", ls);
     kapply_cc(K, new_str);
@@ -374,7 +374,7 @@ void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "string-copy", ptree, "string", ttisstring, str);
+    bind_1tp(K, ptree, "string", ttisstring, str);
 
     TValue new_str;
     /* the if isn't strictly necessary but it's clearer this way */
@@ -392,7 +392,7 @@ void string_to_immutable_string(klisp_State *K, TValue *xparams,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "string->immutable-string", ptree, "string", ttisstring, str);
+    bind_1tp(K, ptree, "string", ttisstring, str);
 
     TValue res_str;
     if (kstring_immutablep(str)) {/* this includes the empty list */
@@ -408,11 +408,11 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_2tp(K, "string-fill!", ptree, "string", ttisstring, str,
+    bind_2tp(K, ptree, "string", ttisstring, str,
 	     "char", ttischar, tv_ch);
 
     if (kstring_immutablep(str)) {
-	klispE_throw(K, "string-fill!: immutable string");
+	klispE_throw_simple(K, "immutable string");
 	return;
     } 
 
@@ -428,7 +428,7 @@ void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "symbol->string", ptree, "symbol", ttissymbol, sym);
+    bind_1tp(K, ptree, "symbol", ttissymbol, sym);
     TValue str = ksymbol_str(sym);
     kapply_cc(K, str);
 }
@@ -449,7 +449,7 @@ void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, "string->symbol", ptree, "string", ttisstring, str);
+    bind_1tp(K, ptree, "string", ttisstring, str);
     TValue new_sym = ksymbol_new_check_i(K, str);
     kapply_cc(K, new_sym);
 }

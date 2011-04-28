@@ -31,7 +31,7 @@ void do_sv_access(klisp_State *K, TValue *xparams, TValue ptree,
     /*
     ** xparams[0]: static key 
     */
-    check_0p(K, "keyed-static-get", ptree);
+    check_0p(K, ptree);
 
     TValue key = xparams[0];
     /* this may throw an exception if not bound */
@@ -46,7 +46,7 @@ void do_sv_bind(klisp_State *K, TValue *xparams, TValue ptree,
     /*
     ** xparams[0]: static key 
     */
-    bind_2tp(K, "keyed-static-bind", ptree, "any", anytype, obj,
+    bind_2tp(K, ptree, "any", anytype, obj,
 	      "environment", ttisenvironment, env);
     UNUSED(denv); 
     TValue key = xparams[0];
@@ -62,7 +62,7 @@ void make_keyed_static_variable(klisp_State *K, TValue *xparams,
     UNUSED(denv); 
     UNUSED(xparams);
 
-    check_0p(K, "make-keyed-static-variable", ptree);
+    check_0p(K, ptree);
     /* the key is just a dummy pair */
     TValue key = kcons(K, KINERT, KINERT);
     krooted_tvs_push(K, key);

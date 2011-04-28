@@ -49,7 +49,7 @@ void kwrite_error(klisp_State *K, char *msg)
     ks_tbclear(K);
     ks_sclear(K);
 
-    klispE_throw(K, msg);
+    klispE_throw_simple(K, msg);
 }
 
 /* TODO: check for return codes and throw error if necessary */

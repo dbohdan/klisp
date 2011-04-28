@@ -40,7 +40,7 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
 void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) xparams;
-    bind_al2p(K, "$vau", ptree, vptree, vpenv, vbody);
+    bind_al2p(K, ptree, vptree, vpenv, vbody);
 
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$vau", vptree, vpenv);
@@ -121,7 +121,7 @@ void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_1tp(K, "wrap", ptree, "combiner", ttiscombiner, comb);
+    bind_1tp(K, ptree, "combiner", ttiscombiner, comb);
     TValue new_app = kwrap(K, comb);
     #if KTRACK_SI
     /* save as source code info the info from the expression whose evaluation
@@ -142,7 +142,7 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) denv;
     (void) xparams;
-    bind_1tp(K, "unwrap", ptree, "applicative", ttisapplicative, app);
+    bind_1tp(K, ptree, "applicative", ttisapplicative, app);
     TValue underlying = kunwrap(app);
     kapply_cc(K, underlying);
 }
@@ -154,7 +154,7 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     (void) xparams;
-    bind_al1p(K, "$lambda", ptree, vptree, vbody);
+    bind_al1p(K, ptree, vptree, vbody);
 
     /* The ptree & body are copied to avoid mutation */
     vptree = check_copy_ptree(K, "$lambda", vptree, KIGNORE);
@@ -191,7 +191,7 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_al2tp(K, "apply", ptree, 
+    bind_al2tp(K, ptree, 
 	       "applicative", ttisapplicative, app, 
 	       "any", anytype, obj, 
 	       maybe_env);
@@ -240,11 +240,10 @@ void map_for_each_get_metrics(klisp_State *K, char *name, TValue lss,
 	    tail = kcdr(tail);
 
 	    if (first_cpairs != 0) {
-		klispE_throw_extra(K, name, 
-				   ": mixed finite and infinite lists");
+		klispE_throw_simple(K, "mixed finite and infinite lists");
 		return;
 	    } else if (first_pairs != res_pairs) {
-		klispE_throw_extra(K, name, ": lists of different length");
+		klispE_throw_simple(K, "lists of different length");
 		return;
 	    }
 	}
@@ -264,8 +263,7 @@ void map_for_each_get_metrics(klisp_State *K, char *name, TValue lss,
 	    tail = kcdr(tail);
 
 	    if (first_cpairs == 0) {
-		klispE_throw_extra(K, name, 
-				   ": mixed finite and infinite lists");
+		klispE_throw_simple(K, "mixed finite and infinite lists");
 		return;
 	    } 
 	    res_apairs = kmax32(res_apairs, first_apairs);
@@ -539,10 +537,10 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
 
-    bind_al1tp(K, "map", ptree, "applicative", ttisapplicative, app, lss);
+    bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);
     
     if (ttisnil(lss)) {
-	klispE_throw(K, "map: no lists");
+	klispE_throw_simple(K, "no lists");
 	return;
     }
 

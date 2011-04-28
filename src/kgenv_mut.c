@@ -28,7 +28,7 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /*
     ** xparams[0] = define symbol
     */
-    bind_2p(K, "$define!", ptree, dptree, expr);
+    bind_2p(K, ptree, dptree, expr);
     
     TValue def_sym = xparams[0];
 
@@ -67,7 +67,7 @@ void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     TValue sname = xparams[0];
 
-    bind_3p(K, "$set!", ptree, env_exp, raw_formals, eval_exp);
+    bind_3p(K, ptree, env_exp, raw_formals, eval_exp);
 
     TValue formals = check_copy_ptree(K, "$set!", raw_formals, KIGNORE);
     krooted_tvs_push(K, formals);
@@ -96,7 +96,7 @@ void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj)
     TValue denv = xparams[3];
     
     if (!ttisenvironment(obj)) {
-	klispE_throw_extra(K, ksymbol_buf(sname), ": bad type from first "
+	klispE_throw_simple(K, "bad type from first "
 			   "operand evaluation (expected environment)");
 	return;
     } else {
@@ -156,15 +156,15 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
     unmark_maybe_symbol_list(K, obj);
 
     if (!ttisnil(tail)) {
-	klispE_throw_extra(K, name, ": expected finite list"); 
+	klispE_throw_simple(K, "expected finite list"); 
 	return KNIL;
     } else if (type_errorp) {
 	/* TODO put type name too */
-	klispE_throw_extra(K, name , ": bad operand type (expected list of "
+	klispE_throw_simple(K, "bad operand type (expected list of "
 			   "symbols)"); 
 	return KNIL;
     } else if (repeated_errorp) {
-	klispE_throw_extra(K, name , ": repeated symbols");
+	klispE_throw_simple(K, "repeated symbols");
     }
     return kcutoff_dummy1(K);
 }
@@ -181,8 +181,8 @@ void do_import(klisp_State *K, TValue *xparams, TValue obj)
     TValue denv = xparams[2];
     
     if (!ttisenvironment(obj)) {
-	klispE_throw_extra(K, ksymbol_buf(sname), ": bad type from first "
-		     "operand evaluation (expected environment)");
+	klispE_throw_simple(K, "bad type from first "
+			    "operand evaluation (expected environment)");
 	return;
     } else {
 	TValue env = obj;
@@ -203,7 +203,7 @@ void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
 
-    bind_al1p(K, name, ptree, symbols, body);
+    bind_al1p(K, ptree, symbols, body);
 
     symbols = check_copy_symbol_list(K, name, symbols);
     krooted_tvs_push(K, symbols);
@@ -265,7 +265,7 @@ void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
 
-    bind_al1p(K, name, ptree, env_expr, symbols);
+    bind_al1p(K, ptree, env_expr, symbols);
 
     symbols = check_copy_symbol_list(K, name, symbols);
     

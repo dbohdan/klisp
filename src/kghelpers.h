@@ -32,115 +32,115 @@
 */
 
 /* XXX: add parens around macro vars!! */
-#define check_0p(K_, n_, ptree_) \
+#define check_0p(K_, ptree_) \
     if (!ttisnil(ptree_)) { \
-	klispE_throw_extra((K_), (n_) , \
-			   ": Bad ptree (expected no arguments)");  \
+	klispE_throw_simple((K_), \
+			   "Bad ptree (expected no arguments)");  \
 	return; \
     }
 
-#define bind_1p(K_, n_, ptree_, v_) \
-    bind_1tp((K_), (n_), (ptree_), "any", anytype, (v_))
+#define bind_1p(K_, ptree_, v_) \
+    bind_1tp((K_), (ptree_), "any", anytype, (v_))
 
-#define bind_1tp(K_, n_, ptree_, tstr_, t_, v_)	\
+#define bind_1tp(K_, ptree_, tstr_, t_, v_)	\
     TValue v_; \
     if (!ttispair(ptree_) || !ttisnil(kcdr(ptree_))) { \
-	klispE_throw_extra((K_), (n_) , \
-			   ": Bad ptree (expected one argument)");  \
+	klispE_throw_simple((K_), \
+			   "Bad ptree (expected one argument)");  \
 	return; \
     } \
     v_ = kcar(ptree_);				\
     if (!t_(v_)) { \
-	klispE_throw_extra(K_, n_ , ": Bad type on first argument " \
+	klispE_throw_simple(K_, "Bad type on first argument " \
 			   "(expected "	tstr_ ")");     \
 	return; \
     } 
 
 
-#define bind_2p(K_, n_, ptree_, v1_, v2_)		\
-    bind_2tp((K_), (n_), (ptree_), "any", anytype, (v1_), \
+#define bind_2p(K_, ptree_, v1_, v2_)		\
+    bind_2tp((K_), (ptree_), "any", anytype, (v1_), \
 	     "any", anytype, (v2_))
 
-#define bind_2tp(K_, n_, ptree_, tstr1_, t1_, v1_, \
+#define bind_2tp(K_, ptree_, tstr1_, t1_, v1_, \
 		 tstr2_, t2_, v2_)			\
     TValue v1_, v2_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
 	    !ttisnil(kcddr(ptree_))) {		\
-	klispE_throw_extra(K_, n_ , ": Bad ptree (expected two arguments)"); \
+	klispE_throw_simple(K_, "Bad ptree (expected two arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
     v2_ = kcadr(ptree_); \
     if (!t1_(v1_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
+	klispE_throw_simple(K_, "Bad type on first argument (expected " \
 		     tstr1_ ")");				     \
 	return; \
     } else if (!t2_(v2_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on second argument (expected " \
+	klispE_throw_simple(K_, "Bad type on second argument (expected " \
 		     tstr2_ ")");				     \
 	return; \
     }
 
-#define bind_3p(K_, n_, ptree_, v1_, v2_, v3_)	\
-    bind_3tp(K_, n_, ptree_, "any", anytype, v1_, \
+#define bind_3p(K_, ptree_, v1_, v2_, v3_)	\
+    bind_3tp(K_, ptree_, "any", anytype, v1_, \
 	     "any", anytype, v2_, "any", anytype, v3_)
 
-#define bind_3tp(K_, n_, ptree_, tstr1_, t1_, v1_, \
+#define bind_3tp(K_, ptree_, tstr1_, t1_, v1_, \
 		 tstr2_, t2_, v2_, tstr3_, t3_, v3_)	\
     TValue v1_, v2_, v3_;				\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) ||	    \
 	  !ttispair(kcddr (ptree_)) || !ttisnil(kcdddr(ptree_))) {  \
-	klispE_throw_extra(K_, n_, ": Bad ptree (expected three arguments)"); \
+	klispE_throw_simple(K_, "Bad ptree (expected three arguments)"); \
 	return; \
     } \
     v1_ = kcar(ptree_); \
     v2_ = kcadr(ptree_); \
     v3_ = kcaddr(ptree_); \
     if (!t1_(v1_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
+	klispE_throw_simple(K_, "Bad type on first argument (expected " \
 		     tstr1_ ")");				     \
 	return; \
     } else if (!t2_(v2_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on second argument (expected " \
+	klispE_throw_simple(K_, "Bad type on second argument (expected " \
 		     tstr2_ ")");				     \
 	return; \
     } else if (!t3_(v3_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on third argument (expected " \
+	klispE_throw_simple(K_, "Bad type on third argument (expected " \
 		     tstr3_ ")");				     \
 	return; \
     }
 
 /* bind at least 1 parameter, like (v1_ . v2_) */
-#define bind_al1p(K_, n_, ptree_, v1_, v2_)		\
-    bind_al1tp((K_), (n_), (ptree_), "any", anytype, (v1_), (v2_))
+#define bind_al1p(K_, ptree_, v1_, v2_)		\
+    bind_al1tp((K_), (ptree_), "any", anytype, (v1_), (v2_))
 
 /* bind at least 1 parameters (with type), like (v1_ . v2_) */
-#define bind_al1tp(K_, n_, ptree_, tstr1_, t1_, v1_, v2_)	\
+#define bind_al1tp(K_, ptree_, tstr1_, t1_, v1_, v2_)	\
     TValue v1_, v2_;				\
     if (!ttispair(ptree_)) {			\
-	klispE_throw_extra(K_, n_ , ": Bad ptree (expected at least " \
+	klispE_throw_simple(K_, "Bad ptree (expected at least " \
 			   "one argument)");			      \
 	return; \
     } \
     v1_ = kcar(ptree_); \
     v2_ = kcdr(ptree_); \
     if (!t1_(v1_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
+	klispE_throw_simple(K_, "Bad type on first argument (expected " \
 		     tstr1_ ")");				     \
 	return; \
     }
 
 /* bind at least 2 parameters, like (v1_ v2_ . v3_) */
-#define bind_al2p(K_, n_, ptree_, v1_, v2_, v3_)		\
-    bind_al2tp((K_), (n_), (ptree_), "any", anytype, (v1_),	\
+#define bind_al2p(K_, ptree_, v1_, v2_, v3_)		\
+    bind_al2tp((K_), (ptree_), "any", anytype, (v1_),	\
 	       "any", anytype, (v2_), (v3_))				
 
 /* bind at least 2 parameters (with type), like (v1_ v2_ . v3_) */
-#define bind_al2tp(K_, n_, ptree_, tstr1_, t1_, v1_, \
+#define bind_al2tp(K_, ptree_, tstr1_, t1_, v1_, \
 		   tstr2_, t2_, v2_, v3_)			\
     TValue v1_, v2_, v3_;					\
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_))) {			\
-	klispE_throw_extra(K_, n_ , ": Bad ptree (expected at least " \
+	klispE_throw_simple(K_, "Bad ptree (expected at least " \
 			   "two arguments)");			      \
 	return; \
     } \
@@ -148,27 +148,27 @@
     v2_ = kcadr(ptree_); \
     v3_ = kcddr(ptree_); \
     if (!t1_(v1_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
+	klispE_throw_simple(K_, "Bad type on first argument (expected " \
 		     tstr1_ ")");				     \
 	return; \
     } else if (!t2_(v2_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on second argument (expected " \
+	klispE_throw_simple(K_, "Bad type on second argument (expected " \
 		     tstr2_ ")");				     \
 	return; \
     }
 
 /* bind at least 3 parameters, like (v1_ v2_ v3_ . v4_) */
-#define bind_al3p(K_, n_, ptree_, v1_, v2_, v3_, v4_)		\
-    bind_al3tp((K_), (n_), (ptree_), "any", anytype, (v1_),	\
+#define bind_al3p(K_, ptree_, v1_, v2_, v3_, v4_)		\
+    bind_al3tp((K_), (ptree_), "any", anytype, (v1_),	\
 	       "any", anytype, (v2_), "any", anytype, (v3_), (v4_)) \
 
 /* bind at least 3 parameters (with type), like (v1_ v2_ v3_ . v4_) */
-#define bind_al3tp(K_, n_, ptree_, tstr1_, t1_, v1_, \
+#define bind_al3tp(K_, ptree_, tstr1_, t1_, v1_, \
 		   tstr2_, t2_, v2_, tstr3_, t3_, v3_, v4_)    \
     TValue v1_, v2_, v3_, v4_;				       \
     if (!ttispair(ptree_) || !ttispair(kcdr(ptree_)) || \
 	!ttispair(kcddr(ptree_))) {			\
-	klispE_throw_extra(K_, n_ , ": Bad ptree (expected at least " \
+	klispE_throw_simple(K_, "Bad ptree (expected at least " \
 			   "three arguments)");			      \
 	return; \
     } \
@@ -177,15 +177,15 @@
     v3_ = kcaddr(ptree_); \
     v4_ = kcdddr(ptree_); \
     if (!t1_(v1_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on first argument (expected " \
+	klispE_throw_simple(K_, "Bad type on first argument (expected " \
 		     tstr1_ ")");				     \
 	return; \
     } else if (!t2_(v2_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on second argument (expected " \
+	klispE_throw_simple(K_, "Bad type on second argument (expected " \
 		     tstr2_ ")");				     \
 	return; \
     } else if (!t3_(v3_)) { \
-	klispE_throw_extra(K_, n_, ": Bad type on third argument (expected " \
+	klispE_throw_simple(K_, "Bad type on third argument (expected " \
 		     tstr3_ ")");				     \
 	return; \
     }
@@ -203,7 +203,7 @@ inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
 	*par = kcar(*par);
 	if (ttype(*par) != type) {
 	    /* TODO show expected type */
-	    klispE_throw_extra(K, name, ": Bad type on optional argument "
+	    klispE_throw_simple(K, "Bad type on optional argument "
 			 "(expected ?)");    
 	    /* avoid warning */
 	    return false;
@@ -211,7 +211,7 @@ inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
 	    return true;
 	}
     } else {
-	klispE_throw_extra(K, name, ": Bad ptree structure (in optional "
+	klispE_throw_simple(K, "Bad ptree structure (in optional "
 			   "argument)");
 	/* avoid warning */
 	return false;
@@ -316,7 +316,7 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj,
 	unmark_list(K, obj);
 
 	if (!ttispair(tail) && !ttisnil(tail)) {
-	    klispE_throw_extra(K, name , ": expected list"); 
+	    klispE_throw_simple(K, "expected list"); 
 	    return KINERT;
 	} 
 	return kcutoff_dummy3(K);
@@ -334,7 +334,7 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
     while(ttispair(tail) && !kis_marked(tail)) {
 	TValue first = kcar(tail);
 	if (!ttisenvironment(first)) {
-	    klispE_throw_extra(K, name, ": not an environment in parent list");
+	    klispE_throw_simple(K, "not an environment in parent list");
 	    return KINERT;
 	}
 	TValue new_pair = kcons(K, first, KNIL);
@@ -348,7 +348,7 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
     unmark_list(K, obj);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name , ": expected list"); 
+	klispE_throw_simple(K, "expected list"); 
 	return KINERT;
     } 
     return kcutoff_dummy3(K);
@@ -411,7 +411,7 @@ inline int32_t kmax32(int32_t a, int32_t b) { return a > b? a : b; }
 inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i) 
 {
     if (i > (int64_t) INT32_MAX || i < (int64_t) INT32_MIN) {
-	klispE_throw(K, msg);
+	klispE_throw_simple(K, msg);
 	return 0;
     } else {
 	return (int32_t) i;

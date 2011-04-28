@@ -48,7 +48,7 @@ void enc_typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	kapply_cc(K, b2tv(res));
     } else {
 	/* try to get name from encapsulation */
-	klispE_throw(K, "encapsulation?: expected list");
+	klispE_throw_simple(K, "expected list");
 	return;
     }
 }
@@ -56,7 +56,7 @@ void enc_typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* Constructor for encapsulations */
 void enc_wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    bind_1p(K, "encapsulate", ptree, obj);
+    bind_1p(K, ptree, obj);
     UNUSED(denv);
     /*
     ** xparams[0]: encapsulation key
@@ -69,7 +69,7 @@ void enc_wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* Accessor for encapsulations */
 void enc_unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    bind_1p(K, "decapsulate", ptree, enc);
+    bind_1p(K, ptree, enc);
     UNUSED(denv);
     /*
     ** xparams[0]: encapsulation key
@@ -77,7 +77,7 @@ void enc_unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue key = xparams[0];
 
     if (!kis_encapsulation_type(enc, key)) {
-	klispE_throw(K, "decapsulate: object doesn't belong to this "
+	klispE_throw_simple(K, "object doesn't belong to this "
 		     "encapsulation type");
 	return;
     }
@@ -89,7 +89,7 @@ void enc_unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
 			     TValue denv)
 {
-    check_0p(K, "make-encapsulation-type", ptree);
+    check_0p(K, ptree);
     UNUSED(denv);
     UNUSED(xparams);
 

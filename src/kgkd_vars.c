@@ -38,14 +38,14 @@ void do_access(klisp_State *K, TValue *xparams, TValue ptree,
     /*
     ** xparams[0]: dynamic key 
     */
-    check_0p(K, "keyed-dynamic-get", ptree);
+    check_0p(K, ptree);
     UNUSED(denv);
     TValue key = xparams[0];
 
     if (kis_true(kcar(key))) {
 	kapply_cc(K, kcdr(key));
     } else {
-	klispE_throw(K, "keyed-dynamic-get: variable is unbound");
+	klispE_throw_simple(K, "variable is unbound");
 	return;
     }
 }
@@ -155,7 +155,7 @@ void do_bind(klisp_State *K, TValue *xparams, TValue ptree,
     /*
     ** xparams[0]: dynamic key 
     */
-    bind_2tp(K, "keyed-dynamic-bind", ptree, "any", anytype, obj,
+    bind_2tp(K, ptree, "any", anytype, obj,
 	      "combiner", ttiscombiner, comb);
     UNUSED(denv); /* the combiner is called in an empty environment */
     TValue key = xparams[0];
@@ -186,7 +186,7 @@ void make_keyed_dynamic_variable(klisp_State *K, TValue *xparams,
     UNUSED(denv); 
     UNUSED(xparams);
 
-    check_0p(K, "make-keyed-dynamic-variable", ptree);
+    check_0p(K, ptree);
     TValue key = kcons(K, KFALSE, KINERT);
     krooted_tvs_push(K, key);
     TValue a = kmake_applicative(K, do_access, 1, key);

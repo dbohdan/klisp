@@ -67,7 +67,7 @@ inline void match(klisp_State *K, char *name, TValue env, TValue ptree,
 	    if (!ttisnil(obj)) {
 		/* TODO show ptree and arguments */
 		ks_sclear(K);
-		klispE_throw_extra(K, name, ": ptree doesn't match arguments");
+		klispE_throw_simple(K, "ptree doesn't match arguments");
 		return;
 	    }
 	    break;
@@ -86,7 +86,7 @@ inline void match(klisp_State *K, char *name, TValue env, TValue ptree,
 	    } else {
 		/* TODO show ptree and arguments */
 		ks_sclear(K);
-		klispE_throw_extra(K, name, ": ptree doesn't match arguments");
+		klispE_throw_simple(K, "ptree doesn't match arguments");
 		return;
 	    }
 	    break;
@@ -132,7 +132,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 		if (kis_marked(top)) {
 		    /* TODO add symbol name */
 		    ptree_clear_all(K, sym_ls);
-		    klispE_throw_extra(K, name, ": repeated symbol in ptree");
+		    klispE_throw_simple(K, "repeated symbol in ptree");
 		    /* avoid warning */
 		    return KNIL;
 		} else {
@@ -168,7 +168,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 		    /* NOTE: the pair should be in the stack already so
 		       it isn't necessary to push it again to clear the mark */
 		    ptree_clear_all(K, sym_ls);
-		    klispE_throw_extra(K, name, ": cycle detected in ptree");
+		    klispE_throw_simple(K, "cycle detected in ptree");
 		    /* avoid warning */
 		    return KNIL;
 		}
@@ -176,7 +176,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 	    }
 	    default:
 		ptree_clear_all(K, sym_ls);
-		klispE_throw_extra(K, name, ": bad object type in ptree");
+		klispE_throw_simple(K, "bad object type in ptree");
 		/* avoid warning */
 		return KNIL;
 	    }
@@ -218,13 +218,13 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 	if (kis_marked(penv)) {
 	    /* TODO add symbol name */
 	    ptree_clear_all(K, sym_ls);
-	    klispE_throw_extra(K, name, ": same symbol in both ptree and "
+	    klispE_throw_simple(K, "same symbol in both ptree and "
 			       "environment parameter");
 	}
     } else if (!ttisignore(penv)) {
 	    /* TODO add symbol name */
 	    ptree_clear_all(K, sym_ls);
-	    klispE_throw_extra(K, name, ": symbol or #ignore expected as "
+	    klispE_throw_simple(K, "symbol or #ignore expected as "
 			       "environment parmameter");
     }
     ptree_clear_all(K, sym_ls);

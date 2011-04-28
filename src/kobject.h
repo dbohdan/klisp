@@ -450,7 +450,7 @@ typedef struct __attribute__ ((__packed__)) {
 /* Errors */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue who;  /* either #inert or creating combiner */
+    TValue who;  /* either #inert or creating combiner/continuation */
     TValue cont;  /* continuation context */
     TValue msg;  /* string msg */
     TValue irritants;  /* list of extra objs */

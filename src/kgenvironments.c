@@ -38,7 +38,7 @@ void eval(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_2tp(K, "eval", ptree, "any", anytype, expr,
+    bind_2tp(K, ptree, "any", anytype, expr,
 	     "environment", ttisenvironment, env);
     /* TODO: track source code info */
     ktail_eval(K, expr, env);
@@ -62,7 +62,7 @@ void make_environment(klisp_State *K, TValue *xparams, TValue ptree,
 	    new_env = kmake_environment(K, parent);
 	    kapply_cc(K, new_env);
 	} else {
-	    klispE_throw(K, "make-environment: not an environment in "
+	    klispE_throw_simple(K, "not an environment in "
 			 "parent list");
 	    return;
 	}
@@ -106,7 +106,7 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 	if (!ttispair(first) || !ttispair(kcdr(first)) ||
 	        !ttisnil(kcddr(first))) {
 	    unmark_list(K, bindings);
-	    klispE_throw_extra(K, name, ": bad structure in bindings");
+	    klispE_throw_simple(K, "bad structure in bindings");
 	    return KNIL;
 	}
 	
@@ -123,10 +123,10 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
     unmark_list(K, bindings);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_extra(K, name, ": expected list");
+	klispE_throw_simple(K, "expected list");
 	return KNIL;
     } else if(ttispair(tail)) {
-	klispE_throw_extra(K, name , ": expected finite list"); 
+	klispE_throw_simple(K, "expected finite list"); 
 	return KNIL;
     } else {
 	TValue res;
@@ -214,7 +214,7 @@ void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     */
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
-    bind_al1p(K, name, ptree, bindings, body);
+    bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
     TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
@@ -253,7 +253,7 @@ void do_bindsp(klisp_State *K, TValue *xparams, TValue obj)
     int32_t count = ivalue(xparams[1]);
     
     if (!ttisenvironment(obj)) {
-	klispE_throw(K, "$binds?: expected environment as first argument");
+	klispE_throw_simple(K, "expected environment as first argument");
 	return;
     }
     TValue env = obj;
@@ -276,7 +276,7 @@ void do_bindsp(klisp_State *K, TValue *xparams, TValue obj)
 void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
-    bind_al1p(K, "binds?", ptree, env_expr, symbols);
+    bind_al1p(K, ptree, env_expr, symbols);
 
     /* REFACTOR replace with single function check_copy_typed_list */
     int32_t count = check_typed_list(K, "$binds?", "symbol", ksymbolp, 
@@ -296,7 +296,7 @@ void get_current_environment(klisp_State *K, TValue *xparams, TValue ptree,
 			     TValue denv)
 {
     UNUSED(xparams);
-    check_0p(K, "get-current-environment", ptree);
+    check_0p(K, ptree);
     kapply_cc(K, denv);
 }
 
@@ -306,7 +306,7 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    check_0p(K, "make-kernel-standard-environment", ptree);
+    check_0p(K, ptree);
     
     TValue new_env = kmake_environment(K, K->ground_env);
     kapply_cc(K, new_env);
@@ -320,7 +320,7 @@ void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     */
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
-    bind_al1p(K, name, ptree, bindings, body);
+    bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
     TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, true);
@@ -369,7 +369,7 @@ void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     */
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
-    bind_al1p(K, name, ptree, bindings, body);
+    bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
     TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
@@ -406,7 +406,7 @@ void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     */
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
-    bind_al1p(K, name, ptree, bindings, body);
+    bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
     TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, true);
@@ -459,14 +459,13 @@ void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj)
     ** xparams[4]: body
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     TValue bptree = xparams[1];
     TValue lexpr = xparams[2];
     TValue denv = xparams[3];
     TValue body = xparams[4];
     
     if (!ttisenvironment(obj)) {
-	klispE_throw_extra(K, name , ": expected environment"); 
+	klispE_throw_simple(K, "expected environment"); 
 	return;
     }
     TValue new_env = kmake_environment(K, obj);
@@ -488,7 +487,7 @@ void Slet_redirect(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     */
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
-    bind_al2p(K, name, ptree, env_exp, bindings, body);
+    bind_al2p(K, ptree, env_exp, bindings, body);
 
     TValue exprs;
     TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
@@ -523,7 +522,7 @@ void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     */
     TValue sname = xparams[0];
     char *name = ksymbol_buf(sname);
-    bind_al1p(K, name, ptree, bindings, body);
+    bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
     TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
@@ -560,7 +559,7 @@ void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, "$remote-eval", ptree, obj, env_exp);
+    bind_2p(K, ptree, obj, env_exp);
 
     TValue new_cont = kmake_continuation(K, kget_cc(K),
 					 do_remote_eval, 1, obj);
@@ -573,7 +572,7 @@ void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj)
 {
     if (!ttisenvironment(obj)) {
-	klispE_throw(K, "$remote-eval: bad type from second operand "
+	klispE_throw_simple(K, "bad type from second operand "
 		     "evaluation (expected environment)");
 	return;
     } else {

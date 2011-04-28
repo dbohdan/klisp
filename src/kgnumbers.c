@@ -175,11 +175,11 @@ bool krealp(TValue obj)
 	 if (tv_equal(n1, n2))
 	     return n1;
 	 else {
-	     klispE_throw(K, "+: no primary value");
+	     klispE_throw_simple(K, "no primary value");
 	     return KINERT;
 	 }
      default:
-	 klispE_throw(K, "+: unsopported type");
+	 klispE_throw_simple(K, "unsopported type");
 	 return KINERT;
      }
  }
@@ -210,14 +210,14 @@ bool krealp(TValue obj)
 	 if (!ttiseinf(n1) || !ttiseinf(n2)) {
 	     if (kfast_zerop(n1) || kfast_zerop(n2)) {
 		 /* report: #e+infinity * 0 has no primary value */
-		 klispE_throw(K, "*: result has no primary value");
+		 klispE_throw_simple(K, "result has no primary value");
 		 return KINERT;
 	     } else
 		 return knum_same_signp(n1, n2)? KEPINF : KEMINF;
 	 } else
 	     return (tv_equal(n1, n2))? KEPINF : KEMINF;
      default:
-	 klispE_throw(K, "*: unsopported type");
+	 klispE_throw_simple(K, "unsopported type");
 	 return KINERT;
      }
  }
@@ -250,12 +250,12 @@ bool krealp(TValue obj)
 	 else if (!ttiseinf(n2))
 	     return n1;
 	 if (tv_equal(n1, n2)) {
-	     klispE_throw(K, "-: no primary value");
+	     klispE_throw_simple(K, "no primary value");
 	     return KINERT;
 	} else
 	    return n1;
     default:
-	klispE_throw(K, "-: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -266,7 +266,7 @@ bool krealp(TValue obj)
  {
      /* first check the most common error, division by zero */
      if (kfast_zerop(n2)) {
-	 klispE_throw(K, "/: division by zero (no primary value)");
+	 klispE_throw_simple(K, "division by zero (no primary value)");
 	 return KINERT;
      }
 
@@ -287,7 +287,7 @@ bool krealp(TValue obj)
      }
      case K_TEINF: {
 	 if (ttiseinf(n1) && ttiseinf(n2)) {
-	     klispE_throw(K, "/: (infinity divided by infinity) "
+	     klispE_throw_simple(K, "(infinity divided by infinity) "
 			  "no primary value");
 	     return KINERT;
 	 } else if (ttiseinf(n1)) {
@@ -297,7 +297,7 @@ bool krealp(TValue obj)
 	 }
      }
      default:
-	 klispE_throw(K, "/: unsopported type");
+	 klispE_throw_simple(K, "unsopported type");
 	 return KINERT;
      }
 }
@@ -328,7 +328,7 @@ TValue knum_abs(klisp_State *K, TValue n)
 	return KEPINF;
     default:
 	/* shouldn't happen */
-	klispE_throw(K, "abs: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -360,7 +360,7 @@ TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 	else
 	    return KEPINF;
     default:
-	klispE_throw(K, "gcd: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -371,7 +371,7 @@ TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
 {
     /* get this out of the way first */
     if (kfast_zerop(n1) || kfast_zerop(n2)) {
-	klispE_throw(K, "lcm: no primary value");
+	klispE_throw_simple(K, "no primary value");
 	return KINERT;
     }
 
@@ -392,7 +392,7 @@ TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
     case K_TEINF:
 	return KEPINF;
     default:
-	klispE_throw(K, "lcm: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -408,7 +408,7 @@ TValue knum_numerator(klisp_State *K, TValue n)
 	return kbigrat_numerator(K, n);
 /*    case K_TEINF: infinities are not rational! */
     default:
-	klispE_throw(K, "numerator: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -424,7 +424,7 @@ TValue knum_denominator(klisp_State *K, TValue n)
 	return kbigrat_denominator(K, n);
 /*    case K_TEINF: infinities are not rational! */
     default:
-	klispE_throw(K, "denominator: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -439,10 +439,10 @@ TValue knum_real_to_integer(klisp_State *K, TValue n, kround_mode mode)
     case K_TBIGRAT:
 	return kbigrat_to_integer(K, n, mode);
     case K_TEINF: 
-	klispE_throw(K, "round: infinite value");
+	klispE_throw_simple(K, "infinite value");
 	return KINERT;
     default:
-	klispE_throw(K, "round: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -451,7 +451,7 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 {
     /* first check that case that n1 > n2 */
     if (knum_gtp(K, n1, n2)) {
-	klispE_throw(K, "simplest_rational: result with no primary value "
+	klispE_throw_simple(K, "result with no primary value "
 		     "(n1 > n2)");
 	return KINERT;
     }
@@ -469,7 +469,7 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
     case K_TEINF:
 	/* we know that n1 <= n2 */
 	if (tv_equal(n1, n2)) {
-	    klispE_throw(K, "simplest rational: result with no primary value");
+	    klispE_throw_simple(K, "result with no primary value");
 	    return KINERT;
 	} else if (knegativep(n1) && kpositivep(n2)) {
 	    return i2tv(0);
@@ -485,7 +485,7 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 	    return knum_real_to_integer(K, n1, K_CEILING);
 	}
     default:
-	klispE_throw(K, "simplest rational: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -506,11 +506,11 @@ TValue knum_rationalize(klisp_State *K, TValue n1, TValue n2)
 	    return i2tv(0);
 	} else { /* infinite n1, finite n2 */
 	    /* ASK John: is this behaviour for infinities ok? */
-	    klispE_throw(K, "rationalize: result with no primary value");
+	    klispE_throw_simple(K, "result with no primary value");
 	    return KINERT;
 	}
     default:
-	klispE_throw(K, "rationalize: unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return KINERT;
     }
 }
@@ -564,7 +564,7 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	if (kfast_zerop(cres)) {
 	    if (!all_zero) {
 		/* report */
-		klispE_throw(K, "+: result has no primary value");
+		klispE_throw_simple(K, "result has no primary value");
 		return;
 	    }
 	} else
@@ -627,7 +627,7 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    if (all_one)
 		cres = i2tv(1);
 	    else {
-		klispE_throw(K, "*: result has no primary value");
+		klispE_throw_simple(K, "result has no primary value");
 		return;
 	    }
 	} else if (knum_gtp(K, cres, i2tv(1))) {
@@ -636,7 +636,7 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    cres = KEPINF;
 	} else {
 	    /* cycle result less than zero */
-	    klispE_throw(K, "*: result has no primary value");
+	    klispE_throw_simple(K, "result has no primary value");
 	    return;
 	}
 
@@ -657,10 +657,10 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     /* - in kernel (and unlike in scheme) requires at least 2 arguments */
     if (!ttispair(ptree) || !ttispair(kcdr(ptree))) {
-	klispE_throw(K, "-: at least two values are required");
+	klispE_throw_simple(K, "at least two values are required");
 	return;
     } else if (!knumberp(kcar(ptree))) {
-	klispE_throw(K, "-: bad type on first argument (expected number)");
+	klispE_throw_simple(K, "bad type on first argument (expected number)");
 	return;
     }
     TValue first_val = kcar(ptree);
@@ -703,7 +703,7 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	if (kfast_zerop(cres)) {
 	    if (!all_zero) {
 		/* report */
-		klispE_throw(K, "-: result has no primary value");
+		klispE_throw_simple(K, "result has no primary value");
 		return;
 	    } 
 	} else
@@ -798,18 +798,17 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ** xparams[0]: name symbol
     ** xparams[1]: div_mod_flags
     */
-    char *name = ksymbol_buf(xparams[0]);
     int32_t flags = ivalue(xparams[1]);
 
     UNUSED(denv);
 
-    bind_2tp(K, name, ptree, "real", krealp, tv_n,
+    bind_2tp(K, ptree, "real", krealp, tv_n,
 	     "real", krealp, tv_d);
 
     TValue tv_div, tv_mod;
 
     if (kfast_zerop(tv_d)) {
-	klispE_throw_extra(K, name, ": division by zero");
+	klispE_throw_simple(K, "division by zero");
 	return;
     } 
 
@@ -852,7 +851,7 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	break;
     case K_TEINF:
 	if (ttiseinf(tv_n)) {
-	    klispE_throw_extra(K, name, ": non finite dividend");
+	    klispE_throw_simple(K, "non finite dividend");
 	    return;
 	} else { /* if (ttiseinf(tv_d)) */
 	    /* The semantics here are unclear, following the general
@@ -872,11 +871,11 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	       way out */
 	    /* throw an exception, until this is resolved */
 	    /* ASK John */
-	    klispE_throw_extra(K, name, ": non finite divisor");
+	    klispE_throw_simple(K, "non finite divisor");
 	    return;
 	}
     default:
-	klispE_throw_extra(K, name, ": unsopported type");
+	klispE_throw_simple(K, "unsopported type");
 	return;
     }
 
@@ -973,7 +972,7 @@ void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_1tp(K, "abs", ptree, "number", knumberp, n);
+    bind_1tp(K, ptree, "number", knumberp, n);
 
     TValue res = knum_abs(K, n);
     kapply_cc(K, res);
@@ -1048,7 +1047,7 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 	if (!seen_finite_non_zero) {
            /* report */
-	    klispE_throw(K, "gcd: result has no primary value");
+	    klispE_throw_simple(K, "result has no primary value");
 	    return;
 	}
     }
@@ -1097,10 +1096,10 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     /* / in kernel (and unlike in scheme) requires at least 2 arguments */
     if (!ttispair(ptree) || !ttispair(kcdr(ptree))) {
-	klispE_throw(K, "/: at least two values are required");
+	klispE_throw_simple(K, "at least two values are required");
 	return;
     } else if (!knumberp(kcar(ptree))) {
-	klispE_throw(K, "/: bad type on first argument (expected number)");
+	klispE_throw_simple(K, "bad type on first argument (expected number)");
 	return;
     }
     TValue first_val = kcar(ptree);
@@ -1149,7 +1148,7 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    if (all_one)
 		cres = i2tv(1);
 	    else {
-		klispE_throw(K, "/: result has no primary value");
+		klispE_throw_simple(K, "result has no primary value");
 		return;
 	    }
 	} else if (knum_gtp(K, cres, i2tv(1))) {
@@ -1158,7 +1157,7 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    cres = KEPINF;
 	} else {
 	    /* cycle result less than zero */
-	    klispE_throw(K, "/: result has no primary value");
+	    klispE_throw_simple(K, "result has no primary value");
 	    return;
 	}
 
@@ -1180,7 +1179,7 @@ void knumerator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     UNUSED(xparams);
     
-    bind_1tp(K, "numerator", ptree, "rational", krationalp, n);
+    bind_1tp(K, ptree, "rational", krationalp, n);
 
     TValue res = knum_numerator(K, n);
     kapply_cc(K, res);
@@ -1191,7 +1190,7 @@ void kdenominator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     UNUSED(xparams);
     
-    bind_1tp(K, "denominator", ptree, "rational", krationalp, n);
+    bind_1tp(K, ptree, "rational", krationalp, n);
 
     TValue res = knum_denominator(K, n);
     kapply_cc(K, res);
@@ -1206,10 +1205,9 @@ void kreal_to_integer(klisp_State *K, TValue *xparams, TValue ptree,
     ** xparams[1]: bool: true min, false max
     */
     UNUSED(denv);
-    char *name = ksymbol_buf(xparams[0]);
     kround_mode mode = (kround_mode) ivalue(xparams[1]);
     
-    bind_1tp(K, name, ptree, "real", krealp, n);
+    bind_1tp(K, ptree, "real", krealp, n);
 
     TValue res = knum_real_to_integer(K, n, mode);
     kapply_cc(K, res);
@@ -1222,7 +1220,7 @@ void krationalize(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_2tp(K, "rationalize", ptree, "real", krealp, n1, 
+    bind_2tp(K, ptree, "real", krealp, n1, 
 	     "real", krealp, n2);
 
     TValue res = knum_rationalize(K, n1, n2);
@@ -1235,7 +1233,7 @@ void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_2tp(K, "simplest-rational", ptree, "real", krealp, n1, 
+    bind_2tp(K, ptree, "real", krealp, n1, 
 	     "real", krealp, n2);
 
     TValue res = knum_simplest_rational(K, n1, n2);

@@ -36,7 +36,7 @@ void cons(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(denv);
     UNUSED(xparams);
-    bind_2p(K, "cons", ptree, car, cdr);
+    bind_2p(K, ptree, car, cdr);
     
     TValue new_pair = kcons(K, car, cdr);
     kapply_cc(K, new_pair);
@@ -66,7 +66,7 @@ void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
 
     if (ttisnil(ptree)) {
-	klispE_throw(K, "list*: empty argument list"); 
+	klispE_throw_simple(K, "empty argument list"); 
 	return;
     }
     TValue last_pair = kget_dummy1(K);
@@ -92,10 +92,10 @@ void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	kset_cdr(next_to_last_pair, kcar(last_pair));
 	kapply_cc(K, kcutoff_dummy1(K));
     } else if (ttispair(tail)) { /* cyclic argument list */
-	klispE_throw(K, "list*: cyclic argument list"); 
+	klispE_throw_simple(K, "cyclic argument list"); 
 	return;
     } else {
-	klispE_throw(K, "list*: argument list is improper"); 
+	klispE_throw_simple(K, "argument list is improper"); 
 	return;
     }
 }
@@ -119,16 +119,15 @@ void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     **             is bit 0 so: caar=0x20, cadr=0x21, cdar:0x22, cddr 0x23
     */
 
-    char *name = ksymbol_buf(xparams[0]);
     int p = ivalue(xparams[1]);
     int count = (p >> 4) & 0xf;
     int branches = p & 0xf;
 
-    bind_1p(K, name, ptree, obj);
+    bind_1p(K, ptree, obj);
 
     while(count) {
 	if (!ttispair(obj)) {
-	    klispE_throw_extra(K, name, ": non pair found while traversing"); 
+	    klispE_throw_simple(K, "non pair found while traversing"); 
 	    return;
 	}
 	obj = ((branches & 1) == 0)? kcar(obj) : kcdr(obj);
@@ -184,7 +183,7 @@ void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_1p(K, "get-list-metrics", ptree, obj);
+    bind_1p(K, ptree, obj);
 
     int32_t pairs, nils, apairs, cpairs;
     get_list_metrics_aux(K, obj, &pairs, &nils, &apairs, &cpairs);
@@ -207,7 +206,7 @@ int32_t ksmallest_index(klisp_State *K, char *name, TValue obj,
     int32_t apairs, cpairs;
     get_list_metrics_aux(K, obj, NULL, NULL, &apairs, &cpairs);
     if (cpairs == 0) {
-	klispE_throw_extra(K, name, ": non pair found while traversing "
+	klispE_throw_simple(K, "non pair found while traversing "
 			   "object");
 	return 0;
     }
@@ -239,11 +238,11 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
    (cf $encycle!) to allow cyclic lists, so that's what I do */
     UNUSED(xparams);
     UNUSED(denv);
-    bind_2tp(K, "list-tail", ptree, "any", anytype, obj,
+    bind_2tp(K, ptree, "any", anytype, obj,
 	     "integer", kintegerp, tk);
 
     if (knegativep(tk)) {
-	klispE_throw(K, "list-tail: negative index");
+	klispE_throw_simple(K, "negative index");
 	return;
     }
 
@@ -252,7 +251,7 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
 
     while(k) {
 	if (!ttispair(obj)) {
-	    klispE_throw(K, "list-tail: non pair found while traversing "
+	    klispE_throw_simple(K, "non pair found while traversing "
 			 "object");
 	    return;
 	}
@@ -268,7 +267,7 @@ void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_1p(K, "length", ptree, obj);
+    bind_1p(K, ptree, obj);
 
     TValue tail = obj;
     int pairs = 0;
@@ -292,11 +291,11 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_2tp(K, "list-ref", ptree, "any", anytype, obj,
+    bind_2tp(K, ptree, "any", anytype, obj,
 	     "integer", kintegerp, tk);
 
     if (knegativep(tk)) {
-	klispE_throw(K, "list-ref: negative index");
+	klispE_throw_simple(K, "negative index");
 	return;
     }
 
@@ -305,7 +304,7 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     while(k) {
 	if (!ttispair(obj)) {
-	    klispE_throw(K, "list-ref: non pair found while traversing "
+	    klispE_throw_simple(K, "non pair found while traversing "
 			 "object");
 	    return;
 	}
@@ -313,7 +312,7 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	--k;
     }
     if (!ttispair(obj)) {
-	klispE_throw(K, "list-ref: non pair found while traversing "
+	klispE_throw_simple(K, "non pair found while traversing "
 		     "object");
 	return;
     }
@@ -348,10 +347,10 @@ TValue append_check_copy_list(klisp_State *K, char *name, TValue obj,
     unmark_list(K, obj);
 
     if (ttispair(tail)) {
-	klispE_throw_extra(K, name , ": expected acyclic list"); 
+	klispE_throw_simple(K, "expected acyclic list"); 
 	return KINERT;
     } else if (!ttisnil(tail)) {
-	klispE_throw_extra(K, name , ": expected list"); 
+	klispE_throw_simple(K, "expected list"); 
 	return KINERT;
     }
     *last_pair_ptr = last_pair;
@@ -427,7 +426,7 @@ void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_1p(K, "list_neighbors", ptree, ls);
+    bind_1p(K, ptree, ls);
 
     int32_t cpairs;
     int32_t pairs = check_list(K, "list_neighbors", true, ls, &cpairs);
@@ -535,7 +534,7 @@ void do_filter(klisp_State *K, TValue *xparams, TValue obj)
     int32_t n = ivalue(xparams[3]);
 
     if (!ttisboolean(obj)) {
-	klispE_throw(K, "filter: expected boolean result");
+	klispE_throw_simple(K, "expected boolean result");
 	return;
     } 
     
@@ -604,7 +603,7 @@ void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_2tp(K, "filter", ptree, "applicative", ttisapplicative, app,
+    bind_2tp(K, ptree, "applicative", ttisapplicative, app,
 	     "any", anytype, ls);
     /* copy the list to ignore changes made by the applicative */
     /* REFACTOR: do this in a single pass */
@@ -646,7 +645,7 @@ void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, "assoc", ptree, obj, ls);
+    bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
     int32_t pairs = check_typed_list(K, "assoc", "pair", kpairp,
 				     true, ls, NULL);
@@ -670,7 +669,7 @@ void memberp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, "member?", ptree, obj, ls);
+    bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
     int32_t pairs = check_list(K, "member?", true, ls, NULL);
     TValue tail = ls;
@@ -925,7 +924,7 @@ void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     
-    bind_al3tp(K, "reduce", ptree, "any", anytype, ls, "applicative",
+    bind_al3tp(K, ptree, "any", anytype, ls, "applicative",
 	       ttisapplicative, bin, "any", anytype, id, rest);
 
     TValue prec, inc, postc;
@@ -934,7 +933,7 @@ void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (extended_form) {
 	/* the variables are an artifact of the way bind_3tp macro works,
 	 XXX: this will also send wrong error msgs (bad number of arg) */
-	bind_3tp(K, "reduce (extended)", rest, 
+	bind_3tp(K, rest, 
 		 "applicative", ttisapplicative, prec_h, 
 		 "applicative", ttisapplicative, inc_h, 
 		 "applicative", ttisapplicative, postc_h);
@@ -969,7 +968,7 @@ void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     if (cpairs != 0) {
 	if (!extended_form) {
-	    klispE_throw(K, "reduce: no cyclic handling applicatives");
+	    klispE_throw_simple(K, "no cyclic handling applicatives");
 	    return;
 	}
 	/* make cycle reducing cont */
