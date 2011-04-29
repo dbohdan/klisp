@@ -142,7 +142,8 @@ void error_fn(klisp_State *K, TValue *xparams, TValue obj)
 	    who_str = "?";
 	}
 	char *msg = kstring_buf(err_obj->msg);
-	fprintf(stdout, "\n*ERROR*: %s: %s", who_str, msg);
+	fprintf(stdout, "\n*ERROR*: \n");
+	fprintf(stdout, "%s: %s", who_str, msg);
 
 	krooted_tvs_push(K, obj);
 
@@ -152,20 +153,33 @@ void error_fn(klisp_State *K, TValue *xparams, TValue obj)
 	    fprintf(stdout, ": ");
 	    kwrite_display_to_port(K, port, err_obj->irritants, false);
 	}
-	fprintf(stdout, "\n");
+	kwrite_newline_to_port(K, port);
 
+#if KTRACK_NAMES
+#if KTRACK_SI
 	/* Location */
 	/* TODO move to a new function */
 	/* MAYBE: remove */
 	if (khas_name(who) || khas_si(who)) {
 	    fprintf(stdout, "Location: ");
 	    kwrite_display_to_port(K, port, who, false);
-	    fprintf(stdout, "\n");
+	    kwrite_newline_to_port(K, port);
 	}
 
 	/* Backtrace */
 	/* TODO move to a new function */
-
+	TValue tv_cont = err_obj->cont;
+	fprintf(stdout, "Backtrace: \n");
+	while(ttiscontinuation(tv_cont)) {
+	    kwrite_display_to_port(K, port, tv_cont, false);
+	    kwrite_newline_to_port(K, port);
+	    Continuation *cont = tv2cont(tv_cont);
+	    tv_cont = cont->parent;
+	}
+	/* add extra newline at the end */
+	kwrite_newline_to_port(K, port);
+#endif
+#endif
 	krooted_tvs_pop(K);
     } else {
 	fprintf(stdout, "\n*ERROR*: not an error object passed to " 
