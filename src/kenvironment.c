@@ -97,7 +97,8 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
     while(!ttisnil(bindings)) {
 	TValue first = kcar(bindings);
 	TValue first_sym = kcar(first);
-	if (tv_equal(sym, first_sym))
+	/* symbols can't be compared with tv_equal! */
+	if (tv_sym_equal(sym, first_sym))
 	    return first;
 	bindings = kcdr(bindings);
     }

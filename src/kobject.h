@@ -739,6 +739,10 @@ bool kis_output_port(TValue o);
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)
 
+/* Symbols could be eq? but not tv_equal? because of source info */
+#define tv_sym_equal(sym1_, sym2_) \
+    (tv_equal(tv2sym(sym1_)->str, tv2sym(sym2_)->str))
+
 /*
 ** for internal debug only
 */

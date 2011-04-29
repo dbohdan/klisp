@@ -30,22 +30,30 @@ inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 {
     bool res = (tv_equal(obj1, obj2));
     if (!res && (ttype(obj1) == ttype(obj2))) {
-	if (ttisapplicative(obj1)) {
+	switch (ttype(obj1)) {
+	case K_TSYMBOL:
+            /* symbols can't be compared with tv_equal! */
+	    res = tv_sym_equal(obj1, obj2);
+	    break;
+	case K_TAPPLICATIVE:
 	    while(ttisapplicative(obj1) && ttisapplicative(obj2)) {
 		obj1 = kunwrap(obj1);
 		obj2 = kunwrap(obj2);
 	    }
 	    res = (tv_equal(obj1, obj2));
-	} else if (ttisbigint(obj1)) {
+	    break;
+	case K_TBIGINT:
 	    /* it's important to know that it can't be the case
 	       that obj1 is bigint and obj is some other type and
 	       (eq? obj1 obj2) */
 	    res = kbigint_eqp(obj1, obj2);
-	} else if (ttisbigrat(obj1)) {
+	    break;
+	case K_TBIGRAT:
 	    /* it's important to know that it can't be the case
 	       that obj1 is bigrat and obj is some other type and
 	       (eq? obj1 obj2) */
 	    res = kbigrat_eqp(K, obj1, obj2);
+	    break;
 	} /* immutable strings are interned so are covered already */
     }
     return res;
