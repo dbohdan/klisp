@@ -139,6 +139,10 @@ void error_fn(klisp_State *K, TValue *xparams, TValue obj)
 	Error *err_obj = tv2error(obj);
 	TValue who = err_obj->who;
 	char *who_str;
+	/* TEMP? */
+	if (ttiscontinuation(who))
+	    who = tv2cont(who)->comb;
+
 	if (ttisstring(who)) {
 	    who_str = kstring_buf(who);
 #if KTRACK_NAMES

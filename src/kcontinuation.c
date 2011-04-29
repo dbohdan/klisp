@@ -28,6 +28,12 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_Cfunc fn,
     /* continuation specific fields */
     new_cont->mark = KFALSE;    
     new_cont->parent = parent;
+
+    TValue comb = K->next_obj;
+    if (ttiscontinuation(comb))
+	comb = tv2cont(comb)->comb;
+    new_cont->comb = comb;
+
     new_cont->fn = fn;
     new_cont->extra_size = xcount;
 
