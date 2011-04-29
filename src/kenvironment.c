@@ -112,7 +112,7 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 
 #if KTRACK_NAMES
 /* GC: Assumes that obj & sym are rooted. */
-void try_set_name(klisp_State *K, TValue obj, TValue sym)
+void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
 {
     if (kcan_have_name(obj) && !khas_name(obj)) {
 	/* TODO: maybe we could have some kind of inheritance so
@@ -140,6 +140,15 @@ void try_set_name(klisp_State *K, TValue obj, TValue sym)
 	}
     }
 }
+
+/* Assumes obj has a name */
+TValue kget_name(klisp_State *K, TValue obj)
+{
+    const TValue *node = klispH_get(tv2table(K->name_table),
+				    obj);
+    klisp_assert(node != &kfree);
+    return *node;
+}
 #endif
 
 /* GC: Assumes that env, sym & val are rooted. */
@@ -149,7 +158,7 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
     klisp_assert(ttissymbol(sym));
 
 #if KTRACK_NAMES
-    try_set_name(K, val, sym);
+    ktry_set_name(K, val, sym);
 #endif
 
     TValue bindings = kenv_bindings(K, env);

@@ -30,4 +30,10 @@ TValue kget_keyed_static_var(klisp_State *K, TValue env, TValue key);
    hashtable */
 TValue kmake_table_environment(klisp_State *K, TValue parents);
 
+#if KTRACK_NAMES
+void ktry_set_name(klisp_State *K, TValue obj, TValue sym);
+/* assumes it has a name */
+TValue kget_name(klisp_State *K, TValue obj);
+#endif
+
 #endif

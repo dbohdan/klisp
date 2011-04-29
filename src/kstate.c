@@ -195,6 +195,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
 		      kcons(K, i2tv(line_number), i2tv(0)));
     kset_source_info(K, K->eval_op, si);
+
+    TValue eval_name = ksymbol_new(K, "eval");
+    ktry_set_name(K, K->eval_op, eval_name);
     
     K->list_app = kmake_applicative(K, list, 0), line_number = __LINE__;
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 

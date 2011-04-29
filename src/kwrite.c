@@ -20,6 +20,7 @@
 #include "kerror.h"
 #include "ktable.h"
 #include "kport.h"
+#include "kenvironment.h"
 
 /*
 ** Stack for the write FSM
@@ -207,18 +208,9 @@ void kw_set_initial_marks(klisp_State *K, TValue root)
 }
 
 #if KTRACK_NAMES
-/* Assumes obj has a name */
-TValue kw_get_name(klisp_State *K, TValue obj)
-{
-    const TValue *node = klispH_get(tv2table(K->name_table),
-				    obj);
-    klisp_assert(node != &kfree);
-    return *node;
-}
-
 void kw_print_name(klisp_State *K, TValue obj)
 {
-    kw_printf(K, ": %s", ksymbol_buf(kw_get_name(K, obj)));
+    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
 }
 #endif /* KTRACK_NAMES */
 

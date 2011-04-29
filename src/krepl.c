@@ -109,18 +109,6 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
     create_loop(K, denv);
 } 
 
-/* XXX move this to a common file (same as in write) */
-#if KTRACK_NAMES
-/* Assumes obj has a name */
-TValue krepl_get_name(klisp_State *K, TValue obj)
-{
-    const TValue *node = klispH_get(tv2table(K->name_table),
-				    obj);
-    klisp_assert(node != &kfree);
-    return *node;
-}
-#endif /* KTRACK_NAMES */
-
 /* the underlying function of the error cont */
 void error_fn(klisp_State *K, TValue *xparams, TValue obj)
 {
@@ -147,7 +135,7 @@ void error_fn(klisp_State *K, TValue *xparams, TValue obj)
 	    who_str = kstring_buf(who);
 #if KTRACK_NAMES
 	} else if (khas_name(who)) {
-	    TValue name = krepl_get_name(K, who);
+	    TValue name = kget_name(K, who);
 	    who_str = ksymbol_buf(name);
 #endif
 	} else {

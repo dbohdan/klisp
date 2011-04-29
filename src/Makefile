@@ -58,12 +58,14 @@ ksymbol.o: ksymbol.c ksymbol.h kobject.h kpair.h kstring.h kstate.h kmem.h \
 kread.o: kread.c kread.h kobject.h ktoken.h kpair.h kstate.h kerror.h klisp.h \
 	kport.h ktable.h klispconf.h
 kwrite.o: kwrite.c kwrite.h kobject.h kpair.h kstring.h kstate.h kerror.h \
-	klisp.h kport.h kinteger.h krational.h ktable.h klispconf.h
+	klisp.h kport.h kinteger.h krational.h ktable.h klispconf.h \
+	kenvironment.h
 # XXX: now that all dealloc code is in gc, many of these are unnecessary
 kstate.o: kstate.c kstate.h klisp.h kobject.h kmem.h kstring.h klisp.h \
 	kenvironment.h kpair.h keval.h koperative.h kground.h \
 	krepl.h kcontinuation.h kapplicative.h kport.h ksymbol.h kport.h \
-	kstring.h kinteger.h krational.h kgc.h klimits.h ktable.h klispconf.h
+	kstring.h kinteger.h krational.h kgc.h klimits.h ktable.h klispconf.h \
+	kenvironment.h
 kmem.o: kmem.c kmem.h klisp.h kerror.h klisp.h kstate.h kgc.h klispconf.h
 kerror.o: kerror.c kerror.h klisp.h kstate.h klisp.h kmem.h kstring.h kpair.h
 kauxlib.o: kauxlib.c kauxlib.h klisp.h kstate.h klisp.h
