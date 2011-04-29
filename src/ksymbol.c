@@ -61,6 +61,7 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     new_sym->gct = klispC_white(K);
     new_sym->tt = K_TSYMBOL;
     new_sym->kflags = identifierp? K_FLAG_EXT_REP : 0;
+    new_sym->si = NULL;
 
     /* symbol specific fields */
     new_sym->mark = KFALSE;

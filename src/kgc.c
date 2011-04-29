@@ -762,6 +762,7 @@ void klispC_barrierback (klisp_State *K, Table *t) {
 }
 
 /* NOTE: kflags is added for klisp */
+/* NOTE: both symbols & strings do this "by hand", they don't call this */
 void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
     o->gch.next = K->rootgc;
     K->rootgc = o;

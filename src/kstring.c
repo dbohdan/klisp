@@ -112,6 +112,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     new_str->gct = klispC_white(K);
     new_str->tt = K_TSTRING;
     new_str->kflags = K_FLAG_IMMUTABLE;
+    new_str->si = NULL;
     /* string specific fields */
     new_str->hash = h;
     new_str->mark = KFALSE;
