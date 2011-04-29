@@ -211,6 +211,7 @@ void kinit_repl(klisp_State *K)
     /* GC: symbol should already be in root */
     kadd_binding(K, K->ground_env, symbol, root_cont);
 
+    #if KTRACK_SI
     /* TODO: find a cleaner way of doing this..., maybe disable gc */
     /* Add source info to the cont */
     TValue str = kstring_new_b_imm(K, __FILE__);
@@ -223,11 +224,13 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
+    #endif
 
     symbol = ksymbol_new(K, "error-continuation"); 
     /* GC: symbol should already be in root */
     kadd_binding(K, K->ground_env, symbol, error_cont);
 
+    #if KTRACK_SI
     str = kstring_new_b_imm(K, __FILE__);
     krooted_tvs_push(K, str);
     tail = kcons(K, i2tv(__LINE__), i2tv(0));
@@ -238,6 +241,7 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
+    #endif
 
     /* and save them in the structure */
     K->root_cont = root_cont;
@@ -246,6 +250,13 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
+
+    #if KTRACK_SI
+    /* save the root cont in next_si to let the loop continuations have 
+       source info, this is hackish but works */
+    
+    K->next_si = ktry_get_si(K, K->root_cont);
+    #endif
 
     /* GC: create_loop will root std_env */
     create_loop(K, std_env);
