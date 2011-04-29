@@ -45,6 +45,8 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_Cfunc fn,
 
     TValue res = gc2cont(new_cont);
     /* Add the current source info as source info (may be changed later) */
+    /* TODO: find all the places where this should be changed (like $and?, 
+       $sequence, and change it */
     kset_source_info(K, res, kget_csi(K));
     return res;
 }

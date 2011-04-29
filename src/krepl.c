@@ -22,6 +22,8 @@
 /* for names */
 #include "ktable.h"
 
+/* TODO add names & source info to the repl continuations */
+
 /* the exit continuation, it exits the loop */
 void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
 {
@@ -208,9 +210,34 @@ void kinit_repl(klisp_State *K)
     symbol = ksymbol_new(K, "root-continuation");
     /* GC: symbol should already be in root */
     kadd_binding(K, K->ground_env, symbol, root_cont);
+
+    /* TODO: find a cleaner way of doing this..., maybe disable gc */
+    /* Add source info to the cont */
+    TValue str = kstring_new_b_imm(K, __FILE__);
+    krooted_tvs_push(K, str);
+    TValue tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    krooted_tvs_push(K, tail);
+    TValue si = kcons(K, str, tail);
+    krooted_tvs_push(K, si);
+    kset_source_info(K, root_cont, si);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
     symbol = ksymbol_new(K, "error-continuation"); 
     /* GC: symbol should already be in root */
     kadd_binding(K, K->ground_env, symbol, error_cont);
+
+    str = kstring_new_b_imm(K, __FILE__);
+    krooted_tvs_push(K, str);
+    tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    krooted_tvs_push(K, tail);
+    si = kcons(K, str, tail);
+    krooted_tvs_push(K, si);
+    kset_source_info(K, error_cont, si);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
 
     /* and save them in the structure */
     K->root_cont = root_cont;
