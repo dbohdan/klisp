@@ -71,6 +71,12 @@ void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
 	kset_cc(K, K->root_cont);
 	kapply_cc(K, KINERT);
     } else {
+	/* save the source code info of the object in loop_cont
+	   before evaling */
+#if KTRACK_SI
+	kset_source_info(K, kget_cc(K), ktry_get_si(K, obj));
+#endif
+
 	ktail_eval(K, obj, denv);
     }
 }
