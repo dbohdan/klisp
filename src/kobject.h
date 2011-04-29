@@ -45,7 +45,7 @@ typedef union GCObject GCObject;
 ** included in other objects)
 */
 #define CommonHeader GCObject *next; uint8_t tt; uint8_t kflags; \
-    uint16_t gct; uint32_t padding; GCObject *gclist;
+    uint16_t gct; GCObject *si; GCObject *gclist;
     
 /* NOTE: the gc flags are called marked in lua, but we reserve that them
    for marks used in cycle traversal. The field kflags is also missing
@@ -62,11 +62,7 @@ typedef union GCObject GCObject;
 ** state struct. Likewise, during the tracing phase, gray objects are linked
 ** by means of the gclist pointer. Technically this is necessary only for
 ** objects that have references, but in klisp all objects except strings
-** have them so it is easier to just put it here. Re the use of the padding,
-** this is necessary (TODO add 32-bit check) in 32 bits because of the packed
-** attribute. Otherwise, all TValues would be misaligned. All of this, 
-** assuming the compiler complies with it, but if not the padding doesn't
-** hurt.
+** have them so it is easier to just put it here. 
 */
 
 /* 
@@ -683,9 +679,9 @@ int32_t kmark_count;
 
 #define K_FLAG_HAS_SI 0x20
 
-/* for now only used in assertions to avoid problems */
 #define kcan_have_si(o_) (iscollectable(o_))
-#define khas_si(o_) ((tv_get_kflags(o_)) & K_FLAG_HAS_SI)
+#define khas_si(o_) ((iscollectable(o_) &&			\
+		      (tv_get_kflags(o_)) & K_FLAG_HAS_SI))
 
 #define K_FLAG_IMMUTABLE 0x10
 

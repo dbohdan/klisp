@@ -144,8 +144,9 @@ void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
 
     switch(ttype(obj)) {
     case K_TPAIR: {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), combine_cfn, 3, 
-					     kcdr(obj), env, obj);
+	TValue new_cont = 
+	    kmake_continuation(K, kget_cc(K), combine_cfn, 3, kcdr(obj), 
+			       env, ktry_get_si(K, obj));
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(obj), env);
 	break;

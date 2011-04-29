@@ -132,13 +132,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->strt.hash = NULL;
     klispS_resize(K, MINSTRTABSIZE); 
 
-    /* initialize name & source code info tables */
+    /* initialize name info table */
     /* needs weak keys, otherwise every named object would
        be fixed! */
     K->name_table = klispH_new(K, 0, MINNAMETABSIZE, 
-	K_FLAG_WEAK_KEYS);
-
-    K->si_table = klispH_new(K, 0, MINSITABSIZE, 
 	K_FLAG_WEAK_KEYS);
 
     /* Empty string */
@@ -555,30 +552,3 @@ void klisp_close (klisp_State *K)
     /* NOTE: this needs to be done "by hand" */
     (*(K->frealloc))(K->ud, K, state_size(), 0);
 }
-
-#if KTRACK_SI
-/*
-** Source code tracking
-** MAYBE: add source code tracking to symbols
-*/
-TValue kget_source_info(klisp_State *K, TValue obj)
-{
-    const TValue *node = klispH_get(tv2table(K->si_table), obj);
-    return (node == &kfree)? KNIL : *node;
-}
-
-/* GC: Assumes obj and si are rooted */
-void kset_source_info(klisp_State *K, TValue obj, TValue si)
-{
-    klisp_assert(kcan_have_si(obj));
-    gcvalue(obj)->gch.kflags |= K_FLAG_HAS_SI;
-    TValue *node = klispH_set(K, tv2table(K->si_table), obj);
-    *node = si;
-}
-
-TValue kget_csi(klisp_State *K)
-{
-    return (kcan_have_si(K->next_si))? kget_source_info(K, K->next_si) : KNIL;
-}
-
-#endif /* KTRACK_SI */

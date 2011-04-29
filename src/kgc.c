@@ -235,6 +235,10 @@ static int32_t propagatemark (klisp_State *K) {
     K->gray = o->gch.gclist;
     klisp_assert(isgray(o));
     gray2black(o);
+    /* all types have si pointers */
+    if (o->gch.si != NULL) {
+	markobject(K, o->gch.si);
+    }
     uint8_t type = o->gch.tt;
 
     switch (type) {
@@ -552,7 +556,6 @@ static void markroot (klisp_State *K) {
     /* TEMP: this is quite awfull, think of other way to do this */
     /* MAYBE: some of these could be FIXED */
     markvalue(K, K->name_table);
-    markvalue(K, K->si_table);
     markvalue(K, K->curr_cont);
     markvalue(K, K->next_obj);
     markvalue(K, K->next_value);
@@ -765,6 +768,7 @@ void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
     o->gch.gct = klispC_white(K);
     o->gch.tt = tt;
     o->gch.kflags = kflags;
+    o->gch.si = NULL;
     /* NOTE that o->gch.gclist doesn't need to be setted */
 }
 

@@ -47,7 +47,6 @@ typedef struct stringtable {
 struct klisp_State {
     stringtable strt;  /* hash table for immutable strings & symbols */
     TValue name_table; /* hash tables for naming objects */
-    TValue si_table; /* hash tables for source code info */
     TValue curr_cont;
 
     /*
@@ -61,7 +60,8 @@ struct klisp_State {
     TValue next_value;     /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
     TValue *next_xparams; 
-    TValue next_si; /* The object with the source code info for this call */
+    /* TODO replace with GCObject *next_si */
+    TValue next_si; /* the source code info for this call */
 
     TValue eval_op; /* the operative for evaluation */
     TValue list_app; /* the applicative for list evaluation */
@@ -353,12 +353,40 @@ typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree,
 ** MAYBE: add source code tracking to symbols
 */
 #if KTRACK_SI
-TValue kget_source_info(klisp_State *K, TValue pair);
-void kset_source_info(klisp_State *K, TValue pair, TValue si);
-TValue kget_csi(klisp_State *K);
-#endif
+inline TValue kget_source_info(klisp_State *K, TValue obj)
+{
+    UNUSED(K);
+    klisp_assert(khas_si(obj));
+    GCObject *si = gcvalue(obj)->gch.si;
+    klisp_assert(si != NULL);
+    return gc2pair(si);
+}
 
-#define kget_csi_obj(K_) (K_->next_si)
+inline void kset_source_info(klisp_State *K, TValue obj, TValue si)
+{
+    UNUSED(K);
+    klisp_assert(kcan_have_si(obj));
+    klisp_assert(ttisnil(si) || ttispair(si));
+    if (ttisnil(si)) {
+	gcvalue(obj)->gch.si = NULL;
+	gcvalue(obj)->gch.kflags &= ~(K_FLAG_HAS_SI);
+    } else {
+	gcvalue(obj)->gch.si = gcvalue(si);
+	gcvalue(obj)->gch.kflags |= K_FLAG_HAS_SI;
+    }
+}
+
+inline TValue ktry_get_si(klisp_State *K, TValue obj)
+{
+    UNUSED(K);
+    return (khas_si(obj))? gc2pair(gcvalue(obj)->gch.si) : KNIL;
+}
+
+inline TValue kget_csi(klisp_State *K)
+{
+    return K->next_si;
+}
+#endif
 
 /*
 ** Functions to manipulate the current continuation and calling 
@@ -387,7 +415,7 @@ inline void klispS_apply_cc(klisp_State *K, TValue val)
     K->next_env = KNIL;
     K->next_xparams = cont->extra;
     K->curr_cont = cont->parent;
-    K->next_si = K->next_obj;
+    K->next_si = ktry_get_si(K, K->next_obj);
 }
 
 #define kapply_cc(K_, val_) klispS_apply_cc((K_), (val_)); return
@@ -435,12 +463,17 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
     { klispS_tail_call_si((K_), (op_), (p_), (e_), (si_)); return; }
 
 /* if no source info is needed */
-#define ktail_call(K_, op_, p_, e_)  (ktail_call_si(K_, op_, p_, e_, KNIL))
+#define ktail_call(K_, op_, p_, e_)					\
+    { klisp_State *K__ = (K_);						\
+	TValue op__ = (op_);						\
+	(ktail_call_si(K__, op__, p_, e_, ktry_get_si(K__, op__))); }	\
 
 #define ktail_eval(K_, p_, e_)						\
     { klisp_State *K__ = (K_);						\
 	TValue p__ = (p_);						\
-    klispS_tail_call_si(K__, K__->eval_op, p__, (e_), p__); return; }
+	klispS_tail_call_si(K__, K__->eval_op, p__, (e_),		\
+			    ktry_get_si(K__, p__));			\
+	return; }
 
 /* helper for continuation->applicative & kcall_cont */
 void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

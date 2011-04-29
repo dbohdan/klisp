@@ -61,7 +61,6 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue si = kget_csi(K);
     if (!ttisnil(si)) {
 	krooted_tvs_push(K, new_op);
-	gcvalue(new_op)->gch.kflags |= K_FLAG_HAS_SI;
 	kset_source_info(K, new_op, si);
 	krooted_tvs_pop(K);
     }
@@ -129,7 +128,6 @@ void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue si = kget_csi(K);
     if (!ttisnil(si)) {
 	krooted_tvs_push(K, new_app);
-	gcvalue(new_app)->gch.kflags |= K_FLAG_HAS_SI;
 	kset_source_info(K, new_app, si);
 	krooted_tvs_pop(K);
     }
@@ -149,7 +147,6 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 5.3.1 $vau */
 /* DONE: above, together with 4.10.4 */
-
 /* 5.3.2 $lambda */
 void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -171,9 +168,9 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* save as source code info the info from the expression whose evaluation
        got us here */
     TValue si = kget_csi(K);
+    
     if (!ttisnil(si)) {
 	krooted_tvs_push(K, new_app);
-	gcvalue(new_app)->gch.kflags |= K_FLAG_HAS_SI;
 	kset_source_info(K, new_app, si);
 	krooted_tvs_pop(K);
     }
