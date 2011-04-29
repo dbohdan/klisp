@@ -166,12 +166,13 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 				       denv);
     #if KTRACK_SI
     /* save as source code info the info from the expression whose evaluation
-       got us here */
+       got us here, both for the applicative and the underlying combiner */
     TValue si = kget_csi(K);
     
     if (!ttisnil(si)) {
 	krooted_tvs_push(K, new_app);
 	kset_source_info(K, new_app, si);
+	kset_source_info(K, kunwrap(new_app), si);
 	krooted_tvs_pop(K);
     }
     #endif
