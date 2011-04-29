@@ -322,6 +322,10 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	    kw_print_name(K, obj);
 	}
 	#endif
+	#if KTRACK_SI
+	if (khas_si(obj))
+	    kw_print_si(K, obj);
+	#endif
 	kw_printf(K, "]");
 	break;
     case K_TOPERATIVE:

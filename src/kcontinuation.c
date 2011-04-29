@@ -43,5 +43,8 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_Cfunc fn,
     }
     va_end(argp);
 
-    return gc2cont(new_cont);
+    TValue res = gc2cont(new_cont);
+    /* Add the current source info as source info (may be changed later) */
+    kset_source_info(K, res, kget_csi(K));
+    return res;
 }
