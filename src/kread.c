@@ -58,21 +58,17 @@ typedef enum {
 */
 void kread_error(klisp_State *K, char *str)
 {
-    /* clear up before throwing */
-    ks_tbclear(K);
-    ks_sclear(K);
-    clear_shared_dict(K);
-    
-    /* this is needed because it would be too complicated to 
-       pop manually on each kind of error */
-    krooted_tvs_clear(K);
-    krooted_vars_clear(K);
+    /* all cleaning is done in throw 
+       (stacks, shared_dict, rooted objs) */
 
-    /* save the source code info on the port anyways */
+    /* save the source code info on the port */
     kport_update_source_info(K->curr_port, K->ktok_source_info.line,
 			     K->ktok_source_info.col);
 
-    klispE_throw_simple(K, str);
+    /* include the source info in the error */
+    TValue si = ktok_get_source_info(K);
+    krooted_tvs_push(K, si); /* will be popped by throw */
+    klispE_throw_with_irritants(K, str, si);
 }
 
 /*

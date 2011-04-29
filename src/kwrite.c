@@ -46,9 +46,8 @@
 
 void kwrite_error(klisp_State *K, char *msg)
 {
-    /* clear up before throwing */
-    ks_tbclear(K);
-    ks_sclear(K);
+    /* all cleaning is done in throw 
+       (stacks, shared_dict, rooted objs) */
 
     klispE_throw_simple(K, msg);
 }
