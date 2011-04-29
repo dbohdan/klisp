@@ -143,13 +143,30 @@ void error_fn(klisp_State *K, TValue *xparams, TValue obj)
 	}
 	char *msg = kstring_buf(err_obj->msg);
 	fprintf(stdout, "\n*ERROR*: %s: %s", who_str, msg);
+
+	krooted_tvs_push(K, obj);
+
+	/* Msg + irritants */
+	/* TODO move to a new function */
 	if (!ttisnil(err_obj->irritants)) {
 	    fprintf(stdout, ": ");
-	    krooted_tvs_push(K, obj);
 	    kwrite_display_to_port(K, port, err_obj->irritants, false);
-	    krooted_tvs_pop(K);
 	}
 	fprintf(stdout, "\n");
+
+	/* Location */
+	/* TODO move to a new function */
+	/* MAYBE: remove */
+	if (khas_name(who) || khas_si(who)) {
+	    fprintf(stdout, "Location: ");
+	    kwrite_display_to_port(K, port, who, false);
+	    fprintf(stdout, "\n");
+	}
+
+	/* Backtrace */
+	/* TODO move to a new function */
+
+	krooted_tvs_pop(K);
     } else {
 	fprintf(stdout, "\n*ERROR*: not an error object passed to " 
 		"error continuation");
