@@ -83,4 +83,6 @@ void do_b_to_env(klisp_State *K, TValue *xparams, TValue obj);
 void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree, 
 			      TValue denv);
 
+void do_let(klisp_State *K, TValue *xparams, TValue obj);
+
 #endif

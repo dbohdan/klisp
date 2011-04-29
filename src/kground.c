@@ -113,6 +113,41 @@ void kinit_cont_names(klisp_State *K)
     add_cont_name(K, t, error_fn, "repl-report-error");
 
     /* GROUND ENV */
+    add_cont_name(K, t, eval_ls_cfn, "eval_ls_cfn");
+    add_cont_name(K, t, combine_cfn, "combine_cfn");
+    add_cont_name(K, t, do_Sandp_Sorp, "do_Sandp_Sorp");
+    add_cont_name(K, t, do_seq, "do_seq");
+    add_cont_name(K, t, do_map, "do_map");
+    add_cont_name(K, t, do_map_encycle, "do_map_encycle");
+    add_cont_name(K, t, do_map_ret, "do_map_ret");
+    add_cont_name(K, t, do_map_cycle, "do_map_cycle");
+    add_cont_name(K, t, do_extended_cont, "do_extended_cont");
+    add_cont_name(K, t, do_pass_value, "do_pass_value");
+    add_cont_name(K, t, do_select_clause, "select_clause");
+    add_cont_name(K, t, do_cond, "do_cond");
+    add_cont_name(K, t, do_for_each, "do_for_each");
+    add_cont_name(K, t, do_let, "do_let");
+    add_cont_name(K, t, do_bindsp, "do_bindsp");
+    add_cont_name(K, t, do_let_redirect, "do_let_redirect");
+    add_cont_name(K, t, do_remote_eval, "do_remote_eval");
+    add_cont_name(K, t, do_b_to_env, "do_b_to_env");
+    add_cont_name(K, t, do_match, "do_match");
+    add_cont_name(K, t, do_set_eval_obj, "do_set_eval_obj");
+    add_cont_name(K, t, do_import, "do_import");
+    add_cont_name(K, t, do_return_value, "do_return_value");
+    add_cont_name(K, t, do_unbind, "do_unbind");
+    add_cont_name(K, t, do_filter, "do_filter");
+    add_cont_name(K, t, do_filter_encycle, "do_filter_encycle");
+    add_cont_name(K, t, do_ret_cdr, "do_ret_cdr");
+    add_cont_name(K, t, do_filter_cycle, "do_filter_cycle");
+    add_cont_name(K, t, do_reduce_prec, "do_reduce_prec");
+    add_cont_name(K, t, do_reduce_combine, "do_reduce_combine");
+    add_cont_name(K, t, do_reduce_postc, "do_reduce_postc");
+    add_cont_name(K, t, do_reduce, "do_reduce");
+    add_cont_name(K, t, do_reduce_cycle, "do_reduce_cycle");
+    add_cont_name(K, t, do_close_file_ret, "do_close_file_ret");
+    add_cont_name(K, t, do_handle_result, "handle_result");
+    add_cont_name(K, t, do_interception, "do_interception");
 }
 
 /*

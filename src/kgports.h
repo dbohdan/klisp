@@ -83,4 +83,6 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 15.2.? display */
 void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj);
+
 #endif

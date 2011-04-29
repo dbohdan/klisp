@@ -28,7 +28,7 @@
 /* uses typep */
 
 /* Helper for force */
-void handle_result(klisp_State *K, TValue *xparams, TValue obj)
+void do_handle_result(klisp_State *K, TValue *xparams, TValue obj)
 {
     /*
     ** xparams[0]: promise
@@ -51,7 +51,7 @@ void handle_result(klisp_State *K, TValue *xparams, TValue obj)
 	    kapply_cc(K, expr);
 	} else {
 	    TValue new_cont = kmake_continuation(K, kget_cc(K),
-						 handle_result, 1, prom);
+						 do_handle_result, 1, prom);
 	    kset_cc(K, new_cont);
 	    ktail_eval(K, expr, maybe_env);
 	}
@@ -78,7 +78,8 @@ void force(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     } else {
 	TValue expr = kpromise_exp(obj);
 	TValue env = kpromise_maybe_env(obj);
-	TValue new_cont = kmake_continuation(K, kget_cc(K), handle_result, 1, obj);
+	TValue new_cont = kmake_continuation(K, kget_cc(K), do_handle_result, 
+					     1, obj);
 	kset_cc(K, new_cont);
 	ktail_eval(K, expr, env);
     }

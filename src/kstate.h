@@ -483,5 +483,7 @@ void klispS_init_repl(klisp_State *K);
 void klispS_run(klisp_State *K);
 void klisp_close (klisp_State *K);
 
+void do_interception(klisp_State *K, TValue *xparams, TValue obj);
+
 #endif
 

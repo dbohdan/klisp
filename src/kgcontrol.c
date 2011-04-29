@@ -26,7 +26,7 @@
 /* 4.5.2 $if */
 
 /* helpers */
-void select_clause(klisp_State *K, TValue *xparams, TValue obj);
+void do_select_clause(klisp_State *K, TValue *xparams, TValue obj);
 
 /*  ASK JOHN: both clauses should probably be copied (copy-es-immutable) */
 void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -37,7 +37,7 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_3p(K, ptree, test, cons_c, alt_c);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), select_clause, 
+	kmake_continuation(K, kget_cc(K), do_select_clause, 
 			   3, denv, cons_c, alt_c);
     /* 
     ** Mark as a bool checking cont, not necessary but avoids a continuation
@@ -48,7 +48,7 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ktail_eval(K, test, denv);
 }
 
-void select_clause(klisp_State *K, TValue *xparams, TValue obj)
+void do_select_clause(klisp_State *K, TValue *xparams, TValue obj)
 {
     /*
     ** xparams[0]: dynamic env

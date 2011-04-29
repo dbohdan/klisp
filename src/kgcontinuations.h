@@ -61,4 +61,7 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
 void kgexit(klisp_State *K, TValue *xparams, TValue ptree, 
 	    TValue denv);
 
+void do_extended_cont(klisp_State *K, TValue *xparams, TValue obj);
+void do_pass_value(klisp_State *K, TValue *xparams, TValue obj);
+
 #endif

@@ -77,4 +77,11 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* Helper for combiner? */
 bool kcombinerp(TValue obj);
 
+
+void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
+void do_map_ret(klisp_State *K, TValue *xparams, TValue obj);
+void do_map_encycle(klisp_State *K, TValue *xparams, TValue obj);
+void do_map(klisp_State *K, TValue *xparams, TValue obj);
+void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj);
+
 #endif

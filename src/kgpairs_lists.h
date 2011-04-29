@@ -86,4 +86,15 @@ void countable_listp(klisp_State *K, TValue *xparams, TValue ptree,
 /* 6.3.10 reduce */
 void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+
+void do_ret_cdr(klisp_State *K, TValue *xparams, TValue obj);
+void do_filter_encycle(klisp_State *K, TValue *xparams, TValue obj);
+void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj);
+void do_filter(klisp_State *K, TValue *xparams, TValue obj);
+void do_reduce_prec(klisp_State *K, TValue *xparams, TValue obj);
+void do_reduce_postc(klisp_State *K, TValue *xparams, TValue obj);
+void do_reduce_combine(klisp_State *K, TValue *xparams, TValue obj);
+void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj);
+void do_reduce(klisp_State *K, TValue *xparams, TValue obj);
+
 #endif

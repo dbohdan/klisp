@@ -18,9 +18,6 @@
 #include "kstate.h"
 #include "kghelpers.h"
 
-/* Helper (also used by $vau and $lambda) */
-void do_seq(klisp_State *K, TValue *xparams, TValue obj);
-
 /* 4.5.1 inert? */
 /* uses typep */
 
@@ -35,12 +32,16 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 TValue split_check_cond_clauses(klisp_State *K, TValue clauses, 
 				TValue *bodies);
 
-void do_cond(klisp_State *K, TValue *xparams, TValue obj);
 
 /* 5.6.1 $cond */
 void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.9.1 for-each */
 void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+void do_seq(klisp_State *K, TValue *xparams, TValue obj);
+void do_cond(klisp_State *K, TValue *xparams, TValue obj);
+void do_select_clause(klisp_State *K, TValue *xparams, TValue obj);
+void do_for_each(klisp_State *K, TValue *xparams, TValue obj);
 
 #endif
