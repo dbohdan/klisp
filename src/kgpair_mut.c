@@ -83,6 +83,9 @@ void copy_es(klisp_State *K, TValue *xparams,
 ** sstack is used to keep track of pairs and tbstack is used
 ** to keep track of which of car or cdr we were copying,
 ** 0 means just pushed, 1 means return from car, 2 means return from cdr
+**
+** This also copies source code info
+**
 */
 
 /* GC: assumes obj is rooted */
@@ -112,6 +115,11 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj,
 		} else {
 		    TValue new_pair = kcons_g(K, mut_flag, KINERT, KINERT);
 		    kset_mark(top, new_pair);
+		    /* save the source code info on the new pair */
+		    /* MAYBE: only do it if mutable */
+		    TValue si = ktry_get_si(K, top);
+		    if (!ttisnil(si))
+			kset_source_info(K, new_pair, si);
 		    /* leave the pair in the stack, continue with the car */
 		    ks_spush(K, top);
 		    ks_tbpush(K, ST_CAR);
