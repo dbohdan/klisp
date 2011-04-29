@@ -108,6 +108,11 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
 	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, env);
 	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, body));
+#endif
 	} 
 	krooted_tvs_pop(K);
 	ktail_eval(K, kcar(body), env);

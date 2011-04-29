@@ -115,12 +115,12 @@ void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj)
 	kapply_cc(K, obj);
     } else {
 	TValue first = kcar(ls);
-	ls = kcdr(ls);
+	TValue tail = kcdr(ls);
 	/* This is the important part of tail context + bool check */
-	if (!ttisnil(ls) || !kis_bool_check_cont(kget_cc(K))) {
+	if (!ttisnil(tail) || !kis_bool_check_cont(kget_cc(K))) {
 	    TValue new_cont = 
 		kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 
-				   4, sname, term_bool, ls, denv);
+				   4, sname, term_bool, tail, denv);
 	    /* 
 	    ** Mark as a bool checking cont this is needed in the last operand
 	    ** to allow both tail recursive behaviour and boolean checking.
@@ -131,6 +131,11 @@ void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj)
 	    */
 	    kset_bool_check_cont(new_cont);
 	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
 	}
 	ktail_eval(K, first, denv);
     }
@@ -152,7 +157,8 @@ void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 					 sname, term_bool, ls, denv);
     krooted_tvs_pop(K);
     /* there's no need to mark it as bool checking, no evaluation
-       is done in the dynamic extent of this cont */
+       is done in the dynamic extent of this cont, no need for 
+    source info either */
     kset_cc(K, new_cont);
     kapply_cc(K, knegp(term_bool)); /* pass dummy value to start */
 }

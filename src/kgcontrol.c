@@ -86,6 +86,11 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
 						 tail, denv);
 	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
 	    krooted_tvs_pop(K);
 	} 
 	ktail_eval(K, kcar(ls), denv);
@@ -109,6 +114,11 @@ void do_seq(klisp_State *K, TValue *xparams, TValue obj)
 	TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, tail, 
 					     denv);
 	kset_cc(K, new_cont);
+#if KTRACK_SI
+	/* put the source info of the list including the element
+	   that we are about to evaluate */
+	kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
     }
     ktail_eval(K, first, denv);
 }
@@ -213,6 +223,11 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 		TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
 						     tail, denv);
 		kset_cc(K, new_cont);
+#if KTRACK_SI
+		/* put the source info of the list including the element
+		   that we are about to evaluate */
+		kset_source_info(K, new_cont, ktry_get_si(K, this_body));
+#endif
 	    }
 	    ktail_eval(K, kcar(this_body), denv);
 	}
@@ -232,6 +247,11 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 	    */
 	    kset_bool_check_cont(new_cont);
 	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, tests));
+#endif
 	    ktail_eval(K, kcar(tests), denv);
 	}
     }
@@ -258,7 +278,7 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 			       KNIL, tests, bodies, denv);
 	/* there is no need to mark this continuation with bool check
 	   because it is just a dummy, no evaluation happens in its
-	   dynamic extent */
+	   dynamic extent, no need for source info either */
 	kset_cc(K, new_cont);
 	obj = KFALSE; 
     }

@@ -447,6 +447,11 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 						 do_seq, 2, tail, denv);
 	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
 	    krooted_tvs_pop(K); /* ls */
 	} 
 	krooted_tvs_pop(K); /* port */
@@ -499,6 +504,11 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    TValue new_cont = kmake_continuation(K, kget_cc(K),
 					     do_seq, 2, tail, env);
 	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
 	    krooted_tvs_pop(K);
 	} 
 	krooted_tvs_pop(K); /* port */
