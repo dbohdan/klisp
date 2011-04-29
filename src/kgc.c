@@ -271,6 +271,7 @@ static int32_t propagatemark (klisp_State *K) {
 	Continuation *c = cast(Continuation *, o);
 	markvalue(K, c->mark);
 	markvalue(K, c->parent);
+	markvalue(K, c->comb);
 	markvaluearray(K, c->extra, c->extra_size);
 	return sizeof(Continuation) + sizeof(TValue) * c->extra_size;
     }
