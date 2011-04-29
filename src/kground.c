@@ -106,48 +106,48 @@ void kinit_cont_names(klisp_State *K)
     Table *t = tv2table(K->cont_name_table);
 
     /* REPL, root-continuation & error-continuation */
-    add_cont_name(K, t, exit_fn, "exit");
-    add_cont_name(K, t, read_fn, "repl-read");
-    add_cont_name(K, t, eval_cfn, "repl-eval");
-    add_cont_name(K, t, loop_fn, "repl-loop");
-    add_cont_name(K, t, error_fn, "repl-report-error");
+    add_cont_name(K, t, do_repl_exit, "exit");
+    add_cont_name(K, t, do_repl_read, "repl-read");
+    add_cont_name(K, t, do_repl_eval, "repl-eval");
+    add_cont_name(K, t, do_repl_loop, "repl-loop");
+    add_cont_name(K, t, do_repl_error, "repl-report-error");
 
     /* GROUND ENV */
-    add_cont_name(K, t, eval_ls_cfn, "eval_ls_cfn");
-    add_cont_name(K, t, combine_cfn, "combine_cfn");
-    add_cont_name(K, t, do_Sandp_Sorp, "do_Sandp_Sorp");
-    add_cont_name(K, t, do_seq, "do_seq");
-    add_cont_name(K, t, do_map, "do_map");
-    add_cont_name(K, t, do_map_encycle, "do_map_encycle");
-    add_cont_name(K, t, do_map_ret, "do_map_ret");
-    add_cont_name(K, t, do_map_cycle, "do_map_cycle");
-    add_cont_name(K, t, do_extended_cont, "do_extended_cont");
-    add_cont_name(K, t, do_pass_value, "do_pass_value");
-    add_cont_name(K, t, do_select_clause, "select_clause");
-    add_cont_name(K, t, do_cond, "do_cond");
-    add_cont_name(K, t, do_for_each, "do_for_each");
-    add_cont_name(K, t, do_let, "do_let");
-    add_cont_name(K, t, do_bindsp, "do_bindsp");
-    add_cont_name(K, t, do_let_redirect, "do_let_redirect");
-    add_cont_name(K, t, do_remote_eval, "do_remote_eval");
-    add_cont_name(K, t, do_b_to_env, "do_b_to_env");
-    add_cont_name(K, t, do_match, "do_match");
-    add_cont_name(K, t, do_set_eval_obj, "do_set_eval_obj");
-    add_cont_name(K, t, do_import, "do_import");
-    add_cont_name(K, t, do_return_value, "do_return_value");
-    add_cont_name(K, t, do_unbind, "do_unbind");
-    add_cont_name(K, t, do_filter, "do_filter");
-    add_cont_name(K, t, do_filter_encycle, "do_filter_encycle");
-    add_cont_name(K, t, do_ret_cdr, "do_ret_cdr");
-    add_cont_name(K, t, do_filter_cycle, "do_filter_cycle");
-    add_cont_name(K, t, do_reduce_prec, "do_reduce_prec");
-    add_cont_name(K, t, do_reduce_combine, "do_reduce_combine");
-    add_cont_name(K, t, do_reduce_postc, "do_reduce_postc");
-    add_cont_name(K, t, do_reduce, "do_reduce");
-    add_cont_name(K, t, do_reduce_cycle, "do_reduce_cycle");
-    add_cont_name(K, t, do_close_file_ret, "do_close_file_ret");
-    add_cont_name(K, t, do_handle_result, "handle_result");
-    add_cont_name(K, t, do_interception, "do_interception");
+    add_cont_name(K, t, do_eval_ls, "eval-list");
+    add_cont_name(K, t, do_combine, "eval-combine");
+    add_cont_name(K, t, do_Sandp_Sorp, "eval-booleans");
+    add_cont_name(K, t, do_seq, "eval-sequence");
+    add_cont_name(K, t, do_map, "map-acyclic-part");
+    add_cont_name(K, t, do_map_encycle, "map-encycle!");
+    add_cont_name(K, t, do_map_ret, "map-ret");
+    add_cont_name(K, t, do_map_cycle, "map-cyclic-part");
+    add_cont_name(K, t, do_extended_cont, "extended-cont");
+    add_cont_name(K, t, do_pass_value, "pass-value");
+    add_cont_name(K, t, do_select_clause, "select-clause");
+    add_cont_name(K, t, do_cond, "eval-cond-list");
+    add_cont_name(K, t, do_for_each, "for-each");
+    add_cont_name(K, t, do_let, "eval-let");
+    add_cont_name(K, t, do_bindsp, "eval-$binds?-env");
+    add_cont_name(K, t, do_let_redirect, "eval-let-redirect");
+    add_cont_name(K, t, do_remote_eval, "eval-remote-eval-env");
+    add_cont_name(K, t, do_b_to_env, "bindings-to-env");
+    add_cont_name(K, t, do_match, "match-ptree");
+    add_cont_name(K, t, do_set_eval_obj, "set-eval-obj");
+    add_cont_name(K, t, do_import, "import");
+    add_cont_name(K, t, do_return_value, "return-value");
+    add_cont_name(K, t, do_unbind, "unbind-dynamic-var");
+    add_cont_name(K, t, do_filter, "filter-acyclic-part");
+    add_cont_name(K, t, do_filter_encycle, "filter-encycle!");
+    add_cont_name(K, t, do_ret_cdr, "return-cdr");
+    add_cont_name(K, t, do_filter_cycle, "filter-cyclic-part");
+    add_cont_name(K, t, do_reduce_prec, "reduce-precycle");
+    add_cont_name(K, t, do_reduce_combine, "reduce-combine");
+    add_cont_name(K, t, do_reduce_postc, "reduce-postcycle");
+    add_cont_name(K, t, do_reduce, "reduce-acyclic-part");
+    add_cont_name(K, t, do_reduce_cycle, "reduce-cyclic-part");
+    add_cont_name(K, t, do_close_file_ret, "close-file-and-ret");
+    add_cont_name(K, t, do_handle_result, "handle-result");
+    add_cont_name(K, t, do_interception, "do-interception");
 }
 
 /*

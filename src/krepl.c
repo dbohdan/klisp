@@ -25,7 +25,7 @@
 /* TODO add names & source info to the repl continuations */
 
 /* the exit continuation, it exits the loop */
-void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_exit(klisp_State *K, TValue *xparams, TValue obj)
 {
     UNUSED(xparams);
     UNUSED(obj);
@@ -36,7 +36,7 @@ void exit_fn(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* the underlying function of the read cont */
-void read_fn(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_read(klisp_State *K, TValue *xparams, TValue obj)
 {
     UNUSED(xparams);
     UNUSED(obj);
@@ -58,7 +58,7 @@ void read_fn(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* the underlying function of the eval cont */
-void eval_cfn(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
     ** xparams[0]: dynamic environment
@@ -75,20 +75,20 @@ void eval_cfn(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void loop_fn(klisp_State *K, TValue *xparams, TValue obj);
+void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj);
 
-/* this is called from both loop_fn and error_fn */
+/* this is called from both do_repl_loop and do_repl_error */
 /* GC: assumes denv is NOT rooted */
 inline void create_loop(klisp_State *K, TValue denv)
 {
     krooted_tvs_push(K, denv);
     TValue loop_cont = 
-	kmake_continuation(K, K->root_cont, loop_fn, 1, denv);
+	kmake_continuation(K, K->root_cont, do_repl_loop, 1, denv);
     krooted_tvs_push(K, loop_cont);
-    TValue eval_cont = kmake_continuation(K, loop_cont, eval_cfn, 1, denv);
+    TValue eval_cont = kmake_continuation(K, loop_cont, do_repl_eval, 1, denv);
     krooted_tvs_pop(K); /* in eval cont */
     krooted_tvs_push(K, eval_cont);
-    TValue read_cont = kmake_continuation(K, eval_cont, read_fn, 0);
+    TValue read_cont = kmake_continuation(K, eval_cont, do_repl_read, 0);
     kset_cc(K, read_cont);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -96,7 +96,7 @@ inline void create_loop(klisp_State *K, TValue denv)
 }
 
 /* the underlying function of the write & loop  cont */
-void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
     ** xparams[0]: dynamic environment
@@ -114,7 +114,7 @@ void loop_fn(klisp_State *K, TValue *xparams, TValue obj)
 } 
 
 /* the underlying function of the error cont */
-void error_fn(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
     ** xparams[0]: dynamic environment
@@ -201,10 +201,11 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_push(K, std_env);
 
     /* set up the continuations */
-    TValue root_cont = kmake_continuation(K, KNIL, exit_fn, 0);
+    TValue root_cont = kmake_continuation(K, KNIL, do_repl_exit, 0);
     krooted_tvs_push(K, root_cont);
 
-    TValue error_cont = kmake_continuation(K, root_cont, error_fn, 1, std_env);
+    TValue error_cont = kmake_continuation(K, root_cont, do_repl_error, 
+					   1, std_env);
     krooted_tvs_push(K, error_cont);
 
     /* update the ground environment with these two conts */

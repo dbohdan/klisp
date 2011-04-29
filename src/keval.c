@@ -15,7 +15,7 @@
 /*
 ** Eval helpers 
 */
-void eval_ls_cfn(klisp_State *K, TValue *xparams, TValue obj)
+void do_eval_ls(klisp_State *K, TValue *xparams, TValue obj)
 {
     /*
     ** xparams[0]: this argument list pair
@@ -39,7 +39,7 @@ void eval_ls_cfn(klisp_State *K, TValue *xparams, TValue obj)
     } else {
 	/* more arguments need to be evaluated */
 	/* GC: all objects are rooted at this point */
-	TValue new_cont = kmake_continuation(K, kget_cc(K), eval_ls_cfn, 4, 
+	TValue new_cont = kmake_continuation(K, kget_cc(K), do_eval_ls, 4, 
 					     rest, env, tail, combiner);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(rest), env);
@@ -89,7 +89,7 @@ inline TValue make_arg_ls(klisp_State *K, TValue operands, TValue *tail)
     return arg_ls;
 }
 
-void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
+void do_combine(klisp_State *K, TValue *xparams, TValue obj)
 {
     /* 
     ** xparams[0]: operand list
@@ -113,13 +113,13 @@ void combine_cfn(klisp_State *K, TValue *xparams, TValue obj)
 	    TValue tail;
 	    TValue arg_ls = make_arg_ls(K, operands, &tail);
 	    krooted_tvs_push(K, arg_ls);
-	    TValue comb_cont = kmake_continuation(K, kget_cc(K), combine_cfn, 
+	    TValue comb_cont = kmake_continuation(K, kget_cc(K), do_combine, 
 						  3, arg_ls, env, si);
 
 	    krooted_tvs_pop(K); /* already in cont */
 	    krooted_tvs_push(K, comb_cont);
 	    TValue els_cont = 
-		kmake_continuation(K, comb_cont, eval_ls_cfn, 4, arg_ls, env, 
+		kmake_continuation(K, comb_cont, do_eval_ls, 4, arg_ls, env, 
 				   tail, tv2app(obj)->underlying);
 	    kset_cc(K, els_cont);
 	    krooted_tvs_pop(K);
@@ -145,7 +145,7 @@ void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
     switch(ttype(obj)) {
     case K_TPAIR: {
 	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), combine_cfn, 3, kcdr(obj), 
+	    kmake_continuation(K, kget_cc(K), do_combine, 3, kcdr(obj), 
 			       env, ktry_get_si(K, obj));
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(obj), env);

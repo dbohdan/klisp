@@ -14,10 +14,10 @@
 void kinit_repl(klisp_State *K);
 
 /* continuation functions */
-void exit_fn(klisp_State *K, TValue *xparams, TValue obj);
-void read_fn(klisp_State *K, TValue *xparams, TValue obj);
-void eval_cfn(klisp_State *K, TValue *xparams, TValue obj);
-void loop_fn(klisp_State *K, TValue *xparams, TValue obj);
-void error_fn(klisp_State *K, TValue *xparams, TValue obj);
+void do_repl_exit(klisp_State *K, TValue *xparams, TValue obj);
+void do_repl_read(klisp_State *K, TValue *xparams, TValue obj);
+void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj);
+void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj);
+void do_repl_error(klisp_State *K, TValue *xparams, TValue obj);
 
 #endif

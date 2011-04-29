@@ -12,7 +12,7 @@
 #include "kobject.h"
 
 void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env);
-void eval_ls_cfn(klisp_State *K, TValue *xparams, TValue obj);
-void combine_cfn(klisp_State *K, TValue *xparams, TValue obj);
+void do_eval_ls(klisp_State *K, TValue *xparams, TValue obj);
+void do_combine(klisp_State *K, TValue *xparams, TValue obj);
 
 #endif
