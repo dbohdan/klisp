@@ -237,6 +237,29 @@ void kw_print_si(klisp_State *K, TValue obj)
 }
 #endif /* KTRACK_SI */
 
+/* obj should be a continuation */
+/* REFACTOR: move get cont name to a function somewhere else */
+void kw_print_cont_type(klisp_State *K, TValue obj)
+{
+    bool saved_displayp = K->write_displayp; 
+    K->write_displayp = true; /* avoid "s and escapes */
+
+    Continuation *cont = tv2cont(obj);
+    const TValue *node = klispH_get(tv2table(K->cont_name_table),
+				    p2tv(cont->fn));
+
+    char *type;
+    if (node == &kfree) {
+	type = "?";
+    } else {
+	klisp_assert(ttisstring(*node));
+	type = kstring_buf(*node);
+    }
+
+    kw_printf(K, " (%s)", type);
+    K->write_displayp = saved_displayp;
+}
+
 /*
 ** Writes all values except strings and pairs
 */
@@ -322,6 +345,9 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	    kw_print_name(K, obj);
 	}
 	#endif
+
+	kw_print_cont_type(K, obj);
+
 	#if KTRACK_SI
 	if (khas_si(obj))
 	    kw_print_si(K, obj);

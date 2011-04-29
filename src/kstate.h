@@ -47,6 +47,7 @@ typedef struct stringtable {
 struct klisp_State {
     stringtable strt;  /* hash table for immutable strings & symbols */
     TValue name_table; /* hash tables for naming objects */
+    TValue cont_name_table; /* hash tables for naming continuation functions*/
     TValue curr_cont;
 
     /*

@@ -39,7 +39,7 @@ void eval_ls_cfn(klisp_State *K, TValue *xparams, TValue obj)
     } else {
 	/* more arguments need to be evaluated */
 	/* GC: all objects are rooted at this point */
-	TValue new_cont = kmake_continuation(K, kget_cc(K), &eval_ls_cfn, 4, 
+	TValue new_cont = kmake_continuation(K, kget_cc(K), eval_ls_cfn, 4, 
 					     rest, env, tail, combiner);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(rest), env);

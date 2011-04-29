@@ -40,6 +40,12 @@
 #include "kgchars.h"
 #include "kgports.h"
 
+/* for initing cont names */
+#include "ktable.h"
+#include "kstring.h"
+#include "keval.h"
+#include "krepl.h"
+
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
 ** "value", both of type TValue. symbol will be bound to a symbol named by
@@ -82,6 +88,25 @@
     { value = v_;					\
 	symbol = ksymbol_new(K_, n_);			\
 	kadd_binding(K_, env_, symbol, v_); }
+
+/* for init_cont_names */
+#define add_cont_name(K_, t_, c_, n_)					\
+    { TValue str = kstring_new_b_imm(K_, n_);				\
+    TValue *node = klispH_set(K_, t_, p2tv(c_));			\
+    *node = str;							\
+    }
+
+/*
+** This is called once to save the names of the types of continuations
+** used in the ground environment & repl
+** TODO the repl should init its own names!
+*/
+void kinit_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, exit_fn, "do-exit");
+}
 
 /*
 ** This is called once to bind all symbols in the ground environment
@@ -1058,6 +1083,8 @@ void kinit_ground_env(klisp_State *K)
        It would also be good to be able to select between append, truncate and
        error if a file exists, but that would need to be an option in all three 
        methods of opening. Also some directory checking, traversing etc */
+
+    kinit_cont_names(K);
 
     return;
 }

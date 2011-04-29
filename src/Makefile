@@ -95,7 +95,7 @@ kground.o: kground.c kground.h kstate.h kobject.h klisp.h kenvironment.h \
 	kgpair_mut.h kgenvironments.h kgenv_mut.h kgcombiners.h \
 	kgcontinuations.h kgencapsulations.h kgpromises.h kgkd_vars.h \
 	kgks_vars.h kgports.h kgchars.h kgnumbers.h kgstrings.o \
-	klispconf.h
+	klispconf.h krepl.h keval.h ktable.h kstring.h
 kghelpers.o: kghelpers.c kghelpers.h kstate.h kstate.h klisp.h kpair.h \
 	kapplicative.h koperative.h kerror.h kobject.h ksymbol.h \
 	kcontinuation.h

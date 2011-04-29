@@ -137,6 +137,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
        be fixed! */
     K->name_table = klispH_new(K, 0, MINNAMETABSIZE, 
 	K_FLAG_WEAK_KEYS);
+    /* here the keys are uncollectable */
+    K->cont_name_table = klispH_new(K, 0, MINCONTNAMETABSIZE, 
+	K_FLAG_WEAK_NOTHING);
 
     /* Empty string */
     /* MAYBE: fix it so we can remove empty_string from roots */

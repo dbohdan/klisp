@@ -81,12 +81,12 @@ inline void create_loop(klisp_State *K, TValue denv)
 {
     krooted_tvs_push(K, denv);
     TValue loop_cont = 
-	kmake_continuation(K, K->root_cont, &loop_fn, 1, denv);
+	kmake_continuation(K, K->root_cont, loop_fn, 1, denv);
     krooted_tvs_push(K, loop_cont);
-    TValue eval_cont = kmake_continuation(K, loop_cont, &eval_cfn, 1, denv);
+    TValue eval_cont = kmake_continuation(K, loop_cont, eval_cfn, 1, denv);
     krooted_tvs_pop(K); /* in eval cont */
     krooted_tvs_push(K, eval_cont);
-    TValue read_cont = kmake_continuation(K, eval_cont, &read_fn, 0);
+    TValue read_cont = kmake_continuation(K, eval_cont, read_fn, 0);
     kset_cc(K, read_cont);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
