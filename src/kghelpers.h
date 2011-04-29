@@ -303,6 +303,10 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj,
 	    TValue new_pair = kcons(K, kcar(tail), KNIL);
 	    /* record the corresponding pair to simplify cycle handling */
 	    kset_mark(tail, new_pair);
+	    /* copy the source code info */
+	    TValue si = ktry_get_si(K, tail);
+	    if (!ttisnil(si))
+		kset_source_info(K, new_pair, si);
 	    kset_cdr(last_pair, new_pair);
 	    last_pair = new_pair;
 	    tail = kcdr(tail);

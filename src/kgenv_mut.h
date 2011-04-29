@@ -156,6 +156,10 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 			/* create a new pair as copy, save it in the mark */
 			TValue new_pair = kimm_cons(K, KNIL, KNIL);
 			kset_mark(top, new_pair);
+			/* copy the source code info */
+			TValue si = ktry_get_si(K, top);
+			if (!ttisnil(si))
+			    kset_source_info(K, new_pair, si);
 		    }
 		    /* keep the old pair and continue with the car */
 		    ks_tbpush(K, ST_CAR); 
