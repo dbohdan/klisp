@@ -105,7 +105,14 @@ void kinit_cont_names(klisp_State *K)
 {
     Table *t = tv2table(K->cont_name_table);
 
-    add_cont_name(K, t, exit_fn, "do-exit");
+    /* REPL, root-continuation & error-continuation */
+    add_cont_name(K, t, exit_fn, "exit");
+    add_cont_name(K, t, read_fn, "repl-read");
+    add_cont_name(K, t, eval_cfn, "repl-eval");
+    add_cont_name(K, t, loop_fn, "repl-loop");
+    add_cont_name(K, t, error_fn, "repl-report-error");
+
+    /* GROUND ENV */
 }
 
 /*
