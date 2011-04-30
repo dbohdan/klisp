@@ -132,7 +132,7 @@ bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out,
 		   char **end);
 /* NOTE: allow decimal for use after #e */
 bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out, 
-			    char **end);
+			    char **end, bool *out_decimalp);
 
 int32_t kbigrat_print_size(TValue tv_bigrat, int32_t base);
 void  kbigrat_print_string(klisp_State *K, TValue tv_bigrat, int32_t base, 

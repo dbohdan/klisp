@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h> /* for code checking '/' & '.' */
 #include <inttypes.h>
+#include <ctype.h> /* for to lower */
 #include <math.h>
 
 #include "krational.h"
@@ -85,39 +86,102 @@ bool krational_read(klisp_State *K, char *buf, int32_t base, TValue *out,
 
 /* NOTE: allow decimal for use after #e */
 bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out, 
-			    char **end)
+			    char **end, bool *out_decimalp)
 {
+    /* NOTE: in Kernel only base ten is allowed in decimal format */
+    klisp_assert(base == 10);
+
     char *my_end;
     if (!end) /* always get the last char not read */
 	end = &my_end;
 
     TValue res = kbigrat_make_simple(K);
     krooted_tvs_push(K, res);
-    bool ret_val = (mp_rat_read_ustring(K, tv2bigrat(res), base, 
-					buf, end) == MP_OK);
-    krooted_tvs_pop(K);
-    *out = kbigrat_try_integer(K, res);
+    mp_result ret_val = mp_rat_read_ustring(K, tv2bigrat(res), base, 
+					buf, end);
+
+    /* check to see if there was a decimal point, will only
+     be written to out_decimalp if no error ocurr */
+    bool decimalp = memchr(buf, '.', *end - buf) != NULL;
+
+    /* handle exponents, avoid the case where the number finishes
+     in a decimal point (this isn't allowed by kernel */
+    if (decimalp && ret_val == MP_TRUNC && *end != buf &&
+	  *((*end)-1) != '.') {
+	char *ebuf = *end;
+	char el = tolower(*ebuf);
+	/* NOTE: in klisp all exponent letters map to double */
+	if (el == 'e' || el == 's' || el == 'f' || el == 'd' || el == 'l') {
+	    ebuf++;
+	    TValue tv_exp_exp = kbigint_make_simple(K);
+	    krooted_tvs_push(K, tv_exp_exp);
+	    Bigint *exp_exp = tv2bigint(tv_exp_exp);
+	    /* base should be 10 */
+	    ret_val = mp_int_read_cstring(K, exp_exp, base, ebuf, end);
+	    if (ret_val == MP_OK) {
+		/* IMath doesn't have general rational exponentiation,
+		   so do it manually */
+		TValue tv_iexp = kbigint_make_simple(K);
+		krooted_tvs_push(K, tv_iexp);
+		Bigint *iexp = tv2bigint(tv_iexp);
+		UNUSED(mp_int_set_value(K, iexp, 10));
+		bool negativep = mp_int_compare_zero(exp_exp) < 0;
+		UNUSED(mp_int_abs(K, exp_exp, exp_exp));
+		UNUSED(mp_int_expt_full(K, iexp, exp_exp, iexp));
+		/* iexp has 10^|exp_exp| */
+		if (negativep) {
+		    TValue tv_rexp = kbigrat_make_simple(K);
+		    krooted_tvs_push(K, tv_rexp);
+		    Bigrat *rexp = tv2bigrat(tv_rexp);
+		    /* copy reciprocal of iexp to rexp */
+		    UNUSED(mp_rat_zero(K, rexp));
+		    UNUSED(mp_rat_add_int(K, rexp, iexp, rexp));
+		    UNUSED(mp_rat_recip(K, rexp, rexp));
+		    /* now get true number */
+		    UNUSED(mp_rat_mul(K, tv2bigrat(res), rexp,
+				      tv2bigrat(res)));
+		    krooted_tvs_pop(K); /* rexp */
+		} else { /* exponent positive, can just mult int */
+		    UNUSED(mp_rat_mul_int(K, tv2bigrat(res), iexp,
+					  tv2bigrat(res)));
+		}
+		krooted_tvs_pop(K); /* iexp */
+		/* fall through, ret_val remains MP_OK */
+	    } /* else, fall through, ret_val remains != MP_OK */
+	    krooted_tvs_pop(K); /* exp_exp */
+	}
+    }
 
     /* TODO: ideally this should be incorporated in the read code */
+    /* TODO: if returning MP_TRUNC adjust the end pointer returned */
     /* detect sign after '/', or trailing '.' or starting '/' or '.'. 
        Those are allowed by imrat but not by kernel */
-    if (ret_val) {
+    if (ret_val == MP_OK) {
 	char *ch = strchr(buf, '/');
 	if (ch != NULL && (ch == 0 || 
 			   (*(ch+1) == '+' || *(ch+1) == '-') ||
-			   (*(ch-1) == '+' || *(ch-1) == '-')))
-	    ret_val = false;
-	else {
+			   (*(ch-1) == '+' || *(ch-1) == '-'))) {
+	    ret_val = MP_TRUNC;
+	} else {
 	    ch = strchr(buf, '.');
 	    if (ch != NULL && (ch == 0 || 
 			       (*(ch+1) == '+' || *(ch+1) == '-') ||
 			       (*(ch-1) == '+' || *(ch-1) == '-') ||
-			       ch == *end - 1))
-		ret_val = false;
+			       ch == *end - 1)) {
+		ret_val = MP_TRUNC;
+	    }
 	}
     }
 
-    return ret_val;
+    if (ret_val == MP_OK && out_decimalp != NULL)
+	*out_decimalp = decimalp;
+
+    krooted_tvs_pop(K);
+    if (ret_val == MP_OK) {
+	*out = kbigrat_try_integer(K, res);
+    }
+
+    return ret_val == MP_OK;
 }
 
 /* this is used by write to estimate the number of chars necessary to

@@ -402,7 +402,7 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
     if (has_exactp && radix == 10) {
 	/* TEMP: while there are no inexacts */
 	/* allow decimals if has #e prefix */
-	if (!krational_read_decimal(K, buf, radix, &n, NULL)) {
+	if (!krational_read_decimal(K, buf, radix, &n, NULL, NULL)) {
 	    /* TODO throw meaningful error msgs, use last param */
 	    ktok_error(K, "Bad format in number");
 	    return KINERT;
