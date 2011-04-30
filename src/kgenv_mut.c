@@ -118,7 +118,7 @@ inline void unmark_maybe_symbol_list(klisp_State *K, TValue ls)
     while(ttispair(ls) && kis_marked(ls)) {
 	TValue first = kcar(ls);
 	if (ttissymbol(first))
-	    kunmark(first);
+	    kunmark_symbol(first);
 	kunmark(ls);
 	ls = kcdr(ls);
     }
@@ -140,8 +140,8 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
 	/* even if there is a type error continue checking the structure */
 	TValue first = kcar(tail);
 	if (ttissymbol(first)) {
-	    repeated_errorp |= kis_marked(first);
-	    kmark(first);
+	    repeated_errorp |= kis_symbol_marked(first);
+	    kmark_symbol(first);
 	} else {
 	    type_errorp = true;
 	}

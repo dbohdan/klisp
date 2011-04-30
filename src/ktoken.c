@@ -425,7 +425,11 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
     if (ktok_check_delimiter(K)) {
 	ks_tbadd(K, ch);
 	ks_tbadd(K, '\0');
-	TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), 1);
+	/* save the source info in the symbol */
+	TValue si = ktok_get_source_info(K);
+	krooted_tvs_push(K, si); /* will be popped by throw */
+	TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), 1, si);
+	krooted_tvs_pop(K); /* already in symbol */
 	krooted_tvs_push(K, new_sym);
 	ks_tbclear(K); /* this shouldn't cause gc, but just in case */
 	krooted_tvs_pop(K);
@@ -728,7 +732,10 @@ TValue ktok_read_identifier(klisp_State *K)
 	    ktok_error(K, "Invalid char in identifier");	    
     }
     ks_tbadd(K, '\0');
-    TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), i-1);
+    TValue si = ktok_get_source_info(K);
+    krooted_tvs_push(K, si); /* will be popped by throw */
+    TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), i-1, si);
+    krooted_tvs_pop(K); /* already in symbol */
     krooted_tvs_push(K, new_sym);
     ks_tbclear(K); /* this shouldn't cause gc, but just in case */
     krooted_tvs_pop(K);

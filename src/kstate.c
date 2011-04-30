@@ -196,7 +196,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 		      kcons(K, i2tv(line_number), i2tv(0)));
     kset_source_info(K, K->eval_op, si);
 
-    TValue eval_name = ksymbol_new(K, "eval");
+    /* TODO: si */
+    TValue eval_name = ksymbol_new(K, "eval", KNIL);
     ktry_set_name(K, K->eval_op, eval_name);
     
     K->list_app = kmake_applicative(K, list, 0), line_number = __LINE__;
@@ -207,9 +208,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* ground environment has a hashtable for bindings */
     K->ground_env = kmake_table_environment(K, KNIL);
+//    K->ground_env = kmake_empty_environment(K);
 
     /* MAYBE: fix it so we can remove module_params_sym from roots */
-    K->module_params_sym = ksymbol_new(K, "module-parameters");
+    /* TODO si */
+    K->module_params_sym = ksymbol_new(K, "module-parameters", KNIL);
 
     kinit_ground_env(K);
 

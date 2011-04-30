@@ -216,9 +216,11 @@ void kinit_repl(klisp_State *K)
 
     /* update the ground environment with these two conts */
     TValue symbol;
-    symbol = ksymbol_new(K, "root-continuation");
-    /* GC: symbol should already be in root */
+    /* TODO si */
+    symbol = ksymbol_new(K, "root-continuation", KNIL);
+    krooted_tvs_push(K, symbol);
     kadd_binding(K, K->ground_env, symbol, root_cont);
+    krooted_tvs_pop(K);
 
     #if KTRACK_SI
     /* TODO: find a cleaner way of doing this..., maybe disable gc */
@@ -235,9 +237,11 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_pop(K);
     #endif
 
-    symbol = ksymbol_new(K, "error-continuation"); 
-    /* GC: symbol should already be in root */
+    /* TODO si */
+    symbol = ksymbol_new(K, "error-continuation", KNIL); 
+    krooted_tvs_push(K, symbol);
     kadd_binding(K, K->ground_env, symbol, error_cont);
+    krooted_tvs_pop(K);
 
     #if KTRACK_SI
     str = kstring_new_b_imm(K, __FILE__);

@@ -53,9 +53,10 @@
 ** GC: All of these should be called when GC is deactivated on startup
 */
 
+/* TODO add si to the symbols */
 #if KTRACK_SI
 #define add_operative(K_, env_, n_, fn_, ...)		\
-    { symbol = ksymbol_new(K_, n_);			\
+    { symbol = ksymbol_new(K_, n_, KNIL);		\
     value = kmake_operative(K_, fn_, __VA_ARGS__);	\
     TValue str = kstring_new_b_imm(K_, __FILE__);	\
     TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),	\
@@ -64,7 +65,7 @@
     kadd_binding(K_, env_, symbol, value); }
 
 #define add_applicative(K_, env_, n_, fn_, ...)				\
-    { symbol = ksymbol_new(K_, n_);					\
+    { symbol = ksymbol_new(K_, n_, KNIL);				\
 	value = kmake_applicative(K_, fn_, __VA_ARGS__);		\
 	TValue str = kstring_new_b_imm(K_, __FILE__);			\
 	TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),		\
@@ -74,7 +75,7 @@
 	kadd_binding(K_, env_, symbol, value); }
 #else /* KTRACK_SI */
 #define add_operative(K_, env_, n_, fn_, ...)		\
-    { symbol = ksymbol_new(K_, n_);			\
+    { symbol = ksymbol_new(K_, n_, KNIL);		\
 	value = kmake_operative(K_, fn_, __VA_ARGS__);	\
 	kadd_binding(K_, env_, symbol, value); }
 
@@ -86,7 +87,7 @@
 
 #define add_value(K_, env_, n_, v_)			\
     { value = v_;					\
-	symbol = ksymbol_new(K_, n_);			\
+	symbol = ksymbol_new(K_, n_, KNIL);		\
 	kadd_binding(K_, env_, symbol, v_); }
 
 /* for init_cont_names */
@@ -133,7 +134,7 @@ void kinit_cont_names(klisp_State *K)
     add_cont_name(K, t, do_b_to_env, "bindings-to-env");
     add_cont_name(K, t, do_match, "match-ptree");
     add_cont_name(K, t, do_set_eval_obj, "set-eval-obj");
-    add_cont_name(K, t, do_import, "import");
+    add_cont_name(K, t, do_import, "import-bindings");
     add_cont_name(K, t, do_return_value, "return-value");
     add_cont_name(K, t, do_unbind, "unbind-dynamic-var");
     add_cont_name(K, t, do_filter, "filter-acyclic-part");

@@ -344,8 +344,7 @@ typedef struct __attribute__ ((__packed__)) {
 } Pair;
 
 typedef struct __attribute__ ((__packed__)) {
-    CommonHeader;
-    TValue mark; /* for cycle/sharing aware algorithms */
+    CommonHeader; /* symbols are marked via their strings */
     TValue str; /* could use String * here, but for now... */
     uint32_t hash; /* this is different from the str hash to
 		      avoid having both the string and the symbol
@@ -628,8 +627,10 @@ const TValue kfree;
 extern char *ktv_names[];
 
 /* Macros to handle marks */
-/* NOTE: this only works in markable objects */
-#define kget_mark(p_) (tv2mgch(p_)->mark) 
+/* TODO add assertions to check that symbols aren't marked with these */
+
+/* NOTE: this only works in markable objects, but not in symbols */
+#define kget_mark(p_) (tv2mgch(p_)->mark)
 
 #ifdef KTRACK_MARKS
 /* XXX: marking macros should take a klisp_State parameter and
@@ -655,6 +656,15 @@ int32_t kmark_count;
 
 #define kis_marked(p_) (!kis_unmarked(p_))
 #define kis_unmarked(p_) (tv_equal(kget_mark(p_), KFALSE))
+
+/* Symbols marking */
+/* NOTE: it's different because symbols mark their strings */
+#define kget_symbol_mark(s_) (kget_mark(tv2sym(s_)->str))
+#define kset_symbol_mark(s_, m_) (kget_mark(tv2sym(s_)->str) = (m_))
+#define kmark_symbol(s_) (kset_mark(tv2sym(s_)->str, KTRUE))
+#define kunmark_symbol(s_) (kset_mark(tv2sym(s_)->str, KFALSE))
+#define kis_symbol_marked(s_) (kis_marked(tv2sym(s_)->str))
+#define kis_symbol_unmarked(s_) (kis_unmarked(tv2sym(s_)->str))
 
 /* Macros to access kflags & type in GCHeader */
 /* TODO: 1 should always be reserved for mutability flag */

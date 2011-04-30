@@ -450,6 +450,7 @@ void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
-    TValue new_sym = ksymbol_new_check_i(K, str);
+    /* TODO si */
+    TValue new_sym = ksymbol_new_check_i(K, str, KNIL);
     kapply_cc(K, new_sym);
 }

@@ -38,8 +38,8 @@ inline void ptree_clear_all(klisp_State *K, TValue sym_ls)
 {
     while(!ttisnil(sym_ls)) {
 	TValue first = sym_ls;
-	sym_ls = kget_mark(first);
-	kunmark(first);
+	sym_ls = kget_symbol_mark(first);
+	kunmark_symbol(first);
     }
 
     while(!ks_sisempty(K)) {
@@ -129,16 +129,15 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 		copy = top;
 		break;
 	    case K_TSYMBOL: {
-		if (kis_marked(top)) {
-		    /* TODO add symbol name */
+		if (kis_symbol_marked(top)) {
 		    ptree_clear_all(K, sym_ls);
-		    klispE_throw_simple(K, "repeated symbol in ptree");
-		    /* avoid warning */
+		    klispE_throw_simple_with_irritants(K, "repeated symbol "
+						       "in ptree", 1, top);
 		    return KNIL;
 		} else {
 		    copy = top;
 		    /* add it to the symbol list */
-		    kset_mark(top, sym_ls);
+		    kset_symbol_mark(top, sym_ls);
 		    sym_ls = top;
 		}
 		break;
@@ -219,14 +218,13 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
     }
 
     if (ttissymbol(penv)) {
-	if (kis_marked(penv)) {
-	    /* TODO add symbol name */
+	if (kis_symbol_marked(penv)) {
 	    ptree_clear_all(K, sym_ls);
-	    klispE_throw_simple(K, "same symbol in both ptree and "
-			       "environment parameter");
+	    klispE_throw_simple_with_irritants(K, "same symbol in both ptree "
+					       "and environment parameter",
+					       1, sym_ls);
 	}
     } else if (!ttisignore(penv)) {
-	    /* TODO add symbol name */
 	    ptree_clear_all(K, sym_ls);
 	    klispE_throw_simple(K, "symbol or #ignore expected as "
 			       "environment parmameter");

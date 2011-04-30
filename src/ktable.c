@@ -503,8 +503,10 @@ const TValue *klispH_getstr (Table *t, String *key) {
 */
 const TValue *klispH_getsym (Table *t, Symbol *key) {
     Node *n = hashsym(t, key);
+    TValue tv_key = gc2sym(key);
     do {  /* check whether `key' is somewhere in the chain */
-	if (ttissymbol(gkey(n)->this) && tv2sym(gkey(n)->this) == key)
+	if (ttissymbol(gkey(n)->this) && 
+	      tv_sym_equal(gkey(n)->this, tv_key))
 	    return &gval(n);  /* that's it */
 	else n = gnext(n);
     } while (n);

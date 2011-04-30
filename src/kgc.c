@@ -253,7 +253,6 @@ static int32_t propagatemark (klisp_State *K) {
     }
     case K_TSYMBOL: {
 	Symbol *s = cast(Symbol *, o);
-	markvalue(K, s->mark);
 	markvalue(K, s->str);
 	return sizeof(Symbol);
     }
@@ -404,7 +403,9 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TSYMBOL:
 	/* symbols are in the string/symbol table */
 	/* The string will be freed before/after */
-	K->strt.nuse--;
+	/* symbols with no source info are in the string/symbol table */
+	if (ttisnil(ktry_get_si(K, gc2sym(o))))
+	    K->strt.nuse--;
 	klispM_free(K, (Symbol *)o);
 	break;
     case K_TSTRING:

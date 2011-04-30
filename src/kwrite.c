@@ -407,6 +407,7 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	K->write_displayp = saved_displayp;
 
 	kw_printf(K, "]");
+	break;
     }
     default:
 	/* shouldn't happen */
