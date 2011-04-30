@@ -527,6 +527,13 @@ void      mp_int_swap(mp_int a, mp_int c)
 
     *a = *c;
     *c = tmp;
+    /* Andres Navarro: bugfix */
+    /* correct if digits was pointing to single */
+    if (a->digits == &c->single)
+	a->digits = &a->single;
+    if (c->digits == &a->single)
+	c->digits = &c->single;
+    /* Andres Navarro: /bugfix */
   }
 }
 
