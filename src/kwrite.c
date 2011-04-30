@@ -397,6 +397,17 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	#endif
 	kw_printf(K, "]");
 	break;
+    case K_TERROR: {
+	kw_printf(K, "#[error: ");
+
+	/* TEMP for now show only msg */
+	bool saved_displayp = K->write_displayp; 
+	K->write_displayp = false; /* use "'s and escapes */
+	kw_print_string(K, tv2error(obj)->msg);
+	K->write_displayp = saved_displayp;
+
+	kw_printf(K, "]");
+    }
     default:
 	/* shouldn't happen */
 	kwrite_error(K, "unknown object type");
