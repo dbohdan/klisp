@@ -38,6 +38,7 @@
 #include "kstate.h"
 #include "kinteger.h"
 #include "krational.h"
+#include "kreal.h"
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
@@ -399,13 +400,18 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
 {
     UNUSED(len); /* not needed really, buf ends with '\0' */
     TValue n;
-    if (has_exactp && radix == 10) {
-	/* TEMP: while there are no inexacts */
-	/* allow decimals if has #e prefix */
-	if (!krational_read_decimal(K, buf, radix, &n, NULL, NULL)) {
+    if (radix == 10) {
+	/* only allow decimals with radix 10 */
+	bool decimalp = false;
+	if (!krational_read_decimal(K, buf, radix, &n, NULL, &decimalp)) {
 	    /* TODO throw meaningful error msgs, use last param */
 	    ktok_error(K, "Bad format in number");
 	    return KINERT;
+	}
+	if (decimalp && !has_exactp) {
+	    /* handle decimal format as an explicit #i */
+	    has_exactp = true;
+	    exactp = false;
 	}
     } else {
 	if (!krational_read(K, buf, radix, &n, NULL)) {
@@ -415,6 +421,12 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
 	}
     }
     ks_tbclear(K);
+    
+    if (has_exactp && !exactp) {
+	krooted_tvs_push(K, n);
+	n = kexact_to_inexact(K, n);
+	krooted_tvs_pop(K);
+    }
     return n;
 }
 
@@ -518,8 +530,10 @@ struct kspecial_token {
 			{ "#inert", KINERT_ },
 			{ "#e+infinity", KEPINF_ },
 			{ "#e-infinity", KEMINF_ },
-			/* TODO add undefined, real with on primary value,
-			   and inexact infinities */
+			{ "#i+infinity", KIPINF_ },
+			{ "#i-infinity", KIMINF_ },
+			{ "#real", KRWNPV_ },
+			{ "#undefined", KUNDEF_ },
 			{ "#\\space", KSPACE_ },
 			{ "#\\newline", KNEWLINE_ }
  }; 
@@ -691,10 +705,7 @@ TValue ktok_read_special(klisp_State *K)
 	case '5': case '6': case '7': case '8': case '9': 
 	case 'a': case 'b': case 'c': case 'd': case 'e':
 	case 'f': case '+': case '-': { /* read the number */
-		if (has_exactp && !exactp) {
-		    ktok_error(K, "inexact numbers not supported");
-		    return KINERT;
-		} else if (idx == buf_len) {
+		if (idx == buf_len) {
 		    ktok_error(K, "no digits found in number");
 		} else {
 		    return ktok_read_number(K, buf+idx, buf_len - idx,
