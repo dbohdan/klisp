@@ -289,7 +289,8 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	break;
     case K_TDOUBLE:
 	/* TODO investigate this further */
-	kw_printf(K, "%17.e", dvalue(obj));
+	/* LOCALE, significant digits, etc */
+	kw_printf(K, "%f", dvalue(obj));
 	break;
     case K_TRWNPV:
 	/* ASK John/TEMP: until John tells me what should this be... */

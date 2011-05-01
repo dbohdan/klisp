@@ -33,15 +33,16 @@
 double kbigint_to_double(Bigint *bigint)
 {
     double radix = (double) UINT32_MAX + 1.0;
-    uint32_t ndigits = bigint->used - 1;
-    double accum = 0;
+    uint32_t ndigits = bigint->used;
+    double accum = 0.0;
 	
     /* bigint is in little endian format, but we traverse in
      big endian */
-    while(ndigits >= 0) {
-	accum = accum * radix + (double) bigint->digits[ndigits];
+    do {
 	--ndigits;
-    }
+	accum = accum * radix + (double) bigint->digits[ndigits];
+    } while (ndigits > 0); /* have to compare like this, it's unsigned */
+    return mp_int_compare_zero(bigint) < 0? -accum : accum;
 }
 
 TValue kexact_to_inexact(klisp_State *K, TValue n)
@@ -50,7 +51,8 @@ TValue kexact_to_inexact(klisp_State *K, TValue n)
     case K_TFIXINT:
 	return d2tv((double) ivalue(n));
     case K_TBIGINT: {
-	double d = kbigint_to_double(tv2bigint(n));
+	Bigint *bigint = tv2bigint(n);
+	double d = kbigint_to_double(bigint);
 	/* d may be inf, ktag_double will handle it */
 	/* MAYBE should throw an exception if strict is on */
 	return ktag_double(d);
