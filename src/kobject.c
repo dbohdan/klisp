@@ -20,6 +20,10 @@ const TValue ktrue = KTRUE_;
 const TValue kfalse = KFALSE_;
 const TValue kepinf = KEPINF_;
 const TValue keminf = KEMINF_;
+const TValue kipinf = KIPINF_;
+const TValue kiminf = KIMINF_;
+const TValue krwnpv = KRWNPV_;
+const TValue kundef = KUNDEF_;
 const TValue kspace = KSPACE_;
 const TValue knewline = KNEWLINE_;
 const TValue kfree = KFREE_;
@@ -36,7 +40,9 @@ char *ktv_names[] = {
     [K_TDOUBLE] = "double", 
     [K_TBDOUBLE] = "bdouble", 
     [K_TIINF] = "iinf", 
-    [K_TRWNPN] = "rwnpn", 
+    
+    [K_TRWNPV] = "rwnpv", 
+    [K_TUNDEFINED] = "undefined", 
     [K_TCOMPLEX] = "complex", 
 
     [K_TNIL] = "nil",       

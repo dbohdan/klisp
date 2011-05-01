@@ -134,8 +134,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TDOUBLE       5
 #define K_TBDOUBLE      6
 #define K_TIINF         7
-#define K_TRWNPN        8
+#define K_TRWNPV        8
 #define K_TCOMPLEX      9
+#define K_TUNDEFINED    10
 
 #define K_TNIL 		20
 #define K_TIGNORE 	21
@@ -183,6 +184,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_BIGRAT	K_MAKE_VTAG(K_TBIGRAT)
 #define K_TAG_EINF	K_MAKE_VTAG(K_TEINF)
 #define K_TAG_IINF	K_MAKE_VTAG(K_TIINF)
+#define K_TAG_RWNPV	K_MAKE_VTAG(K_TRWNPV)
+#define K_TAG_UNDEFINED	K_MAKE_VTAG(K_TUNDEFINED)
 
 #define K_TAG_NIL	K_MAKE_VTAG(K_TNIL)
 #define K_TAG_IGNORE	K_MAKE_VTAG(K_TIGNORE)
@@ -232,12 +235,17 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
 #define ttisbigrat(o)	(tbasetype_(o) == K_TAG_BIGRAT)
-#define ttisrational(o_)	({ int32_t t_ = tbasetype_(o_); \
-	t_ == K_TAG_BIGRAT || t_== K_TAG_BIGINT || \
-	    t_ == K_TAG_FIXINT;})
+#define ttisrational(o_)				\
+    ({ TValue t_ = o_;					\
+	(ttype(t_) <= K_TBIGRAT) || ttisdouble(t_); })
+#define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
+#define ttisreal(o) (ttype(o) < K_TCOMPLEX)
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
+#define ttisrwnpv(o)	(tbasetype_(o) == K_TAG_RWNPV)
+#define ttisundef(o)	(tbasetype_(o) == K_TAG_UNDEFINED)
+
 #define ttisnil(o)	(tbasetype_(o) == K_TAG_NIL)
 #define ttisignore(o)	(tbasetype_(o) == K_TAG_IGNORE)
 #define ttisinert(o)	(tbasetype_(o) == K_TAG_INERT)
@@ -245,7 +253,6 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisboolean(o)	(tbasetype_(o) == K_TAG_BOOLEAN)
 #define ttischar(o)	(tbasetype_(o) == K_TAG_CHAR)
 #define ttisfree(o)	(tbasetype_(o) == K_TAG_FREE)
-#define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 
 /* Complex types (value in heap), 
    (bigints, rationals, etc could be collectable)
@@ -524,6 +531,10 @@ union GCObject {
 #define KFALSE_ {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = false }}}
 #define KEPINF_ {.tv = {.t = K_TAG_EINF, .v = { .i = 1 }}}
 #define KEMINF_ {.tv = {.t = K_TAG_EINF, .v = { .i = -1 }}}
+#define KIPINF_ {.tv = {.t = K_TAG_IINF, .v = { .i = 1 }}}
+#define KIMINF_ {.tv = {.t = K_TAG_IINF, .v = { .i = -1 }}}
+#define KRWNPV_ {.tv = {.t = K_TAG_RWNPV, .v = { .i = 0 }}}
+#define KUNDEF_ {.tv = {.t = K_TAG_UNDEFINED, .v = { .i = 0 }}}
 #define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
 #define KNEWLINE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\n' }}}
 #define KFREE_ {.tv = {.t = K_TAG_FREE, .v = { .i = 0 }}}
@@ -538,6 +549,10 @@ union GCObject {
 #define KFALSE ((TValue) KFALSE_)
 #define KEPINF ((TValue) KEPINF_)
 #define KEMINF ((TValue) KEMINF_)
+#define KIPINF ((TValue) KIPINF_)
+#define KIMINF ((TValue) KIMINF_)
+#define KRWNPV ((TValue) KRWNPV_)
+#define KUNDEF ((TValue) KUNDEF_)
 #define KSPACE ((TValue) KSPACE_)
 #define KNEWLINE ((TValue) KNEWLINE_)
 #define KFREE ((TValue) KFREE_)
@@ -551,6 +566,10 @@ const TValue ktrue;
 const TValue kfalse;
 const TValue kepinf;
 const TValue keminf;
+const TValue kipinf;
+const TValue kiminf;
+const TValue krwnpv;
+const TValue kundef;
 const TValue kspace;
 const TValue knewline;
 const TValue kfree;
@@ -560,12 +579,14 @@ const TValue kfree;
 #define i2tv_(i_) {.tv = {.t = K_TAG_FIXINT, .v = { .i = (i_) }}}
 #define b2tv_(b_) {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = (b_) }}}
 #define p2tv_(p_) {.tv = {.t = K_TAG_USER, .v = { .p = (p_) }}}
+#define d2tv_(d_) {.d = d_}
 
 /* Macros to create TValues of non-heap allocated types */
 #define ch2tv(ch_) ((TValue) ch2tv_(ch_))
 #define i2tv(i_) ((TValue) i2tv_(i_))
 #define b2tv(b_) ((TValue) b2tv_(b_))
 #define p2tv(p_) ((TValue) p2tv_(p_))
+#define d2tv(d_) ((TValue) d2tv_(d_))
 
 /* Macros to convert a GCObject * into a tagged value */
 /* TODO: add assertions */
@@ -620,6 +641,7 @@ const TValue kfree;
 #define chvalue(o_) ((o_).tv.v.ch)
 #define gcvalue(o_) ((o_).tv.v.gc)
 #define pvalue(o_) ((o_).tv.v.p)
+#define dvalue(o_) ((o_).d)
 
 /* Macro to obtain a string describing the type of a TValue */#
 #define ttname(tv_) (ktv_names[ttype(tv_)])
