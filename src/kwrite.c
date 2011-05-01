@@ -13,6 +13,7 @@
 #include "kobject.h"
 #include "kinteger.h"
 #include "krational.h"
+#include "kreal.h"
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
@@ -271,9 +272,6 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kwrite_error(K, "string type found in kwrite-simple");
 	/* avoid warning */
 	return;
-    case K_TEINF:
-	kw_printf(K, "#e%cinfinity", tv_equal(obj, KEPINF)? '+' : '-');
-	break;
     case K_TFIXINT:
 	kw_printf(K, "%" PRId32, ivalue(obj));
 	break;
@@ -282,6 +280,23 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	break;
     case K_TBIGRAT:
 	kw_print_bigrat(K, obj);
+	break;
+    case K_TEINF:
+	kw_printf(K, "#e%cinfinity", tv_equal(obj, KEPINF)? '+' : '-');
+	break;
+    case K_TIINF:
+	kw_printf(K, "#i%cinfinity", tv_equal(obj, KIPINF)? '+' : '-');
+	break;
+    case K_TDOUBLE:
+	/* TODO investigate this further */
+	kw_printf(K, "%17.e", dvalue(obj));
+	break;
+    case K_TRWNPV:
+	/* ASK John/TEMP: until John tells me what should this be... */
+	kw_printf(K, "#real");
+	break;
+    case K_TUNDEFINED:
+	kw_printf(K, "#undefined");
 	break;
     case K_TNIL:
 	kw_printf(K, "()");
