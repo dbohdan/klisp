@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "kwrite.h"
 #include "kobject.h"
@@ -85,6 +86,23 @@ void kw_print_bigrat(klisp_State *K, TValue bigrat)
 
     char *buf = kstring_buf(buf_str);
     kbigrat_print_string(K, bigrat, radix, buf, size);
+    kw_printf(K, "%s", buf);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+}
+
+void kw_print_double(klisp_State *K, TValue tv_double)
+{
+    int32_t size = kdouble_print_size(tv_double); 
+    krooted_tvs_push(K, tv_double);
+    /* here we are using 1 byte extra, because size already includes
+       1 for the terminator, but better be safe than sorry */
+    TValue buf_str = kstring_new_s(K, size);
+    krooted_tvs_push(K, buf_str);
+
+    char *buf = kstring_buf(buf_str);
+    kdouble_print_string(K, tv_double, buf, size);
     kw_printf(K, "%s", buf);
 
     krooted_tvs_pop(K);
@@ -287,11 +305,10 @@ void kwrite_simple(klisp_State *K, TValue obj)
     case K_TIINF:
 	kw_printf(K, "#i%cinfinity", tv_equal(obj, KIPINF)? '+' : '-');
 	break;
-    case K_TDOUBLE:
-	/* TODO investigate this further */
-	/* LOCALE, significant digits, etc */
-	kw_printf(K, "%f", dvalue(obj));
+    case K_TDOUBLE: {
+	kw_print_double(K, obj);
 	break;
+    }
     case K_TRWNPV:
 	/* ASK John/TEMP: until John tells me what should this be... */
 	kw_printf(K, "#real");

@@ -46,6 +46,7 @@ double kbigint_to_double(Bigint *bigint)
 /* bigrat is rooted */
 double kbigrat_to_double(klisp_State *K, Bigrat *bigrat)
 {	
+    /* TODO: check rounding in extreme cases */
     TValue tv_rem = kbigrat_copy(K, gc2bigrat(bigrat));
     krooted_tvs_push(K, tv_rem);
     Bigrat *rem = tv2bigrat(tv_rem);
@@ -124,4 +125,23 @@ TValue kexact_to_inexact(klisp_State *K, TValue n)
 	klisp_assert(0);
 	return KUNDEF;
     }
+}
+
+/*
+** read/write interface 
+*/
+
+/* TEMP: this is a stub for now, always return sufficiently large 
+   number */
+int32_t kdouble_print_size(TValue tv_double)
+{
+    UNUSED(tv_double);
+    return 1024;
+}
+
+void kdouble_print_string(klisp_State *K, TValue tv_double,
+			   char *buf, int32_t limit)
+{
+    sprintf(buf, "%f", dvalue(tv_double));
+    return;
 }
