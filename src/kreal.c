@@ -18,6 +18,8 @@
 #include "kstate.h"
 #include "kmem.h"
 #include "kgc.h"
+#include "kpair.h" /* for list in throw error */
+#include "kerror.h"
 
 /* MAYBE move to kobject.h */
 #define ktag_double(d_)							\
@@ -121,6 +123,139 @@ TValue kexact_to_inexact(klisp_State *K, TValue n)
     case K_TRWNPV:
     case K_TUNDEFINED:
 	return n;
+    default:
+	klisp_assert(0);
+	return KUNDEF;
+    }
+}
+
+/* assume d is integer and doesn't fit in a fixint */
+TValue kdouble_to_bigint(klisp_State *K, double d)
+{
+    bool neg = d < 0;
+    if (neg)
+	d = -d;
+
+    TValue tv_res = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_res);
+    Bigint *res = tv2bigint(tv_res);
+    mp_int_set_value(K, res, 0);
+
+    TValue tv_digit = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_digit);
+    Bigint *digit = tv2bigint(tv_digit);
+
+    /* do it 32 bits at a time */
+    double radix = ((double) UINT32_MAX) + 1.0;
+    int power =  0;
+    while(d > 0) {
+	double dd = fmod(d, radix);
+	d = floor(d / radix);
+	/* load in two moves because set_value takes signed ints */
+	uint32_t id = (uint32_t) dd;
+	int32_t id1 = (int32_t) (id >> 1);
+	int32_t id2 = (int32_t) (id - id1);
+
+	mp_int_set_value(K, digit, id1);
+	mp_int_add_value(K, digit, id2, digit);
+
+	mp_int_mul_pow2(K, digit, power, digit);
+	mp_int_add(K, res, digit, res);
+
+	power += 32;
+    }
+
+    if (neg)
+	mp_int_neg(K, res, res);
+
+    krooted_tvs_pop(K); /* digit */
+    krooted_tvs_pop(K); /* res */
+
+    return tv_res; /* can't be fixint except when coming from
+		    kdouble_to_bigrat, so don't convert */
+}
+
+/* TODO: should do something like rationalize with range +/- 1/2ulp) */
+TValue kdouble_to_bigrat(klisp_State *K, double d)
+{
+    bool neg = d < 0;
+    if (neg)
+	d = -d;
+
+    /* find an integer, convert it and divide by 
+       an adequate power of 2 */
+    TValue tv_res = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_res);
+    Bigrat *res = tv2bigrat(tv_res);
+    UNUSED(mp_rat_set_value(K, res, 0, 1));
+
+    TValue tv_den = kbigint_make_simple(K);
+    krooted_tvs_push(K, tv_den);
+    Bigint *den = tv2bigint(tv_den);
+    UNUSED(mp_int_set_value(K, den, 1));
+
+    /* XXX could be made a lot more efficiently */
+    int32_t power = 16;
+    double radix = pow(2, power);
+    while(d != floor(d)) {
+	d *= radix;
+	UNUSED(mp_int_mul_pow2(K, den, power, den));
+    }
+
+    TValue tv_num = kdouble_to_bigint(K, d);
+    krooted_tvs_push(K, tv_num);
+    Bigint *num = tv2bigint(tv_num);
+
+    TValue tv_den2 = kbigrat_make_simple(K);
+    krooted_tvs_push(K, tv_den2);
+    Bigrat *den2 = tv2bigrat(tv_den2);
+
+    UNUSED(mp_rat_set_value(K, den2, 0, 1));
+    UNUSED(mp_rat_add_int(K, den2, den, den2));
+    UNUSED(mp_rat_set_value(K, res, 0, 1));
+    UNUSED(mp_rat_add_int(K, res, num, res));
+    UNUSED(mp_rat_div(K, res, den2, res));
+
+    if (neg)
+	mp_rat_neg(K, res, res);
+
+    krooted_tvs_pop(K); /* den2 */
+    krooted_tvs_pop(K); /* num */
+    krooted_tvs_pop(K); /* den */
+    krooted_tvs_pop(K); /* res */
+
+    return tv_res; /* can't be integer */
+}
+
+TValue kinexact_to_exact(klisp_State *K, TValue n)
+{
+    switch(ttype(n)) {
+    case K_TFIXINT:
+    case K_TBIGINT:
+    case K_TBIGRAT:
+    case K_TEINF:
+	/* all of these are already exact */
+	return n;
+    case K_TDOUBLE: {
+	double d = dvalue(n);
+	klisp_assert(!isnan(d) && !isinf(d));
+	if (d == floor(d)) { /* integer */
+	    if (d <= (double) INT32_MAX && 
+		d >= (double) INT32_MIN) {
+		return i2tv((int32_t) d); /* fixint */
+	    } else {
+		return kdouble_to_bigint(K, d);
+	    }
+	} else { /* non integer rational */
+	    return kdouble_to_bigrat(K, d);
+	}
+    }
+    case K_TIINF:
+	return tv_equal(n, KIPINF)? KEPINF : KEMINF;
+    case K_TRWNPV:
+    case K_TUNDEFINED:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return KUNDEF;
     default:
 	klisp_assert(0);
 	return KUNDEF;
