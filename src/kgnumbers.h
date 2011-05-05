@@ -111,6 +111,30 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.6.1 exact?, inexact?, robust?, undefined? */
+/* TODO */
+
+/* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
+/* TODO */
+
+/* 12.6.3 get-real-internal-primary, get-real-exact-primary */
+/* TODO */
+
+/* 12.6.4 make-inexact */
+/* TODO */
+
+/* 12.6.5 real->inexact, real->exact */
+void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
+/* ASK John, the error signaling depends on with-strict-arithmetic, or
+   not? Should always throw error on overflow and underflow? and when 
+   the precission isn't that great? */
+void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
+
+/* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
+/* TODO */
+
 /* 12.8.1 rational? */
 /* uses ftypep */
 

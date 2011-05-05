@@ -19,6 +19,7 @@
 #include "ksymbol.h"
 #include "kinteger.h"
 #include "krational.h"
+#include "kreal.h"
 
 #include "kghelpers.h"
 #include "kgnumbers.h"
@@ -1081,7 +1082,34 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 
-/* TODO: remaining of rational module */
+/* TODO remainding of module real and inexact */
+
+/* 12.6.5 real->inexact, real->exact */
+void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+
+    TValue res = kexact_to_inexact(K, tv_n);
+    kapply_cc(K, res);
+}
+/* ASK John, the error signaling depends on with-strict-arithmetic, or
+   not? Should always throw error on overflow and underflow? and when 
+   the precission isn't that great? */
+void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+
+    TValue res = kinexact_to_exact(K, tv_n);
+    kapply_cc(K, res);
+}
 
 /* 12.8.1 rational? */
 /* uses ftypep */

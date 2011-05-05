@@ -800,6 +800,32 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "lcm", klcm, 0);
 
     /* 
+    ** 12.8 Inexact features
+    */
+
+    /* 12.6.1 exact?, inexact?, robust?, undefined? */
+    /* TODO */
+
+    /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
+    /* TODO */
+
+    /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
+    /* TODO */
+
+    /* 12.6.4 make-inexact */
+    /* TODO */
+
+    /* 12.6.5 real->inexact, real->exact */
+    /* ASK John, the error signaling depends on with-strict-arithmetic, or
+       not? Should always throw error on overflow and underflow? and when 
+       the precission isn't that great? */
+    add_applicative(K, ground_env, "real->inexact", kreal_to_inexact, 0);
+    add_applicative(K, ground_env, "real->exact", kreal_to_exact, 0);
+
+    /* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
+    /* TODO */
+
+    /* 
     ** 12.8 Rational features
     */
 
@@ -827,6 +853,15 @@ void kinit_ground_env(klisp_State *K)
     /* 12.8.5 rationalize, simplest-rational */
     add_applicative(K, ground_env, "rationalize", krationalize, 0);
     add_applicative(K, ground_env, "simplest-rational", ksimplest_rational, 0);
+
+    /* 
+    ** 12.9 Real features
+    */
+
+    /* 12.9.1 real? */
+    /* TODO */
+
+    /* TODO complete all other bindings of module real */
 
     /*
     **
