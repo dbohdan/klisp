@@ -38,10 +38,7 @@ bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
 bool kintegerp(TValue obj) { return ttisinteger(obj); }
 bool krationalp(TValue obj) { return ttisrational(obj); }
 /* all real are rationals in klisp */
-bool krealp(TValue obj) 
-{ 
-    return ttisrational(obj) || ttiseinf(obj) || ttisiinf(obj); 
-}
+bool krealp(TValue obj) { return ttisreal(obj); }
 
 bool kexactp(TValue obj) { return ttisexact(obj); }
 bool kinexactp(TValue obj) { return ttisinexact(obj); }
