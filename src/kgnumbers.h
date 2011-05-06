@@ -131,14 +131,11 @@ void kget_real_exact_primary(klisp_State *K, TValue *xparams,
 			     TValue ptree, TValue denv);
 
 /* 12.6.4 make-inexact */
-/* TODO */
+void kmake_inexact(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 12.6.5 real->inexact, real->exact */
 void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv);
-/* ASK John, the error signaling depends on with-strict-arithmetic, or
-   not? Should always throw error on overflow and underflow? and when 
-   the precission isn't that great? */
 void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv);
 

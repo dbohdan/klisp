@@ -826,12 +826,9 @@ void kinit_ground_env(klisp_State *K)
 		    kget_real_exact_primary, 0);
 
     /* 12.6.4 make-inexact */
-    /* TODO */
+    add_applicative(K, ground_env, "make-inexact", kmake_inexact, 0);
 
     /* 12.6.5 real->inexact, real->exact */
-    /* ASK John, the error signaling depends on with-strict-arithmetic, or
-       not? Should always throw error on overflow and underflow? and when 
-       the precission isn't that great? */
     add_applicative(K, ground_env, "real->inexact", kreal_to_inexact, 0);
     add_applicative(K, ground_env, "real->exact", kreal_to_exact, 0);
 

@@ -1084,34 +1084,8 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 
-/* TODO remainding of module real and inexact */
-
-/* 12.6.5 real->inexact, real->exact */
-void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
-{
-    UNUSED(denv);
-    UNUSED(xparams);
-
-    bind_1tp(K, ptree, "real", krealp, tv_n);
-
-    TValue res = kexact_to_inexact(K, tv_n);
-    kapply_cc(K, res);
-}
-/* ASK John, the error signaling depends on with-strict-arithmetic, or
-   not? Should always throw error on overflow and underflow? and when 
-   the precission isn't that great? */
-void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
-{
-    UNUSED(denv);
-    UNUSED(xparams);
-
-    bind_1tp(K, ptree, "real", krealp, tv_n);
-
-    TValue res = kinexact_to_exact(K, tv_n);
-    kapply_cc(K, res);
-}
+/* 12.6.1 exact?, inexact?, robust?, undefined? */
+/* use fyped_predp */
 
 /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
 void kget_real_internal_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -1164,21 +1138,59 @@ void kget_real_exact_primary(klisp_State *K, TValue *xparams,
 			     TValue ptree, TValue denv)
 {
     bind_1tp(K, ptree, "real", krealp, tv_n);
-    /* TEMP: do it here directly, for now all inexact objects have
-     [-inf, +inf] bounds, when bounded reals are implemented this
-    should take care to round the min towards -inf and the max towards
-    +inf when converting to exact */
+    
+    /* NOTE: this handles no primary value errors & exact cases just fine */
+    TValue res = kinexact_to_exact(K, tv_n);
+    kapply_cc(K, res);
+}
+
+/* 12.6.4 make-inexact */
+void kmake_inexact(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    bind_3tp(K, ptree, "real", krealp, real1, 
+	     "real", krealp, real2, "real", krealp, real3);
+
     TValue res;
-    if (ttisrwnpv(tv_n)) {
-	klispE_throw_simple_with_irritants(K, "no primary value", 1, tv_n);
-	return;
-    } else if (ttisexact(tv_n)) {
-	res = tv_n;
+    UNUSED(real1);
+    UNUSED(real3);
+    if (ttisinexact(real2)) {
+	res = real2;
     } else {
-	res = kinexact_to_exact(K, tv_n);
+	/* TEMP: for now bounds are ignored */
+	/* NOTE: this handles overflow and underflow */
+	res = kexact_to_inexact(K, real2);
     }
     kapply_cc(K, res);
 }
+
+/* 12.6.5 real->inexact, real->exact */
+void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+
+    /* NOTE: this handles overflow and underflow */
+    TValue res = kexact_to_inexact(K, tv_n);
+    kapply_cc(K, res);
+}
+
+void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+
+    TValue res = kinexact_to_exact(K, tv_n);
+    kapply_cc(K, res);
+}
+
+/* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
+/* TODO */
 
 /* 12.8.1 rational? */
 /* uses ftypep */

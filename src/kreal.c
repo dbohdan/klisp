@@ -89,6 +89,8 @@ double kbigrat_to_double(klisp_State *K, Bigrat *bigrat)
     return mp_rat_compare_zero(bigrat) < 0? -accum : accum;
 }
 
+/* TODO test strict arithmetic and throw errors on overflow and underflow? 
+   if set */
 TValue kexact_to_inexact(klisp_State *K, TValue n)
 {
     switch(ttype(n)) {
