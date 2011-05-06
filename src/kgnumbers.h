@@ -125,7 +125,10 @@ void kget_real_exact_bounds(klisp_State *K, TValue *xparams, TValue ptree,
 			       TValue denv);
 
 /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
-/* TODO */
+void kget_real_internal_primary(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv);
+void kget_real_exact_primary(klisp_State *K, TValue *xparams, 
+			     TValue ptree, TValue denv);
 
 /* 12.6.4 make-inexact */
 /* TODO */

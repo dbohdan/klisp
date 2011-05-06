@@ -820,7 +820,10 @@ void kinit_ground_env(klisp_State *K)
 		    kget_real_exact_bounds, 0);
 
     /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
-    /* TODO */
+    add_applicative(K, ground_env, "get-real-internal-primary", 
+		    kget_real_internal_primary, 0);
+    add_applicative(K, ground_env, "get-real-exact-primary", 
+		    kget_real_exact_primary, 0);
 
     /* 12.6.4 make-inexact */
     /* TODO */

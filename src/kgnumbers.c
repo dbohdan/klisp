@@ -1146,6 +1146,39 @@ void kget_real_exact_bounds(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
+/* 12.6.3 get-real-internal-primary, get-real-exact-primary */
+void kget_real_internal_primary(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv)
+{
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+    /* TEMP: do it here directly */
+    if (ttisrwnpv(tv_n)) {
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, tv_n);
+	return; 
+    } else {
+	kapply_cc(K, tv_n);
+    }
+}
+
+void kget_real_exact_primary(klisp_State *K, TValue *xparams, 
+			     TValue ptree, TValue denv)
+{
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+    /* TEMP: do it here directly, for now all inexact objects have
+     [-inf, +inf] bounds, when bounded reals are implemented this
+    should take care to round the min towards -inf and the max towards
+    +inf when converting to exact */
+    TValue res;
+    if (ttisrwnpv(tv_n)) {
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, tv_n);
+	return;
+    } else if (ttisexact(tv_n)) {
+	res = tv_n;
+    } else {
+	res = kinexact_to_exact(K, tv_n);
+    }
+    kapply_cc(K, res);
+}
 
 /* 12.8.1 rational? */
 /* uses ftypep */
