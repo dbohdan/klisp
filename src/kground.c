@@ -814,7 +814,10 @@ void kinit_ground_env(klisp_State *K)
 		    p2tv(knumberp), p2tv(kundefinedp));
 
     /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
-    /* TODO */
+    add_applicative(K, ground_env, "get-real-internal-bounds", 
+		    kget_real_internal_bounds, 0);
+    add_applicative(K, ground_env, "get-real-exact-bounds", 
+		    kget_real_exact_bounds, 0);
 
     /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
     /* TODO */

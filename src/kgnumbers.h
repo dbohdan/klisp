@@ -116,10 +116,13 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 12.6.1 exact?, inexact?, robust?, undefined? */
-/* TODO */
+/* use fyped_predp */
 
 /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
-/* TODO */
+void kget_real_internal_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
+			       TValue denv);
+void kget_real_exact_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
+			       TValue denv);
 
 /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
 /* TODO */
@@ -159,6 +162,12 @@ void krationalize(klisp_State *K, TValue *xparams, TValue ptree,
 
 void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree, 
 			TValue denv);
+
+
+/* 12.9.1 real? */
+/* uses ftypep */
+
+/* TODO remaining of module real */
 
 /* REFACTOR: These should be in a knumber.h header */
 

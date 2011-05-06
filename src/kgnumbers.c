@@ -1113,6 +1113,40 @@ void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
+/* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
+void kget_real_internal_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
+			       TValue denv)
+{
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+    /* TEMP: do it here directly, for now all inexact objects have
+     [-inf, +inf] bounds */
+    TValue res;
+    if (ttisexact(tv_n)) {
+	res = klist(K, 2, tv_n, tv_n);
+    } else {
+	res = klist(K, 2, KIMINF, KIPINF);
+    }
+    kapply_cc(K, res);
+}
+
+void kget_real_exact_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
+			       TValue denv)
+{
+    bind_1tp(K, ptree, "real", krealp, tv_n);
+    /* TEMP: do it here directly, for now all inexact objects have
+     [-inf, +inf] bounds, when bounded reals are implemented this
+    should take care to round the min towards -inf and the max towards
+    +inf when converting to exact */
+    TValue res;
+    if (ttisexact(tv_n)) {
+	res = klist(K, 2, tv_n, tv_n);
+    } else {
+	res = klist(K, 2, KEMINF, KEPINF);
+    }
+    kapply_cc(K, res);
+}
+
+
 /* 12.8.1 rational? */
 /* uses ftypep */
 
