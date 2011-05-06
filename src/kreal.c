@@ -217,13 +217,16 @@ TValue kdouble_to_bigrat(klisp_State *K, double d)
     Bigint *den = tv2bigint(tv_den);
     UNUSED(mp_int_set_value(K, den, 1));
 
-    /* XXX could be made a lot more efficiently */
-    int32_t power = 16;
-    double radix = pow(2, power);
+    /* XXX could be made a lot more efficiently reading ieee
+     fields directly */
+    int ie;
+    d = frexp(d, &ie);
+
     while(d != floor(d)) {
-	d *= radix;
-	UNUSED(mp_int_mul_pow2(K, den, power, den));
+	d *= 2.0;
+	--ie;
     }
+    UNUSED(mp_int_mul_pow2(K, den, -ie, den));
 
     TValue tv_num = kdouble_to_bigint(K, d);
     krooted_tvs_push(K, tv_num);
@@ -240,14 +243,24 @@ TValue kdouble_to_bigrat(klisp_State *K, double d)
     UNUSED(mp_rat_div(K, res, den2, res));
 
     if (neg)
-	mp_rat_neg(K, res, res);
+	UNUSED(mp_rat_neg(K, res, res));
+
+    /* now create a value corresponding to 1/2 ulp
+       for rationalize */
+    UNUSED(mp_int_mul_pow2(K, den, 1, den));
+    UNUSED(mp_rat_set_value(K, den2, 0, 1));
+    UNUSED(mp_rat_add_int(K, den2, den, den2));
+    UNUSED(mp_rat_recip(K, den2, den2));
+    /* den2 now has 1/2 ulp */
+
+    TValue rationalized = kbigrat_rationalize(K, tv_res, tv_den2);
 
     krooted_tvs_pop(K); /* den2 */
     krooted_tvs_pop(K); /* num */
     krooted_tvs_pop(K); /* den */
     krooted_tvs_pop(K); /* res */
 
-    return tv_res; /* can't be integer */
+    return rationalized;
 }
 
 TValue kinexact_to_exact(klisp_State *K, TValue n)
@@ -412,7 +425,7 @@ bool dtoa(klisp_State *K, double d, char *buf, int32_t upoint, int32_t *out_h,
     res = mp_int_add_value(K, &f, (mp_small) im & 0x7fffffff, &f);
 
     /* adjust f & p so that p is 53 TODO do in one step */
-    /* XXX: this is not ok for denorms!! */
+    /* XXX: is this is ok for denorms?? */
     while(ip < 53) {
 	++ip;
 	res = mp_int_mul_value(K, &f, 2, &f);
