@@ -130,9 +130,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TBIGINT       1
 #define K_TFIXRAT       2
 #define K_TBIGRAT       3
-#define K_TEINF         4
-#define K_TDOUBLE       5
-#define K_TBDOUBLE      6
+#define K_TDOUBLE       4
+#define K_TBDOUBLE      5
+#define K_TEINF         6
 #define K_TIINF         7
 #define K_TRWNPV        8
 #define K_TCOMPLEX      9
@@ -177,7 +177,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 **
 ** - decide if inexact infinities and reals with no
 **    primary values are included in K_TDOUBLE
-** - For now we will only use fixints, bigints, bigrats and exact infinities 
+** - All types except complexs, bounded reals and fixrats 
 */
 #define K_TAG_FIXINT	K_MAKE_VTAG(K_TFIXINT)
 #define K_TAG_BIGINT	K_MAKE_VTAG(K_TBIGINT)
@@ -240,6 +240,13 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 	(ttype(t_) <= K_TBIGRAT) || ttisdouble(t_); })
 #define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 #define ttisreal(o) (ttype(o) < K_TCOMPLEX)
+#define ttisexact(o)					\
+    ({ TValue t_ = o_;					\
+	(ttiseinf(t_) || ttype(t_) <= K_TBIGRAT); })
+/* MAYBE this is ugly..., maybe add exact/inexact flag, real, rational flag */
+#define ttisinexact(o_)					\
+    ({ TValue t_ = o_;					\
+	(ttisundef(t_) || ttisdouble(t_); || ttiswnpv(t_) || ttisiinf(t_); })
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
@@ -580,6 +587,15 @@ const TValue kfree;
 #define b2tv_(b_) {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = (b_) }}}
 #define p2tv_(p_) {.tv = {.t = K_TAG_USER, .v = { .p = (p_) }}}
 #define d2tv_(d_) {.d = d_}
+#define ktag_double(d_)							\
+    ({ double d__ = d_;							\
+	TValue res;							\
+	if (isnan(d__)) res = KRWNPV;					\
+	else if (isinf(d__)) res = (d__ == INFINITY)? KIPINF : KIMINF;	\
+	/* +0.0 == -0.0 too, but that doesn't hurt */			\
+	else if (d_ == -0.0) res = d2tv(+0.0);				\
+	else res = d2tv(d__);						\
+	res;})
 
 /* Macros to create TValues of non-heap allocated types */
 #define ch2tv(ch_) ((TValue) ch2tv_(ch_))

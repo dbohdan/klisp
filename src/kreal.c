@@ -21,15 +21,6 @@
 #include "kpair.h" /* for list in throw error */
 #include "kerror.h"
 
-/* MAYBE move to kobject.h */
-#define ktag_double(d_)							\
-    ({ double d__ = d_;							\
-	TValue res;							\
-	if (isnan(d__)) res = KRWNPV;					\
-	else if (isinf(d__)) res = (d__ == INFINITY)? KIPINF : KIMINF;	\
-	else res = d2tv(d__);						\
-	res;})
-
 double kbigint_to_double(Bigint *bigint)
 {
     double radix = (double) UINT32_MAX + 1.0;
@@ -389,6 +380,7 @@ bool dtoa(klisp_State *K, double d, char *buf, int32_t upoint, int32_t *out_h,
     res = mp_int_add_value(K, &f, (mp_small) im & 0x7fffffff, &f);
 
     /* adjust f & p so that p is 53 TODO do in one step */
+    /* XXX: this is not ok for denorms!! */
     while(ip < 53) {
 	++ip;
 	res = mp_int_mul_value(K, &f, 2, &f);
