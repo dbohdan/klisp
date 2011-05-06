@@ -93,20 +93,50 @@ double kbigrat_to_double(klisp_State *K, Bigrat *bigrat)
    if set */
 TValue kexact_to_inexact(klisp_State *K, TValue n)
 {
+    bool strictp = bvalue(kcurr_strict_arithp(K));
+
     switch(ttype(n)) {
     case K_TFIXINT:
+	/* NOTE: can't over or underflow, and can't give NaN */
 	return d2tv((double) ivalue(n));
     case K_TBIGINT: {
 	Bigint *bigint = tv2bigint(n);
 	double d = kbigint_to_double(bigint);
-	/* d may be inf, ktag_double will handle it */
-	/* MAYBE should throw an exception if strict is on */
-	return ktag_double(d);
+	if (strictp && (d == 0.0 || isinf(d) || isnan(d))) {
+	    /* NOTE: bigints can't be zero */
+	    char *msg;
+	    if (isnan(d))
+		msg = "unexpected error";
+	    else if (isinf(d))
+		msg = "overflow";
+	    else
+		msg = "undeflow";
+	    klispE_throw_simple_with_irritants(K, msg, 1, n);
+	    return KUNDEF;
+	} else {
+	    /* d may be inf, ktag_double will handle it */
+	    return ktag_double(d);
+	}
     }
     case K_TBIGRAT: {
 	Bigrat *bigrat = tv2bigrat(n);
 	double d = kbigrat_to_double(K, bigrat);
-	return ktag_double(d);
+	/* REFACTOR: this code is the same for bigints... */
+	if (strictp && (d == 0.0 || isinf(d) || isnan(d))) {
+	    /* NOTE: bigrats can't be zero */
+	    char *msg;
+	    if (isnan(d))
+		msg = "unexpected error";
+	    else if (isinf(d))
+		msg = "overflow";
+	    else
+		msg = "undeflow";
+	    klispE_throw_simple_with_irritants(K, msg, 1, n);
+	    return KUNDEF;
+	} else {
+	    /* d may be inf, ktag_double will handle it */
+	    return ktag_double(d);
+	}
     }
     case K_TEINF:
 	return tv_equal(n, KEPINF)? KIPINF : KIMINF;
