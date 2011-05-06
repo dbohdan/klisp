@@ -833,7 +833,10 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "real->exact", kreal_to_exact, 0);
 
     /* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
-    /* TODO */
+    add_applicative(K, ground_env, "with-strict-arithmetic", 
+		    kwith_strict_arithmetic, 0);
+    add_applicative(K, ground_env, "get-strict-arithmetic?", 
+		    kget_strict_arithmeticp, 0);
 
     /* 
     ** 12.8 Rational features

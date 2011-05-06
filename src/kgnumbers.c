@@ -23,6 +23,7 @@
 
 #include "kghelpers.h"
 #include "kgnumbers.h"
+#include "kgkd_vars.h" /* for strict arith flag */
 
 /* 15.5.1? number?, finite?, integer? */
 /* use ftypep & ftypep_predp */
@@ -1190,7 +1191,36 @@ void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
-/* TODO */
+void kwith_strict_arithmetic(klisp_State *K, TValue *xparams, TValue ptree, 
+			     TValue denv)
+{
+    bind_2tp(K, ptree, "bool", ttisboolean, strictp,
+	     "combiner", ttiscombiner, comb);
+
+    TValue op = kmake_operative(K, do_bind, 1, K->kd_strict_arith_key);
+    krooted_tvs_push(K, op);
+
+    TValue args = klist(K, 2, strictp, comb);
+
+    krooted_tvs_pop(K);
+
+    /* even if we call with denv, do_bind calls comb in an empty env */
+    /* XXX: what to pass for source info?? */
+    ktail_call(K, op, args, denv);
+}
+
+void kget_strict_arithmeticp(klisp_State *K, TValue *xparams, TValue ptree, 
+			     TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    check_0p(K, ptree);
+
+    /* can access directly, no need to call do_access */
+    TValue res = kcurr_strict_arithp(K);
+    kapply_cc(K, res);
+}
 
 /* 12.8.1 rational? */
 /* uses ftypep */

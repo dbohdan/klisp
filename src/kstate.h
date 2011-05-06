@@ -107,6 +107,9 @@ struct klisp_State {
     TValue kd_in_port_key;
     TValue kd_out_port_key;
 
+    /* for strict-arithmetic */
+    TValue kd_strict_arith_key;
+
     /* Strings */
     TValue empty_string;
     
@@ -484,6 +487,15 @@ void klispS_run(klisp_State *K);
 void klisp_close (klisp_State *K);
 
 void do_interception(klisp_State *K, TValue *xparams, TValue obj);
+
+/* simple accessors for dynamic keys */
+
+/* XXX: this is ugly but we can't include kpair.h here so... */
+/* MAYBE: move car & cdr to kobject.h */
+/* TODO: use these where appropriate */
+#define kcurr_input_port(K) (tv2pair((K)->kd_in_port_key)->cdr)
+#define kcurr_output_port(K) (tv2pair((K)->kd_out_port_key)->cdr)
+#define kcurr_strict_arithp(K) (tv2pair((K)->kd_strict_arith_key)->cdr)
 
 #endif
 

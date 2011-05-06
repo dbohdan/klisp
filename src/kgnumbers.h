@@ -140,7 +140,11 @@ void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree,
 		      TValue denv);
 
 /* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
-/* TODO */
+void kwith_strict_arithmetic(klisp_State *K, TValue *xparams, TValue ptree, 
+			     TValue denv);
+
+void kget_strict_arithmeticp(klisp_State *K, TValue *xparams, TValue ptree, 
+			     TValue denv);
 
 /* 12.8.1 rational? */
 /* uses ftypep */
