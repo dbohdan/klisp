@@ -165,7 +165,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TDEADKEY        60
 
 /* this is used to test for numbers, as returned by ttype */
-#define K_LAST_NUMBER_TYPE K_TCOMPLEX
+#define K_LAST_NUMBER_TYPE K_TUNDEFINED
 
 /* this is used to if the object is collectable */
 #define K_FIRST_GC_TYPE K_TPAIR
@@ -240,13 +240,15 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 	(ttype(t_) <= K_TBIGRAT) || ttisdouble(t_); })
 #define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 #define ttisreal(o) (ttype(o) < K_TCOMPLEX)
-#define ttisexact(o)					\
+#define ttisexact(o_)					\
     ({ TValue t_ = o_;					\
 	(ttiseinf(t_) || ttype(t_) <= K_TBIGRAT); })
 /* MAYBE this is ugly..., maybe add exact/inexact flag, real, rational flag */
 #define ttisinexact(o_)					\
     ({ TValue t_ = o_;					\
-	(ttisundef(t_) || ttisdouble(t_); || ttiswnpv(t_) || ttisiinf(t_); })
+	(ttisundef(t_) || ttisdouble(t_) || ttisrwnpv(t_) || ttisiinf(t_)); })
+/* For now, all inexact numbers are not robust and have -inf & +inf bounds */
+#define ttisrobust(o)	(ttisexact(o))
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)

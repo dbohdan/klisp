@@ -43,6 +43,11 @@ bool krealp(TValue obj)
     return ttisrational(obj) || ttiseinf(obj) || ttisiinf(obj); 
 }
 
+bool kexactp(TValue obj) { return ttisexact(obj); }
+bool kinexactp(TValue obj) { return ttisinexact(obj); }
+bool kundefinedp(TValue obj) { return ttisundef(obj); }
+bool krobustp(TValue obj) { return ttisrobust(obj); }
+
  /* 12.5.2 =? */
  /* uses typed_bpredp */
 

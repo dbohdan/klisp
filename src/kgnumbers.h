@@ -29,6 +29,10 @@ bool kfinitep(TValue obj);
 bool kintegerp(TValue obj);
 bool krationalp(TValue obj);
 bool krealp(TValue obj);
+bool kexactp(TValue obj);
+bool kinexactp(TValue obj);
+bool kundefinedp(TValue obj);
+bool krobustp(TValue obj);
 
 
 /* 12.5.2 =? */

@@ -804,7 +804,14 @@ void kinit_ground_env(klisp_State *K)
     */
 
     /* 12.6.1 exact?, inexact?, robust?, undefined? */
-    /* TODO */
+    add_applicative(K, ground_env, "exact?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kexactp));
+    add_applicative(K, ground_env, "inexact?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kinexactp));
+    add_applicative(K, ground_env, "robust?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(krobustp));
+    add_applicative(K, ground_env, "undefined?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kundefinedp));
 
     /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
     /* TODO */
