@@ -20,7 +20,7 @@
 #include "kghelpers.h"
 #include "kgpair_mut.h"
 #include "kgeqp.h" /* eq? checking in memq and assq */
-#include "kgnumbers.h" /* for kpositivep and kintegerp */
+#include "kgnumbers.h" /* for kpositivep and keintegerp */
 
 /* 4.7.1 set-car!, set-cdr! */
 void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -167,8 +167,8 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
     UNUSED(xparams);
 
     bind_3tp(K, ptree, "any", anytype, obj,
-	     "integer", kintegerp, tk1,
-	     "integer", kintegerp, tk2);
+	     "exact integer", keintegerp, tk1,
+	     "exact integer", keintegerp, tk2);
 
     if (knegativep(tk1) || knegativep(tk2)) {
 	klispE_throw_simple(K, "negative index");

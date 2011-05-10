@@ -24,7 +24,7 @@
 #include "kghelpers.h"
 #include "kgchars.h" /* for kcharp */
 #include "kgstrings.h"
-#include "kgnumbers.h" /* for kintegerp & knegativep */
+#include "kgnumbers.h" /* for keintegerp & knegativep */
 
 /* 13.1.1? string? */
 /* uses typep */
@@ -34,7 +34,7 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_al1tp(K, ptree, "integer", kintegerp, tv_s, 
+    bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, 
 	       maybe_char);
 
     char fill = ' ';
@@ -71,7 +71,7 @@ void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "string", ttisstring, str,
-	     "integer", kintegerp, tv_i);
+	     "exact integer", keintegerp, tv_i);
 
     if (!ttisfixint(tv_i)) {
 	/* TODO show index */
@@ -96,7 +96,7 @@ void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
-	     "integer", kintegerp, tv_i, "char", ttischar, tv_ch);
+	     "exact integer", keintegerp, tv_i, "char", ttischar, tv_ch);
 
     if (!ttisfixint(tv_i)) {
 	/* TODO show index */
@@ -245,8 +245,8 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
-	     "integer", kintegerp, tv_start,
-	     "integer", kintegerp, tv_end);
+	     "exact integer", keintegerp, tv_start,
+	     "exact integer", keintegerp, tv_end);
 
     if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
 	  ivalue(tv_start) > kstring_size(str)) {

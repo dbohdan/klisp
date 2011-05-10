@@ -27,6 +27,7 @@
 bool knumberp(TValue obj);
 bool kfinitep(TValue obj);
 bool kintegerp(TValue obj);
+bool keintegerp(TValue obj);
 bool krationalp(TValue obj);
 bool krealp(TValue obj);
 bool kexactp(TValue obj);

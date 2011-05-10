@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "klimits.h"
 #include "klispconf.h"
@@ -232,8 +233,11 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 /* Simple types (value in TValue struct) */
 #define ttisfixint(o)	(tbasetype_(o) == K_TAG_FIXINT)
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
-#define ttisinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
+#define ttiseinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+#define ttisinteger(o) ({ TValue o__ = (o);				\
+	    (ttiseinteger(o__) ||					\
+	     (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})
 #define ttisbigrat(o)	(tbasetype_(o) == K_TAG_BIGRAT)
 #define ttisrational(o_)				\
     ({ TValue t_ = o_;					\

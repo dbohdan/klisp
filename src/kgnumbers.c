@@ -34,9 +34,10 @@ bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
 bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
 /* obj is known to be a number */
 bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
-/* TEMP: for now only fixint, bigints & rational, should also include inexact 
-   integers */
+/* fixint, bigints & inexact integers */
 bool kintegerp(TValue obj) { return ttisinteger(obj); }
+/* only exact integers (like for indices), bigints & fixints */
+bool keintegerp(TValue obj) { return ttiseinteger(obj); }
 bool krationalp(TValue obj) { return ttisrational(obj); }
 /* all real are rationals in klisp */
 bool krealp(TValue obj) { return ttisreal(obj); }
