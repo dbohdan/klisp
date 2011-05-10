@@ -54,7 +54,7 @@ void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree,
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, ptree, "integer", ttisinteger, itv);
+    bind_1tp(K, ptree, "exact integer", ttiseinteger, itv);
     
     if (ttisbigint(itv)) {
 	klispE_throw_simple(K, "integer out of ASCII range [0 - 127]");
