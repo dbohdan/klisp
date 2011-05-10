@@ -735,17 +735,17 @@ void kinit_ground_env(klisp_State *K)
 
     /* 12.5.2 =? */
     add_applicative(K, ground_env, "=?", ftyped_kbpredp, 3,
-		    symbol, p2tv(knumberp), p2tv(knum_eqp));
+		    symbol, p2tv(knumber_wpvp), p2tv(knum_eqp));
     
     /* 12.5.3 <?, <=?, >?, >=? */
     add_applicative(K, ground_env, "<?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp), p2tv(knum_ltp));
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_ltp));
     add_applicative(K, ground_env, "<=?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp),  p2tv(knum_lep));
+		    symbol, p2tv(kreal_wpvp),  p2tv(knum_lep));
     add_applicative(K, ground_env, ">?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp), p2tv(knum_gtp));
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_gtp));
     add_applicative(K, ground_env, ">=?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp), p2tv(knum_gep));
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_gep));
 
     /* 12.5.4 + */
     add_applicative(K, ground_env, "+", kplus, 0);

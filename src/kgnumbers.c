@@ -29,7 +29,14 @@
 /* use ftypep & ftypep_predp */
 
 /* Helpers for typed predicates */
-bool knumberp(TValue obj) { return ttype(obj) <= K_LAST_NUMBER_TYPE; }
+bool knumberp(TValue obj) { return ttisnumber(obj); }
+/* TEMP used in =? for type predicate (XXX it's not actually a type
+   error, but it's close enough and otherwise should define a 
+   new bpredp for numeric predicates...) */
+bool knumber_wpvp(TValue obj) 
+{ 
+    return ttisnumber(obj) && !ttisrwnpv(obj) && !ttisundef(obj); 
+}
 /* This is used in gcd & lcm */
 bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
 /* obj is known to be a number */
@@ -39,8 +46,11 @@ bool kintegerp(TValue obj) { return ttisinteger(obj); }
 /* only exact integers (like for indices), bigints & fixints */
 bool keintegerp(TValue obj) { return ttiseinteger(obj); }
 bool krationalp(TValue obj) { return ttisrational(obj); }
-/* all real are rationals in klisp */
 bool krealp(TValue obj) { return ttisreal(obj); }
+/* TEMP used in <? & co for type predicate (XXX it's not actually a type
+   error, but it's close enough and otherwise should define a 
+   new bpredp for numeric predicates...) */
+bool kreal_wpvp(TValue obj) { return ttisreal(obj) && !ttisrwnpv(obj); }
 
 bool kexactp(TValue obj) { return ttisexact(obj); }
 bool kinexactp(TValue obj) { return ttisinexact(obj); }
@@ -133,12 +143,9 @@ bool knum_eqp(klisp_State *K, TValue n1, TValue n2)
 	return (tv_equal(n1, n2));
     case K_TRWNPV: 
     case K_TUNDEFINED: /* no primary value, should throw an error */
-	/* TODO add irritant */
-	klispE_throw_simple(K, "no primary value");
-	return false;
+	/* TEMP: this was already contemplated in type predicate */
     default:
-	/* shouldn't happen */
-	assert(0);
+	klispE_throw_simple(K, "unsopported type");
 	return false;
     }
 }
@@ -172,12 +179,9 @@ bool knum_ltp(klisp_State *K, TValue n1, TValue n2)
 				     tv_equal(n2, KIPINF));
     case K_TRWNPV: 
     case K_TUNDEFINED: /* no primary value, should throw an error */
-	/* TODO add irritant */
-	klispE_throw_simple(K, "no primary value");
-	return false;
+	/* TEMP: this was already contemplated in type predicate */
     default:
-	/* shouldn't happen */
-	assert(0);
+	klispE_throw_simple(K, "unsopported type");
 	return false;
     }
 }

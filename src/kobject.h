@@ -253,7 +253,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 	(ttisundef(t_) || ttisdouble(t_) || ttisrwnpv(t_) || ttisiinf(t_)); })
 /* For now, all inexact numbers are not robust and have -inf & +inf bounds */
 #define ttisrobust(o)	(ttisexact(o))
-#define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE); })
+#define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE)
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
 #define ttisrwnpv(o)	(tbasetype_(o) == K_TAG_RWNPV)

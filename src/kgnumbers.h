@@ -25,11 +25,13 @@
 /* XXX: this should probably be in a file knumber.h but there is no real need for 
    that file yet */
 bool knumberp(TValue obj);
+bool knumber_wpvp(TValue obj);
 bool kfinitep(TValue obj);
 bool kintegerp(TValue obj);
 bool keintegerp(TValue obj);
 bool krationalp(TValue obj);
 bool krealp(TValue obj);
+bool kreal_wpvp(TValue obj);
 bool kexactp(TValue obj);
 bool kinexactp(TValue obj);
 bool kundefinedp(TValue obj);
