@@ -300,6 +300,8 @@ TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
 /* GC: assumes n1 & n2 rooted */
 TValue knum_times(klisp_State *K, TValue n1, TValue n2)
 {
+    kensure_same_exactness(K, n1, n2);
+    TValue res; /* used for results with no primary value */
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT: {
 	int64_t res = (int64_t) ivalue(n1) * (int64_t) ivalue(n2);
@@ -318,20 +320,56 @@ TValue knum_times(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigrat(n2);
 	return kbigrat_times(K, n1, n2);
     }
+    case K_TDOUBLE: {
+	double res = dvalue(n1) * dvalue(n2);
+	/* check under & overflow */
+	if (kcurr_strict_arithp(K)) {
+	    if (res == 0 && dvalue(n1) != 0.0 && dvalue(n2) != 0.00) {
+		klispE_throw_simple(K, "underflow");
+		return KINERT;
+	    } else if (isinf(res)) {
+		klispE_throw_simple(K, "overflow");
+		return KINERT;
+	    }
+	}
+	/* correctly encapsulate infinities and -0.0 */
+	return ktag_double(res);
+    }
     case K_TEINF:
 	if (!ttiseinf(n1) || !ttiseinf(n2)) {
 	    if (kfast_zerop(n1) || kfast_zerop(n2)) {
 		/* report: #e+infinity * 0 has no primary value */
-		klispE_throw_simple(K, "result has no primary value");
-		return KINERT;
-	    } else
+		res = KRWNPV;
+		break;
+	    } else if (ttisexact(n1) && ttisexact(n2))
 		return knum_same_signp(K, n1, n2)? KEPINF : KEMINF;
+	    else 
+		return knum_same_signp(K, n1, n2)? KIPINF : KIMINF;
 	} else
 	    return (tv_equal(n1, n2))? KEPINF : KEMINF;
+    case K_TIINF:
+	if (!ttisiinf(n1) || !ttisiinf(n2)) {
+	    if (kfast_zerop(n1) || kfast_zerop(n2)) {
+		/* report: #i[+-]infinity * 0 has no primary value */
+		res = KRWNPV;
+		break;
+	    } else
+		return knum_same_signp(K, n1, n2)? KIPINF : KIMINF;
+	} else
+	    return (tv_equal(n1, n2))? KIPINF : KIMINF;
+    case K_TRWNPV:
+	res = KRWNPV;
+	break;
+    case K_TUNDEFINED:
+	res = KUNDEF;
+	break;
     default:
 	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
+
+    /* check for no primary value and value of strict arith */
+    arith_return(K, res);
 }
 
 /* May throw an error */
@@ -723,43 +761,50 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* next the cyclic part */
     TValue cres = i2tv(1);
 
-    if (cpairs == 0) {
+    if (cpairs == 0 && !ttisnwnpv(ares)) { /* #undefined or #real */
 	/* speed things up if there is no cycle */
 	res = ares;
 	krooted_vars_pop(K);
     } else {
 	bool all_one = true;
+	bool all_exact = true;
 
 	krooted_vars_push(K, &cres);
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
 	    all_one = all_one && kfast_onep(first);
+	    all_exact = all_exact && ttisexact(first);
 	    cres = knum_times(K, cres, first);
 	}
 
 	/* think of cres as the product of an infinite series */
+	if (ttisnwnpv(ares))
+	    ; /* do nothing */
 	if (kfast_zerop(cres)) 
 	    ; /* do nothing */
-	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1)))
-	    cres = i2tv(0);
+	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1))) {
+	    if (all_exact)
+		cres = i2tv(0);
+	    else 
+		cres = d2tv(0.0);
+	}
 	else if (kfast_onep(cres)) {
-	    if (all_one)
-		cres = i2tv(1);
-	    else {
-		klispE_throw_simple(K, "result has no primary value");
-		return;
-	    }
+	    if (all_one) {
+		if (all_exact)
+		    cres = i2tv(1);
+		else
+		    cres = d2tv(1.0);
+	    } else 
+		cres = KRWNPV;
 	} else if (knum_gtp(K, cres, i2tv(1))) {
 	    /* ASK JOHN: this is as per the report, but maybe we should check
 	       that all elements are positive... */
-	    cres = KEPINF;
-	} else {
-	    /* cycle result less than zero */
-	    klispE_throw_simple(K, "result has no primary value");
-	    return;
-	}
+	    cres = all_exact? KEPINF : KIPINF;
+	} else
+	    cres = KRWNPV;
 
+	/* this will throw error if necessary on no primary value */
 	res = knum_times(K, ares, cres);
 	krooted_vars_pop(K);
 	krooted_vars_pop(K);
