@@ -114,6 +114,9 @@ inline int32_t min_ttype(TValue obj1, TValue obj2)
 bool knum_eqp(klisp_State *K, TValue n1, TValue n2) 
 { 
     /* for simplicity if one is inexact convert the other to inexact */
+    /* ASK John what happens on under & overflow, probably an error shouldn't 
+       be signaled but instead inexact should be converted to exact to perform
+       the check?? */
     kensure_same_exactness(K, n1, n2);
 
     switch(max_ttype(n1, n2)) {
@@ -145,7 +148,7 @@ bool knum_eqp(klisp_State *K, TValue n1, TValue n2)
     case K_TUNDEFINED: /* no primary value, should throw an error */
 	/* TEMP: this was already contemplated in type predicate */
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return false;
     }
 }
@@ -181,7 +184,7 @@ bool knum_ltp(klisp_State *K, TValue n1, TValue n2)
     case K_TUNDEFINED: /* no primary value, should throw an error */
 	/* TEMP: this was already contemplated in type predicate */
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return false;
     }
 }
@@ -199,6 +202,21 @@ bool knum_gep(klisp_State *K, TValue n1, TValue n2)
     return !knum_ltp(K, n1, n2); 
 }
 
+/*
+** Helper to check strict arithmetic flag if the result may not
+** have a primary value
+*/
+/* may evaluate K & n more than once */
+#define arith_return(K, n)						\
+    ({ if (ttisnwnpv(n) && kcurr_strict_arithp(K)) {			\
+	    klispE_throw_simple_with_irritants(K, "result has no "	\
+					       "primary value",		\
+					       1, n);			\
+	    return KINERT;						\
+	} else { return n;}})
+
+
+
 /* REFACTOR/MAYBE: add small inlineable plus that
    first tries fixint addition and if that fails calls knum_plus */
 
@@ -206,6 +224,8 @@ bool knum_gep(klisp_State *K, TValue n1, TValue n2)
 /* GC: assumes n1 & n2 rooted */
 TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
 {
+    kensure_same_exactness(K, n1, n2);
+    TValue res; /* used for results with no primary value */
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT: {
 	int64_t res = (int64_t) ivalue(n1) + (int64_t) ivalue(n2);
@@ -224,6 +244,21 @@ TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigrat(n2);
 	return kbigrat_plus(K, n1, n2);
     }
+    case K_TDOUBLE: {
+	double res = dvalue(n1) + dvalue(n2);
+	/* check under & overflow */
+	if (kcurr_strict_arithp(K)) {
+	    if (res == 0 && dvalue(n1) != -dvalue(n2)) {
+		klispE_throw_simple(K, "underflow");
+		return KINERT;
+	    } else if (isinf(res)) {
+		klispE_throw_simple(K, "overflow");
+		return KINERT;
+	    } 
+	}
+	/* correctly encapsulate infinities and -0.0 */
+	return ktag_double(res);
+    }
     case K_TEINF:
 	if (!ttiseinf(n1))
 	    return n2;
@@ -231,14 +266,34 @@ TValue knum_plus(klisp_State *K, TValue n1, TValue n2)
 	    return n1;
 	if (tv_equal(n1, n2))
 	    return n1;
-	else {
-	    klispE_throw_simple(K, "no primary value");
-	    return KINERT;
+	else { /* no primary value; handle error at the end of function */
+	    res = KRWNPV;
+	    break; 
 	}
+    case K_TIINF:
+	if (!ttisiinf(n1))
+	    return n2;
+	else if (!ttisiinf(n2))
+	    return n1;
+	if (tv_equal(n1, n2))
+	    return n1;
+	else { /* no primary value; handle error at the end of function */
+	    res = KRWNPV;
+	    break;
+	}
+    case K_TRWNPV: /* no primary value */
+	res = KRWNPV;
+	break;
+    case K_TUNDEFINED: /* undefined */
+	res = KUNDEF;
+	break;
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
+
+    /* check for no primary value and value of strict arith */
+    arith_return(K, res);
 }
 
 /* May throw an error */
@@ -270,11 +325,11 @@ TValue knum_times(klisp_State *K, TValue n1, TValue n2)
 		klispE_throw_simple(K, "result has no primary value");
 		return KINERT;
 	    } else
-		return knum_same_signp(n1, n2)? KEPINF : KEMINF;
+		return knum_same_signp(K, n1, n2)? KEPINF : KEMINF;
 	} else
 	    return (tv_equal(n1, n2))? KEPINF : KEMINF;
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -312,7 +367,7 @@ TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
 	} else
 	    return n1;
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -348,13 +403,13 @@ TValue knum_divided(klisp_State *K, TValue n1, TValue n2)
 				"no primary value");
 	    return KINERT;
 	} else if (ttiseinf(n1)) {
-	    return knum_same_signp(n1, n2)? KEPINF : KEMINF;
+	    return knum_same_signp(K, n1, n2)? KEPINF : KEMINF;
 	} else { /* ttiseinf(n2) */
 	    return i2tv(0);
 	}
     }
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -385,7 +440,7 @@ TValue knum_abs(klisp_State *K, TValue n)
 	return KEPINF;
     default:
 	/* shouldn't happen */
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -417,7 +472,7 @@ TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 	else
 	    return KEPINF;
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -449,7 +504,7 @@ TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
     case K_TEINF:
 	return KEPINF;
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -465,7 +520,7 @@ TValue knum_numerator(klisp_State *K, TValue n)
 	return kbigrat_numerator(K, n);
 /*    case K_TEINF: infinities are not rational! */
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -481,7 +536,7 @@ TValue knum_denominator(klisp_State *K, TValue n)
 	return kbigrat_denominator(K, n);
 /*    case K_TEINF: infinities are not rational! */
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -499,7 +554,7 @@ TValue knum_real_to_integer(klisp_State *K, TValue n, kround_mode mode)
 	klispE_throw_simple(K, "infinite value");
 	return KINERT;
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -528,9 +583,9 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 	if (tv_equal(n1, n2)) {
 	    klispE_throw_simple(K, "result with no primary value");
 	    return KINERT;
-	} else if (knegativep(n1) && kpositivep(n2)) {
+	} else if (knegativep(K, n1) && kpositivep(K, n2)) {
 	    return i2tv(0);
-	} else if (knegativep(n1)) {
+	} else if (knegativep(K, n1)) {
 	    /* n1 -inf, n2 finite negative */
 	    /* ASK John: is this behaviour for infinities ok? */
 	    /* Also in the report example both 1/3 & 1/2 are simpler than 
@@ -542,7 +597,7 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 	    return knum_real_to_integer(K, n1, K_CEILING);
 	}
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -567,7 +622,7 @@ TValue knum_rationalize(klisp_State *K, TValue n1, TValue n2)
 	    return KINERT;
 	}
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
 }
@@ -579,8 +634,8 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
     int32_t cpairs; 
-    int32_t pairs = check_typed_list(K, "+", "number", knumberp, true,
-				     ptree, &cpairs);
+    int32_t pairs = check_typed_list(K, "+", "number", knumberp, 
+				     true, ptree, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -601,12 +656,14 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* next the cyclic part */
     TValue cres = i2tv(0); /* push it only if needed */
 
-    if (cpairs == 0) {
-	/* speed things up if there is no cycle */
+    if (cpairs == 0 && !ttisnwnpv(ares)) { /* #undefined or #real */
+	/* speed things up if there is no cycle and 
+	 no possible error (on no primary value) */
 	res = ares;
 	krooted_vars_pop(K);
     } else {
 	bool all_zero = true;
+	bool all_exact = true;
 
 	krooted_vars_push(K, &cres);
 	while(cpairs--) {
@@ -614,18 +671,24 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    tail = kcdr(tail);
 
 	    all_zero = all_zero && kfast_zerop(first);
+	    all_exact = all_exact && ttisexact(first);
 
 	    cres = knum_plus(K, cres, first);
 	}
 
-	if (kfast_zerop(cres)) {
+	if (ttisnwnpv(cres)) /* #undefined or #real */
+	    ; /* do nothing, check is made later */
+	else if (kfast_zerop(cres)) {
 	    if (!all_zero) {
-		/* report */
-		klispE_throw_simple(K, "result has no primary value");
+		cres = KRWNPV; /* check is made later */
 		return;
 	    }
-	} else
-	    cres = knegativep(cres)? KEMINF : KEPINF;
+	} else if (all_exact)
+	    cres = knegativep(K, cres)? KEMINF : KEPINF;
+	else
+	    cres = knegativep(K, cres)? KIMINF : KIPINF;
+
+	/* here if any of the two has no primary an error is signaled */
 	res = knum_plus(K, ares, cres);
 	krooted_vars_pop(K);
 	krooted_vars_pop(K);
@@ -678,7 +741,7 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	/* think of cres as the product of an infinite series */
 	if (kfast_zerop(cres)) 
 	    ; /* do nothing */
-	else if (kpositivep(cres) && knum_ltp(K, cres, i2tv(1)))
+	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1)))
 	    cres = i2tv(0);
 	else if (kfast_onep(cres)) {
 	    if (all_one)
@@ -764,7 +827,7 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 		return;
 	    } 
 	} else
-	    cres = knegativep(cres)? KEMINF : KEPINF;
+	    cres = knegativep(K, cres)? KEMINF : KEPINF;
 	res = knum_plus(K, ares, cres);
 	krooted_vars_pop(K);
 	krooted_vars_pop(K);
@@ -932,7 +995,7 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    return;
 	}
     default:
-	klispE_throw_simple(K, "unsopported type");
+	klispE_throw_simple(K, "unsupported type");
 	return;
     }
 
@@ -960,36 +1023,48 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(TValue n) 
+bool kpositivep(klisp_State *K, TValue n) 
 { 
     switch (ttype(n)) {
     case K_TFIXINT:
     case K_TEINF:
+    case K_TIINF:
 	return ivalue(n) > 0;
     case K_TBIGINT:
 	return kbigint_positivep(n);
     case K_TBIGRAT:
 	return kbigrat_positivep(n);
+    case K_TDOUBLE:
+	return dvalue(n) > 0.0;
+    case K_TRWNPV:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return false;
+	/* complex and undefined should be captured by type predicate */
     default:
-	/* shouldn't happen */
-	assert(0);
+	klispE_throw_simple(K, "unsupported type");
 	return false;
     }
 }
 
-bool knegativep(TValue n) 
+bool knegativep(klisp_State *K, TValue n) 
 { 
     switch (ttype(n)) {
     case K_TFIXINT:
     case K_TEINF:
+    case K_TIINF:
 	return ivalue(n) < 0;
     case K_TBIGINT:
 	return kbigint_negativep(n);
     case K_TBIGRAT:
 	return kbigrat_negativep(n);
+    case K_TDOUBLE:
+	return dvalue(n) < 0.0;
+    case K_TRWNPV:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return false;
+	/* complex and undefined should be captured by type predicate */
     default:
-	/* shouldn't happen */
-	assert(0);
+	klispE_throw_simple(K, "unsupported type");
 	return false;
     }
 }
@@ -1271,7 +1346,7 @@ void kget_strict_arithmeticp(klisp_State *K, TValue *xparams, TValue ptree,
     check_0p(K, ptree);
 
     /* can access directly, no need to call do_access */
-    TValue res = kcurr_strict_arithp(K);
+    TValue res = b2tv(kcurr_strict_arithp(K));
     kapply_cc(K, res);
 }
 
@@ -1334,7 +1409,7 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	/* think of cres as the product of an infinite series */
 	if (kfast_zerop(cres)) 
 	    ; /* do nothing */
-	else if (kpositivep(cres) && knum_ltp(K, cres, i2tv(1)))
+	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1)))
 	    cres = i2tv(0);
 	else if (kfast_onep(cres)) {
 	    if (all_one)

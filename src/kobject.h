@@ -258,6 +258,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
 #define ttisrwnpv(o)	(tbasetype_(o) == K_TAG_RWNPV)
 #define ttisundef(o)	(tbasetype_(o) == K_TAG_UNDEFINED)
+#define ttisnwnpv(o_)				     \
+    ({ TValue t_ = o_;				     \
+	(ttisundef(t_) || ttisrwnpv(t_)); })
 
 #define ttisnil(o)	(tbasetype_(o) == K_TAG_NIL)
 #define ttisignore(o)	(tbasetype_(o) == K_TAG_IGNORE)
@@ -595,13 +598,14 @@ const TValue kfree;
 #define d2tv_(d_) {.d = d_}
 #define ktag_double(d_)							\
     ({ double d__ = d_;							\
-	TValue res;							\
-	if (isnan(d__)) res = KRWNPV;					\
-	else if (isinf(d__)) res = (d__ == INFINITY)? KIPINF : KIMINF;	\
+	TValue res__;							\
+	if (isnan(d__)) res__ = KRWNPV;					\
+	else if (isinf(d__)) res__ = (d__ == INFINITY)?			\
+				 KIPINF : KIMINF;			\
 	/* +0.0 == -0.0 too, but that doesn't hurt */			\
-	else if (d_ == -0.0) res = d2tv(+0.0);				\
-	else res = d2tv(d__);						\
-	res;})
+	else if (d__ == -0.0) res__ = d2tv(+0.0);			\
+	else res__ = d2tv(d__);						\
+	res__;})
 
 /* Macros to create TValues of non-heap allocated types */
 #define ch2tv(ch_) ((TValue) ch2tv_(ch_))

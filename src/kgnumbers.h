@@ -84,8 +84,8 @@ bool kzerop(TValue n);
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(TValue n);
-bool knegativep(TValue n);
+bool kpositivep(klisp_State *K, TValue n);
+bool knegativep(klisp_State *K, TValue n);
 bool koddp(TValue n);
 bool kevenp(TValue n);
 
@@ -179,18 +179,30 @@ void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree,
 /* REFACTOR: These should be in a knumber.h header */
 
 /* Misc Helpers */
-/* TEMP: only infinities, fixints and bigints for now */
-inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
-inline bool kfast_onep(TValue n) { return ttisfixint(n) && ivalue(n) == 1; }
-/* TEMP: only exact infinties */
-inline TValue kneg_inf(TValue i) 
+/* TEMP: only reals (no complex numbers) */
+inline bool kfast_zerop(TValue n) 
 { 
-    return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
+    return (ttisfixint(n) && ivalue(n) == 0) ||
+	(ttisdouble(n) && dvalue(n) == 0.0); 
 }
 
-inline bool knum_same_signp(TValue n1, TValue n2) 
+inline bool kfast_onep(TValue n) 
 { 
-    return kpositivep(n1) == kpositivep(n2); 
+    return (ttisfixint(n) && ivalue(n) == 1) ||
+	(ttisdouble(n) && dvalue(n) == 1.0); 
+}
+
+inline TValue kneg_inf(TValue i) 
+{ 
+    if (ttiseinf(i))
+	return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
+    else /* ttisiinf(i) */
+	return tv_equal(i, KIPINF)? KIMINF : KIPINF; 
+}
+
+inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2) 
+{ 
+    return kpositivep(K, n1) == kpositivep(K, n2); 
 }
 
 #endif

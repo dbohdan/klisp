@@ -170,7 +170,7 @@ void encycleB(klisp_State *K, TValue *xparams, TValue ptree,
 	     "exact integer", keintegerp, tk1,
 	     "exact integer", keintegerp, tk2);
 
-    if (knegativep(tk1) || knegativep(tk2)) {
+    if (knegativep(K, tk1) || knegativep(K, tk2)) {
 	klispE_throw_simple(K, "negative index");
 	return;
     }

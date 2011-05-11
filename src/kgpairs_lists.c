@@ -241,7 +241,7 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, ptree, "any", anytype, obj,
 	     "exact integer", keintegerp, tk);
 
-    if (knegativep(tk)) {
+    if (knegativep(K, tk)) {
 	klispE_throw_simple(K, "negative index");
 	return;
     }
@@ -294,7 +294,7 @@ void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_2tp(K, ptree, "any", anytype, obj,
 	     "exact integer", keintegerp, tk);
 
-    if (knegativep(tk)) {
+    if (knegativep(K, tk)) {
 	klispE_throw_simple(K, "negative index");
 	return;
     }

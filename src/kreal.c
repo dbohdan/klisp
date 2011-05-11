@@ -93,7 +93,7 @@ double kbigrat_to_double(klisp_State *K, Bigrat *bigrat)
    if set */
 TValue kexact_to_inexact(klisp_State *K, TValue n)
 {
-    bool strictp = bvalue(kcurr_strict_arithp(K));
+    bool strictp = kcurr_strict_arithp(K);
 
     switch(ttype(n)) {
     case K_TFIXINT:

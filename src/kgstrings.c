@@ -41,7 +41,7 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (get_opt_tpar(K, "make-string", K_TCHAR, &maybe_char))
 	fill = chvalue(maybe_char);
 
-    if (knegativep(tv_s)) {
+    if (knegativep(K, tv_s)) {
 	klispE_throw_simple(K, "negative size");    
 	return;
     } else if (!ttisfixint(tv_s)) {
