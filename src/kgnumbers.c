@@ -454,9 +454,12 @@ TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
 /* GC: assumes n1 & n2 rooted */
 TValue knum_divided(klisp_State *K, TValue n1, TValue n2)
 {
+    kensure_same_exactness(K, n1, n2);
+    TValue res; /* used for results with no primary value */
+
     /* first check the most common error, division by zero */
     if (kfast_zerop(n2)) {
-	klispE_throw_simple(K, "division by zero (no primary value)");
+	klispE_throw_simple(K, "division by zero");
 	return KINERT;
     }
 
@@ -475,10 +478,24 @@ TValue knum_divided(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigrat(n2);
 	return kbigrat_divided(K, n1, n2);
     }
+    case K_TDOUBLE: {
+	double res = dvalue(n1) / dvalue(n2);
+	/* check under & overflow */
+	if (kcurr_strict_arithp(K)) {
+	    if (res == 0 && dvalue(n1) != 0.0) {
+		klispE_throw_simple(K, "underflow");
+		return KINERT;
+	    } else if (isinf(res)) {
+		klispE_throw_simple(K, "overflow");
+		return KINERT;
+	    }
+	}
+	/* correctly encapsulate infinities and -0.0 */
+	return ktag_double(res);
+    }
     case K_TEINF: {
 	if (ttiseinf(n1) && ttiseinf(n2)) {
-	    klispE_throw_simple(K, "(infinity divided by infinity) "
-				"no primary value");
+	    klispE_throw_simple(K, "infinity divided by infinity");
 	    return KINERT;
 	} else if (ttiseinf(n1)) {
 	    return knum_same_signp(K, n1, n2)? KEPINF : KEMINF;
@@ -486,10 +503,29 @@ TValue knum_divided(klisp_State *K, TValue n1, TValue n2)
 	    return i2tv(0);
 	}
     }
+    case K_TIINF:
+	if (ttisiinf(n1) && ttisiinf(n2)) {
+	    klispE_throw_simple(K, "infinity divided by infinity");
+	    return KINERT;
+	} else if (ttisiinf(n1)) {
+	    return knum_same_signp(K, n1, n2)? KIPINF : KIMINF;
+	} else { /* ttiseinf(n2) */
+	    /* NOTE: I guess this doens't count as underflow */
+	    return d2tv(0.0);
+	}
+    case K_TRWNPV:
+	res = KRWNPV;
+	break;
+    case K_TUNDEFINED:
+	res = KUNDEF;
+	break;
     default:
 	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
+
+    /* check for no primary value and value of strict arith */
+    arith_return(K, res);
 }
 
 /* GC: assumes n rooted */
@@ -1482,47 +1518,55 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* next the cyclic part */
     TValue cres = i2tv(1);
 
-    if (cpairs == 0) {
+    if (cpairs == 0 && !ttisnwnpv(ares)) { /* #undefined or #real */
 	/* speed things up if there is no cycle */
 	res = ares;
 	krooted_vars_pop(K);
     } else {
 	bool all_one = true;
+	bool all_exact = true;
 
 	krooted_vars_push(K, &cres);
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
 	    all_one = all_one && kfast_onep(first);
+	    all_exact = all_exact && ttisexact(first);
 	    cres = knum_times(K, cres, first);
 	}
 
 	/* think of cres as the product of an infinite series */
+	if (ttisnwnpv(ares))
+	    ; /* do nothing */
 	if (kfast_zerop(cres)) 
 	    ; /* do nothing */
-	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1)))
-	    cres = i2tv(0);
+	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1))) {
+	    if (all_exact)
+		cres = i2tv(0);
+	    else 
+		cres = d2tv(0.0);
+	}
 	else if (kfast_onep(cres)) {
-	    if (all_one)
-		cres = i2tv(1);
-	    else {
-		klispE_throw_simple(K, "result has no primary value");
-		return;
-	    }
+	    if (all_one) {
+		if (all_exact)
+		    cres = i2tv(1);
+		else
+		    cres = d2tv(1.0);
+	    } else 
+		cres = KRWNPV;
 	} else if (knum_gtp(K, cres, i2tv(1))) {
 	    /* ASK JOHN: this is as per the report, but maybe we should check
 	       that all elements are positive... */
-	    cres = KEPINF;
-	} else {
-	    /* cycle result less than zero */
-	    klispE_throw_simple(K, "result has no primary value");
-	    return;
-	}
+	    cres = all_exact? KEPINF : KIPINF;
+	} else
+	    cres = KRWNPV;
 
+	/* this will throw error if necessary on no primary value */
 	res = knum_times(K, ares, cres);
 	krooted_vars_pop(K);
 	krooted_vars_pop(K);
     } 
+
     /* now divide first value by the product of all the elements in the list */
     krooted_tvs_push(K, res);
     res = knum_divided(K, first_val, res);
