@@ -1248,7 +1248,7 @@ bool knegativep(klisp_State *K, TValue n)
     }
 }
 
-/* n is finite */
+/* n is finite, integer */
 bool koddp(TValue n) 
 { 
     switch (ttype(n)) {
@@ -1256,8 +1256,9 @@ bool koddp(TValue n)
 	return (ivalue(n) & 1) != 0; 
     case K_TBIGINT:
 	return kbigint_oddp(n);
+    case K_TDOUBLE:
+	return fmod(dvalue(n), 2.0) != 0.0;
     default:
-	/* shouldn't happen */
 	assert(0);
 	return false;
     }
@@ -1270,8 +1271,9 @@ bool kevenp(TValue n)
 	return (ivalue(n) & 1) == 0; 
     case K_TBIGINT:
 	return kbigint_evenp(n);
+    case K_TDOUBLE:
+	return fmod(dvalue(n), 2.0) == 0.0;
     default:
-	/* shouldn't happen */
 	assert(0);
 	return false;
     }

@@ -660,7 +660,7 @@ void kdouble_print_string(klisp_State *K, TValue tv_double,
 double kdouble_div_mod(double n, double d, double *res_mod) 
 {
     double div = floor(n / d);
-    double mod = n - div * d;
+    double mod = fmod(n, d);
 
     /* div, mod or div-and-mod */
     /* 0 <= mod0 < |d| */
@@ -680,7 +680,7 @@ double kdouble_div_mod(double n, double d, double *res_mod)
 double kdouble_div0_mod0(double n, double d, double *res_mod) 
 {
     double div = floor(n / d);
-    double mod = n - div * d;
+    double mod = fmod(n, d);
 
     /* div0, mod0 or div-and-mod0 */
     /*
