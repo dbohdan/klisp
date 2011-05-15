@@ -656,3 +656,59 @@ void kdouble_print_string(klisp_State *K, TValue tv_double,
     }
     return;
 }
+
+double kdouble_div_mod(double n, double d, double *res_mod) 
+{
+    double div = floor(n / d);
+    double mod = n - div * d;
+
+    /* div, mod or div-and-mod */
+    /* 0 <= mod0 < |d| */
+    if (mod < 0.0) {
+	if (d < 0.0) {
+	    mod -= d;
+	    div += 1.0;
+	} else {
+	    mod += d;
+	    div -= 1.0;
+	}
+    }
+    *res_mod = mod;
+    return div;
+}
+
+double kdouble_div0_mod0(double n, double d, double *res_mod) 
+{
+    double div = floor(n / d);
+    double mod = n - div * d;
+
+    /* div0, mod0 or div-and-mod0 */
+    /*
+    ** Adjust q and r so that:
+    ** -|d/2| <= mod0 < |d/2| which is the same as
+    ** dmin <= mod0 < dmax, where 
+    ** dmin = -|d/2| and dmax = |d/2| 
+    */
+    double dmin = -((d<0.0? -d : d) / 2.0);
+    double dmax = (d<0.0? -d : d) / 2.0;
+	
+    if (mod < dmin) {
+	if (d < 0) {
+	    mod -= d;
+	    div += 1.0;
+	} else {
+	    mod += d;
+	    div -= 1.0;
+	}
+    } else if (mod >= dmax) {
+	if (d < 0) {
+	    mod += d;
+	    div += 1.0;
+	} else {
+	    mod -= d;
+	    div -= 1.0;
+	}
+    }
+    *res_mod = mod;
+    return div;
+}

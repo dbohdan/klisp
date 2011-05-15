@@ -22,6 +22,9 @@ TValue kexact_to_inexact(klisp_State *K, TValue n);
 TValue kinexact_to_exact(klisp_State *K, TValue n);
 
 
+double kdouble_div_mod(double n, double d, double *res_mod);
+double kdouble_div0_mod0(double n, double d, double *res_mod);
+
 /*
 ** read/write interface 
 */

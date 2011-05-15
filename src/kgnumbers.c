@@ -1054,6 +1054,8 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     TValue tv_div, tv_mod;
 
+    kensure_same_exactness(K, tv_n, tv_d);
+
     if (kfast_zerop(tv_d)) {
 	klispE_throw_simple(K, "division by zero");
 	return;
@@ -1096,6 +1098,17 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	else 
 	    tv_div = kbigrat_div0_mod0(K, tv_n, tv_d, &tv_mod);
 	break;
+    case K_TDOUBLE: {
+	/* both are double */
+	double div, mod;
+	if ((flags & FDIV_ZERO) == 0)
+	    div = kdouble_div_mod(dvalue(tv_n), dvalue(tv_d), &mod);
+	else 
+	    div = kdouble_div0_mod0(dvalue(tv_n), dvalue(tv_d), &mod);
+	tv_div = ktag_double(div);
+	tv_mod = ktag_double(mod);
+	break;
+    }
     case K_TEINF:
 	if (ttiseinf(tv_n)) {
 	    klispE_throw_simple(K, "non finite dividend");
@@ -1121,10 +1134,49 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    klispE_throw_simple(K, "non finite divisor");
 	    return;
 	}
-    default:
+    case K_TIINF:
+	if (ttisiinf(tv_n)) {
+	    klispE_throw_simple(K, "non finite dividend");
+	    return;
+	} else { /* if (ttiseinf(tv_d)) */
+	    /* The semantics here are unclear, following the general
+	       guideline of the report that says that if an infinity is 
+	       involved it should be understand as a limit. In that
+	       case once the divisor is greater in magnitude than the
+	       dividend the division stabilizes itself at q = 0; r = n
+	       if both have the same sign, and q = 1; r = +infinity if
+	       both have different sign (but in that case !(r < |d|)
+	       !!) */ 
+            /* RATIONALE: if q were 0 we can't accomplish 
+	       q * d + r = n because q * d is undefined, if q isn't zero
+	       then, either q*d + r is infinite or undefined so
+	       there's no good q.  on the other hand if we want 
+	       n - q*d = r & 0 <= r < d, r can't be infinite because it
+	       would be equal to d, but q*d is infinite, so there's no
+	       way out */
+	    /* throw an exception, until this is resolved */
+	    /* ASK John */
+	    klispE_throw_simple(K, "non finite divisor");
+	    return;
+	}
+    case K_TRWNPV: { /* no primary value */
+	/* ASK John: what happens with undefined & real with no primary values */
+	TValue n = ttisrwnpv(tv_n)? tv_n : tv_d;
+	if (kcurr_strict_arithp(K)) {					
+	    klispE_throw_simple_with_irritants(K, "operand has no primary "
+					       "value", 1, n);
+	    return;
+	} else {
+	    tv_div = KRWNPV;
+	    tv_mod = KRWNPV;
+	    break;
+	}
+    }
+    default: 
 	klispE_throw_simple(K, "unsupported type");
 	return;
     }
+
 
     TValue res;
     if (flags & FDIV_DIV) {
