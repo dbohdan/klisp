@@ -376,6 +376,9 @@ TValue knum_times(klisp_State *K, TValue n1, TValue n2)
 /* GC: assumes n1 & n2 rooted */
 TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
 {
+    kensure_same_exactness(K, n1, n2);
+    TValue res; /* used for results with no primary value */
+
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT: {
 	int64_t res = (int64_t) ivalue(n1) - (int64_t) ivalue(n2);
@@ -394,20 +397,57 @@ TValue knum_minus(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigrat(n2);
 	return kbigrat_minus(K, n1, n2);
     }
+    case K_TDOUBLE: {
+	/* both are double */
+	double res = dvalue(n1) - dvalue(n2);
+	/* check under & overflow */
+	if (kcurr_strict_arithp(K)) {
+	    if (res == 0 && dvalue(n1) != dvalue(n2)) {
+		klispE_throw_simple(K, "underflow");
+		return KINERT;
+	    } else if (isinf(res)) {
+		klispE_throw_simple(K, "overflow");
+		return KINERT;
+	    } 
+	}
+	/* correctly encapsulate infinities and -0.0 */
+	return ktag_double(res);
+    }
     case K_TEINF:
 	if (!ttiseinf(n1))
 	    return kneg_inf(n2);
 	else if (!ttiseinf(n2))
 	    return n1;
 	if (tv_equal(n1, n2)) {
-	    klispE_throw_simple(K, "no primary value");
-	    return KINERT;
+	    /* no primary value; handle error at the end of function */
+	    res = KRWNPV;
+	    break;
 	} else
 	    return n1;
+    case K_TIINF:
+	if (!ttisiinf(n1))
+	    return kneg_inf(n2);
+	else if (!ttisiinf(n2))
+	    return n1;
+	if (tv_equal(n1, n2)) {
+	    /* no primary value; handle error at the end of function */
+	    res = KRWNPV;
+	    break;
+	} else 
+	    return n1;
+    case K_TRWNPV: /* no primary value */
+	res = KRWNPV;
+	break;
+    case K_TUNDEFINED: /* undefined */
+	res = KUNDEF;
+	break;
     default:
 	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
     }
+
+    /* check for no primary value and value of strict arith */
+    arith_return(K, res);
 }
 
 /* May throw an error */
@@ -717,10 +757,8 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	if (ttisnwnpv(cres)) /* #undefined or #real */
 	    ; /* do nothing, check is made later */
 	else if (kfast_zerop(cres)) {
-	    if (!all_zero) {
+	    if (!all_zero)
 		cres = KRWNPV; /* check is made later */
-		return;
-	    }
 	} else if (all_exact)
 	    cres = knegativep(K, cres)? KEMINF : KEPINF;
 	else
@@ -848,35 +886,43 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 
     /* next the cyclic part */
-    TValue cres = i2tv(0);
+    TValue cres = i2tv(0); /* push it only if needed */
 
-    if (cpairs == 0) {
-	/* speed things up if there is no cycle */
+    if (cpairs == 0 && !ttisnwnpv(ares)) { /* #undefined or #real */
+	/* speed things up if there is no cycle and 
+	 no possible error (on no primary value) */
 	res = ares;
 	krooted_vars_pop(K);
     } else {
 	bool all_zero = true;
+	bool all_exact = true;
 
 	krooted_vars_push(K, &cres);
 	while(cpairs--) {
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
+
 	    all_zero = all_zero && kfast_zerop(first);
+	    all_exact = all_exact && ttisexact(first);
+
 	    cres = knum_plus(K, cres, first);
 	}
 
-	if (kfast_zerop(cres)) {
-	    if (!all_zero) {
-		/* report */
-		klispE_throw_simple(K, "result has no primary value");
-		return;
-	    } 
-	} else
+	if (ttisnwnpv(cres)) /* #undefined or #real */
+	    ; /* do nothing, check is made later */
+	else if (kfast_zerop(cres)) {
+	    if (!all_zero)
+		cres = KRWNPV; /* check is made later */
+	} else if (all_exact)
 	    cres = knegativep(K, cres)? KEMINF : KEPINF;
+	else
+	    cres = knegativep(K, cres)? KIMINF : KIPINF;
+
+	/* here if any of the two has no primary an error is signaled */
 	res = knum_plus(K, ares, cres);
 	krooted_vars_pop(K);
 	krooted_vars_pop(K);
-    } 
+    }
     /* now substract the sum of all the elements in the list to the first 
        value */
     krooted_tvs_push(K, res);
