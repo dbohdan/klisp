@@ -538,6 +538,7 @@ TValue knum_abs(klisp_State *K, TValue n)
 	    return (i < 0? i2tv(-i) : n);
 	/* if i == INT32_MIN, fall through */
 	/* MAYBE: we could cache the bigint INT32_MAX+1 */
+	/* else fall through */
     }
     case K_TBIGINT: {
 	/* this is needed for INT32_MIN, can't be in previous
@@ -547,11 +548,18 @@ TValue knum_abs(klisp_State *K, TValue n)
 	return kbigint_abs(K, n);
     }
     case K_TBIGRAT: {
-	kensure_bigrat(n); 
 	return kbigrat_abs(K, n);
+    }
+    case K_TDOUBLE: {
+	return ktag_double(fabs(dvalue(n)));
     }
     case K_TEINF:
 	return KEPINF;
+    case K_TIINF:
+	return KIPINF;
+    case K_TRWNPV: 
+	/* ASK John: is the error here okay */
+	arith_return(K, KRWNPV);
     default:
 	/* shouldn't happen */
 	klispE_throw_simple(K, "unsupported type");
