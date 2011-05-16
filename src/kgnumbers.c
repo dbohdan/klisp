@@ -640,6 +640,13 @@ TValue knum_numerator(klisp_State *K, TValue n)
 	return n;
     case K_TBIGRAT:
 	return kbigrat_numerator(K, n);
+    case K_TDOUBLE: {
+	TValue res = knum_numerator(K, kinexact_to_exact(K, n));
+	krooted_tvs_push(K, res);
+	res = kexact_to_inexact(K, res);
+	krooted_tvs_pop(K);
+	return res;
+    }
 /*    case K_TEINF: infinities are not rational! */
     default:
 	klispE_throw_simple(K, "unsupported type");
@@ -656,6 +663,13 @@ TValue knum_denominator(klisp_State *K, TValue n)
 	return i2tv(1); /* denominator of integer is always (+)1 */
     case K_TBIGRAT:
 	return kbigrat_denominator(K, n);
+    case K_TDOUBLE: {
+	TValue res = knum_denominator(K, kinexact_to_exact(K, n));
+	krooted_tvs_push(K, res);
+	res = kexact_to_inexact(K, res);
+	krooted_tvs_pop(K);
+	return res;
+    }
 /*    case K_TEINF: infinities are not rational! */
     default:
 	klispE_throw_simple(K, "unsupported type");
