@@ -641,16 +641,19 @@ TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 /* GC: assumes n1 & n2 rooted */
 TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
 {
+    /* this is not so nice but simplifies some cases */
+    /* XXX: this may cause overflows! */
+    kensure_same_exactness(K, n1, n2);
+    
     /* get this out of the way first */
     if (kfast_zerop(n1) || kfast_zerop(n2)) {
-	klispE_throw_simple(K, "no primary value");
-	return KINERT;
+	arith_return(K, KRWNPV);
     }
 
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT: {
 	int64_t lcm = klcm32_64(ivalue(n1), ivalue(n2));
-        /* May fail for lcm(INT32_MIN, 1) because
+	/* May fail for lcm(INT32_MIN, 1) because
 	   it would return INT32_MAX+1 */
 	if (kfit_int32_t(lcm)) 
 	    return i2tv((int32_t) lcm);
@@ -661,8 +664,23 @@ TValue knum_lcm(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigint(n2);
 	return kbigint_lcm(K, n1, n2);
     }
+    case K_TDOUBLE: {
+	krooted_vars_push(K, &n1);
+	krooted_vars_push(K, &n2);
+	n1 = kinexact_to_exact(K, n1);
+	n2 = kinexact_to_exact(K, n2);
+	TValue res = knum_lcm(K, n1, n2);
+	krooted_tvs_push(K, res);
+	res = kexact_to_inexact(K, res);
+	krooted_tvs_pop(K);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
+	return res;
+    }
     case K_TEINF:
 	return KEPINF;
+    case K_TIINF:
+	return KIPINF;
     default:
 	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
