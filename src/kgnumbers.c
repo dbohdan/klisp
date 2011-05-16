@@ -4,6 +4,11 @@
 ** See Copyright Notice in klisp.h
 */
 
+/*
+** TODO: Many real operations are done by converting to bigint/bigrat
+** (like numerator and gcd), these should be done in doubles directly
+*/
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,9 +43,9 @@ bool knumber_wpvp(TValue obj)
     return ttisnumber(obj) && !ttisrwnpv(obj) && !ttisundef(obj); 
 }
 /* This is used in gcd & lcm */
-bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttiseinf(obj); }
+bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttisinf(obj); }
 /* obj is known to be a number */
-bool kfinitep(TValue obj) { return (!ttiseinf(obj) && !ttisiinf(obj)); }
+bool kfinitep(TValue obj) { return !ttisinf(obj); }
 /* fixint, bigints & inexact integers */
 bool kintegerp(TValue obj) { return ttisinteger(obj); }
 /* only exact integers (like for indices), bigints & fixints */
@@ -214,6 +219,15 @@ bool knum_gep(klisp_State *K, TValue n1, TValue n2)
 					       1, n);			\
 	    return KINERT;						\
 	} else { return n;}})
+
+/* may evaluate K & n more than once */
+#define arith_kapply_cc(K, n)						\
+    ({ if (ttisnwnpv(n) && kcurr_strict_arithp(K)) {			\
+	    klispE_throw_simple_with_irritants(K, "result has no "	\
+					       "primary value",		\
+					       1, n);			\
+	    return;							\
+	} else { kapply_cc(K, n); return;}})
 
 
 
@@ -572,6 +586,10 @@ TValue knum_abs(klisp_State *K, TValue n)
 /* GC: assumes n1 & n2 rooted */
 TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 {
+    /* this is not so nice but simplifies some cases */
+    /* XXX: this may cause overflows! */
+    kensure_same_exactness(K, n1, n2);
+
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT: {
 	int64_t gcd = kgcd32_64(ivalue(n1), ivalue(n2));
@@ -585,6 +603,19 @@ TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigint(n1);
 	kensure_bigint(n2);
 	return kbigint_gcd(K, n1, n2);
+    }
+    case K_TDOUBLE: {
+	krooted_vars_push(K, &n1);
+	krooted_vars_push(K, &n2);
+	n1 = kinexact_to_exact(K, n1);
+	n2 = kinexact_to_exact(K, n2);
+	TValue res = knum_gcd(K, n1, n2);
+	krooted_tvs_push(K, res);
+	res = kexact_to_inexact(K, res);
+	krooted_tvs_pop(K);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
+	return res;
     }
     case K_TEINF:
 	if (kfast_zerop(n2) || !ttiseinf(n1))
@@ -1385,19 +1416,16 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    TValue first = kcar(tail);
 	    tail = kcdr(tail);
 	    seen_finite_non_zero |= 
-		(!ttiseinf(first) && !kfast_zerop(first));
+		(!ttisinf(first) && !kfast_zerop(first));
 	    res = knum_gcd(K, res, first);
 	}
 
-	if (!seen_finite_non_zero) {
-	    /* report */
-	    klispE_throw_simple(K, "result has no primary value");
-	    return;
-	}
+	if (!seen_finite_non_zero)
+	    res = KRWNPV;
     }
 
     krooted_vars_pop(K);
-    kapply_cc(K, res);
+    arith_kapply_cc(K, res);
 }
 
 void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)

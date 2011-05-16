@@ -256,6 +256,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE)
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
+#define ttisinf(o_)				\
+    ({ TValue t_ = o_;				\
+	(ttiseinf(t_) || ttisiinf(t_)); })
 #define ttisrwnpv(o)	(tbasetype_(o) == K_TAG_RWNPV)
 #define ttisundef(o)	(tbasetype_(o) == K_TAG_UNDEFINED)
 #define ttisnwnpv(o_)				     \
