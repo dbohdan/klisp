@@ -593,6 +593,13 @@ TValue knum_gcd(klisp_State *K, TValue n1, TValue n2)
 	    return knum_abs(K, n2);
 	else
 	    return KEPINF;
+    case K_TIINF:
+	if (kfast_zerop(n2) || !ttisiinf(n1))
+	    return knum_abs(K, n1);
+	else if (kfast_zerop(n1) || !ttisiinf(n2))
+	    return knum_abs(K, n2);
+	else
+	    return KIPINF;
     default:
 	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
@@ -641,10 +648,11 @@ TValue knum_numerator(klisp_State *K, TValue n)
     case K_TBIGRAT:
 	return kbigrat_numerator(K, n);
     case K_TDOUBLE: {
-	TValue res = knum_numerator(K, kinexact_to_exact(K, n));
-	krooted_tvs_push(K, res);
+	TValue res = kinexact_to_exact(K, n);
+	krooted_vars_push(K, &res);
+	res = knum_numerator(K, res);
 	res = kexact_to_inexact(K, res);
-	krooted_tvs_pop(K);
+	krooted_vars_pop(K);
 	return res;
     }
 /*    case K_TEINF: infinities are not rational! */
@@ -664,10 +672,11 @@ TValue knum_denominator(klisp_State *K, TValue n)
     case K_TBIGRAT:
 	return kbigrat_denominator(K, n);
     case K_TDOUBLE: {
-	TValue res = knum_denominator(K, kinexact_to_exact(K, n));
-	krooted_tvs_push(K, res);
+	TValue res = kinexact_to_exact(K, n);
+	krooted_vars_push(K, &res);
+	res = knum_denominator(K, res);
 	res = kexact_to_inexact(K, res);
-	krooted_tvs_pop(K);
+	krooted_vars_pop(K);
 	return res;
     }
 /*    case K_TEINF: infinities are not rational! */
