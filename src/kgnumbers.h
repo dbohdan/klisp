@@ -178,6 +178,9 @@ void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree,
 void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.9.3 sin, cos, tan */
+void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* REFACTOR: These should be in a knumber.h header */
 
 /* Misc Helpers */

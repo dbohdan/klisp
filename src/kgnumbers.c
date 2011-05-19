@@ -1852,7 +1852,7 @@ void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_1tp(K, ptree, "real", krealp, n);
+    bind_1tp(K, ptree, "number", knumberp, n);
 
     /* TEMP: do it inline for now */
     TValue res = i2tv(0);
@@ -1873,6 +1873,7 @@ void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	res = kpositivep(K, n)? KIPINF : d2tv(0.0);
 	break;
     case K_TRWNPV:
+    case K_TUNDEFINED:
 	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
 	return;
 	/* complex and undefined should be captured by type predicate */
@@ -1888,7 +1889,7 @@ void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     UNUSED(xparams);
 
-    bind_1tp(K, ptree, "real", krealp, n);
+    bind_1tp(K, ptree, "number", knumberp, n);
 
     /* ASK John: error or no primary value, or undefined */
     if (kfast_zerop(n)) {
@@ -1919,6 +1920,7 @@ void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	res = KIPINF;
 	break;
     case K_TRWNPV:
+    case K_TUNDEFINED:
 	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
 	return;
 	/* complex and undefined should be captured by type predicate */
@@ -1927,4 +1929,44 @@ void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
     kapply_cc(K, res);
+}
+
+void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    /*
+    ** xparams[0]: trig function
+    */
+    double (*fn)(double) = pvalue(xparams[0]);
+
+    bind_1tp(K, ptree, "number", knumberp, n);
+
+    /* TEMP: do it inline for now */
+    TValue res = i2tv(0);
+    switch(ttype(n)) {
+    case K_TFIXINT: 
+    case K_TBIGINT:
+    case K_TBIGRAT:
+	/* for now, all go to double */
+	n = kexact_to_inexact(K, n); /* no need to root it */
+	/* fall through */
+    case K_TDOUBLE: {
+	double d = (*fn)(dvalue(n));
+	res = ktag_double(d);
+	break;
+    }
+    case K_TEINF: 
+    case K_TIINF:
+	/* is this ok? */
+	res = KRWNPV;
+	break;
+    case K_TRWNPV:
+    case K_TUNDEFINED:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return;
+    default:
+	klispE_throw_simple(K, "unsupported type");
+	return;
+    }
+    arith_kapply_cc(K, res);
 }

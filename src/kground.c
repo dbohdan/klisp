@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "kstate.h"
 #include "kobject.h"
@@ -45,6 +46,7 @@
 #include "kstring.h"
 #include "keval.h"
 #include "krepl.h"
+
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -878,6 +880,21 @@ void kinit_ground_env(klisp_State *K)
     /* 12.9.2 exp, log */
     add_applicative(K, ground_env, "exp", kexp, 0);
     add_applicative(K, ground_env, "log", klog, 0);
+
+    /* 12.9.3 sin, cos, tan */
+    add_applicative(K, ground_env, "sin", ktrig, 1, sin);
+    add_applicative(K, ground_env, "cos", ktrig, 1, cos);
+    add_applicative(K, ground_env, "tan", ktrig, 1, tan);
+
+    /* 12.9.4 asin, acos, atan */
+    /* TODO */
+
+    /* 12.9.5 cos, sin, tan */
+    /* TODO */
+
+    /* 12.9.6 cos, sin, tan */
+    /* TODO */
+
 
     /* TODO complete all other bindings of module real */
 
