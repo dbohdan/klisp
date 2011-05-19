@@ -14,6 +14,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kinteger.h"
+#include "krational.h"
 #include "imrat.h"
 
 /* REFACTOR rename. These can take any real, but
@@ -24,6 +25,8 @@ TValue kinexact_to_exact(klisp_State *K, TValue n);
 
 double kdouble_div_mod(double n, double d, double *res_mod);
 double kdouble_div0_mod0(double n, double d, double *res_mod);
+
+TValue kdouble_to_integer(klisp_State *K, TValue tv_double, kround_mode mode);
 
 /*
 ** read/write interface 

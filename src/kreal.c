@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include <ctype.h> 
 #include <math.h>
+#include <fenv.h> /* for setting round direction */
 
 #include "kreal.h"
 #include "krational.h"
@@ -711,4 +712,32 @@ double kdouble_div0_mod0(double n, double d, double *res_mod)
     }
     *res_mod = mod;
     return div;
+}
+
+TValue kdouble_to_integer(klisp_State *K, TValue tv_double, kround_mode mode)
+{
+    double d = dvalue(tv_double);
+    switch(mode) {
+    case K_TRUNCATE: 
+	d = trunc(d);
+	break;
+    case K_CEILING:
+	d = ceil(d);
+	break;
+    case K_FLOOR:
+	d = floor(d);
+	break;
+    case K_ROUND_EVEN: {
+	int res = fesetround(FE_TONEAREST); /* REFACTOR: should be done once only... */
+	klisp_assert(res == 0);
+	d = nearbyint(d);
+    }
+    }
+    /* ASK John: we currently return inexact if given inexact is this ok?
+       or should it return an exact integer? */
+    return ktag_double(d);
+#if 0    
+    tv_double = ktag_double(d); /* won't alloc mem so no need to root */
+    return kinexact_to_exact(K, tv_double); 
+#endif
 }

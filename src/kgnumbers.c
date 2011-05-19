@@ -744,9 +744,16 @@ TValue knum_real_to_integer(klisp_State *K, TValue n, kround_mode mode)
 	return n; /* integers are easy */
     case K_TBIGRAT:
 	return kbigrat_to_integer(K, n, mode);
+    case K_TDOUBLE:
+	return kdouble_to_integer(K, n, mode);
     case K_TEINF: 
 	klispE_throw_simple(K, "infinite value");
 	return KINERT;
+    case K_TIINF: 
+	klispE_throw_simple(K, "infinite value");
+	return KINERT;
+    case K_TUNDEFINED:
+	/* undefined in not a real, shouldn't get here, fall through */
     default:
 	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
