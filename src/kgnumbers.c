@@ -762,10 +762,13 @@ TValue knum_real_to_integer(klisp_State *K, TValue n, kround_mode mode)
 
 TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 {
+    /* this is not so nice but simplifies some cases */
+    /* XXX: this may cause overflows! */
+    kensure_same_exactness(K, n1, n2);
+
     /* first check that case that n1 > n2 */
     if (knum_gtp(K, n1, n2)) {
-	klispE_throw_simple(K, "result with no primary value "
-			    "(n1 > n2)");
+	klispE_throw_simple(K, "x0 doesn't exists (n1 > n2)");
 	return KINERT;
     }
 
@@ -779,13 +782,46 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigrat(n2);
 	return kbigrat_simplest_rational(K, n1, n2);
     }
+    case K_TDOUBLE: {
+	/* both are double, for now just convert to rational */
+	krooted_vars_push(K, &n1);
+	krooted_vars_push(K, &n2);
+	n1 = kinexact_to_exact(K, n1);
+	n2 = kinexact_to_exact(K, n2);
+	TValue res = knum_simplest_rational(K, n1, n2);
+	krooted_tvs_push(K, res);
+	res = kexact_to_inexact(K, res);
+	krooted_tvs_pop(K);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
+	return res;
+    }
     case K_TEINF:
+	/* we know that n1 <= n2 */
+	if (tv_equal(n1, n2)) {
+	    klispE_throw_simple(K, "x0 doesn't exists (n1 == n2 & "
+				"irrational)");
+	    return KINERT;
+	} else if (knegativep(K, n1) && kpositivep(K, n2)) {
+	    return i2tv(0);
+	} else if (knegativep(K, n1)) {
+	    /* n1 -inf, n2 finite negative */
+	    /* ASK John: is this behaviour for infinities ok? */
+	    /* Also in the report example both 1/3 & 1/2 are simpler than 
+	       2/5... */
+	    return knum_real_to_integer(K, n2, K_FLOOR);
+	} else {
+	    /* n1 finite positive, n2 +inf */
+	    /* ASK John: is this behaviour for infinities ok? */
+	    return knum_real_to_integer(K, n1, K_CEILING);
+	}
+    case K_TIINF:
 	/* we know that n1 <= n2 */
 	if (tv_equal(n1, n2)) {
 	    klispE_throw_simple(K, "result with no primary value");
 	    return KINERT;
 	} else if (knegativep(K, n1) && kpositivep(K, n2)) {
-	    return i2tv(0);
+	    return d2tv(0.0);
 	} else if (knegativep(K, n1)) {
 	    /* n1 -inf, n2 finite negative */
 	    /* ASK John: is this behaviour for infinities ok? */
@@ -805,6 +841,10 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 
 TValue knum_rationalize(klisp_State *K, TValue n1, TValue n2)
 {
+    /* this is not so nice but simplifies some cases */
+    /* XXX: this may cause overflows! */
+    kensure_same_exactness(K, n1, n2);
+
     switch(max_ttype(n1, n2)) {
     case K_TFIXINT:
     case K_TBIGINT: /* for now do all with bigrat */
@@ -814,12 +854,34 @@ TValue knum_rationalize(klisp_State *K, TValue n1, TValue n2)
 	kensure_bigrat(n2);
 	return kbigrat_rationalize(K, n1, n2);
     }
+    case K_TDOUBLE: {
+	/* both are double, for now just convert to rational */
+	krooted_vars_push(K, &n1);
+	krooted_vars_push(K, &n2);
+	n1 = kinexact_to_exact(K, n1);
+	n2 = kinexact_to_exact(K, n2);
+	TValue res = knum_rationalize(K, n1, n2);
+	krooted_tvs_push(K, res);
+	res = kexact_to_inexact(K, res);
+	krooted_tvs_pop(K);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
+	return res;
+    }
     case K_TEINF:
 	if (kfinitep(n1) || !kfinitep(n2)) {
 	    return i2tv(0);
 	} else { /* infinite n1, finite n2 */
 	    /* ASK John: is this behaviour for infinities ok? */
-	    klispE_throw_simple(K, "result with no primary value");
+	    klispE_throw_simple(K, "x0 doesn't exists");
+	    return KINERT;
+	}
+    case K_TIINF:
+	if (kfinitep(n1) || !kfinitep(n2)) {
+	    return d2tv(0.0);
+	} else { /* infinite n1, finite n2 */
+	    /* ASK John: is this behaviour for infinities ok? */
+	    klispE_throw_simple(K, "x0 doesn't exists");
 	    return KINERT;
 	}
     default:
