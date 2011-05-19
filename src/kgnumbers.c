@@ -752,6 +752,8 @@ TValue knum_real_to_integer(klisp_State *K, TValue n, kround_mode mode)
     case K_TIINF: 
 	klispE_throw_simple(K, "infinite value");
 	return KINERT;
+    case K_TRWNPV:
+	arith_return(K, KRWNPV);
     case K_TUNDEFINED:
 	/* undefined in not a real, shouldn't get here, fall through */
     default:
@@ -833,6 +835,9 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 	    /* ASK John: is this behaviour for infinities ok? */
 	    return knum_real_to_integer(K, n1, K_CEILING);
 	}
+    case K_TRWNPV:
+	arith_return(K, KRWNPV);
+	/* complex and undefined should be captured by type predicate */
     default:
 	klispE_throw_simple(K, "unsupported type");
 	return KINERT;
@@ -1839,5 +1844,87 @@ void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree,
 	     "real", krealp, n2);
 
     TValue res = knum_simplest_rational(K, n1, n2);
+    kapply_cc(K, res);
+}
+
+void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_1tp(K, ptree, "real", krealp, n);
+
+    /* TEMP: do it inline for now */
+    TValue res = i2tv(0);
+    switch(ttype(n)) {
+    case K_TFIXINT: 
+    case K_TBIGINT:
+    case K_TBIGRAT:
+	/* for now, all go to double */
+	n = kexact_to_inexact(K, n); /* no need to root it */
+	/* fall through */
+    case K_TDOUBLE: {
+	double d = exp(dvalue(n));
+	res = ktag_double(d);
+	break;
+    }
+    case K_TEINF: /* in any case return inexact result (e is inexact) */
+    case K_TIINF:
+	res = kpositivep(K, n)? KIPINF : d2tv(0.0);
+	break;
+    case K_TRWNPV:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return;
+	/* complex and undefined should be captured by type predicate */
+    default:
+	klispE_throw_simple(K, "unsupported type");
+	return;
+    }
+    kapply_cc(K, res);
+}
+
+void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_1tp(K, ptree, "real", krealp, n);
+
+    /* ASK John: error or no primary value, or undefined */
+    if (kfast_zerop(n)) {
+	klispE_throw_simple_with_irritants(K, "zero argument", 1, n);
+	return;
+    } else if (knegativep(K, n)) {
+	klispE_throw_simple_with_irritants(K, "negative argument", 1, n);
+	return;
+    }
+
+    /* TEMP: do it inline for now */
+    TValue res = i2tv(0);
+    switch(ttype(n)) {
+    case K_TFIXINT: 
+    case K_TBIGINT:
+    case K_TBIGRAT:
+	/* for now, all go to double */
+	n = kexact_to_inexact(K, n); /* no need to root it */
+	/* fall through */
+    case K_TDOUBLE: {
+	double d = log(dvalue(n));
+	res = ktag_double(d);
+	break;
+    }
+    case K_TEINF: /* in any case return inexact result (e is inexact) */
+    case K_TIINF:
+	/* is this ok? */
+	res = KIPINF;
+	break;
+    case K_TRWNPV:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return;
+	/* complex and undefined should be captured by type predicate */
+    default:
+	klispE_throw_simple(K, "unsupported type");
+	return;
+    }
     kapply_cc(K, res);
 }

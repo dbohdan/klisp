@@ -875,6 +875,10 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "real?", ftypep, 2, symbol, 
 		    p2tv(krealp));
 
+    /* 12.9.2 exp, log */
+    add_applicative(K, ground_env, "exp", kexp, 0);
+    add_applicative(K, ground_env, "log", klog, 0);
+
     /* TODO complete all other bindings of module real */
 
     /*

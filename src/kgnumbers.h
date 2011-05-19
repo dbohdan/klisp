@@ -174,7 +174,9 @@ void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree,
 /* 12.9.1 real? */
 /* uses ftypep */
 
-/* TODO remaining of module real */
+/* 12.9.2 exp, log */
+void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* REFACTOR: These should be in a knumber.h header */
 
