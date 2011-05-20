@@ -25,10 +25,17 @@
 /* XXX: this should probably be in a file knumber.h but there is no real need for 
    that file yet */
 bool knumberp(TValue obj);
+bool knumber_wpvp(TValue obj);
 bool kfinitep(TValue obj);
 bool kintegerp(TValue obj);
+bool keintegerp(TValue obj);
 bool krationalp(TValue obj);
 bool krealp(TValue obj);
+bool kreal_wpvp(TValue obj);
+bool kexactp(TValue obj);
+bool kinexactp(TValue obj);
+bool kundefinedp(TValue obj);
+bool krobustp(TValue obj);
 
 
 /* 12.5.2 =? */
@@ -77,8 +84,8 @@ bool kzerop(TValue n);
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(TValue n);
-bool knegativep(TValue n);
+bool kpositivep(klisp_State *K, TValue n);
+bool knegativep(klisp_State *K, TValue n);
 bool koddp(TValue n);
 bool kevenp(TValue n);
 
@@ -111,6 +118,37 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.6.1 exact?, inexact?, robust?, undefined? */
+/* use fyped_predp */
+
+/* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
+void kget_real_internal_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
+			       TValue denv);
+void kget_real_exact_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
+			       TValue denv);
+
+/* 12.6.3 get-real-internal-primary, get-real-exact-primary */
+void kget_real_internal_primary(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv);
+void kget_real_exact_primary(klisp_State *K, TValue *xparams, 
+			     TValue ptree, TValue denv);
+
+/* 12.6.4 make-inexact */
+void kmake_inexact(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 12.6.5 real->inexact, real->exact */
+void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
+void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
+
+/* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
+void kwith_strict_arithmetic(klisp_State *K, TValue *xparams, TValue ptree, 
+			     TValue denv);
+
+void kget_strict_arithmeticp(klisp_State *K, TValue *xparams, TValue ptree, 
+			     TValue denv);
+
 /* 12.8.1 rational? */
 /* uses ftypep */
 
@@ -132,21 +170,55 @@ void krationalize(klisp_State *K, TValue *xparams, TValue ptree,
 void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree, 
 			TValue denv);
 
+
+/* 12.9.1 real? */
+/* uses ftypep */
+
+/* 12.9.2 exp, log */
+void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 12.9.3 sin, cos, tan */
+void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 12.9.4 asin, acos, atan */
+void katrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 12.9.5 sqrt */
+void ksqrt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 12.9.6 expt */
+void kexpt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+
 /* REFACTOR: These should be in a knumber.h header */
 
 /* Misc Helpers */
-/* TEMP: only infinities, fixints and bigints for now */
-inline bool kfast_zerop(TValue n) { return ttisfixint(n) && ivalue(n) == 0; }
-inline bool kfast_onep(TValue n) { return ttisfixint(n) && ivalue(n) == 1; }
-/* TEMP: only exact infinties */
-inline TValue kneg_inf(TValue i) 
+/* TEMP: only reals (no complex numbers) */
+inline bool kfast_zerop(TValue n) 
 { 
-    return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
+    return (ttisfixint(n) && ivalue(n) == 0) ||
+	(ttisdouble(n) && dvalue(n) == 0.0); 
 }
 
-inline bool knum_same_signp(TValue n1, TValue n2) 
+inline bool kfast_onep(TValue n) 
 { 
-    return kpositivep(n1) == kpositivep(n2); 
+    return (ttisfixint(n) && ivalue(n) == 1) ||
+	(ttisdouble(n) && dvalue(n) == 1.0); 
+}
+
+inline TValue kneg_inf(TValue i) 
+{ 
+    if (ttiseinf(i))
+	return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
+    else /* ttisiinf(i) */
+	return tv_equal(i, KIPINF)? KIMINF : KIPINF; 
+}
+
+inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2) 
+{ 
+    return kpositivep(K, n1) == kpositivep(K, n2); 
 }
 
 #endif

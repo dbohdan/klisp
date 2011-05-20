@@ -10,7 +10,6 @@
 #include "kobject.h"
 /* for identifier checking */
 #include "ktoken.h"
-#include "kpair.h"
 #include "kstate.h"
 #include "kmem.h"
 #include "kgc.h"

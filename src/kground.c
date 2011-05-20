@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "kstate.h"
 #include "kobject.h"
@@ -45,6 +46,7 @@
 #include "kstring.h"
 #include "keval.h"
 #include "krepl.h"
+
 
 /*
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
@@ -735,17 +737,17 @@ void kinit_ground_env(klisp_State *K)
 
     /* 12.5.2 =? */
     add_applicative(K, ground_env, "=?", ftyped_kbpredp, 3,
-		    symbol, p2tv(knumberp), p2tv(knum_eqp));
+		    symbol, p2tv(knumber_wpvp), p2tv(knum_eqp));
     
     /* 12.5.3 <?, <=?, >?, >=? */
     add_applicative(K, ground_env, "<?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp), p2tv(knum_ltp));
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_ltp));
     add_applicative(K, ground_env, "<=?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp),  p2tv(knum_lep));
+		    symbol, p2tv(kreal_wpvp),  p2tv(knum_lep));
     add_applicative(K, ground_env, ">?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp), p2tv(knum_gtp));
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_gtp));
     add_applicative(K, ground_env, ">=?", ftyped_kbpredp, 3,
-		    symbol, p2tv(krealp), p2tv(knum_gep));
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_gep));
 
     /* 12.5.4 + */
     add_applicative(K, ground_env, "+", kplus, 0);
@@ -800,6 +802,45 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "lcm", klcm, 0);
 
     /* 
+    ** 12.8 Inexact features
+    */
+
+    /* 12.6.1 exact?, inexact?, robust?, undefined? */
+    add_applicative(K, ground_env, "exact?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kexactp));
+    add_applicative(K, ground_env, "inexact?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kinexactp));
+    add_applicative(K, ground_env, "robust?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(krobustp));
+    add_applicative(K, ground_env, "undefined?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kundefinedp));
+
+    /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
+    add_applicative(K, ground_env, "get-real-internal-bounds", 
+		    kget_real_internal_bounds, 0);
+    add_applicative(K, ground_env, "get-real-exact-bounds", 
+		    kget_real_exact_bounds, 0);
+
+    /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
+    add_applicative(K, ground_env, "get-real-internal-primary", 
+		    kget_real_internal_primary, 0);
+    add_applicative(K, ground_env, "get-real-exact-primary", 
+		    kget_real_exact_primary, 0);
+
+    /* 12.6.4 make-inexact */
+    add_applicative(K, ground_env, "make-inexact", kmake_inexact, 0);
+
+    /* 12.6.5 real->inexact, real->exact */
+    add_applicative(K, ground_env, "real->inexact", kreal_to_inexact, 0);
+    add_applicative(K, ground_env, "real->exact", kreal_to_exact, 0);
+
+    /* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
+    add_applicative(K, ground_env, "with-strict-arithmetic", 
+		    kwith_strict_arithmetic, 0);
+    add_applicative(K, ground_env, "get-strict-arithmetic?", 
+		    kget_strict_arithmeticp, 0);
+
+    /* 
     ** 12.8 Rational features
     */
 
@@ -827,6 +868,34 @@ void kinit_ground_env(klisp_State *K)
     /* 12.8.5 rationalize, simplest-rational */
     add_applicative(K, ground_env, "rationalize", krationalize, 0);
     add_applicative(K, ground_env, "simplest-rational", ksimplest_rational, 0);
+
+    /* 
+    ** 12.9 Real features
+    */
+
+    /* 12.9.1 real? */
+    add_applicative(K, ground_env, "real?", ftypep, 2, symbol, 
+		    p2tv(krealp));
+
+    /* 12.9.2 exp, log */
+    add_applicative(K, ground_env, "exp", kexp, 0);
+    add_applicative(K, ground_env, "log", klog, 0);
+
+    /* 12.9.3 sin, cos, tan */
+    add_applicative(K, ground_env, "sin", ktrig, 1, sin);
+    add_applicative(K, ground_env, "cos", ktrig, 1, cos);
+    add_applicative(K, ground_env, "tan", ktrig, 1, tan);
+
+    /* 12.9.4 asin, acos, atan */
+    add_applicative(K, ground_env, "asin", katrig, 1, asin);
+    add_applicative(K, ground_env, "acos", katrig, 1, acos);
+    add_applicative(K, ground_env, "atan", katan, 0);
+
+    /* 12.9.5 sqrt */
+    add_applicative(K, ground_env, "sqrt", ksqrt, 0);
+
+    /* 12.9.6 expt */
+    add_applicative(K, ground_env, "expt", kexpt, 0);
 
     /*
     **

@@ -91,6 +91,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->kd_in_port_key = KINERT;
     K->kd_out_port_key = KINERT;
 
+    /* strict arithmetic dynamic key */
+    /* this is init later */
+    K->kd_strict_arith_key = KINERT;
+
     /* GC */
     K->currentwhite = bit2mask(WHITE0BIT, FIXEDBIT);
     K->gcstate = GCSpause;
@@ -187,6 +191,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 				     true, stdout);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
+
+    /* strict arithmetic key, (starts as false) */
+    K->kd_strict_arith_key = kcons(K, KTRUE, KFALSE);
 
     /* create the ground environment and the eval operative */
     int32_t line_number; 
