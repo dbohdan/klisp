@@ -895,10 +895,7 @@ void kinit_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "sqrt", ksqrt, 0);
 
     /* 12.9.6 expt */
-    /* TODO */
-
-
-    /* TODO complete all other bindings of module real */
+    add_applicative(K, ground_env, "expt", kexpt, 0);
 
     /*
     **

@@ -2143,3 +2143,73 @@ void ksqrt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     arith_kapply_cc(K, res);
 }
+
+void kexpt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_2tp(K, ptree, "number", knumberp, n1,
+	     "number", knumberp, n2);
+
+    kensure_same_exactness(K, n1, n2);
+
+    /* TEMP: do it inline for now */
+    TValue res = i2tv(0);
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: 
+    case K_TBIGINT:
+    case K_TBIGRAT:
+	/* TEMP: for now, all go to double */
+	n1 = kexact_to_inexact(K, n1); /* no need to root it */
+	n2 = kexact_to_inexact(K, n2); /* no need to root it */
+	/* fall through */
+    case K_TDOUBLE: {
+	double d1 = dvalue(n1);
+	double d2 = dvalue(n2);
+	d1 = pow(d1, d2);
+	res = ktag_double(d1);
+	break;
+    }
+    case K_TEINF: 
+    case K_TIINF:
+	if (ttisinf(n1) && ttisinf(n2)) {
+	    if (knegativep(K, n1) && knegativep(K, n2))
+		res = d2tv(0.0);
+	    else if (knegativep(K, n1) || knegativep(K, n2))
+		res = KUNDEF; /* ASK John: is this ok? */
+	    else 
+		res = KIPINF;
+	} else if (ttisinf(n1)) {
+	    if (knegativep(K, n1)) {
+		if (knegativep(K, n2))
+		    res = d2tv(0.0);
+		else {
+		    TValue num = knum_numerator(K, n2);
+		    krooted_tvs_push(K, num);
+		    res = kevenp(num)? KIPINF : KIMINF;
+		    krooted_tvs_pop(K);
+		}
+	    } else {
+		res = KIPINF;
+	    }
+	} else { /* ttisinf(n2) */
+	    if (knegativep(K, n2))
+		res = d2tv(0.0);
+	    else if (knegativep(K, n1))
+		res = KUNDEF; /* ASK John: is this ok? */
+	    else 
+		res = KIPINF;
+	}
+	break;
+    case K_TRWNPV:
+    case K_TUNDEFINED:
+	klispE_throw_simple_with_irritants(K, "no primary value", 2, 
+					   n1, n2);
+	return;
+    default:
+	klispE_throw_simple(K, "unsupported type");
+	return;
+    }
+    arith_kapply_cc(K, res);
+}
