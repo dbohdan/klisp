@@ -185,6 +185,13 @@ void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void katrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.9.5 sqrt */
+void ksqrt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 12.9.6 expt */
+void kexpt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+
 /* REFACTOR: These should be in a knumber.h header */
 
 /* Misc Helpers */

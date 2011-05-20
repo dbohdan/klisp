@@ -2102,3 +2102,44 @@ void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     arith_kapply_cc(K, res);
 }
+
+void ksqrt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_1tp(K, ptree, "number", knumberp, n);
+
+    /* TEMP: do it inline for now */
+    TValue res = i2tv(0);
+    switch(ttype(n)) {
+    case K_TFIXINT: 
+    case K_TBIGINT:
+    case K_TBIGRAT:
+	/* TEMP: for now, all go to double */
+	n = kexact_to_inexact(K, n); /* no need to root it */
+	/* fall through */
+    case K_TDOUBLE: {
+	double d = dvalue(n);
+	if (d < 0.0)
+	    res = KUNDEF;  /* ASK John: is this ok, or should throw error? */
+	else {
+	    d = sqrt(d);
+	    res = ktag_double(d);
+	}
+	break;
+    }
+    case K_TEINF: 
+    case K_TIINF:
+	res = knegativep(K, n)? KUNDEF : KIPINF;
+	break;
+    case K_TRWNPV:
+    case K_TUNDEFINED:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return;
+    default:
+	klispE_throw_simple(K, "unsupported type");
+	return;
+    }
+    arith_kapply_cc(K, res);
+}

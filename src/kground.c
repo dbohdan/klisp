@@ -889,12 +889,12 @@ void kinit_ground_env(klisp_State *K)
     /* 12.9.4 asin, acos, atan */
     add_applicative(K, ground_env, "asin", katrig, 1, asin);
     add_applicative(K, ground_env, "acos", katrig, 1, acos);
-    add_applicative(K, ground_env, "atan", katan, 2, atan, atan2);
+    add_applicative(K, ground_env, "atan", katan, 0);
 
-    /* 12.9.5 cos, sin, tan */
-    /* TODO */
+    /* 12.9.5 sqrt */
+    add_applicative(K, ground_env, "sqrt", ksqrt, 0);
 
-    /* 12.9.6 cos, sin, tan */
+    /* 12.9.6 expt */
     /* TODO */
 
 
