@@ -1970,3 +1970,135 @@ void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     arith_kapply_cc(K, res);
 }
+
+void katrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    /*
+    ** xparams[0]: trig function
+    */
+    double (*fn)(double) = pvalue(xparams[0]);
+
+    bind_1tp(K, ptree, "number", knumberp, n);
+
+    /* TEMP: do it inline for now */
+    TValue res = i2tv(0);
+    switch(ttype(n)) {
+    case K_TFIXINT: 
+    case K_TBIGINT:
+    case K_TBIGRAT:
+	/* for now, all go to double */
+	n = kexact_to_inexact(K, n); /* no need to root it */
+	/* fall through */
+    case K_TDOUBLE: {
+	double d = dvalue(n);
+	if (d >= -1.0 && d <= 1.0) {
+	    d = (*fn)(dvalue(n));
+	    res = ktag_double(d);
+	} else {
+	    res = KUNDEF; /* ASK John: is this ok, or should throw error? */
+	}
+	break;
+    }
+    case K_TEINF: 
+    case K_TIINF:
+	/* ASK John: is this ok? */
+	res = KRWNPV;
+	break;
+    case K_TRWNPV:
+    case K_TUNDEFINED:
+	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
+	return;
+    default:
+	klispE_throw_simple(K, "unsupported type");
+	return;
+    }
+    arith_kapply_cc(K, res);
+}
+
+void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_al1tp(K, ptree, "number", knumberp, n1, rest);
+    bool two_params;
+    TValue n2;
+    if (ttisnil(rest)) {
+	two_params = false;
+	n2 = n1;
+    } else {
+	two_params = true;
+	if (!ttispair(rest) || !ttisnil(kcdr(rest))) {
+	    klispE_throw_simple(K, "Bad ptree structure (in optional "
+				"argument)");
+	    return;
+	} else if (!ttisnumber(kcar(rest))) {
+	    klispE_throw_simple(K, "Bad type on optional argument "
+			 "(expected number)");
+	    return;
+	} else {
+	    n2 = kcar(rest);
+	    kensure_same_exactness(K, n1, n2);
+	}
+    }
+
+    /* TEMP: do it inline for now */
+    TValue res = i2tv(0);
+    switch(max_ttype(n1, n2)) {
+    case K_TFIXINT: 
+    case K_TBIGINT:
+    case K_TBIGRAT:
+	/* for now, all go to double */
+	n1 = kexact_to_inexact(K, n1); /* no need to root it */
+	if (two_params)
+	    n2 = kexact_to_inexact(K, n2); /* no need to root it */
+	/* fall through */
+    case K_TDOUBLE: {
+	double d1 = dvalue(n1);
+	if (two_params) {
+	    double d2 = dvalue(n2);
+	    d1 = atan2(d1, d2);
+	} else {
+	    d1 = atan(d1);
+	}
+	res = ktag_double(d1);
+	break;
+    }
+    case K_TEINF: 
+    case K_TIINF:
+	/* ASK John: is this ok? */
+	if (two_params) {
+	    if (kfinitep(n1)) {
+		res = ktag_double(0.0);
+	    } else if (!kfinitep(n2)) {
+		klispE_throw_simple_with_irritants(K, "infinite divisor & "
+						   "dividend", 2, n1, n2);
+		return;
+	    } else {
+		/* XXX either pi/2 or -pi/2, but we don't have the constant */
+		double d = knum_same_signp(K, n1, n2)? atan(INFINITY) : 
+		    atan(-INFINITY);
+		res = ktag_double(d);
+	    }
+	} else {
+	    /* XXX either pi/2 or -pi/2, but we don't have the constant */
+	    double d = kpositivep(K, n1)? atan(INFINITY) : atan(-INFINITY);
+	    res = ktag_double(d);
+	}
+	break;
+    case K_TRWNPV:
+    case K_TUNDEFINED:
+	if (two_params) {
+	    klispE_throw_simple_with_irritants(K, "no primary value", 2, 
+					       n1, n2);
+	} else {
+	    klispE_throw_simple_with_irritants(K, "no primary value", 1, n1);
+	}
+	return;
+    default:
+	klispE_throw_simple(K, "unsupported type");
+	return;
+    }
+    arith_kapply_cc(K, res);
+}

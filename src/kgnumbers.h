@@ -181,6 +181,10 @@ void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 12.9.3 sin, cos, tan */
 void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 12.9.4 asin, acos, atan */
+void katrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* REFACTOR: These should be in a knumber.h header */
 
 /* Misc Helpers */
