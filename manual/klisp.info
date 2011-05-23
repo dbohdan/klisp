@@ -1,0 +1,112 @@
+This is klisp, produced by makeinfo version 4.13 from
+/home/deka/prog/kernel/klisp/manual/src/klisp.texi.
+
+This file documents klisp.
+
+   This is edition 0.1 of the klisp Reference Manual, for klisp
+version 0.1.
+
+   Copyright (C) 2011 Andres Navarro
+
+   Permission is granted to make and distribute this manual, in whole
+or in part.
+
+
+File: klisp,  Node: Top,  Next: License,  Prev: (dir),  Up: (dir)
+
+   This Info file contains edition 0.1 of the klisp Reference Manual,
+corresponding to klisp version 0.1.
+
+   Copyright (C) 2011 Andres Navarro
+
+   Permission is granted to make and distribute this manual, in whole
+or in part.
+
+* Menu:
+
+* License::                 Conditions for copying and changing klisp.
+* Introduction::            Introduction and conventions used.
+
+
+File: klisp,  Node: License,  Next: Introduction,  Prev: Top,  Up: Top
+
+   klisp is licensed under the terms of the MIT license reproduced
+below.  This means that klisp is free software and can be used for
+both academic and commercial purposes at absolutely no cost.  The two
+projects whose code klisp uses, Lua & IMath, are also distributed
+under the MIT license.
+
+   * klisp Parts: Copyright (C) 2011 Andres Navarro.
+
+   * Lua Parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
+
+   * IMath Parts: Copyright (C) 2002-2007 Michael J. Fromberger.
+
+   * srfi-78: Copyright (C) 2005-2006 Sebastian Egner.
+
+MIT/X11 License
+***************
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+   The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+File: klisp,  Node: Introduction,  Next: (dir),  Prev: License,  Up: Top
+
+1 Introduction
+**************
+
+klisp is an open source interpreter for the Kernel Programming
+Language. It aims at being comprehensive and robust as specified in
+the "Revised(-1) Report on the Kernel Programming Language", but that
+probably won't happen for some time. It is written in C99 under the
+MIT license. It draws heavily from the Lua interpreter source code &
+file structure. It uses the IMath library for arbitrary sized
+integers and rationals.
+
+   Kernel is a conservative, Scheme-like dialect of Lisp in which
+everything is a first-class object. It was created by John N. Shutt.
+You can read all about it at http://web.cs.wpi.edu/~jshutt/kernel.html
+
+   klisp is freely available for both academic and commercial
+purposes.  See LICENSE for details. it can be downloaded at
+http://www.bitbucket.org/AndresNavarro/klisp
+
+   klisp is developed by Andres Navarro, a Computer Science
+undergraduate at Buenos Aires University (UBA). You can reach him at
+<canavarro82@gmail.com>.
+
+   This manual describes klisp version 0.1, presuming some familiarity
+with the Lisp family of languages in general, and with the Kernel
+Programming Language in particular. There are frequent references to
+the Kernel Programming Language Report. Unlike in the report, no
+rationale is provided for any feature, only a description of the
+implemented functionality.
+
+   This is edition 0.1.
+
+
+
+Tag Table:
+Node: Top334
+Node: License775
+Node: Introduction2442
+
+End Tag Table

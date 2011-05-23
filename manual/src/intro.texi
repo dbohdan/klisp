@@ -1,0 +1,75 @@
+@c -*-texinfo-*-
+@setfilename ../src/intro
+
+@node License, Introduction, Top, Top
+@comment  node-name,  next,  previous,  up
+
+klisp is licensed under the terms of the MIT license reproduced below.
+This means that klisp is free software and can be used for both academic
+and commercial purposes at absolutely no cost. 
+The two projects whose code klisp uses, Lua & IMath, are also distributed 
+under the MIT license.
+
+@itemize @bullet
+@item 
+klisp Parts: Copyright @copyright{} 2011 Andres Navarro.
+@item 
+Lua Parts: Copyright @copyright{} 1994-2010 Lua.org, PUC-Rio.
+@item 
+IMath Parts: Copyright @copyright{} 2002-2007 Michael J. Fromberger.
+@item 
+srfi-78: Copyright @copyright{} 2005-2006 Sebastian Egner.
+@end itemize
+
+@unnumbered MIT/X11 License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+@c add next node 
+@node Introduction, (dir), License, Top
+@chapter Introduction
+
+  klisp is an open source interpreter for the Kernel Programming
+Language. It aims at being comprehensive and robust as specified in
+the "Revised(-1) Report on the Kernel Programming Language", but
+that probably won't happen for some time. It is written in C99 under
+the MIT license. It draws heavily from the Lua interpreter source
+code & file structure. It uses the IMath library for arbitrary sized
+integers and rationals.
+
+  Kernel is a conservative, Scheme-like dialect of Lisp in which
+everything is a first-class object. It was created by John N. Shutt.
+You can read all about it at http://web.cs.wpi.edu/~jshutt/kernel.html
+
+  klisp is freely available for both academic and commercial purposes.
+See LICENSE for details. it can be downloaded at 
+http://www.bitbucket.org/AndresNavarro/klisp
+
+  klisp is developed by Andres Navarro, a Computer Science
+undergraduate at Buenos Aires University (UBA). You can reach him at
+<canavarro82@@gmail.com>.
+
+  This manual describes klisp version 0.1, presuming some familiarity
+with the Lisp family of languages in general, and with the Kernel 
+Programming Language in particular. There are frequent references to
+the Kernel Programming Language Report. Unlike in the report, no
+rationale is provided for any feature, only a description of the
+implemented functionality. 
+
+  This is edition 0.1.

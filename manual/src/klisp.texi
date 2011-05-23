@@ -1,0 +1,90 @@
+\input texinfo  @c -*-texinfo-*-
+@c %**start of header
+@setfilename klisp
+@settitle klisp Reference Manual
+@c %**end of header
+
+@ifinfo
+This file documents klisp.
+
+@c The edition number appears in several places in this file
+@c and also in the file intro.texi.
+This is edition 0.1 of the klisp Reference Manual,  
+for klisp version 0.1.
+
+Copyright (C) 2011 Andres Navarro
+
+Permission is granted to make and distribute this manual, in whole or
+in part. 
+@c TODO put up better text for this.
+@end ifinfo
+
+@setchapternewpage odd
+
+@titlepage
+@title klisp Reference Manual
+@subtitle klisp version 0.1
+@c The edition number appears in several places in this file
+@c and also in the file intro.texi.
+@subtitle Edition 0.1, May 2011
+
+@author by Andres Navarro
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2011 Andres Navarro
+
+@sp 2
+This is edition 0.1 of the @cite{klisp Reference Manual},
+for klisp Version 01.,@*
+May 2011.@*
+
+@sp 2
+
+Permission is granted to make and distribute this manual, in whole or
+in part. 
+@end titlepage
+@page
+
+@node Top, License, (dir), (dir)
+
+@ifinfo
+This Info file contains edition 0.1 of the klisp Reference Manual,
+corresponding to klisp version 0.1.
+
+Copyright @copyright{} 2011 Andres Navarro
+
+Permission is granted to make and distribute this manual, in whole or
+in part. 
+@c TODO put up better text for this.
+@end ifinfo
+
+@menu
+* License::                 Conditions for copying and changing klisp.
+* Introduction::            Introduction and conventions used.
+
+@c TODO
+
+@c TODO index
+@c * Index::                   Index including concepts, functions, variables,
+@c                              and other terms.
+
+@c Appendices
+@c TODO
+
+@c TODO add detailed node listing 
+@end menu
+
+@include intro.texi
+
+@c appendices
+@c TODO
+
+@c @include index.texi
+
+@c Print the tables of contents
+@c FOR some reason this ends up in the last node instead of the general...
+@c TODO @summarycontents
+@c TODO @contents
+@c That's all
+
+@bye
