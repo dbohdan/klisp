@@ -41,6 +41,7 @@ void klisp_close (klisp_State *K);
 * Copyright (C) 2011 Andres Navarro.  All rights reserved.
 * Lua parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio. All rights reserved.
 * IMath Parts: Copyright (C) 2002-2007 Michael J. Fromberger.
+* srfi-78: Copyright (C) 2005-2006 Sebastian Egner.
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the
