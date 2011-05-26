@@ -274,14 +274,15 @@ The description follows on succeeding lines, sometimes with examples.
 @cindex operative descriptions
 @cindex object descriptions
 
-  In an applicative description, the name of the applicative being described
-appears first. It is followed on the same line by a list of arguments.
-The names used for the arguments are also used in the body of the
-description.
+  In an applicative description, the name of the applicative being
+described appears first. It is followed on the same line by an
+applicative combination that includes the name of the applicative and
+the arguments, as would appear in a program. The names used for the
+arguments are also used in the body of the description.
 
   Here is a description of an imaginary applicative @code{foo}:
 
-@deffn Applicative (foo integer1 integer2 . rest)
+@deffn Applicative foo (foo integer1 integer2 . rest)
   The applicative @code{foo} subtracts @var{integer1} from @var{integer2},
 then adds all the rest of the arguments to the result. 
 

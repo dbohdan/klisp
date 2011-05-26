@@ -64,9 +64,8 @@ in part.
 
 @c TODO
 
-@c TODO index
-@c * Index::                   Index including concepts, functions, variables,
-@c                              and other terms.
+* Index::                   Index including concepts, functions, variables,
+                              and other terms.
 
 @c Appendices
 @c TODO
@@ -79,12 +78,12 @@ in part.
 @c appendices
 @c TODO
 
-@c @include index.texi
+@include index.texi
 
 @c Print the tables of contents
-@c FOR some reason this ends up in the last node instead of the general...
-@c TODO @summarycontents
-@c TODO @contents
+@summarycontents
+@contents
+
 @c That's all
 
 @bye

@@ -27,6 +27,10 @@ or in part.
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
 
+
+* Index::                   Index including concepts, functions, variables,
+                              and other terms.
+
 
 File: klisp,  Node: License,  Next: Introduction,  Prev: Top,  Up: Top
 
@@ -292,13 +296,14 @@ File: klisp,  Node: A Sample Applicative Description,  Prev: Format of Descripti
 ........................................
 
 In an applicative description, the name of the applicative being
-described appears first. It is followed on the same line by a list of
-arguments.  The names used for the arguments are also used in the
-body of the description.
+described appears first. It is followed on the same line by an
+applicative combination that includes the name of the applicative and
+the arguments, as would appear in a program. The names used for the
+arguments are also used in the body of the description.
 
    Here is a description of an imaginary applicative `foo':
 
- -- Applicative: (foo integer1 integer2 . rest)
+ -- Applicative: foo (foo integer1 integer2 . rest)
      The applicative `foo' subtracts INTEGER1 from INTEGER2, then
      adds all the rest of the arguments to the result.
 
@@ -338,21 +343,34 @@ borrowed from the Elisp Manual by the Free Sofware Foundation. This
 manual also borrows freely from both the Kernel Report and the Scheme
 Reports.
 
+
+File: klisp,  Node: Index,  Prev: (dir),  Up: Top
+
+Index
+*****
+
+ [index ]
+* Menu:
+
+* foo:                                   A Sample Applicative Description.
+                                                             (line 15)
+
 
 
 Tag Table:
 Node: Top334
-Node: License775
-Node: Introduction2442
-Node: Caveats5244
-Node: Kernel History6021
-Node: Conventions7454
-Node: Some Terms8119
-Node: Evaluation Notation8783
-Node: Printing Notation9519
-Node: Error Messages9990
-Node: Format of Descriptions10631
-Node: A Sample Applicative Description11188
-Node: Acknowledgements12739
+Node: License900
+Node: Introduction2567
+Node: Caveats5369
+Node: Kernel History6146
+Node: Conventions7579
+Node: Some Terms8244
+Node: Evaluation Notation8908
+Node: Printing Notation9644
+Node: Error Messages10115
+Node: Format of Descriptions10756
+Node: A Sample Applicative Description11313
+Node: Acknowledgements12964
+Node: Index13344
 
 End Tag Table

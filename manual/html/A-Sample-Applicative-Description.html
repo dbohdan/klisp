@@ -33,15 +33,16 @@ Up:&nbsp;<a rel="up" accesskey="u" href="Format-of-Descriptions.html#Format-of-D
 <h5 class="subsubsection">1.3.5.1 A Sample Applicative Description</h5>
 
 <p><a name="index-applicative-descriptions-8"></a><a name="index-operative-descriptions-9"></a><a name="index-object-descriptions-10"></a>
-  In an applicative description, the name of the applicative being described
-appears first. It is followed on the same line by a list of arguments. 
-The names used for the arguments are also used in the body of the
-description.
+  In an applicative description, the name of the applicative being
+described appears first. It is followed on the same line by an
+applicative combination that includes the name of the applicative and
+the arguments, as would appear in a program. The names used for the
+arguments are also used in the body of the description.
 
    <p>Here is a description of an imaginary applicative <code>foo</code>:
 
 <div class="defun">
-&mdash; Applicative: <b>(</b><var>foo integer1 integer2 . rest</var>)<var><a name="index-g_t_0028-11"></a></var><br>
+&mdash; Applicative: <b>foo</b> (<var>foo integer1 integer2 . rest</var>)<var><a name="index-foo-11"></a></var><br>
 <blockquote><p>  The applicative <code>foo</code> subtracts <var>integer1</var> from <var>integer2</var>,
 then adds all the rest of the arguments to the result.
 
