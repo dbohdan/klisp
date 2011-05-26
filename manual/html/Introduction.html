@@ -35,23 +35,42 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 
 <p>klisp is an open source interpreter for the Kernel Programming
 Language. It aims at being comprehensive and robust as specified in
-the "Revised(-1) Report on the Kernel Programming Language", but
+the <cite>Revised(-1) Report on the Kernel Programming Language</cite>, but
 that probably won't happen for some time. It is written in C99 under
 the MIT license. It draws heavily from the Lua interpreter source
 code &amp; file structure. It uses the IMath library for arbitrary sized
 integers and rationals.
 
-   <p>Kernel is a conservative, Scheme-like dialect of Lisp in which
-everything is a first-class object. It was created by John N. Shutt. 
-You can read all about it at http://web.cs.wpi.edu/~jshutt/kernel.html
+   <p>The Kernel programming language is a statically scoped and properly
+tail-recursive dialect of Lisp, descended from Scheme. It is designed
+to be simpler and more general than Scheme, with an exceptionally
+clear, simple, and versatile semantics, only one way to form compound
+expressions, and no inessential restrictions on the power of that one
+compound form. Imperative, functional, and message-passing programming
+styles (to name a few) may be conveniently expressed in Kernel.
+
+   <p>An important property of Kernel is that all manipulable entities in
+Kernel are first-class objects. In particular, Kernel has no
+second-class combiners; instead, the roles of special forms and macros
+are subsumed by operatives, which are first-class, statically scoped
+combiners that act directly on their unevaluated operands. Kernel
+also has a second type of combiners, applicatives, which act on their
+evalu- ated arguments. Applicatives are roughly equivalent to Scheme
+procedures. However, an applicative is nothing more than a wrapper to
+induce operand evaluation, around an underlying operative (or, in
+principle, around another applicative, though that isn’t usually
+done); applicatives themselves are mere facilitators to computation.
+
+   <p>You can read more about Kernel at
+<a href="http://web.cs.wpi.edu/~jshutt/kernel.html">http://web.cs.wpi.edu/~jshutt/kernel.html</a>.
 
    <p>klisp is freely available for both academic and commercial purposes. 
 See LICENSE for details. it can be downloaded at
-http://www.bitbucket.org/AndresNavarro/klisp
+<a href="http://www.bitbucket.org/AndresNavarro/klisp">http://www.bitbucket.org/AndresNavarro/klisp</a>
 
    <p>klisp is developed by Andres Navarro, a Computer Science
 undergraduate at Buenos Aires University (UBA). You can reach him at
-&lt;canavarro82@gmail.com&gt;.
+<a href="mailto:canavarro82@gmail.com">canavarro82@gmail.com</a>.
 
    <p>This manual describes klisp version 0.1, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel
@@ -62,13 +81,12 @@ implemented functionality.
 
    <p>This is edition 0.1.
 
-<!-- appendices -->
-<!-- TODO -->
-<!-- @include index.texi -->
-<!-- Print the tables of contents -->
-<!-- FOR some reason this ends up in the last node instead of the general... -->
-<!-- TODO @summarycontents -->
-<!-- TODO @contents -->
-<!-- That's all -->
-</body></html>
+<ul class="menu">
+<li><a accesskey="1" href="Caveats.html#Caveats">Caveats</a>:                 Flaws and a request for help. 
+<li><a accesskey="2" href="Kernel-History.html#Kernel-History">Kernel History</a>:          Kernel is descended from Scheme. 
+<li><a accesskey="3" href="Conventions.html#Conventions">Conventions</a>:             How the manual is formatted. 
+<li><a accesskey="4" href="Acknowledgements.html#Acknowledgements">Acknowledgements</a>:        Contributions to this manual. 
+</ul>
+
+   </body></html>
 

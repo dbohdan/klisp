@@ -47,23 +47,42 @@ THE SOFTWARE.
 
   klisp is an open source interpreter for the Kernel Programming
 Language. It aims at being comprehensive and robust as specified in
-the "Revised(-1) Report on the Kernel Programming Language", but
+the @cite{Revised(-1) Report on the Kernel Programming Language}, but
 that probably won't happen for some time. It is written in C99 under
 the MIT license. It draws heavily from the Lua interpreter source
 code & file structure. It uses the IMath library for arbitrary sized
 integers and rationals.
 
-  Kernel is a conservative, Scheme-like dialect of Lisp in which
-everything is a first-class object. It was created by John N. Shutt.
-You can read all about it at http://web.cs.wpi.edu/~jshutt/kernel.html
+  The Kernel programming language is a statically scoped and properly
+tail-recursive dialect of Lisp, descended from Scheme. It is designed
+to be simpler and more general than Scheme, with an exceptionally
+clear, simple, and versatile semantics, only one way to form compound
+expressions, and no inessential restrictions on the power of that one
+compound form. Imperative, functional, and message-passing programming
+styles (to name a few) may be conveniently expressed in Kernel.
+
+  An important property of Kernel is that all manipulable entities in
+Kernel are first-class objects. In particular, Kernel has no
+second-class combiners; instead, the roles of special forms and macros
+are subsumed by operatives, which are first-class, statically scoped
+combiners that act directly on their unevaluated operands. Kernel
+also has a second type of combiners, applicatives, which act on their
+evalu- ated arguments. Applicatives are roughly equivalent to Scheme
+procedures. However, an applicative is nothing more than a wrapper to
+induce operand evaluation, around an underlying operative (or, in
+principle, around another applicative, though that isn’t usually
+done); applicatives themselves are mere facilitators to computation.
+
+  You can read more about Kernel at
+@url{http://web.cs.wpi.edu/~jshutt/kernel.html}.
 
   klisp is freely available for both academic and commercial purposes.
 See LICENSE for details. it can be downloaded at 
-http://www.bitbucket.org/AndresNavarro/klisp
+@url{http://www.bitbucket.org/AndresNavarro/klisp}
 
   klisp is developed by Andres Navarro, a Computer Science
 undergraduate at Buenos Aires University (UBA). You can reach him at
-<canavarro82@@gmail.com>.
+@email{canavarro82@@gmail.com}.
 
   This manual describes klisp version 0.1, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel 
@@ -73,3 +92,238 @@ rationale is provided for any feature, only a description of the
 implemented functionality. 
 
   This is edition 0.1.
+
+@menu
+* Caveats::                Flaws and a request for help.
+* Kernel History::         Kernel is descended from Scheme.
+* Conventions::            How the manual is formatted.
+* Acknowledgements::       Contributions to this manual.
+@end menu
+
+@node Caveats, Kernel History, Introduction, Introduction
+@section Caveats
+
+  This is the first draft of this manual. It will be incomplete for
+some time. It will also evolve, together with klisp and the Kernel
+Programming Language, both of which, right now, are in a quite fluid
+state.
+
+@c this is below, in history
+  The main reference on Kernel is the preliminary report: 
+@cite{Revised(-1) Report on the Kernel Programming Language}. Some
+sections of the report are still incomplete, so both klisp and this
+manual will use specifications from other languages in these sections,
+trying to follow the Kernel spirit. These instances will be documented
+throughout the manual.
+
+Please mail comments and corrections to
+@email{canavarro82@@gmail.com}.
+
+@noindent
+@display
+ --Andres Navarro
+@end display
+
+@node Kernel History, Conventions, Caveats, Introduction
+@section Kernel History
+@cindex Kernel history
+
+  The Kernel Programming Language is a work in progress. It is being
+developed by John N. Shutt, Ph.D, who created it while studying at the
+Worcester Polytechnic Institute (I think about 2002, or so... ASK). It
+is descended from scheme, with the idea that all objects should be
+first class values. In particular, Kernel replaces macros with
+operatives (kinda like statically scoped fexprs and fsubrs) and has
+first class environments. Kernel also has the notion of encapsulated
+objects which limits the ammount of information an implementation can
+share with a Kernel program (e.g. There is no way in Kernel to get the
+parents or a complete list of bindings of an environment object). 
+
+@c this is repeated above, in caveats
+  The main reference on Kernel is the preliminary report: 
+@cite{Revised(-1) Report on the Kernel Programming Language}. Some
+sections of the report are still incomplete, so both klisp and this
+manual will use specifications from other languages in these sections,
+trying to follow the Kernel spirit. These instances will be documented
+throughout the manual.
+
+  You can read all about Kernel at John's homepage at WPI 
+@url{http://www.cs.wpi.edu/~jshutt/}, including the preliminary report
+on the language and his doctoral dissertation which gives a
+theorethical frame for fexprs. You can contact him at
+@email{jshutt@@cs.wpi.edu}.
+
+@node Conventions, Acknowledgements, Kernel History, Introduction
+@section Conventions
+
+  This section explains the notational conventions that are used in this
+manual. You may want to skip this section and refer back to it later.
+
+@menu
+* Some Terms::               Explanation of terms we use in this manual.
+@c TODO add sections for booleans, parameter trees, list structures,
+@c naming conventions, etc.
+* Evaluation Notation::      The format we use for examples of evaluation.
+* Printing Notation::        The format we use for examples that print output.
+* Error Messages::           The format we use for examples of errors.
+* Format of Descriptions::   Notation for describing functions, variables, etc.
+@end menu
+
+@node Some Terms, Evaluation Notation, Conventions, Conventions
+@subsection Some Terms
+
+  Throughout this manual, the phrases ``the Kernel reader'' and ``the Kernel
+printer'' are used to refer to those routines in Lisp that convert
+textual representations of Kernel objects into actual objects, and
+@c TODO xref to printed representations
+vice versa. XXX Printed Representation XXX, for more details. You, the
+person reading this manual, are assumed to be ``the programmer'' or
+``the user''.
+
+@cindex fonts
+  Examples of Kernel code appear in this font or form: @code{(list 1 2
+3)}. Names that represent arguments or metasyntactic variables appear
+in this font or form: @var{first-number}.
+
+@node Evaluation Notation, Printing Notation, Some Terms, Conventions
+@subsection Evaluation Notation
+@cindex evaluation notation
+@cindex documentation notation
+
+  When you evaluate a piece of Kernel code, it produces a result. In the
+examples in this manual, this is indicated with @samp{@result{}}:
+
+@example
+(car (cons 1 2))
+     @result{} 1
+@end example
+
+@noindent
+You can read this as ``@code{(car (cons 1 2))} evaluates to 1''.
+
+  The semantics of a language feature are sometimes clarified, or even
+defined, in its entry by specifying that two expressions are
+equivalent. This is notated with @samp{@equiv{}}. For example, the 
+semantics of applicative list* can be defined by following
+equivalences:
+@example
+(list* arg1) @equiv{} arg1
+(list* arg1 . more-args) @equiv{} (cons arg1 (list* . more-args))
+@end example
+
+@node Printing Notation, Error Messages, Evaluation Notation, Conventions
+@subsection Printing Notation
+@cindex printing notation
+
+  Many of the examples in this manual print text when they are
+evaluated. In examples that print text, the printed text is indicated with
+@samp{@print{}}. The value returned by evaluating the form (here
+@code{#t}) follows on a separate line.
+
+@group
+@example
+($sequence (write 1) (write 2) #t)
+     @print{} 1
+     @print{} 2
+     @result{} #t
+@end example
+@end group
+
+@node Error Messages, Format of Descriptions, Printing Notation, Conventions
+@subsection Error Messages
+@cindex error message notation
+
+  Some examples cause errors to be signaled. The report doesn't
+specify what objects are passed to the error continuation, but in
+klisp, objects passed to the error continuation are encapsulated error
+objects that have at least a message and possibly some additional
+objects and context informations (such as source code location). In
+the examples, the error message is shown on a line starting with
+@samp{@error{}}.
+
+@example
+(+ 23 #t)
+@error{} Wrong type argument: (expected number) (#t)
+@end example
+
+@node Format of Descriptions,  , Error Messages, Conventions
+@subsection Format of Descriptions
+@cindex description format
+
+  Applicatives, operatives, and other objects are described in this manual
+in a uniform format. The first line of a description contains the
+name of the item followed by its operands or arguments, if any.
+@ifinfo
+The category---operative, applicative, or whatever---appears at the
+beginning of the line.
+@end ifinfo
+@iftex
+The category---operative, applicative, or whatever---is printed next to the
+right margin.
+@end iftex
+The description follows on succeeding lines, sometimes with examples.
+
+@menu
+* A Sample Applicative Description::       
+@c TODO add operative and/or variable like root-continuation
+@end menu
+
+@node A Sample Applicative Description, , Format of Descriptions, Format of Descriptions
+@subsubsection A Sample Applicative Description
+@cindex applicative descriptions
+@cindex operative descriptions
+@cindex object descriptions
+
+  In an applicative description, the name of the applicative being described
+appears first. It is followed on the same line by a list of arguments.
+The names used for the arguments are also used in the body of the
+description.
+
+  Here is a description of an imaginary applicative @code{foo}:
+
+@deffn Applicative (foo integer1 integer2 . rest)
+  The applicative @code{foo} subtracts @var{integer1} from @var{integer2},
+then adds all the rest of the arguments to the result. 
+
+@example
+(foo 1 5 3 9)
+     @result{} 16
+@end example
+
+More generally,
+
+@example
+(foo @var{w} @var{x} @var{y}@dots{})
+@equiv{}
+(+ (- @var{x} @var{w}) @var{y}@dots{})
+@end example
+@end deffn
+
+  Any parameter whose name contains the name of a type (e.g.,
+@var{integer}, @var{integer1} or @var{continuation}) is expected to be of that
+type. A plural of a type (such as @var{numbers}) often means a list of
+objects of that type. Parameters named @var{object} may be of any
+type.
+@c TODO add xref types of objects
+(XXX Types of Lisp Object XXX, for a list of Kernel object types.)
+Parameters with other sorts of names are
+discussed specifically in the description of the combiner. In some
+sections, features common to parameters of several combiners are
+described at the beginning.
+
+@c TODO xref to ptree
+@c TODO clean this up a little
+  Operative descriptions have the same format, but the word
+`Applicative' is  replaced by `Operative', and `Argument' is replaced
+by `Operand'. Also Operatives always have an environment parameter
+(that can be #ignore or a symbol).
+
+@node Acknowledgements,, Conventions, Introduction
+@section Acknowledgements
+
+  This manual was written by Andres Navarro.
+
+  The structure and some text for this introductory section were
+borrowed from the Elisp Manual by the Free Sofware Foundation. This
+manual also borrows freely from both the Kernel Report and the Scheme
+Reports.

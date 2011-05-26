@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>A Sample Applicative Description - klisp Reference Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="klisp Reference Manual">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Format-of-Descriptions.html#Format-of-Descriptions" title="Format of Descriptions">
+<link rel="prev" href="Format-of-Descriptions.html#Format-of-Descriptions" title="Format of Descriptions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="A-Sample-Applicative-Description"></a>
+<p>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Format-of-Descriptions.html#Format-of-Descriptions">Format of Descriptions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Format-of-Descriptions.html#Format-of-Descriptions">Format of Descriptions</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">1.3.5.1 A Sample Applicative Description</h5>
+
+<p><a name="index-applicative-descriptions-8"></a><a name="index-operative-descriptions-9"></a><a name="index-object-descriptions-10"></a>
+  In an applicative description, the name of the applicative being described
+appears first. It is followed on the same line by a list of arguments. 
+The names used for the arguments are also used in the body of the
+description.
+
+   <p>Here is a description of an imaginary applicative <code>foo</code>:
+
+<div class="defun">
+&mdash; Applicative: <b>(</b><var>foo integer1 integer2 . rest</var>)<var><a name="index-g_t_0028-11"></a></var><br>
+<blockquote><p>  The applicative <code>foo</code> subtracts <var>integer1</var> from <var>integer2</var>,
+then adds all the rest of the arguments to the result.
+
+     <pre class="example">          (foo 1 5 3 9)
+               &rArr; 16
+</pre>
+        <p>More generally,
+
+     <pre class="example">          (foo <var>w</var> <var>x</var> <var>y</var>...)
+          ==
+          (+ (- <var>x</var> <var>w</var>) <var>y</var>...)
+</pre>
+        </blockquote></div>
+
+   <p>Any parameter whose name contains the name of a type (e.g.,
+<var>integer</var>, <var>integer1</var> or <var>continuation</var>) is expected to be of that
+type. A plural of a type (such as <var>numbers</var>) often means a list of
+objects of that type. Parameters named <var>object</var> may be of any
+type. 
+<!-- TODO add xref types of objects -->
+(XXX Types of Lisp Object XXX, for a list of Kernel object types.) 
+Parameters with other sorts of names are
+discussed specifically in the description of the combiner. In some
+sections, features common to parameters of several combiners are
+described at the beginning.
+
+<!-- TODO xref to ptree -->
+<!-- TODO clean this up a little -->
+   <p>Operative descriptions have the same format, but the word
+`Applicative' is  replaced by `Operative', and `Argument' is replaced
+by `Operand'. Also Operatives always have an environment parameter
+(that can be #ignore or a symbol).
+
+   </body></html>
+
