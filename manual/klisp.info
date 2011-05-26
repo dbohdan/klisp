@@ -1,26 +1,26 @@
-This is klisp, produced by makeinfo version 4.13 from
-/home/deka/prog/kernel/klisp/manual/src/klisp.texi.
+This is klisp.info, produced by makeinfo version 4.13 from
+src/klisp.texi.
 
 This file documents klisp.
 
-   This is edition 0.1 of the klisp Reference Manual, for klisp
-version 0.1.
+   This is edition 0.1 of the klisp Reference Manual, for klisp version
+0.1.
 
    Copyright (C) 2011 Andres Navarro
 
-   Permission is granted to copy and distribute this manual, in whole
-or in part.
+   Permission is granted to copy and distribute this manual, in whole or
+in part.
 
 
-File: klisp,  Node: Top,  Next: License,  Prev: (dir),  Up: (dir)
+File: klisp.info,  Node: Top,  Next: License,  Prev: (dir),  Up: (dir)
 
    This Info file contains edition 0.1 of the klisp Reference Manual,
 corresponding to klisp version 0.1.
 
    Copyright (C) 2011 Andres Navarro
 
-   Permission is granted to copy and distribute this manual, in whole
-or in part.
+   Permission is granted to copy and distribute this manual, in whole or
+in part.
 
 * Menu:
 
@@ -32,13 +32,13 @@ or in part.
                               and other terms.
 
 
-File: klisp,  Node: License,  Next: Introduction,  Prev: Top,  Up: Top
+File: klisp.info,  Node: License,  Next: Introduction,  Prev: Top,  Up: Top
 
    klisp is licensed under the terms of the MIT license reproduced
-below.  This means that klisp is free software and can be used for
-both academic and commercial purposes at absolutely no cost.  The two
-projects whose code klisp uses, Lua & IMath, are also distributed
-under the MIT license.
+below.  This means that klisp is free software and can be used for both
+academic and commercial purposes at absolutely no cost.  The two
+projects whose code klisp uses, Lua & IMath, are also distributed under
+the MIT license.
 
    * klisp Parts: Copyright (C) 2011 Andres Navarro.
 
@@ -51,8 +51,8 @@ under the MIT license.
 MIT/X11 License
 ***************
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
 "Software"), to deal in the Software without restriction, including
 without limitation the rights to use, copy, modify, merge, publish,
 distribute, sublicense, and/or sell copies of the Software, and to
@@ -64,26 +64,25 @@ included in all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-File: klisp,  Node: Introduction,  Next: (dir),  Prev: License,  Up: Top
+File: klisp.info,  Node: Introduction,  Next: (dir),  Prev: License,  Up: Top
 
 1 Introduction
 **************
 
 klisp is an open source interpreter for the Kernel Programming
-Language. It aims at being comprehensive and robust as specified in
-the `Revised(-1) Report on the Kernel Programming Language', but that
-probably won't happen for some time. It is written in C99 under the
-MIT license. It draws heavily from the Lua interpreter source code &
-file structure. It uses the IMath library for arbitrary sized
-integers and rationals.
+Language. It aims at being comprehensive and robust as specified in the
+`Revised(-1) Report on the Kernel Programming Language', but that
+probably won't happen for some time. It is written in C99 under the MIT
+license. It draws heavily from the Lua interpreter source code & file
+structure. It uses the IMath library for arbitrary sized integers and
+rationals.
 
    The Kernel programming language is a statically scoped and properly
 tail-recursive dialect of Lisp, descended from Scheme. It is designed
@@ -97,19 +96,19 @@ styles (to name a few) may be conveniently expressed in Kernel.
 Kernel are first-class objects. In particular, Kernel has no
 second-class combiners; instead, the roles of special forms and macros
 are subsumed by operatives, which are first-class, statically scoped
-combiners that act directly on their unevaluated operands. Kernel
-also has a second type of combiners, applicatives, which act on their
-evalu- ated arguments. Applicatives are roughly equivalent to Scheme
+combiners that act directly on their unevaluated operands. Kernel also
+has a second type of combiners, applicatives, which act on their evalu-
+ated arguments. Applicatives are roughly equivalent to Scheme
 procedures. However, an applicative is nothing more than a wrapper to
 induce operand evaluation, around an underlying operative (or, in
-principle, around another applicative, though that isn’t usually
-done); applicatives themselves are mere facilitators to computation.
+principle, around another applicative, though that isn’t usually done);
+applicatives themselves are mere facilitators to computation.
 
    You can read more about Kernel at
 `http://web.cs.wpi.edu/~jshutt/kernel.html'.
 
-   klisp is freely available for both academic and commercial
-purposes.  See LICENSE for details. it can be downloaded at
+   klisp is freely available for both academic and commercial purposes.
+See LICENSE for details. it can be downloaded at
 `http://www.bitbucket.org/AndresNavarro/klisp'
 
    klisp is developed by Andres Navarro, a Computer Science
@@ -133,22 +132,22 @@ implemented functionality.
 * Acknowledgements::       Contributions to this manual.
 
 
-File: klisp,  Node: Caveats,  Next: Kernel History,  Prev: Introduction,  Up: Introduction
+File: klisp.info,  Node: Caveats,  Next: Kernel History,  Prev: Introduction,  Up: Introduction
 
 1.1 Caveats
 ===========
 
-This is the first draft of this manual. It will be incomplete for
-some time. It will also evolve, together with klisp and the Kernel
+This is the first draft of this manual. It will be incomplete for some
+time. It will also evolve, together with klisp and the Kernel
 Programming Language, both of which, right now, are in a quite fluid
 state.
 
-   The main reference on Kernel is the preliminary report:
-`Revised(-1) Report on the Kernel Programming Language'. Some
-sections of the report are still incomplete, so both klisp and this
-manual will use specifications from other languages in these sections,
-trying to follow the Kernel spirit. These instances will be documented
-throughout the manual.
+   The main reference on Kernel is the preliminary report: `Revised(-1)
+Report on the Kernel Programming Language'. Some sections of the report
+are still incomplete, so both klisp and this manual will use
+specifications from other languages in these sections, trying to follow
+the Kernel spirit. These instances will be documented throughout the
+manual.
 
    Please mail comments and corrections to <canavarro82@gmail.com>.
 
@@ -156,7 +155,7 @@ throughout the manual.
       -Andres Navarro
 
 
-File: klisp,  Node: Kernel History,  Next: Conventions,  Prev: Caveats,  Up: Introduction
+File: klisp.info,  Node: Kernel History,  Next: Conventions,  Prev: Caveats,  Up: Introduction
 
 1.2 Kernel History
 ==================
@@ -172,12 +171,12 @@ objects which limits the ammount of information an implementation can
 share with a Kernel program (e.g. There is no way in Kernel to get the
 parents or a complete list of bindings of an environment object).
 
-   The main reference on Kernel is the preliminary report:
-`Revised(-1) Report on the Kernel Programming Language'. Some
-sections of the report are still incomplete, so both klisp and this
-manual will use specifications from other languages in these sections,
-trying to follow the Kernel spirit. These instances will be documented
-throughout the manual.
+   The main reference on Kernel is the preliminary report: `Revised(-1)
+Report on the Kernel Programming Language'. Some sections of the report
+are still incomplete, so both klisp and this manual will use
+specifications from other languages in these sections, trying to follow
+the Kernel spirit. These instances will be documented throughout the
+manual.
 
    You can read all about Kernel at John's homepage at WPI
 `http://www.cs.wpi.edu/~jshutt/', including the preliminary report on
@@ -185,7 +184,7 @@ the language and his doctoral dissertation which gives a theorethical
 frame for fexprs. You can contact him at <jshutt@cs.wpi.edu>.
 
 
-File: klisp,  Node: Conventions,  Next: Acknowledgements,  Prev: Kernel History,  Up: Introduction
+File: klisp.info,  Node: Conventions,  Next: Acknowledgements,  Prev: Kernel History,  Up: Introduction
 
 1.3 Conventions
 ===============
@@ -202,24 +201,24 @@ manual. You may want to skip this section and refer back to it later.
 * Format of Descriptions::   Notation for describing functions, variables, etc.
 
 
-File: klisp,  Node: Some Terms,  Next: Evaluation Notation,  Prev: Conventions,  Up: Conventions
+File: klisp.info,  Node: Some Terms,  Next: Evaluation Notation,  Prev: Conventions,  Up: Conventions
 
 1.3.1 Some Terms
 ----------------
 
-Throughout this manual, the phrases "the Kernel reader" and "the
-Kernel printer" are used to refer to those routines in Lisp that
-convert textual representations of Kernel objects into actual
-objects, and vice versa. XXX Printed Representation XXX, for more
-details. You, the person reading this manual, are assumed to be "the
-programmer" or "the user".
+Throughout this manual, the phrases "the Kernel reader" and "the Kernel
+printer" are used to refer to those routines in Lisp that convert
+textual representations of Kernel objects into actual objects, and vice
+versa. XXX Printed Representation XXX, for more details. You, the
+person reading this manual, are assumed to be "the programmer" or "the
+user".
 
-   Examples of Kernel code appear in this font or form: `(list 1 2
-3)'. Names that represent arguments or metasyntactic variables appear
-in this font or form: FIRST-NUMBER.
+   Examples of Kernel code appear in this font or form: `(list 1 2 3)'.
+Names that represent arguments or metasyntactic variables appear in
+this font or form: FIRST-NUMBER.
 
 
-File: klisp,  Node: Evaluation Notation,  Next: Printing Notation,  Prev: Some Terms,  Up: Conventions
+File: klisp.info,  Node: Evaluation Notation,  Next: Printing Notation,  Prev: Some Terms,  Up: Conventions
 
 1.3.2 Evaluation Notation
 -------------------------
@@ -232,23 +231,23 @@ examples in this manual, this is indicated with `=>':
 
 You can read this as "`(car (cons 1 2))' evaluates to 1".
 
-   The semantics of a language feature are sometimes clarified, or
-even defined, in its entry by specifying that two expressions are
+   The semantics of a language feature are sometimes clarified, or even
+defined, in its entry by specifying that two expressions are
 equivalent. This is notated with `=='. For example, the semantics of
 applicative list* can be defined by following equivalences:
      (list* arg1) == arg1
      (list* arg1 . more-args) == (cons arg1 (list* . more-args))
 
 
-File: klisp,  Node: Printing Notation,  Next: Error Messages,  Prev: Evaluation Notation,  Up: Conventions
+File: klisp.info,  Node: Printing Notation,  Next: Error Messages,  Prev: Evaluation Notation,  Up: Conventions
 
 1.3.3 Printing Notation
 -----------------------
 
-Many of the examples in this manual print text when they are
-evaluated. In examples that print text, the printed text is indicated
-with `-|'. The value returned by evaluating the form (here `#t')
-follows on a separate line.
+Many of the examples in this manual print text when they are evaluated.
+In examples that print text, the printed text is indicated with `-|'.
+The value returned by evaluating the form (here `#t') follows on a
+separate line.
 
      ($sequence (write 1) (write 2) #t)
           -| 1
@@ -256,41 +255,40 @@ follows on a separate line.
           => #t
 
 
-File: klisp,  Node: Error Messages,  Next: Format of Descriptions,  Prev: Printing Notation,  Up: Conventions
+File: klisp.info,  Node: Error Messages,  Next: Format of Descriptions,  Prev: Printing Notation,  Up: Conventions
 
 1.3.4 Error Messages
 --------------------
 
 Some examples cause errors to be signaled. The report doesn't specify
 what objects are passed to the error continuation, but in klisp,
-objects passed to the error continuation are encapsulated error
-objects that have at least a message and possibly some additional
-objects and context informations (such as source code location). In
-the examples, the error message is shown on a line starting with
-`error-->'.
+objects passed to the error continuation are encapsulated error objects
+that have at least a message and possibly some additional objects and
+context informations (such as source code location). In the examples,
+the error message is shown on a line starting with `error-->'.
 
      (+ 23 #t)
      error--> Wrong type argument: (expected number) (#t)
 
 
-File: klisp,  Node: Format of Descriptions,  Prev: Error Messages,  Up: Conventions
+File: klisp.info,  Node: Format of Descriptions,  Prev: Error Messages,  Up: Conventions
 
 1.3.5 Format of Descriptions
 ----------------------------
 
-Applicatives, operatives, and other objects are described in this
-manual in a uniform format. The first line of a description contains
-the name of the item followed by its operands or arguments, if any.
-The category--operative, applicative, or whatever--appears at the
-beginning of the line.  The description follows on succeeding lines,
-sometimes with examples.
+Applicatives, operatives, and other objects are described in this manual
+in a uniform format. The first line of a description contains the name
+of the item followed by its operands or arguments, if any.  The
+category--operative, applicative, or whatever--appears at the beginning
+of the line.  The description follows on succeeding lines, sometimes
+with examples.
 
 * Menu:
 
 * A Sample Applicative Description::
 
 
-File: klisp,  Node: A Sample Applicative Description,  Prev: Format of Descriptions,  Up: Format of Descriptions
+File: klisp.info,  Node: A Sample Applicative Description,  Prev: Format of Descriptions,  Up: Format of Descriptions
 
 1.3.5.1 A Sample Applicative Description
 ........................................
@@ -304,8 +302,8 @@ arguments are also used in the body of the description.
    Here is a description of an imaginary applicative `foo':
 
  -- Applicative: foo (foo integer1 integer2 . rest)
-     The applicative `foo' subtracts INTEGER1 from INTEGER2, then
-     adds all the rest of the arguments to the result.
+     The applicative `foo' subtracts INTEGER1 from INTEGER2, then adds
+     all the rest of the arguments to the result.
 
           (foo 1 5 3 9)
                => 16
@@ -316,14 +314,14 @@ arguments are also used in the body of the description.
           ==
           (+ (- X W) Y...)
 
-   Any parameter whose name contains the name of a type (e.g.,
-INTEGER, INTEGER1 or CONTINUATION) is expected to be of that type. A
-plural of a type (such as NUMBERS) often means a list of objects of
-that type. Parameters named OBJECT may be of any type.  (XXX Types of
-Lisp Object XXX, for a list of Kernel object types.)  Parameters with
-other sorts of names are discussed specifically in the description of
-the combiner. In some sections, features common to parameters of
-several combiners are described at the beginning.
+   Any parameter whose name contains the name of a type (e.g., INTEGER,
+INTEGER1 or CONTINUATION) is expected to be of that type. A plural of a
+type (such as NUMBERS) often means a list of objects of that type.
+Parameters named OBJECT may be of any type.  (XXX Types of Lisp Object
+XXX, for a list of Kernel object types.)  Parameters with other sorts
+of names are discussed specifically in the description of the combiner.
+In some sections, features common to parameters of several combiners are
+described at the beginning.
 
    Operative descriptions have the same format, but the word
 `Applicative' is  replaced by `Operative', and `Argument' is replaced
@@ -331,7 +329,7 @@ by `Operand'. Also Operatives always have an environment parameter
 (that can be #ignore or a symbol).
 
 
-File: klisp,  Node: Acknowledgements,  Prev: Conventions,  Up: Introduction
+File: klisp.info,  Node: Acknowledgements,  Prev: Conventions,  Up: Introduction
 
 1.4 Acknowledgements
 ====================
@@ -344,7 +342,7 @@ manual also borrows freely from both the Kernel Report and the Scheme
 Reports.
 
 
-File: klisp,  Node: Index,  Prev: (dir),  Up: Top
+File: klisp.info,  Node: Index,  Prev: (dir),  Up: Top
 
 Index
 *****
@@ -353,24 +351,24 @@ Index
 * Menu:
 
 * foo:                                   A Sample Applicative Description.
-                                                             (line 15)
+                                                               (line 15)
 
 
 
 Tag Table:
-Node: Top334
-Node: License900
-Node: Introduction2567
-Node: Caveats5369
-Node: Kernel History6146
-Node: Conventions7579
-Node: Some Terms8244
-Node: Evaluation Notation8908
-Node: Printing Notation9644
-Node: Error Messages10115
-Node: Format of Descriptions10756
-Node: A Sample Applicative Description11313
-Node: Acknowledgements12964
-Node: Index13344
+Node: Top303
+Node: License874
+Node: Introduction2545
+Node: Caveats5351
+Node: Kernel History6133
+Node: Conventions7571
+Node: Some Terms8241
+Node: Evaluation Notation8910
+Node: Printing Notation9651
+Node: Error Messages10127
+Node: Format of Descriptions10773
+Node: A Sample Applicative Description11336
+Node: Acknowledgements12992
+Node: Index13377
 
 End Tag Table

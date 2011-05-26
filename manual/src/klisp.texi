@@ -4,6 +4,16 @@ input texinfo  @c -*-texinfo-*-
 @settitle klisp Reference Manual
 @c %**end of header
 
+@c TODO probably don't use all of these, this is from elisp
+@c Combine indices.
+@synindex cp fn
+@syncodeindex vr fn
+@syncodeindex ky fn
+@syncodeindex pg fn
+@syncodeindex tp fn
+@c oops: texinfo-format-buffer ignores synindex
+@c
+
 @ifinfo
 This file documents klisp.
 
