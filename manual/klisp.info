@@ -1,5 +1,5 @@
-This is klisp.info, produced by makeinfo version 4.13 from
-src/klisp.texi.
+This is ../klisp.info, produced by makeinfo version 4.13 from
+klisp.texi.
 
 This file documents klisp.
 
@@ -350,25 +350,39 @@ Index
  [index ]
 * Menu:
 
+* applicative descriptions:              A Sample Applicative Description.
+                                                               (line  6)
+* description format:                    Format of Descriptions.
+                                                               (line  6)
+* documentation notation:                Evaluation Notation.  (line  6)
+* error message notation:                Error Messages.       (line  6)
+* evaluation notation:                   Evaluation Notation.  (line  6)
+* fonts:                                 Some Terms.           (line 13)
 * foo:                                   A Sample Applicative Description.
                                                                (line 15)
+* Kernel history:                        Kernel History.       (line  6)
+* object descriptions:                   A Sample Applicative Description.
+                                                               (line  6)
+* operative descriptions:                A Sample Applicative Description.
+                                                               (line  6)
+* printing notation:                     Printing Notation.    (line  6)
 
 
 
 Tag Table:
-Node: Top303
-Node: License874
-Node: Introduction2545
-Node: Caveats5351
-Node: Kernel History6133
-Node: Conventions7571
-Node: Some Terms8241
-Node: Evaluation Notation8910
-Node: Printing Notation9651
-Node: Error Messages10127
-Node: Format of Descriptions10773
-Node: A Sample Applicative Description11336
-Node: Acknowledgements12992
-Node: Index13377
+Node: Top302
+Node: License873
+Node: Introduction2544
+Node: Caveats5350
+Node: Kernel History6132
+Node: Conventions7570
+Node: Some Terms8240
+Node: Evaluation Notation8909
+Node: Printing Notation9650
+Node: Error Messages10126
+Node: Format of Descriptions10772
+Node: A Sample Applicative Description11335
+Node: Acknowledgements12991
+Node: Index13376
 
 End Tag Table
