@@ -71,9 +71,9 @@ in part.
 @menu
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
-
-@c TODO
-
+@c TODO lisp types and other introductions
+* Booleans::                Boolean module features.
+@c TODO complete
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -84,6 +84,7 @@ in part.
 @end menu
 
 @include intro.texi
+@include booleans.texi
 
 @c appendices
 @c TODO

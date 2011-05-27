@@ -1,0 +1,65 @@
+@c -*-texinfo-*-
+@setfilename ../src/booleans
+
+@node Booleans, Index, Introduction, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Booleans
+@cindex booleans
+
+  The boolean data type consists of two values, which are called true
+and false, and have respectively external representations @code{#t}
+and @code{#f}. There are no possible mutations of either of these two 
+@c add encapsulated cross ref
+values, and the boolean type is encapsulated.
+
+@deffn Applicative boolean? (boolean? . objects)
+  The primitive type predicate for type boolean. @code{boolean?}
+returns true iff all the objects in list are of type boolean.
+@end deffn
+
+@deffn Applicative not? (not? boolean)
+  Applicative @code{not?} is a predicate that returns the logical
+negation of its argument.
+@end deffn
+
+@deffn Applicative and? (and? . booleans)
+  Applicative @code{and?} is a predicate that returns true unless one
+or more of its arguments are false.
+@end deffn
+
+@deffn Applicative or? (or? . booleans)
+  Applicative @code{or?} is a predicate that returns false unless one
+or more of its arguments are true.
+@end deffn
+
+@deffn Operative $and? ($and? . list)
+  The @code{$and?} operative performs a ``short-circuit and'' of its
+operands. It evaluates them from left to right, until either an
+operand evaluates to false, or the end of the list is reached. If the
+end of the list is reached (which is immediate if @code{list} is
+@code{nil}), the operative returns true. If an operand evaluates to
+false, no further operand evaluations are performed, and the operative
+returns false. If @code{list} is acyclic, and the last operand is
+@c TODO cross ref tail-contect
+evaluated, it is evaluated as a tail context. If @code{list} is
+cyclic, an unbounded number of operand evaluations may be
+performed. If any of the operands evaluates to a non-boolean value, an
+error is signaled (even if it's the last one).
+@end deffn
+
+@deffn Operative $or? ($or? . list)
+  The @code{$or?} operative performs a ``short-circuit or'' of its
+operands. It evaluates them from left to right, until either an
+operand evaluates to true, or the end of the list is reached. If the
+end of the list is reached (which is immediate if @code{list} is
+@code{nil}), the operative returns false. If an operand evaluates to
+true, no further operand evaluations are performed, and the operative
+returns true. If @code{list} is acyclic, and the last operand is
+@c TODO cross ref tail-contect
+evaluated, it is evaluated as a tail context. If @code{list} is
+cyclic, an unbounded number of operand evaluations may be
+performed. If any of the operands evaluates to a non-boolean value, an
+error is signaled (even if it's the last one).
+@end deffn
+

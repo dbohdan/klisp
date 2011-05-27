@@ -2,7 +2,7 @@
 @setfilename ../src/index
 
 @c TODO correct prev node
-@node Index,  , (dir), Top
+@node Index, (dir), Booleans, Top
 @c this is from the elisp manual... Should read a little about this.
 @unnumbered Index
 

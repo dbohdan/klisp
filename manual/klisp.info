@@ -26,8 +26,7 @@ in part.
 
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
-
-
+* Booleans::                Boolean module features.
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -71,7 +70,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-File: klisp.info,  Node: Introduction,  Next: (dir),  Prev: License,  Up: Top
+File: klisp.info,  Node: Introduction,  Next: Booleans,  Prev: License,  Up: Top
 
 1 Introduction
 **************
@@ -342,7 +341,60 @@ manual also borrows freely from both the Kernel Report and the Scheme
 Reports.
 
 
-File: klisp.info,  Node: Index,  Prev: (dir),  Up: Top
+File: klisp.info,  Node: Booleans,  Next: Index,  Prev: Introduction,  Up: Top
+
+2 Booleans
+**********
+
+The boolean data type consists of two values, which are called true and
+false, and have respectively external representations `#t' and `#f'.
+There are no possible mutations of either of these two values, and the
+boolean type is encapsulated.
+
+ -- Applicative: boolean? (boolean? . objects)
+     The primitive type predicate for type boolean. `boolean?' returns
+     true iff all the objects in list are of type boolean.
+
+ -- Applicative: not? (not? boolean)
+     Applicative `not?' is a predicate that returns the logical
+     negation of its argument.
+
+ -- Applicative: and? (and? . booleans)
+     Applicative `and?' is a predicate that returns true unless one or
+     more of its arguments are false.
+
+ -- Applicative: or? (or? . booleans)
+     Applicative `or?' is a predicate that returns false unless one or
+     more of its arguments are true.
+
+ -- Operative: $and? ($and? . list)
+     The `$and?' operative performs a "short-circuit and" of its
+     operands. It evaluates them from left to right, until either an
+     operand evaluates to false, or the end of the list is reached. If
+     the end of the list is reached (which is immediate if `list' is
+     `nil'), the operative returns true. If an operand evaluates to
+     false, no further operand evaluations are performed, and the
+     operative returns false. If `list' is acyclic, and the last
+     operand is evaluated, it is evaluated as a tail context. If `list'
+     is cyclic, an unbounded number of operand evaluations may be
+     performed. If any of the operands evaluates to a non-boolean
+     value, an error is signaled (even if it's the last one).
+
+ -- Operative: $or? ($or? . list)
+     The `$or?' operative performs a "short-circuit or" of its
+     operands. It evaluates them from left to right, until either an
+     operand evaluates to true, or the end of the list is reached. If
+     the end of the list is reached (which is immediate if `list' is
+     `nil'), the operative returns false. If an operand evaluates to
+     true, no further operand evaluations are performed, and the
+     operative returns true. If `list' is acyclic, and the last operand
+     is evaluated, it is evaluated as a tail context. If `list' is
+     cyclic, an unbounded number of operand evaluations may be
+     performed. If any of the operands evaluates to a non-boolean
+     value, an error is signaled (even if it's the last one).
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Booleans,  Up: Top
 
 Index
 *****
@@ -350,8 +402,13 @@ Index
  [index ]
 * Menu:
 
+* $and?:                                 Booleans.             (line 28)
+* $or?:                                  Booleans.             (line 41)
+* and?:                                  Booleans.             (line 20)
 * applicative descriptions:              A Sample Applicative Description.
                                                                (line  6)
+* boolean?:                              Booleans.             (line 12)
+* booleans:                              Booleans.             (line  6)
 * description format:                    Format of Descriptions.
                                                                (line  6)
 * documentation notation:                Evaluation Notation.  (line  6)
@@ -361,28 +418,31 @@ Index
 * foo:                                   A Sample Applicative Description.
                                                                (line 15)
 * Kernel history:                        Kernel History.       (line  6)
+* not?:                                  Booleans.             (line 16)
 * object descriptions:                   A Sample Applicative Description.
                                                                (line  6)
 * operative descriptions:                A Sample Applicative Description.
                                                                (line  6)
+* or?:                                   Booleans.             (line 24)
 * printing notation:                     Printing Notation.    (line  6)
 
 
 
 Tag Table:
 Node: Top302
-Node: License873
-Node: Introduction2544
-Node: Caveats5350
-Node: Kernel History6132
-Node: Conventions7570
-Node: Some Terms8240
-Node: Evaluation Notation8909
-Node: Printing Notation9650
-Node: Error Messages10126
-Node: Format of Descriptions10772
-Node: A Sample Applicative Description11335
-Node: Acknowledgements12991
-Node: Index13376
+Node: License924
+Node: Introduction2595
+Node: Caveats5404
+Node: Kernel History6186
+Node: Conventions7624
+Node: Some Terms8294
+Node: Evaluation Notation8963
+Node: Printing Notation9704
+Node: Error Messages10180
+Node: Format of Descriptions10826
+Node: A Sample Applicative Description11389
+Node: Acknowledgements13045
+Node: Booleans13430
+Node: Index15932
 
 End Tag Table
