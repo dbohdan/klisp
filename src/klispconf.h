@@ -53,3 +53,30 @@
 ** change this value dynamically.
 */
 #define KLISPI_GCMUL	200 /* GC runs 'twice the speed' of memory allocation */
+
+/*
+@@ KLISP_API is a mark for all core API functions.
+@@ KLISPLIB_API is a mark for all standard library functions.
+** CHANGE them if you need to define those functions in some special way.
+** For instance, if you want to create one Windows DLL with the core and
+** the libraries, you may want to use the following definition (define
+** KLISP_BUILD_AS_DLL to get it).
+*/
+#if defined(KLISP_BUILD_AS_DLL)
+
+#if defined(KLISP_CORE) || defined(KLISP_LIB)
+#define KLISP_API __declspec(dllexport)
+#else
+#define KLISP_API __declspec(dllimport)
+#endif
+
+#else
+
+#define KLISP_API		extern
+
+#endif
+
+/* more often than not the libs go together with the core */
+#define KLISPLIB_API	KLISP_API
+
+/* TODO: add klisp_core/lib defines... see lua */
