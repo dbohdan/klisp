@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/booleans
 
-@node Booleans, Index, Introduction, Top
+@node Booleans, Equivalence, Introduction, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Booleans

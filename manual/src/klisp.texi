@@ -73,6 +73,8 @@ in part.
 * Introduction::            Introduction and conventions used.
 @c TODO lisp types and other introductions
 * Booleans::                Boolean module features.
+* Equivalence::             Equivalence under mutation & Equivalence up to
+mutation module features.
 @c TODO complete
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
@@ -85,6 +87,7 @@ in part.
 
 @include intro.texi
 @include booleans.texi
+@include equivalence.texi
 
 @c appendices
 @c TODO

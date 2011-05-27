@@ -27,6 +27,8 @@ in part.
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
 * Booleans::                Boolean module features.
+* Equivalence::             Equivalence under mutation & Equivalence up to
+mutation module features.
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -341,7 +343,7 @@ manual also borrows freely from both the Kernel Report and the Scheme
 Reports.
 
 
-File: klisp.info,  Node: Booleans,  Next: Index,  Prev: Introduction,  Up: Top
+File: klisp.info,  Node: Booleans,  Next: Equivalence,  Prev: Introduction,  Up: Top
 
 2 Booleans
 **********
@@ -394,7 +396,28 @@ boolean type is encapsulated.
      value, an error is signaled (even if it's the last one).
 
 
-File: klisp.info,  Node: Index,  Next: (dir),  Prev: Booleans,  Up: Top
+File: klisp.info,  Node: Equivalence,  Next: Index,  Prev: Booleans,  Up: Top
+
+3 Equivalence
+*************
+
+Kernel has two general-purpose equivalence predicates (whereas R5RS
+Scheme has three). The two Kernel predicates correspond to the abstract
+notions of equivalence up to mutation (`equal') and equivalence in the
+presence of mutation (`eq?').
+
+ -- Applicative: eq? (eq? . objects)
+     Predicate `eq?' returns true iff all of `objects' are effectively
+     the same object, even in the presence of mutation.
+
+ -- Applicative: equal? (equal? . objects)
+     Predicate `equal?' returns true iff all of `objects' "look" the
+     same as long as nothing is mutated. This is a weaker predicate
+     than `eq?'; that is, `equal?' must return true whenever `eq?'
+     would return true.
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Equivalence,  Up: Top
 
 Index
 *****
@@ -412,6 +435,9 @@ Index
 * description format:                    Format of Descriptions.
                                                                (line  6)
 * documentation notation:                Evaluation Notation.  (line  6)
+* eq?:                                   Equivalence.          (line 12)
+* equal?:                                Equivalence.          (line 16)
+* equivalence:                           Equivalence.          (line  6)
 * error message notation:                Error Messages.       (line  6)
 * evaluation notation:                   Evaluation Notation.  (line  6)
 * fonts:                                 Some Terms.           (line 13)
@@ -430,19 +456,20 @@ Index
 
 Tag Table:
 Node: Top302
-Node: License924
-Node: Introduction2595
-Node: Caveats5404
-Node: Kernel History6186
-Node: Conventions7624
-Node: Some Terms8294
-Node: Evaluation Notation8963
-Node: Printing Notation9704
-Node: Error Messages10180
-Node: Format of Descriptions10826
-Node: A Sample Applicative Description11389
-Node: Acknowledgements13045
-Node: Booleans13430
-Node: Index15932
+Node: License1025
+Node: Introduction2696
+Node: Caveats5505
+Node: Kernel History6287
+Node: Conventions7725
+Node: Some Terms8395
+Node: Evaluation Notation9064
+Node: Printing Notation9805
+Node: Error Messages10281
+Node: Format of Descriptions10927
+Node: A Sample Applicative Description11490
+Node: Acknowledgements13146
+Node: Booleans13531
+Node: Equivalence16039
+Node: Index16828
 
 End Tag Table
