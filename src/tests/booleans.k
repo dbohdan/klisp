@@ -5,6 +5,7 @@
 ;;;
 
 ;; boolean?
+($check-predicate (applicative? boolean?))
 ($check-predicate (boolean?))
 ($check-predicate (boolean? #t))
 ($check-predicate (boolean? #f))
@@ -25,16 +26,19 @@
 				  (enc #inert))))
 ($check-not-predicate (boolean? (memoize #inert)))
 ($check-not-predicate (boolean? 1))
-;XXX ($check-not-predicate (boolean? 1.0))
+($check-not-predicate (boolean? -1/2))
+($check-not-predicate (boolean? 1.0))
 ($check-not-predicate (boolean? #e+infinity))
-;XXX ($check-not-predicate (boolean? #i+infinity))
-;($check-not-predicate (boolean? #undefined))
-;($check-not-predicate (boolean? #real-with-no-primary-value))
+($check-not-predicate (boolean? #i+infinity))
+($check-not-predicate (boolean? #undefined))
+($check-not-predicate (boolean? #real))
 ($check-not-predicate (boolean? "string"))
 ($check-not-predicate (boolean? #\a))
 ($check-not-predicate (boolean? (get-current-input-port)))
 
 ;; basic eq?-ness and not?
+($check-predicate (applicative? not?))
+
 ($check eq? #t #t)
 ($check eq? #f #f)
 ($check not-eq? #t #f)
@@ -51,6 +55,7 @@
 ($check equal? (not? #f) #t)
 
 ;; and? & or?
+($check-predicate (applicative? and?))
 ($check-predicate (and?))
 ($check-predicate (and? #t))
 ($check-predicate (and? #t #t))
@@ -59,6 +64,7 @@
 ($check-not-predicate (and? #f))
 ($check-not-predicate (and? #t #t #f))
 
+($check-predicate (applicative? or?))
 ($check-predicate (or? #t))
 ($check-predicate (or? #f #t))
 ($check-predicate (or? #f #f #t))
@@ -69,6 +75,7 @@
 
 ;; $and? & $or?
 ;; TODO check tail call
+($check-predicate (operative? $and?))
 ($check-predicate ($and?))
 ($check-predicate ($and? #t))
 ($check-predicate ($and? (eq? #t #t) #t)) ;; test some evaluation too!
@@ -78,6 +85,7 @@
 ($check-not-predicate ($and? #t #t #f))
 ($check-not-predicate ($and? #f (/ 1 0))) ;; test conditional evaluation
 
+($check-predicate (operative? $or?))
 ($check-predicate ($or? #t))
 ($check-predicate ($or? #f (eq? #t #t) #t)) ;; test some evaluation too!
 ($check-predicate ($or? #f #f #t))

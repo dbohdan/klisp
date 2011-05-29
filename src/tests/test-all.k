@@ -3,7 +3,7 @@
 
 ;(check-set-mode! check-mode-report)
 
-;; TODO add applicative?/operative? check in boolean, eq/equal, pairs and lists and pair-mutation
+;; TODO add applicative?/operative? check in pairs and lists and pair-mutation
 
 (load "tests/booleans.k")
 (load "tests/eq-equal.k")
