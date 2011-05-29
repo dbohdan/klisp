@@ -341,6 +341,14 @@ TValue read_all_expr(klisp_State *K, TValue port)
 	    return kcutoff_dummy1(K);
 	} else {
 	    TValue new_pair = kimm_cons(K, obj, KNIL);
+#if KTRACK_SI
+	    /* put the source info */
+	    /* XXX: should first read all comments and whitespace,
+	     then save the source info, then read the object and
+	     lastly put the saved source info on the new pair...
+	     For now this will do, but it's not technically correct */
+	    kset_source_info(K, new_pair, ktry_get_si(K, obj));
+#endif
 	    kset_cdr_unsafe(K, tail, new_pair);
 	    tail = new_pair;
 	}
