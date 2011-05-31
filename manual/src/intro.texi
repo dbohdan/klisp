@@ -309,7 +309,8 @@ More generally,
 @var{integer}, @var{integer1} or @var{continuation}) is expected to be of that
 type.  A plural of a type (such as @var{numbers}) often means a list of
 objects of that type.  Parameters named @var{object} may be of any
-type.
+type.  Additionally parameters named @var{k}, or @var{kn} (for any
+value of @var{n}), should be exact, non-negative integers.
 @c TODO add xref types of objects
 (XXX Types of Lisp Object XXX, for a list of Kernel object types.)
 Parameters with other sorts of names are

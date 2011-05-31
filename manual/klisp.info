@@ -325,11 +325,13 @@ arguments are also used in the body of the description.
    Any parameter whose name contains the name of a type (e.g., INTEGER,
 INTEGER1 or CONTINUATION) is expected to be of that type.  A plural of
 a type (such as NUMBERS) often means a list of objects of that type.
-Parameters named OBJECT may be of any type.  (XXX Types of Lisp Object
-XXX, for a list of Kernel object types.)  Parameters with other sorts
-of names are discussed specifically in the description of the combiner.
-In some sections, features common to parameters of several combiners are
-described at the beginning.
+Parameters named OBJECT may be of any type.  Additionally parameters
+named K, or KN (for any value of N), should be exact, non-negative
+integers.  (XXX Types of Lisp Object XXX, for a list of Kernel object
+types.)  Parameters with other sorts of names are discussed
+specifically in the description of the combiner.  In some sections,
+features common to parameters of several combiners are described at the
+beginning.
 
    Operative descriptions have the same format, but the word
 `Applicative' is  replaced by `Operative', and `Argument' is replaced
@@ -574,59 +576,165 @@ output using, modulo whitespace, external representation `(1 2 3)'.
      returned value is isomorphic to that of `object' at the time of
      copying, with corresponding non-pair referents being `eq?'.
 
-     In Kernel it's undefined whether immutable pairs are copied or
-     left "as is" in the result.  klisp doesn't copy immutable pairs,
-     but that behaviour should not be depended upon.
+     NOTE: In Kernel it's undefined whether immutable pairs are copied
+     or left "as is" in the result.  klisp doesn't copy immutable
+     pairs, but that behaviour should not be depended upon.
 
- -- list: (list . objects)
+ -- Applicative: list (list . objects)
      The `list' applicative returns `objects'.
 
      The underlying operative of `list' returns its undifferentiated
      operand tree, regardless of whether that tree is or is not a list.
 
- -- list*: (list* . objects)
-     `objects' should be a finite nonempty list of arguments.  The
-     following equivalences hold:
+ -- Applicative: list* (list* . objects)
+     `objects' should be a finite nonempty list of arguments.
+
+     The following equivalences hold:
           (list* arg1) == arg1
           (list* arg1 arg2 . args) == (cons arg1 (list* arg2 . args))
 
- -- car: (car pair)
- -- cdr: (cdr pair)
+ -- Applicative: car (car pair)
+ -- Applicative: cdr (cdr pair)
      These applicatives return, respectively, the car and cdr of `pair'.
 
- -- caar: (caar pair)
- -- cadr: (cadr pair)
- -- cdar: (cdar pair)
- -- cddr: (cddr pair)
- -- caaar: (caaar pair)
- -- caadr: (caadr pair)
- -- cadar: (cadar pair)
- -- caddr: (caddr pair)
- -- cdaar: (cdaar pair)
- -- cdadr: (cdadr pair)
- -- cddar: (cddar pair)
- -- cdddr: (cdddr pair)
- -- caaaar: (caaaar pair)
- -- caaadr: (caaadr pair)
- -- caadar: (caadar pair)
- -- caaddr: (caaddr pair)
- -- cadaar: (cadaar pair)
- -- cadadr: (cadadr pair)
- -- caddar: (caddar pair)
- -- cadddr: (cadddr pair)
- -- cdaaar: (cdaaar pair)
- -- cdaadr: (cdaadr pair)
- -- cdadar: (cdadar pair)
- -- cdaddr: (cdaddr pair)
- -- cddaar: (cddaar pair)
- -- cddadr: (cddadr pair)
- -- cdddar: (cdddar pair)
- -- cddddr: (cddddr pair)
+ -- Applicative: caar (caar pair)
+ -- Applicative: cadr (cadr pair)
+ -- Applicative: cdar (cdar pair)
+ -- Applicative: cddr (cddr pair)
+ -- Applicative: caaar (caaar pair)
+ -- Applicative: caadr (caadr pair)
+ -- Applicative: cadar (cadar pair)
+ -- Applicative: caddr (caddr pair)
+ -- Applicative: cdaar (cdaar pair)
+ -- Applicative: cdadr (cdadr pair)
+ -- Applicative: cddar (cddar pair)
+ -- Applicative: cdddr (cdddr pair)
+ -- Applicative: caaaar (caaaar pair)
+ -- Applicative: caaadr (caaadr pair)
+ -- Applicative: caadar (caadar pair)
+ -- Applicative: caaddr (caaddr pair)
+ -- Applicative: cadaar (cadaar pair)
+ -- Applicative: cadadr (cadadr pair)
+ -- Applicative: caddar (caddar pair)
+ -- Applicative: cadddr (cadddr pair)
+ -- Applicative: cdaaar (cdaaar pair)
+ -- Applicative: cdaadr (cdaadr pair)
+ -- Applicative: cdadar (cdadar pair)
+ -- Applicative: cdaddr (cdaddr pair)
+ -- Applicative: cddaar (cddaar pair)
+ -- Applicative: cddadr (cddadr pair)
+ -- Applicative: cdddar (cdddar pair)
+ -- Applicative: cddddr (cddddr pair)
      These applicatives are compositions of `car' and `cdr', with the
      "a’s" and "d’s" in the same order as they would appear if all the
-     individual "car"’s and "cdr"’s were written out in prefix order.
+     individual "car’s" and "cdr’s" were written out in prefix order.
      Arbitrary compositions up to four deep are provided. There are
      twenty-eight of these applicatives in all.
+
+ -- Applicative: get-list-metrics (get-list-metrics object)
+     By definition, an improper list is a data structure whose objects
+     are its start together with all objects reachable from the start by
+     following the cdr references of pairs, and whose internal
+     references are just the cdr references of its pairs.  Every
+     object, of whatever type, is the start of an improper list.  If
+     the start is not a pair, the improper list consists of just that
+     object.  The acyclic prefix length of an improper list `L' is the
+     number of pairs of `L' that a naive traversal of `L' would visit
+     only once. The cycle length of `L' is the number of pairs of `L'
+     that a naive traversal would visit repeatedly. Two improper lists
+     are structurally isomorphic iff they have the same acyclic prefix
+     length and cycle length and, if they are terminated by non-pair
+     objects rather than by cycles, the non-pair objects have the same
+     type.  Applicative `get-list-metrics' constructs and returns a
+     list of exact integers of the form `(p n a c)', where `p', `n',
+     `a', and `c' are, respectively, the number of pairs in, the number
+     of nil objects in, the acyclic prefix length of, and the cycle
+     length of, the improper list starting with `object'. `n' is either
+     `0' or `1', `a + c = p', and `n' and `c' cannot both be non-zero.
+     If `c = 0', the improper list is acyclic; if `n = 1', the improper
+     list is a finite list; if `n = c = 0', the improper list is not a
+     list; if `a = c = 0', `object' is not a pair.
+
+ -- Applicative: list-tail (list-tail object k)
+     `object' must be the start of an improper list containing at least
+     `k' pairs.
+
+     The `list-tail' applicative follows `k' cdr references starting
+     from `object'.
+
+     The following equivalences hold:
+          (list-tail object 0) == object
+          (list-tail object (+ k 1)) == (list-tail (cdr object) k)
+
+ -- Applicative: encycle! (encycle! object k1 k2)
+     The improper list starting at `object' must contain at least `k1 +
+     k2' pairs.
+
+     If `k2 = 0', the applicative does nothing. If `k2 > 0', the
+     applicative mutates the improper list starting at `object' to have
+     acyclic prefix length `k1' and cycle length `k2', by setting the
+     cdr of the `(k1+k2)'th pair in the list to refer to the `(k1 +
+     1)'th pair in the list.  The result returned by `encycle!' is
+     inert.
+
+ -- Applicative: map (map applicative . lists)
+     `lists' must be a nonempty list of lists; if there are two or
+     more, they must all have the same length.
+
+     The map applicative applies `applicative' element-wise to the
+     elements of the lists in lists (i.e., applies it to a list of the
+     first elements of the lists, to a list of the second elements of
+     the lists, etc.), using the dynamic environment from which map was
+     called, and returns a list of the results, in order. The
+     applications may be performed in any order, as long as their
+     results occur in the resultant list in the order of their
+     arguments in the original lists.  If `lists' is a cyclic list,
+     each argument list to which `applicative' is applied is
+     structurally isomorphic to `lists'.  If any of the elements of
+     `lists' is a cyclic list, they all must be, or they wouldn’t all
+     have the same length.  Let `a1...an' be their acyclic prefix
+     lengths, and `c1...cn' be their cycle lengths.  The acyclic prefix
+     length `a' of the resultant list will be the maximum of the `ak',
+     while the cycle length `c' of the resultant list will be the least
+     common multiple of the `ck'.  In the construction of the result,
+     `applicative' is called exactly `a + c' times.
+
+ -- Applicative: length (length object)
+     Applicative `length' returns the (exact) improper-list length of
+     `object'.  That is, it returns the number of consecutive cdr
+     references that can be followed starting from `object'.  If
+     `object' is not a pair, it returns zero; if `object' is a cyclic
+     list, it returns positive infinity.
+
+ -- Applicative: list-ref (list-ref object k)
+     The `list-ref' applicative returns the `car' of the object
+     obtained by following `k' cdr references starting from `object'.
+
+     NOTE: In the current report, object is required to be a list. In
+     klisp, for now, we prefer the behaviour presented here, as it is
+     more in line with the applicative `list-tail'.  That is, we define
+     `list-ref' by the following equivalence:
+          (list-ref object k) == (car (list-tail object k))
+
+ -- Applicative: append (append . lists)
+     Here, all the elements of `lists' except the last element (if any)
+     must be acyclic lists.  The `append' applicative returns a freshly
+     allocated list of the elements of all the specified `lists', in
+     order, except that if there is a last specified element of
+     `lists', it is not copied, but is simply referenced by the cdr of
+     the preceding pair (if any) in the resultant list.  If `lists' is
+     cyclic, the cycle of the result list consists of just the elements
+     of the lists specified in the cycle in `lists'. In this case, the
+     acyclic prefix length of the result is the sum of the lengths of
+     the lists specified in the acyclic prefix of `lists', and the
+     cycle length of the result is the sum of the lengths of the lists
+     specified in the cycle of `lists'.
+
+     The following equivalences hold:
+          (append) == ()
+          (append h) == h
+          (append () h . t) == (append h . t)
+          (append (cons a b) h . t) == (cons a (append b h . t))
 
 
 File: klisp.info,  Node: Index,  Next: (dir),  Prev: Pairs and lists,  Up: Top
@@ -637,53 +745,91 @@ Index
  [index ]
 * Menu:
 
-* $and?:                                 Booleans.             (line 28)
-* $cond:                                 Control.              (line 32)
-* $if:                                   Control.              (line 15)
-* $or?:                                  Booleans.             (line 41)
-* $sequence:                             Control.              (line 23)
-* (:                                     Pairs and lists.      (line 72)
-* and?:                                  Booleans.             (line 20)
+* $and?:                                 Booleans.            (line  28)
+* $cond:                                 Control.             (line  32)
+* $if:                                   Control.             (line  15)
+* $or?:                                  Booleans.            (line  41)
+* $sequence:                             Control.             (line  23)
+* and?:                                  Booleans.            (line  20)
+* append:                                Pairs and lists.     (line 208)
 * applicative descriptions:              A Sample Applicative Description.
-                                                               (line  6)
-* boolean?:                              Booleans.             (line 12)
-* booleans:                              Booleans.             (line  6)
-* cons:                                  Pairs and lists.      (line 35)
-* control:                               Control.              (line  6)
-* copy-es-immutable!:                    Pairs and lists.      (line 49)
+                                                              (line   6)
+* boolean?:                              Booleans.            (line  12)
+* booleans:                              Booleans.            (line   6)
+* caaaar:                                Pairs and lists.     (line 101)
+* caaadr:                                Pairs and lists.     (line 102)
+* caaar:                                 Pairs and lists.     (line  93)
+* caadar:                                Pairs and lists.     (line 103)
+* caaddr:                                Pairs and lists.     (line 104)
+* caadr:                                 Pairs and lists.     (line  94)
+* caar:                                  Pairs and lists.     (line  89)
+* cadaar:                                Pairs and lists.     (line 105)
+* cadadr:                                Pairs and lists.     (line 106)
+* cadar:                                 Pairs and lists.     (line  95)
+* caddar:                                Pairs and lists.     (line 107)
+* cadddr:                                Pairs and lists.     (line 108)
+* caddr:                                 Pairs and lists.     (line  96)
+* cadr:                                  Pairs and lists.     (line  90)
+* car:                                   Pairs and lists.     (line  85)
+* cdaaar:                                Pairs and lists.     (line 109)
+* cdaadr:                                Pairs and lists.     (line 110)
+* cdaar:                                 Pairs and lists.     (line  97)
+* cdadar:                                Pairs and lists.     (line 111)
+* cdaddr:                                Pairs and lists.     (line 112)
+* cdadr:                                 Pairs and lists.     (line  98)
+* cdar:                                  Pairs and lists.     (line  91)
+* cddaar:                                Pairs and lists.     (line 113)
+* cddadr:                                Pairs and lists.     (line 114)
+* cddar:                                 Pairs and lists.     (line  99)
+* cdddar:                                Pairs and lists.     (line 115)
+* cddddr:                                Pairs and lists.     (line 116)
+* cdddr:                                 Pairs and lists.     (line 100)
+* cddr:                                  Pairs and lists.     (line  92)
+* cdr:                                   Pairs and lists.     (line  86)
+* cons:                                  Pairs and lists.     (line  35)
+* control:                               Control.             (line   6)
+* copy-es-immutable!:                    Pairs and lists.     (line  49)
 * description format:                    Format of Descriptions.
-                                                               (line  6)
-* documentation notation:                Evaluation Notation.  (line  6)
-* empty list:                            Pairs and lists.      (line  6)
-* eq?:                                   Equivalence.          (line 12)
-* equal?:                                Equivalence.          (line 16)
-* equivalence:                           Equivalence.          (line  6)
-* error message notation:                Error Messages.       (line  6)
-* evaluation notation:                   Evaluation Notation.  (line  6)
-* fonts:                                 Some Terms.           (line 13)
+                                                              (line   6)
+* documentation notation:                Evaluation Notation. (line   6)
+* empty list:                            Pairs and lists.     (line   6)
+* encycle!:                              Pairs and lists.     (line 158)
+* eq?:                                   Equivalence.         (line  12)
+* equal?:                                Equivalence.         (line  16)
+* equivalence:                           Equivalence.         (line   6)
+* error message notation:                Error Messages.      (line   6)
+* evaluation notation:                   Evaluation Notation. (line   6)
+* fonts:                                 Some Terms.          (line  13)
 * foo:                                   A Sample Applicative Description.
-                                                               (line 15)
-* for-each:                              Control.              (line 42)
-* inert?:                                Control.              (line 11)
-* Kernel history:                        Kernel History.       (line  6)
-* lists:                                 Pairs and lists.      (line  6)
-* nil:                                   Pairs and lists.      (line  6)
-* not?:                                  Booleans.             (line 16)
-* null?:                                 Pairs and lists.      (line 31)
+                                                              (line  15)
+* for-each:                              Control.             (line  42)
+* get-list-metrics:                      Pairs and lists.     (line 123)
+* inert?:                                Control.             (line  11)
+* Kernel history:                        Kernel History.      (line   6)
+* length:                                Pairs and lists.     (line 191)
+* list:                                  Pairs and lists.     (line  72)
+* list*:                                 Pairs and lists.     (line  78)
+* list-ref:                              Pairs and lists.     (line 198)
+* list-tail:                             Pairs and lists.     (line 147)
+* lists:                                 Pairs and lists.     (line   6)
+* map:                                   Pairs and lists.     (line 169)
+* nil:                                   Pairs and lists.     (line   6)
+* not?:                                  Booleans.            (line  16)
+* null?:                                 Pairs and lists.     (line  31)
 * object descriptions:                   A Sample Applicative Description.
-                                                               (line  6)
+                                                              (line   6)
 * operative descriptions:                A Sample Applicative Description.
-                                                               (line  6)
-* or?:                                   Booleans.             (line 24)
-* pair?:                                 Pairs and lists.      (line 27)
-* pairs:                                 Pairs and lists.      (line  6)
-* printing notation:                     Printing Notation.    (line  6)
-* set-car!:                              Pairs and lists.      (line 41)
-* set-cdr!:                              Pairs and lists.      (line 42)
-* string->symbol:                        Symbols.              (line 20)
-* symbol->string:                        Symbols.              (line 16)
-* symbol?:                               Symbols.              (line 12)
-* symbols:                               Symbols.              (line  6)
+                                                              (line   6)
+* or?:                                   Booleans.            (line  24)
+* pair?:                                 Pairs and lists.     (line  27)
+* pairs:                                 Pairs and lists.     (line   6)
+* printing notation:                     Printing Notation.   (line   6)
+* set-car!:                              Pairs and lists.     (line  41)
+* set-cdr!:                              Pairs and lists.     (line  42)
+* string->symbol:                        Symbols.             (line  20)
+* symbol->string:                        Symbols.             (line  16)
+* symbol?:                               Symbols.             (line  12)
+* symbols:                               Symbols.             (line   6)
 
 
 
@@ -700,12 +846,12 @@ Node: Printing Notation10297
 Node: Error Messages10773
 Node: Format of Descriptions11421
 Node: A Sample Applicative Description11985
-Node: Acknowledgements13645
-Node: Booleans14031
-Node: Equivalence16573
-Node: Symbols17366
-Node: Control18731
-Node: Pairs and lists21048
-Node: Index25996
+Node: Acknowledgements13748
+Node: Booleans14134
+Node: Equivalence16676
+Node: Symbols17469
+Node: Control18834
+Node: Pairs and lists21151
+Node: Index32148
 
 End Tag Table

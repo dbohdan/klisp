@@ -1,8 +1,10 @@
 # Makefile for the klisp manual
 # some of this is from the elisp manual
 
-srcs = klisp.texi intro.texi \
-  index.texi booleans.texi equivalence.texi symbols.texi
+srcs = klisp.texi index.texi \
+	intro.texi \
+	booleans.texi equivalence.texi symbols.texi \
+	control.texi pairs_lists.texi
 
 #TODO add dvi/pdf output
 #TODO check what happens with xrefs

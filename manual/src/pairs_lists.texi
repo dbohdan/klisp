@@ -79,63 +79,64 @@ immutable pair whose car and cdr would be suitable results for
 the returned value is isomorphic to that of @code{object} at the time
 of copying, with corresponding non-pair referents being @code{eq?}.
 
-  In Kernel it's undefined whether immutable pairs are copied or left ``as
-is'' in the result.  klisp doesn't copy immutable pairs, but that
-behaviour should not be depended upon.
+  NOTE: In Kernel it's undefined whether immutable pairs are copied or
+left ``as is'' in the result.  klisp doesn't copy immutable pairs, but
+that behaviour should not be depended upon.
 @end deffn
 
-@deffn list (list . objects)
+@deffn Applicative list (list . objects)
 The @code{list} applicative returns @code{objects}.
 
   The underlying operative of @code{list} returns its undifferentiated
 operand tree, regardless of whether that tree is or is not a list.  
 @end deffn
 
-@deffn list* (list* . objects)
-@code{objects} should be a finite nonempty list of arguments.  The
-following equivalences hold: 
+@deffn Applicative list* (list* . objects)
+@code{objects} should be a finite nonempty list of arguments.
+
+  The following equivalences hold: 
 @example
 (list* arg1) @equiv{} arg1 
 (list* arg1 arg2 . args) @equiv{} (cons arg1 (list* arg2 . args))
 @end example
 @end deffn
 
-@deffn car (car pair)
-@deffnx cdr (cdr pair)
+@deffn Applicative car (car pair)
+@deffnx Applicative cdr (cdr pair)
 These applicatives return, respectively, the car and cdr of @code{pair}.
 @end deffn
 @c 2 levels
-@deffn caar (caar pair)
-@deffnx cadr (cadr pair)
-@deffnx cdar (cdar pair)
-@deffnx cddr (cddr pair)
+@deffn Applicative caar (caar pair)
+@deffnx Applicative cadr (cadr pair)
+@deffnx Applicative cdar (cdar pair)
+@deffnx Applicative cddr (cddr pair)
 @c 3 levels
-@deffnx caaar (caaar pair)
-@deffnx caadr (caadr pair)
-@deffnx cadar (cadar pair)
-@deffnx caddr (caddr pair)
-@deffnx cdaar (cdaar pair)
-@deffnx cdadr (cdadr pair)
-@deffnx cddar (cddar pair)
-@deffnx cdddr (cdddr pair)
+@deffnx Applicative caaar (caaar pair)
+@deffnx Applicative caadr (caadr pair)
+@deffnx Applicative cadar (cadar pair)
+@deffnx Applicative caddr (caddr pair)
+@deffnx Applicative cdaar (cdaar pair)
+@deffnx Applicative cdadr (cdadr pair)
+@deffnx Applicative cddar (cddar pair)
+@deffnx Applicative cdddr (cdddr pair)
 @c 3 levels
-@deffnx caaaar (caaaar pair)
-@deffnx caaadr (caaadr pair)
-@deffnx caadar (caadar pair)
-@deffnx caaddr (caaddr pair)
-@deffnx cadaar (cadaar pair)
-@deffnx cadadr (cadadr pair)
-@deffnx caddar (caddar pair)
-@deffnx cadddr (cadddr pair)
+@deffnx Applicative caaaar (caaaar pair)
+@deffnx Applicative caaadr (caaadr pair)
+@deffnx Applicative caadar (caadar pair)
+@deffnx Applicative caaddr (caaddr pair)
+@deffnx Applicative cadaar (cadaar pair)
+@deffnx Applicative cadadr (cadadr pair)
+@deffnx Applicative caddar (caddar pair)
+@deffnx Applicative cadddr (cadddr pair)
 
-@deffnx cdaaar (cdaaar pair)
-@deffnx cdaadr (cdaadr pair)
-@deffnx cdadar (cdadar pair)
-@deffnx cdaddr (cdaddr pair)
-@deffnx cddaar (cddaar pair)
-@deffnx cddadr (cddadr pair)
-@deffnx cdddar (cdddar pair)
-@deffnx cddddr (cddddr pair)
+@deffnx Applicative cdaaar (cdaaar pair)
+@deffnx Applicative cdaadr (cdaadr pair)
+@deffnx Applicative cdadar (cdadar pair)
+@deffnx Applicative cdaddr (cdaddr pair)
+@deffnx Applicative cddaar (cddaar pair)
+@deffnx Applicative cddadr (cddadr pair)
+@deffnx Applicative cdddar (cdddar pair)
+@deffnx Applicative cddddr (cddddr pair)
 
 @c TODO add note about pronunciation
 These applicatives are compositions of @code{car} and @code{cdr}, with
@@ -145,3 +146,127 @@ order.  Arbitrary compositions up to four deep are provided. There are
 twenty-eight of these applicatives in all.
 @end deffn
 
+@deffn Applicative get-list-metrics (get-list-metrics object)
+@c TODO move definition of improper list to intro, xref data structure
+  By definition, an improper list is a data structure whose objects
+are its start together with all objects reachable from the start by
+following the cdr references of pairs, and whose internal references
+are just the cdr references of its pairs.  Every object, of whatever
+type, is the start of an improper list.  If the start is not a pair,
+the improper list consists of just that object.  The acyclic prefix
+length of an improper list @code{L} is the number of pairs of @code{L}
+that a naive traversal of @code{L} would visit only once. The cycle
+length of @code{L} is the number of pairs of @code{L} that a naive
+traversal would visit repeatedly. Two improper lists are structurally
+@c TODO add xref to isomorphic
+isomorphic iff they have the same acyclic prefix length and cycle
+length and, if they are terminated by non-pair objects rather than by
+cycles, the non-pair objects have the same type.  Applicative
+@code{get-list-metrics} constructs and returns a list of exact
+integers of the form @code{(p n a c)}, where @code{p}, @code{n},
+@code{a}, and @code{c} are, respectively, the number of pairs in, the
+number of nil objects in, the acyclic prefix length of, and the cycle
+length of, the improper list starting with @code{object}. @code{n} is
+either @code{0} or @code{1}, @code{a + c = p}, and @code{n} and
+@code{c} cannot both be non-zero. If @code{c = 0}, the improper list
+is acyclic; if @code{n = 1}, the improper list is a finite list; if
+@code{n = c = 0}, the improper list is not a list; if @code{a = c =
+0}, @code{object} is not a pair.
+@end deffn
+
+@deffn Applicative list-tail (list-tail object k)
+@code{object} must be the start of an improper list containing at
+least @code{k} pairs.
+
+  The @code{list-tail} applicative follows @code{k} cdr references
+starting from @code{object}.
+
+The following equivalences hold:
+@example
+(list-tail object 0) @equiv{} object
+(list-tail object (+ k 1)) @equiv{} (list-tail (cdr object) k)
+@end example
+@end deffn
+
+@deffn Applicative encycle! (encycle! object k1 k2)
+  The improper list starting at @code{object} must contain at least
+@code{k1 + k2} pairs.
+
+  If @code{k2 = 0}, the applicative does nothing. If @code{k2 > 0},
+the applicative mutates the improper list starting at @code{object} to
+have acyclic prefix length @code{k1} and cycle length @code{k2}, by
+setting the cdr of the @code{(k1+k2)}th pair in the list to refer to
+the @code{(k1 + 1)}th pair in the list.  The result returned by
+@code{encycle!} is inert.
+@end deffn
+
+@deffn Applicative map (map applicative . lists)
+  @code{lists} must be a nonempty list of lists; if there are two or
+@c TODO add xref to length
+more, they must all have the same length. 
+
+  The map applicative applies @code{applicative} element-wise to the
+elements of the lists in lists (i.e., applies it to a list of the
+first elements of the lists, to a list of the second elements of the
+lists, etc.), using the dynamic environment from which map was called,
+and returns a list of the results, in order. The applications may be
+performed in any order, as long as their results occur in the
+resultant list in the order of their arguments in the original lists.
+If @code{lists} is a cyclic list, each argument list to which
+@c TODO xref to ismorphic
+@code{applicative} is applied is structurally isomorphic to @code{lists}.  If
+any of the elements of @code{lists} is a cyclic list, they all must
+be, or they wouldn’t all have the same length.  Let @code{a1...an} be
+their acyclic prefix lengths, and @code{c1...cn} be their cycle
+lengths.  The acyclic prefix length @code{a} of the resultant list
+will be the maximum of the @code{ak}, while the cycle length @code{c}
+of the resultant list will be the least common multiple of the
+@code{ck}.  In the construction of the result, @code{applicative} is
+called exactly @code{a + c} times.
+@end deffn
+
+@deffn Applicative length (length object)
+@c TODO xref improper-list
+  Applicative @code{length} returns the (exact) improper-list length
+of @code{object}.  That is, it returns the number of consecutive cdr
+references that can be followed starting from @code{object}.  If
+@code{object} is not a pair, it returns zero; if @code{object} is a
+cyclic list, it returns positive infinity.
+@end deffn
+
+@deffn Applicative list-ref (list-ref object k)
+  The @code{list-ref} applicative returns the @code{car} of the object
+obtained by following @code{k} cdr references starting from
+@code{object}.
+
+NOTE: In the current report, object is required to be a list. In
+klisp, for now, we prefer the behaviour presented here, as it is more
+in line with the applicative @code{list-tail}.  That is, we define
+@code{list-ref} by the following equivalence:
+@example
+(list-ref object k) @equiv{} (car (list-tail object k))
+@end example
+@end deffn
+
+@deffn Applicative append (append . lists)
+  Here, all the elements of @code{lists} except the last element (if
+any) must be acyclic lists.  The @code{append} applicative returns a
+freshly allocated list of the elements of all the specified
+@code{lists}, in order, except that if there is a last specified
+element of @code{lists}, it is not copied, but is simply referenced by
+the cdr of the preceding pair (if any) in the resultant list.  If
+@code{lists} is cyclic, the cycle of the result list consists of just
+the elements of the lists specified in the cycle in @code{lists}. In
+this case, the acyclic prefix length of the result is the sum of the
+lengths of the lists specified in the acyclic prefix of @code{lists},
+and the cycle length of the result is the sum of the lengths of the
+lists specified in the cycle of @code{lists}.
+
+The following equivalences hold:
+@example
+(append) @equiv{} () 
+(append h) @equiv{} h
+(append () h . t) @equiv{} (append h . t) 
+(append (cons a b) h . t) @equiv{} (cons a (append b h . t))
+@end example
+@end deffn
