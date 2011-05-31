@@ -33,31 +33,31 @@ or more of its arguments are false.
 or more of its arguments are true.
 @end deffn
 
-@deffn Operative $and? ($and? . list)
+@deffn Operative $and? ($and? . <list>)
   The @code{$and?} operative performs a ``short-circuit and'' of its
 operands.  It evaluates them from left to right, until either an
 operand evaluates to false, or the end of the list is reached.  If the
-end of the list is reached (which is immediate if @code{list} is
+end of the list is reached (which is immediate if @code{<list>} is
 @code{nil}), the operative returns true.  If an operand evaluates to
 false, no further operand evaluations are performed, and the operative
-returns false.  If @code{list} is acyclic, and the last operand is
+returns false.  If @code{<list>} is acyclic, and the last operand is
 @c TODO cross ref tail-contect
-evaluated, it is evaluated as a tail context.  If @code{list} is
+evaluated, it is evaluated as a tail context.  If @code{<list>} is
 cyclic, an unbounded number of operand evaluations may be
 performed.  If any of the operands evaluates to a non-boolean value, an
 error is signaled (even if it's the last one).
 @end deffn
 
-@deffn Operative $or? ($or? . list)
+@deffn Operative $or? ($or? . <list>)
   The @code{$or?} operative performs a ``short-circuit or'' of its
 operands.  It evaluates them from left to right, until either an
 operand evaluates to true, or the end of the list is reached.  If the
-end of the list is reached (which is immediate if @code{list} is
+end of the list is reached (which is immediate if @code{<list>} is
 @code{nil}), the operative returns false.  If an operand evaluates to
 true, no further operand evaluations are performed, and the operative
-returns true.  If @code{list} is acyclic, and the last operand is
-@c TODO cross ref tail-contect
-evaluated, it is evaluated as a tail context.  If @code{list} is
+returns true.  If @code{<list>} is acyclic, and the last operand is
+@c TODO cross ref tail-context
+evaluated, it is evaluated as a tail context.  If @code{<list>} is
 cyclic, an unbounded number of operand evaluations may be
 performed.  If any of the operands evaluates to a non-boolean value, an
 error is signaled (even if it's the last one).

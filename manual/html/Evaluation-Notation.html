@@ -51,5 +51,11 @@ equivalences:
 <pre class="example">     (list* arg1) == arg1
      (list* arg1 . more-args) == (cons arg1 (list* . more-args))
 </pre>
+   <p>Notice that in these kind of examples the applicatives or operatives
+referred to are the first class values and not the symbols bound to
+them in the ground environment.  This definition would hold even if
+<code>cons</code> or <code>list*</code> were redefined in the current dynamic
+environment.
+
    </body></html>
 

@@ -210,6 +210,11 @@ equivalences:
 (list* arg1) @equiv{} arg1
 (list* arg1 . more-args) @equiv{} (cons arg1 (list* . more-args))
 @end example
+Notice that in these kind of examples the applicatives or operatives
+referred to are the first class values and not the symbols bound to
+them in the ground environment.  This definition would hold even if
+@code{cons} or @code{list*} were redefined in the current dynamic
+environment.
 
 @node Printing Notation, Error Messages, Evaluation Notation, Conventions
 @subsection Printing Notation

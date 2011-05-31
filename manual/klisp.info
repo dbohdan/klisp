@@ -30,6 +30,7 @@ in part.
 * Equivalence::             Equivalence under mutation & Equivalence up to
 mutation module features.
 * Symbols::                 Symbol module features.
+* Control::                 Control module features.
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -239,6 +240,10 @@ equivalent.  This is notated with `=='.  For example, the semantics of
 applicative list* can be defined by following equivalences:
      (list* arg1) == arg1
      (list* arg1 . more-args) == (cons arg1 (list* . more-args))
+   Notice that in these kind of examples the applicatives or operatives
+referred to are the first class values and not the symbols bound to
+them in the ground environment.  This definition would hold even if
+`cons' or `list*' were redefined in the current dynamic environment.
 
 
 File: klisp.info,  Node: Printing Notation,  Next: Error Messages,  Prev: Evaluation Notation,  Up: Conventions
@@ -370,30 +375,30 @@ boolean type is encapsulated.
      Applicative `or?' is a predicate that returns false unless one or
      more of its arguments are true.
 
- -- Operative: $and? ($and? . list)
+ -- Operative: $and? ($and? . <list>)
      The `$and?' operative performs a "short-circuit and" of its
      operands.  It evaluates them from left to right, until either an
      operand evaluates to false, or the end of the list is reached.  If
-     the end of the list is reached (which is immediate if `list' is
+     the end of the list is reached (which is immediate if `<list>' is
      `nil'), the operative returns true.  If an operand evaluates to
      false, no further operand evaluations are performed, and the
-     operative returns false.  If `list' is acyclic, and the last
+     operative returns false.  If `<list>' is acyclic, and the last
      operand is evaluated, it is evaluated as a tail context.  If
-     `list' is cyclic, an unbounded number of operand evaluations may be
-     performed.  If any of the operands evaluates to a non-boolean
+     `<list>' is cyclic, an unbounded number of operand evaluations may
+     be performed.  If any of the operands evaluates to a non-boolean
      value, an error is signaled (even if it's the last one).
 
- -- Operative: $or? ($or? . list)
+ -- Operative: $or? ($or? . <list>)
      The `$or?' operative performs a "short-circuit or" of its
      operands.  It evaluates them from left to right, until either an
      operand evaluates to true, or the end of the list is reached.  If
-     the end of the list is reached (which is immediate if `list' is
+     the end of the list is reached (which is immediate if `<list>' is
      `nil'), the operative returns false.  If an operand evaluates to
      true, no further operand evaluations are performed, and the
-     operative returns true.  If `list' is acyclic, and the last
+     operative returns true.  If `<list>' is acyclic, and the last
      operand is evaluated, it is evaluated as a tail context.  If
-     `list' is cyclic, an unbounded number of operand evaluations may be
-     performed.  If any of the operands evaluates to a non-boolean
+     `<list>' is cyclic, an unbounded number of operand evaluations may
+     be performed.  If any of the operands evaluates to a non-boolean
      value, an error is signaled (even if it's the last one).
 
 
@@ -418,7 +423,7 @@ equivalence in the presence of mutation (`eq?').
      would return true.
 
 
-File: klisp.info,  Node: Symbols,  Next: Index,  Prev: Equivalence,  Up: Top
+File: klisp.info,  Node: Symbols,  Next: Control,  Prev: Equivalence,  Up: Top
 
 4 Symbols
 *********
@@ -450,7 +455,59 @@ symbols with other external representations may be created.
      R7RS Scheme.
 
 
-File: klisp.info,  Node: Index,  Next: (dir),  Prev: Symbols,  Up: Top
+File: klisp.info,  Node: Control,  Next: Index,  Prev: Symbols,  Up: Top
+
+5 Control
+*********
+
+The inert data type is provided for use with control combiners.  It
+consists of a single immutable value, having external representation
+`#inert'.  The inert type is encapsulated.
+
+ -- Applicative: inert? (inert? . objects)
+     The primitive type predicate for type inert. `inert?' returns true
+     iff all the objects in `objects' are of type inert.
+
+ -- Operative: $if ($if <test> <consequent> <alternative>)
+     The `$if' operative first evaluates `<test>' in the dynamic
+     environment.  If the result is not of type boolean, an error is
+     signaled.  If the result is true, `<consequent>' is then evaluated
+     in the dynamic environment as a tail context.  Otherwise,
+     `<alternative>' is evaluated in the dynamic environment as a tail
+     context.
+
+ -- Operative: $sequence ($sequence . <objects>)
+     The `$sequence' operative evaluates the elements of the list
+     `<objects>' in the dynamic environment, one at a time from left to
+     right.  If `<objects>' is a cyclic list, element evaluation
+     continues indefinitely, with elements in the cycle being evaluated
+     repeatedly.  If `<objects>' is a nonempty finite list, its last
+     element is evaluated as a tail context.  If `<objects>' is the
+     empty list, the result is inert.
+
+ -- Operative: $cond ($cond . <clauses>)
+     `<clauses>' should be a list of clause expressions, each of the
+     form `(<test> . <body>)', where body is a list of expressions.
+
+     The following equivalences define the behaviour of the `$cond'
+     operative:
+          ($cond) == #inert
+          ($cond (<test> . <body>) . <clauses>) ==
+            ($if <test> ($sequence . <body>) ($cond . <clauses>))
+
+ -- Applicative: for-each (for-each . lists)
+     `lists' must be a nonempty list of lists; if there are two or
+     more, they should all be the same length. If lists is empty, or if
+     all of its elements are not lists of the same length, an error is
+     signaled.
+
+     `for-each' behaves identically to `map', except that instead of
+     accumulating and returning a list of the results of the
+     element-wise applications, the results of the applications are
+     discarded and the result returned by `for-each' is inert.
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Control,  Up: Top
 
 Index
 *****
@@ -459,12 +516,16 @@ Index
 * Menu:
 
 * $and?:                                 Booleans.             (line 28)
+* $cond:                                 Control.              (line 32)
+* $if:                                   Control.              (line 15)
 * $or?:                                  Booleans.             (line 41)
+* $sequence:                             Control.              (line 23)
 * and?:                                  Booleans.             (line 20)
 * applicative descriptions:              A Sample Applicative Description.
                                                                (line  6)
 * boolean?:                              Booleans.             (line 12)
 * booleans:                              Booleans.             (line  6)
+* control:                               Control.              (line  6)
 * description format:                    Format of Descriptions.
                                                                (line  6)
 * documentation notation:                Evaluation Notation.  (line  6)
@@ -476,6 +537,8 @@ Index
 * fonts:                                 Some Terms.           (line 13)
 * foo:                                   A Sample Applicative Description.
                                                                (line 15)
+* for-each:                              Control.              (line 42)
+* inert?:                                Control.              (line 11)
 * Kernel history:                        Kernel History.       (line  6)
 * not?:                                  Booleans.             (line 16)
 * object descriptions:                   A Sample Applicative Description.
@@ -493,21 +556,22 @@ Index
 
 Tag Table:
 Node: Top302
-Node: License1077
-Node: Introduction2748
-Node: Caveats5571
-Node: Kernel History6357
-Node: Conventions7802
-Node: Some Terms8473
-Node: Evaluation Notation9144
-Node: Printing Notation9888
-Node: Error Messages10364
-Node: Format of Descriptions11012
-Node: A Sample Applicative Description11576
-Node: Acknowledgements13236
-Node: Booleans13622
-Node: Equivalence16148
-Node: Symbols16941
-Node: Index18304
+Node: License1130
+Node: Introduction2801
+Node: Caveats5624
+Node: Kernel History6410
+Node: Conventions7855
+Node: Some Terms8526
+Node: Evaluation Notation9197
+Node: Printing Notation10218
+Node: Error Messages10694
+Node: Format of Descriptions11342
+Node: A Sample Applicative Description11906
+Node: Acknowledgements13566
+Node: Booleans13952
+Node: Equivalence16494
+Node: Symbols17287
+Node: Control18652
+Node: Index20959
 
 End Tag Table

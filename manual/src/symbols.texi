@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/symbols
 
-@node Symbols, Index, Equivalence, Top
+@node Symbols, Control, Equivalence, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Symbols

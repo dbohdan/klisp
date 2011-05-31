@@ -5,7 +5,7 @@
 <meta name="description" content="klisp Reference Manual">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
-<link rel="prev" href="Symbols.html#Symbols" title="Symbols">
+<link rel="prev" href="Control.html#Control" title="Control">
 <link rel="next" href="../index.html#dir" title="(dir)">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <meta http-equiv="Content-Style-Type" content="text/css">
@@ -26,7 +26,7 @@
 <a name="Index"></a>
 <p>
 Next:&nbsp;<a rel="next" accesskey="n" href="../index.html#dir">(dir)</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbols.html#Symbols">Symbols</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Control.html#Control">Control</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <hr>
 </div>
@@ -36,11 +36,15 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 
 <ul class="index-fn" compact>
 <li><a href="Booleans.html#index-g_t_0024and_003f-17"><code>$and?</code></a>: <a href="Booleans.html#Booleans">Booleans</a></li>
+<li><a href="Control.html#index-g_t_0024cond-30"><code>$cond</code></a>: <a href="Control.html#Control">Control</a></li>
+<li><a href="Control.html#index-g_t_0024if-28"><code>$if</code></a>: <a href="Control.html#Control">Control</a></li>
 <li><a href="Booleans.html#index-g_t_0024or_003f-18"><code>$or?</code></a>: <a href="Booleans.html#Booleans">Booleans</a></li>
+<li><a href="Control.html#index-g_t_0024sequence-29"><code>$sequence</code></a>: <a href="Control.html#Control">Control</a></li>
 <li><a href="Booleans.html#index-and_003f-15"><code>and?</code></a>: <a href="Booleans.html#Booleans">Booleans</a></li>
 <li><a href="A-Sample-Applicative-Description.html#index-applicative-descriptions-8">applicative descriptions</a>: <a href="A-Sample-Applicative-Description.html#A-Sample-Applicative-Description">A Sample Applicative Description</a></li>
 <li><a href="Booleans.html#index-boolean_003f-13"><code>boolean?</code></a>: <a href="Booleans.html#Booleans">Booleans</a></li>
 <li><a href="Booleans.html#index-booleans-12">booleans</a>: <a href="Booleans.html#Booleans">Booleans</a></li>
+<li><a href="Control.html#index-control-26">control</a>: <a href="Control.html#Control">Control</a></li>
 <li><a href="Format-of-Descriptions.html#index-description-format-7">description format</a>: <a href="Format-of-Descriptions.html#Format-of-Descriptions">Format of Descriptions</a></li>
 <li><a href="Evaluation-Notation.html#index-documentation-notation-4">documentation notation</a>: <a href="Evaluation-Notation.html#Evaluation-Notation">Evaluation Notation</a></li>
 <li><a href="Equivalence.html#index-eq_003f-20"><code>eq?</code></a>: <a href="Equivalence.html#Equivalence">Equivalence</a></li>
@@ -50,6 +54,8 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Evaluation-Notation.html#index-evaluation-notation-3">evaluation notation</a>: <a href="Evaluation-Notation.html#Evaluation-Notation">Evaluation Notation</a></li>
 <li><a href="Some-Terms.html#index-fonts-2">fonts</a>: <a href="Some-Terms.html#Some-Terms">Some Terms</a></li>
 <li><a href="A-Sample-Applicative-Description.html#index-foo-11"><code>foo</code></a>: <a href="A-Sample-Applicative-Description.html#A-Sample-Applicative-Description">A Sample Applicative Description</a></li>
+<li><a href="Control.html#index-for_002deach-31"><code>for-each</code></a>: <a href="Control.html#Control">Control</a></li>
+<li><a href="Control.html#index-inert_003f-27"><code>inert?</code></a>: <a href="Control.html#Control">Control</a></li>
 <li><a href="Kernel-History.html#index-Kernel-history-1">Kernel history</a>: <a href="Kernel-History.html#Kernel-History">Kernel History</a></li>
 <li><a href="Booleans.html#index-not_003f-14"><code>not?</code></a>: <a href="Booleans.html#Booleans">Booleans</a></li>
 <li><a href="A-Sample-Applicative-Description.html#index-object-descriptions-10">object descriptions</a>: <a href="A-Sample-Applicative-Description.html#A-Sample-Applicative-Description">A Sample Applicative Description</a></li>
@@ -70,6 +76,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Index.html#toc_Booleans">2 Booleans</a></li>
 <li><a href="Index.html#toc_Equivalence">3 Equivalence</a></li>
 <li><a href="Index.html#toc_Symbols">4 Symbols</a></li>
+<li><a href="Index.html#toc_Control">5 Control</a></li>
 <li><a href="Index.html#toc_Index">Index</a></li>
 </ul>
 </div>
@@ -98,6 +105,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a name="toc_Booleans" href="Booleans.html#Booleans">2 Booleans</a>
 <li><a name="toc_Equivalence" href="Equivalence.html#Equivalence">3 Equivalence</a>
 <li><a name="toc_Symbols" href="Symbols.html#Symbols">4 Symbols</a>
+<li><a name="toc_Control" href="Control.html#Control">5 Control</a>
 <li><a name="toc_Index" href="Index.html#Index">Index</a>
 </li></ul>
 </div>
