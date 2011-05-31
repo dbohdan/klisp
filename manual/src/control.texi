@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/control
 
-@node Control, Index, Symbols, Top
+@node Control, Pairs and lists, Symbols, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Control

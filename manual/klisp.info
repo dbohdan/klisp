@@ -31,6 +31,7 @@ in part.
 mutation module features.
 * Symbols::                 Symbol module features.
 * Control::                 Control module features.
+* Pairs and lists::         Pairs and lists and Pair mutation module features.
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -455,7 +456,7 @@ symbols with other external representations may be created.
      R7RS Scheme.
 
 
-File: klisp.info,  Node: Control,  Next: Index,  Prev: Symbols,  Up: Top
+File: klisp.info,  Node: Control,  Next: Pairs and lists,  Prev: Symbols,  Up: Top
 
 5 Control
 *********
@@ -507,7 +508,128 @@ consists of a single immutable value, having external representation
      discarded and the result returned by `for-each' is inert.
 
 
-File: klisp.info,  Node: Index,  Next: (dir),  Prev: Control,  Up: Top
+File: klisp.info,  Node: Pairs and lists,  Next: Index,  Prev: Control,  Up: Top
+
+6 Pairs and lists
+*****************
+
+A pair is an object that refers to two other objects, called its car
+and cdr.  The Kernel data type pair is encapsulated.
+
+   The null data type consists of a single immutable value, called nil
+or the empty list and having external representation `()', with or
+without whitespace between the parentheses. It is immutable, and the
+null type is encapsulated.
+
+   If `a' and `d' are external representations of respectively the car
+and cdr of a pair `p', then `(a . d)' is an external representation of
+`p'. If the cdr of `p' is nil, then `(a)' is also an external
+representation of `p'. If the cdr of `p' is a pair `p2', and `(r)' is
+an external representation of `p2', then `(a r)' is an external
+representation of `p'.    When a pair is output (as by write), an
+external representation with the fewest parentheses is used; in the
+case of a finite list, only one set of parentheses is required beyond
+those used in representing the elements of the list. For example, an
+object with external representation `(1 . (2 . (3 . ())))' would be
+output using, modulo whitespace, external representation `(1 2 3)'.
+
+ -- Applicative: pair? (pair? . objects)
+     The primitive type predicate for type pair. `pair?' returns true
+     iff all the objects in `objects' are of type pair.
+
+ -- Applicative: null? (null? . objects)
+     The primitive type predicate for type null. `null?' returns true
+     iff all the objects in `objects' are of type null.
+
+ -- Applicative: cons (cons object1 object2)
+     A new mutable pair object is constructed and returned, whose car
+     and cdr referents are respectively `object1' and `object2'.  No
+     two objects returned by different calls to cons are `eq?' to each
+     other.
+
+ -- Applicative: set-car! (set-car! pair object)
+ -- Applicative: set-cdr! (set-cdr! pair object)
+     `pair' should be a mutable pair.
+
+     These applicatives set the referent of, respectively, the car
+     reference or the cdr reference of `pair' to `object'.  The result
+     of the expression is inert.
+
+ -- Applicative: copy-es-immutable! (copy-es-immutable object)
+     The short description of this applicative is that it returns an
+     object `equal?' to `object' with an immutable evaluation
+     structure. The "-es-" in the name is short for "evaluation
+     structure".
+
+     The evaluation structure of an object `o' is defined to be the set
+     of all pairs that can be reached by following chains of references
+     from `o' without ever passing through a non-pair object. The
+     evaluation structure of a non-pair object is empty.
+
+     If `object' is not a pair, the applicative returns `object'.
+     Otherwise (if `object' is a pair), the applicative returns an
+     immutable pair whose car and cdr would be suitable results for
+     `(copy-es-immutable (car object))' and `(copy-es-immutable (cdr
+     object))', respectively.  Further, the evaluation structure of the
+     returned value is isomorphic to that of `object' at the time of
+     copying, with corresponding non-pair referents being `eq?'.
+
+     In Kernel it's undefined whether immutable pairs are copied or
+     left "as is" in the result.  klisp doesn't copy immutable pairs,
+     but that behaviour should not be depended upon.
+
+ -- list: (list . objects)
+     The `list' applicative returns `objects'.
+
+     The underlying operative of `list' returns its undifferentiated
+     operand tree, regardless of whether that tree is or is not a list.
+
+ -- list*: (list* . objects)
+     `objects' should be a finite nonempty list of arguments.  The
+     following equivalences hold:
+          (list* arg1) == arg1
+          (list* arg1 arg2 . args) == (cons arg1 (list* arg2 . args))
+
+ -- car: (car pair)
+ -- cdr: (cdr pair)
+     These applicatives return, respectively, the car and cdr of `pair'.
+
+ -- caar: (caar pair)
+ -- cadr: (cadr pair)
+ -- cdar: (cdar pair)
+ -- cddr: (cddr pair)
+ -- caaar: (caaar pair)
+ -- caadr: (caadr pair)
+ -- cadar: (cadar pair)
+ -- caddr: (caddr pair)
+ -- cdaar: (cdaar pair)
+ -- cdadr: (cdadr pair)
+ -- cddar: (cddar pair)
+ -- cdddr: (cdddr pair)
+ -- caaaar: (caaaar pair)
+ -- caaadr: (caaadr pair)
+ -- caadar: (caadar pair)
+ -- caaddr: (caaddr pair)
+ -- cadaar: (cadaar pair)
+ -- cadadr: (cadadr pair)
+ -- caddar: (caddar pair)
+ -- cadddr: (cadddr pair)
+ -- cdaaar: (cdaaar pair)
+ -- cdaadr: (cdaadr pair)
+ -- cdadar: (cdadar pair)
+ -- cdaddr: (cdaddr pair)
+ -- cddaar: (cddaar pair)
+ -- cddadr: (cddadr pair)
+ -- cdddar: (cdddar pair)
+ -- cddddr: (cddddr pair)
+     These applicatives are compositions of `car' and `cdr', with the
+     "a’s" and "d’s" in the same order as they would appear if all the
+     individual "car"’s and "cdr"’s were written out in prefix order.
+     Arbitrary compositions up to four deep are provided. There are
+     twenty-eight of these applicatives in all.
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Pairs and lists,  Up: Top
 
 Index
 *****
@@ -520,15 +642,19 @@ Index
 * $if:                                   Control.              (line 15)
 * $or?:                                  Booleans.             (line 41)
 * $sequence:                             Control.              (line 23)
+* (:                                     Pairs and lists.      (line 72)
 * and?:                                  Booleans.             (line 20)
 * applicative descriptions:              A Sample Applicative Description.
                                                                (line  6)
 * boolean?:                              Booleans.             (line 12)
 * booleans:                              Booleans.             (line  6)
+* cons:                                  Pairs and lists.      (line 35)
 * control:                               Control.              (line  6)
+* copy-es-immutable!:                    Pairs and lists.      (line 49)
 * description format:                    Format of Descriptions.
                                                                (line  6)
 * documentation notation:                Evaluation Notation.  (line  6)
+* empty list:                            Pairs and lists.      (line  6)
 * eq?:                                   Equivalence.          (line 12)
 * equal?:                                Equivalence.          (line 16)
 * equivalence:                           Equivalence.          (line  6)
@@ -540,13 +666,20 @@ Index
 * for-each:                              Control.              (line 42)
 * inert?:                                Control.              (line 11)
 * Kernel history:                        Kernel History.       (line  6)
+* lists:                                 Pairs and lists.      (line  6)
+* nil:                                   Pairs and lists.      (line  6)
 * not?:                                  Booleans.             (line 16)
+* null?:                                 Pairs and lists.      (line 31)
 * object descriptions:                   A Sample Applicative Description.
                                                                (line  6)
 * operative descriptions:                A Sample Applicative Description.
                                                                (line  6)
 * or?:                                   Booleans.             (line 24)
+* pair?:                                 Pairs and lists.      (line 27)
+* pairs:                                 Pairs and lists.      (line  6)
 * printing notation:                     Printing Notation.    (line  6)
+* set-car!:                              Pairs and lists.      (line 41)
+* set-cdr!:                              Pairs and lists.      (line 42)
 * string->symbol:                        Symbols.              (line 20)
 * symbol->string:                        Symbols.              (line 16)
 * symbol?:                               Symbols.              (line 12)
@@ -556,22 +689,23 @@ Index
 
 Tag Table:
 Node: Top302
-Node: License1130
-Node: Introduction2801
-Node: Caveats5624
-Node: Kernel History6410
-Node: Conventions7855
-Node: Some Terms8526
-Node: Evaluation Notation9197
-Node: Printing Notation10218
-Node: Error Messages10694
-Node: Format of Descriptions11342
-Node: A Sample Applicative Description11906
-Node: Acknowledgements13566
-Node: Booleans13952
-Node: Equivalence16494
-Node: Symbols17287
-Node: Control18652
-Node: Index20959
+Node: License1209
+Node: Introduction2880
+Node: Caveats5703
+Node: Kernel History6489
+Node: Conventions7934
+Node: Some Terms8605
+Node: Evaluation Notation9276
+Node: Printing Notation10297
+Node: Error Messages10773
+Node: Format of Descriptions11421
+Node: A Sample Applicative Description11985
+Node: Acknowledgements13645
+Node: Booleans14031
+Node: Equivalence16573
+Node: Symbols17366
+Node: Control18731
+Node: Pairs and lists21048
+Node: Index25996
 
 End Tag Table

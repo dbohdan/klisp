@@ -1,0 +1,147 @@
+@c -*-texinfo-*-
+@setfilename ../src/pairs_lists
+
+@node Pairs and lists, Index, Control, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Pairs and lists
+@cindex pairs
+@cindex nil
+@cindex empty list
+@cindex lists
+
+A pair is an object that refers to two other objects, called its car
+and cdr.  The Kernel data type pair is encapsulated.
+
+  The null data type consists of a single immutable value, called nil
+or the empty list and having external representation @code{()}, with
+or without whitespace between the parentheses. It is immutable, and
+the null type is encapsulated.
+
+  If @code{a} and @code{d} are external representations of
+respectively the car and cdr of a pair @code{p}, then @code{(a . d)}
+is an external representation of @code{p}. If the cdr of @code{p} is
+nil, then @code{(a)} is also an external representation of
+@code{p}. If the cdr of @code{p} is a pair @code{p2}, and @code{(r)}
+is an external representation of @code{p2}, then @code{(a r)} is an
+external representation of @code{p}.
+@c add xref for write
+  When a pair is output (as by write), an external representation with
+the fewest parentheses is used; in the case of a finite list, only one
+set of parentheses is required beyond those used in representing the
+elements of the list. For example, an object with external
+representation @code{(1 . (2 . (3 . ())))} would be output using,
+modulo whitespace, external representation @code{(1 2 3)}.
+
+@deffn Applicative pair? (pair? . objects)
+  The primitive type predicate for type pair. @code{pair?}
+returns true iff all the objects in @code{objects} are of type pair.
+@end deffn
+
+@deffn Applicative null? (null? . objects)
+  The primitive type predicate for type null. @code{null?}
+returns true iff all the objects in @code{objects} are of type null.
+@end deffn
+
+@deffn Applicative cons (cons object1 object2)
+  A new mutable pair object is constructed and returned, whose car and
+cdr referents are respectively @code{object1} and @code{object2}.  No
+two objects returned by different calls to cons are @code{eq?} to each
+other.
+@end deffn
+
+@deffn Applicative set-car! (set-car! pair object)
+@deffnx Applicative set-cdr! (set-cdr! pair object)
+  @code{pair} should be a mutable pair.
+  
+  These applicatives set the referent of, respectively, the car
+reference or the cdr reference of @code{pair} to @code{object}.  The
+result of the expression is inert.
+@end deffn
+
+@deffn Applicative copy-es-immutable! (copy-es-immutable object)
+  The short description of this applicative is that it returns an object
+@code{equal?} to @code{object} with an immutable evaluation structure. The
+``-es-'' in the name is short for ``evaluation structure''.  
+
+@c TODO move the evaluation structure description to the intro
+  The evaluation structure of an object @code{o} is defined to be the
+set of all pairs that can be reached by following chains of references
+from @code{o} without ever passing through a non-pair object. The
+evaluation structure of a non-pair object is empty.  
+
+  If @code{object} is not a pair, the applicative returns @code{object}.
+Otherwise (if @code{object} is a pair), the applicative returns an
+immutable pair whose car and cdr would be suitable results for
+@code{(copy-es-immutable (car object))} and @code{(copy-es-immutable
+(cdr object))}, respectively.  Further, the evaluation structure of
+@c TODO add xref for isomorphic (and add isomorphic to the intro)
+the returned value is isomorphic to that of @code{object} at the time
+of copying, with corresponding non-pair referents being @code{eq?}.
+
+  In Kernel it's undefined whether immutable pairs are copied or left ``as
+is'' in the result.  klisp doesn't copy immutable pairs, but that
+behaviour should not be depended upon.
+@end deffn
+
+@deffn list (list . objects)
+The @code{list} applicative returns @code{objects}.
+
+  The underlying operative of @code{list} returns its undifferentiated
+operand tree, regardless of whether that tree is or is not a list.  
+@end deffn
+
+@deffn list* (list* . objects)
+@code{objects} should be a finite nonempty list of arguments.  The
+following equivalences hold: 
+@example
+(list* arg1) @equiv{} arg1 
+(list* arg1 arg2 . args) @equiv{} (cons arg1 (list* arg2 . args))
+@end example
+@end deffn
+
+@deffn car (car pair)
+@deffnx cdr (cdr pair)
+These applicatives return, respectively, the car and cdr of @code{pair}.
+@end deffn
+@c 2 levels
+@deffn caar (caar pair)
+@deffnx cadr (cadr pair)
+@deffnx cdar (cdar pair)
+@deffnx cddr (cddr pair)
+@c 3 levels
+@deffnx caaar (caaar pair)
+@deffnx caadr (caadr pair)
+@deffnx cadar (cadar pair)
+@deffnx caddr (caddr pair)
+@deffnx cdaar (cdaar pair)
+@deffnx cdadr (cdadr pair)
+@deffnx cddar (cddar pair)
+@deffnx cdddr (cdddr pair)
+@c 3 levels
+@deffnx caaaar (caaaar pair)
+@deffnx caaadr (caaadr pair)
+@deffnx caadar (caadar pair)
+@deffnx caaddr (caaddr pair)
+@deffnx cadaar (cadaar pair)
+@deffnx cadadr (cadadr pair)
+@deffnx caddar (caddar pair)
+@deffnx cadddr (cadddr pair)
+
+@deffnx cdaaar (cdaaar pair)
+@deffnx cdaadr (cdaadr pair)
+@deffnx cdadar (cdadar pair)
+@deffnx cdaddr (cdaddr pair)
+@deffnx cddaar (cddaar pair)
+@deffnx cddadr (cddadr pair)
+@deffnx cdddar (cdddar pair)
+@deffnx cddddr (cddddr pair)
+
+@c TODO add note about pronunciation
+These applicatives are compositions of @code{car} and @code{cdr}, with
+the ``a’s'' and ``d’s'' in the same order as they would appear if all
+the individual ``car’s'' and ``cdr’s'' were written out in prefix
+order.  Arbitrary compositions up to four deep are provided. There are
+twenty-eight of these applicatives in all.
+@end deffn
+

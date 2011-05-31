@@ -77,6 +77,7 @@ in part.
 mutation module features.
 * Symbols::                 Symbol module features.
 * Control::                 Control module features.
+* Pairs and lists::         Pairs and lists and Pair mutation module features. 
 @c TODO complete
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
@@ -92,6 +93,7 @@ mutation module features.
 @include equivalence.texi
 @include symbols.texi
 @include control.texi
+@include pairs_lists.texi
 
 @c appendices
 @c TODO
