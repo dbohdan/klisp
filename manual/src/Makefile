@@ -2,7 +2,7 @@
 # some of this is from the elisp manual
 
 srcs = klisp.texi intro.texi \
-  index.texi
+  index.texi booleans.texi equivalence.texi symbols.texi
 
 #TODO add dvi/pdf output
 #TODO check what happens with xrefs

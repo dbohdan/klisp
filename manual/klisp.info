@@ -29,6 +29,7 @@ in part.
 * Booleans::                Boolean module features.
 * Equivalence::             Equivalence under mutation & Equivalence up to
 mutation module features.
+* Symbols::                 Symbol module features.
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -78,29 +79,29 @@ File: klisp.info,  Node: Introduction,  Next: Booleans,  Prev: License,  Up: Top
 **************
 
 klisp is an open source interpreter for the Kernel Programming
-Language. It aims at being comprehensive and robust as specified in the
-`Revised(-1) Report on the Kernel Programming Language', but that
-probably won't happen for some time. It is written in C99 under the MIT
-license. It draws heavily from the Lua interpreter source code & file
-structure. It uses the IMath library for arbitrary sized integers and
-rationals.
+Language.  It aims at being comprehensive and robust as specified in
+the `Revised(-1) Report on the Kernel Programming Language', but that
+probably won't happen for some time.  It is written in C99 under the
+MIT license.  It draws heavily from the Lua interpreter source code &
+file structure.  It uses the IMath library for arbitrary sized integers
+and rationals.
 
    The Kernel programming language is a statically scoped and properly
-tail-recursive dialect of Lisp, descended from Scheme. It is designed
+tail-recursive dialect of Lisp, descended from Scheme.  It is designed
 to be simpler and more general than Scheme, with an exceptionally
 clear, simple, and versatile semantics, only one way to form compound
 expressions, and no inessential restrictions on the power of that one
-compound form. Imperative, functional, and message-passing programming
+compound form.  Imperative, functional, and message-passing programming
 styles (to name a few) may be conveniently expressed in Kernel.
 
    An important property of Kernel is that all manipulable entities in
-Kernel are first-class objects. In particular, Kernel has no
+Kernel are first-class objects.  In particular, Kernel has no
 second-class combiners; instead, the roles of special forms and macros
 are subsumed by operatives, which are first-class, statically scoped
-combiners that act directly on their unevaluated operands. Kernel also
+combiners that act directly on their unevaluated operands.  Kernel also
 has a second type of combiners, applicatives, which act on their evalu-
-ated arguments. Applicatives are roughly equivalent to Scheme
-procedures. However, an applicative is nothing more than a wrapper to
+ated arguments.  Applicatives are roughly equivalent to Scheme
+procedures.  However, an applicative is nothing more than a wrapper to
 induce operand evaluation, around an underlying operative (or, in
 principle, around another applicative, though that isn’t usually done);
 applicatives themselves are mere facilitators to computation.
@@ -109,17 +110,17 @@ applicatives themselves are mere facilitators to computation.
 `http://web.cs.wpi.edu/~jshutt/kernel.html'.
 
    klisp is freely available for both academic and commercial purposes.
-See LICENSE for details. it can be downloaded at
+See LICENSE for details.  it can be downloaded at
 `http://www.bitbucket.org/AndresNavarro/klisp'
 
    klisp is developed by Andres Navarro, a Computer Science
-undergraduate at Buenos Aires University (UBA). You can reach him at
+undergraduate at Buenos Aires University (UBA).  You can reach him at
 <canavarro82@gmail.com>.
 
    This manual describes klisp version 0.1, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel
-Programming Language in particular. There are frequent references to
-the Kernel Programming Language Report. Unlike in the report, no
+Programming Language in particular.  There are frequent references to
+the Kernel Programming Language Report.  Unlike in the report, no
 rationale is provided for any feature, only a description of the
 implemented functionality.
 
@@ -138,16 +139,16 @@ File: klisp.info,  Node: Caveats,  Next: Kernel History,  Prev: Introduction,  U
 1.1 Caveats
 ===========
 
-This is the first draft of this manual. It will be incomplete for some
-time. It will also evolve, together with klisp and the Kernel
+This is the first draft of this manual.  It will be incomplete for some
+time.  It will also evolve, together with klisp and the Kernel
 Programming Language, both of which, right now, are in a quite fluid
 state.
 
    The main reference on Kernel is the preliminary report: `Revised(-1)
-Report on the Kernel Programming Language'. Some sections of the report
-are still incomplete, so both klisp and this manual will use
+Report on the Kernel Programming Language'.  Some sections of the
+report are still incomplete, so both klisp and this manual will use
 specifications from other languages in these sections, trying to follow
-the Kernel spirit. These instances will be documented throughout the
+the Kernel spirit.  These instances will be documented throughout the
 manual.
 
    Please mail comments and corrections to <canavarro82@gmail.com>.
@@ -161,28 +162,28 @@ File: klisp.info,  Node: Kernel History,  Next: Conventions,  Prev: Caveats,  Up
 1.2 Kernel History
 ==================
 
-The Kernel Programming Language is a work in progress. It is being
+The Kernel Programming Language is a work in progress.  It is being
 developed by John N. Shutt, Ph.D, who created it while studying at the
-Worcester Polytechnic Institute (I think about 2002, or so... ASK). It
+Worcester Polytechnic Institute (I think about 2002, or so... ASK).  It
 is descended from scheme, with the idea that all objects should be
-first class values. In particular, Kernel replaces macros with
+first class values.  In particular, Kernel replaces macros with
 operatives (kinda like statically scoped fexprs and fsubrs) and has
-first class environments. Kernel also has the notion of encapsulated
+first class environments.  Kernel also has the notion of encapsulated
 objects which limits the ammount of information an implementation can
 share with a Kernel program (e.g. There is no way in Kernel to get the
 parents or a complete list of bindings of an environment object).
 
    The main reference on Kernel is the preliminary report: `Revised(-1)
-Report on the Kernel Programming Language'. Some sections of the report
-are still incomplete, so both klisp and this manual will use
+Report on the Kernel Programming Language'.  Some sections of the
+report are still incomplete, so both klisp and this manual will use
 specifications from other languages in these sections, trying to follow
-the Kernel spirit. These instances will be documented throughout the
+the Kernel spirit.  These instances will be documented throughout the
 manual.
 
    You can read all about Kernel at John's homepage at WPI
 `http://www.cs.wpi.edu/~jshutt/', including the preliminary report on
 the language and his doctoral dissertation which gives a theorethical
-frame for fexprs. You can contact him at <jshutt@cs.wpi.edu>.
+frame for fexprs.  You can contact him at <jshutt@cs.wpi.edu>.
 
 
 File: klisp.info,  Node: Conventions,  Next: Acknowledgements,  Prev: Kernel History,  Up: Introduction
@@ -191,7 +192,7 @@ File: klisp.info,  Node: Conventions,  Next: Acknowledgements,  Prev: Kernel His
 ===============
 
 This section explains the notational conventions that are used in this
-manual. You may want to skip this section and refer back to it later.
+manual.  You may want to skip this section and refer back to it later.
 
 * Menu:
 
@@ -210,7 +211,7 @@ File: klisp.info,  Node: Some Terms,  Next: Evaluation Notation,  Prev: Conventi
 Throughout this manual, the phrases "the Kernel reader" and "the Kernel
 printer" are used to refer to those routines in Lisp that convert
 textual representations of Kernel objects into actual objects, and vice
-versa. XXX Printed Representation XXX, for more details. You, the
+versa.  XXX Printed Representation XXX, for more details.  You, the
 person reading this manual, are assumed to be "the programmer" or "the
 user".
 
@@ -224,7 +225,7 @@ File: klisp.info,  Node: Evaluation Notation,  Next: Printing Notation,  Prev: S
 1.3.2 Evaluation Notation
 -------------------------
 
-When you evaluate a piece of Kernel code, it produces a result. In the
+When you evaluate a piece of Kernel code, it produces a result.  In the
 examples in this manual, this is indicated with `=>':
 
      (car (cons 1 2))
@@ -234,7 +235,7 @@ You can read this as "`(car (cons 1 2))' evaluates to 1".
 
    The semantics of a language feature are sometimes clarified, or even
 defined, in its entry by specifying that two expressions are
-equivalent. This is notated with `=='. For example, the semantics of
+equivalent.  This is notated with `=='.  For example, the semantics of
 applicative list* can be defined by following equivalences:
      (list* arg1) == arg1
      (list* arg1 . more-args) == (cons arg1 (list* . more-args))
@@ -261,11 +262,11 @@ File: klisp.info,  Node: Error Messages,  Next: Format of Descriptions,  Prev: P
 1.3.4 Error Messages
 --------------------
 
-Some examples cause errors to be signaled. The report doesn't specify
+Some examples cause errors to be signaled.  The report doesn't specify
 what objects are passed to the error continuation, but in klisp,
 objects passed to the error continuation are encapsulated error objects
 that have at least a message and possibly some additional objects and
-context informations (such as source code location). In the examples,
+context informations (such as source code location).  In the examples,
 the error message is shown on a line starting with `error-->'.
 
      (+ 23 #t)
@@ -278,7 +279,7 @@ File: klisp.info,  Node: Format of Descriptions,  Prev: Error Messages,  Up: Con
 ----------------------------
 
 Applicatives, operatives, and other objects are described in this manual
-in a uniform format. The first line of a description contains the name
+in a uniform format.  The first line of a description contains the name
 of the item followed by its operands or arguments, if any.  The
 category--operative, applicative, or whatever--appears at the beginning
 of the line.  The description follows on succeeding lines, sometimes
@@ -295,9 +296,9 @@ File: klisp.info,  Node: A Sample Applicative Description,  Prev: Format of Desc
 ........................................
 
 In an applicative description, the name of the applicative being
-described appears first. It is followed on the same line by an
+described appears first.  It is followed on the same line by an
 applicative combination that includes the name of the applicative and
-the arguments, as would appear in a program. The names used for the
+the arguments, as would appear in a program.  The names used for the
 arguments are also used in the body of the description.
 
    Here is a description of an imaginary applicative `foo':
@@ -316,8 +317,8 @@ arguments are also used in the body of the description.
           (+ (- X W) Y...)
 
    Any parameter whose name contains the name of a type (e.g., INTEGER,
-INTEGER1 or CONTINUATION) is expected to be of that type. A plural of a
-type (such as NUMBERS) often means a list of objects of that type.
+INTEGER1 or CONTINUATION) is expected to be of that type.  A plural of
+a type (such as NUMBERS) often means a list of objects of that type.
 Parameters named OBJECT may be of any type.  (XXX Types of Lisp Object
 XXX, for a list of Kernel object types.)  Parameters with other sorts
 of names are discussed specifically in the description of the combiner.
@@ -326,7 +327,7 @@ described at the beginning.
 
    Operative descriptions have the same format, but the word
 `Applicative' is  replaced by `Operative', and `Argument' is replaced
-by `Operand'. Also Operatives always have an environment parameter
+by `Operand'.  Also Operatives always have an environment parameter
 (that can be #ignore or a symbol).
 
 
@@ -338,7 +339,7 @@ File: klisp.info,  Node: Acknowledgements,  Prev: Conventions,  Up: Introduction
 This manual was written by Andres Navarro.
 
    The structure and some text for this introductory section were
-borrowed from the Elisp Manual by the Free Sofware Foundation. This
+borrowed from the Elisp Manual by the Free Sofware Foundation.  This
 manual also borrows freely from both the Kernel Report and the Scheme
 Reports.
 
@@ -354,8 +355,8 @@ There are no possible mutations of either of these two values, and the
 boolean type is encapsulated.
 
  -- Applicative: boolean? (boolean? . objects)
-     The primitive type predicate for type boolean. `boolean?' returns
-     true iff all the objects in list are of type boolean.
+     The primitive type predicate for type boolean.  `boolean?' returns
+     true iff all the objects in `objects' are of type boolean.
 
  -- Applicative: not? (not? boolean)
      Applicative `not?' is a predicate that returns the logical
@@ -371,40 +372,40 @@ boolean type is encapsulated.
 
  -- Operative: $and? ($and? . list)
      The `$and?' operative performs a "short-circuit and" of its
-     operands. It evaluates them from left to right, until either an
-     operand evaluates to false, or the end of the list is reached. If
+     operands.  It evaluates them from left to right, until either an
+     operand evaluates to false, or the end of the list is reached.  If
      the end of the list is reached (which is immediate if `list' is
-     `nil'), the operative returns true. If an operand evaluates to
+     `nil'), the operative returns true.  If an operand evaluates to
      false, no further operand evaluations are performed, and the
-     operative returns false. If `list' is acyclic, and the last
-     operand is evaluated, it is evaluated as a tail context. If `list'
-     is cyclic, an unbounded number of operand evaluations may be
-     performed. If any of the operands evaluates to a non-boolean
+     operative returns false.  If `list' is acyclic, and the last
+     operand is evaluated, it is evaluated as a tail context.  If
+     `list' is cyclic, an unbounded number of operand evaluations may be
+     performed.  If any of the operands evaluates to a non-boolean
      value, an error is signaled (even if it's the last one).
 
  -- Operative: $or? ($or? . list)
      The `$or?' operative performs a "short-circuit or" of its
-     operands. It evaluates them from left to right, until either an
-     operand evaluates to true, or the end of the list is reached. If
+     operands.  It evaluates them from left to right, until either an
+     operand evaluates to true, or the end of the list is reached.  If
      the end of the list is reached (which is immediate if `list' is
-     `nil'), the operative returns false. If an operand evaluates to
+     `nil'), the operative returns false.  If an operand evaluates to
      true, no further operand evaluations are performed, and the
-     operative returns true. If `list' is acyclic, and the last operand
-     is evaluated, it is evaluated as a tail context. If `list' is
-     cyclic, an unbounded number of operand evaluations may be
-     performed. If any of the operands evaluates to a non-boolean
+     operative returns true.  If `list' is acyclic, and the last
+     operand is evaluated, it is evaluated as a tail context.  If
+     `list' is cyclic, an unbounded number of operand evaluations may be
+     performed.  If any of the operands evaluates to a non-boolean
      value, an error is signaled (even if it's the last one).
 
 
-File: klisp.info,  Node: Equivalence,  Next: Index,  Prev: Booleans,  Up: Top
+File: klisp.info,  Node: Equivalence,  Next: Symbols,  Prev: Booleans,  Up: Top
 
 3 Equivalence
 *************
 
 Kernel has two general-purpose equivalence predicates (whereas R5RS
-Scheme has three). The two Kernel predicates correspond to the abstract
-notions of equivalence up to mutation (`equal') and equivalence in the
-presence of mutation (`eq?').
+Scheme has three).  The two Kernel predicates correspond to the
+abstract notions of equivalence up to mutation (`equal') and
+equivalence in the presence of mutation (`eq?').
 
  -- Applicative: eq? (eq? . objects)
      Predicate `eq?' returns true iff all of `objects' are effectively
@@ -412,12 +413,44 @@ presence of mutation (`eq?').
 
  -- Applicative: equal? (equal? . objects)
      Predicate `equal?' returns true iff all of `objects' "look" the
-     same as long as nothing is mutated. This is a weaker predicate
+     same as long as nothing is mutated.  This is a weaker predicate
      than `eq?'; that is, `equal?' must return true whenever `eq?'
      would return true.
 
 
-File: klisp.info,  Node: Index,  Next: (dir),  Prev: Equivalence,  Up: Top
+File: klisp.info,  Node: Symbols,  Next: Index,  Prev: Equivalence,  Up: Top
+
+4 Symbols
+*********
+
+Two symbols are eq? iff they have the same external representation.
+Symbols are immutable, and the symbol type is encapsulated.  The
+external representations of symbols are usually identifiers.  However,
+symbols with other external representations may be created.
+
+ -- Applicative: symbol? (symbol? . objects)
+     The primitive type predicate for type symbol. `symbol?' returns
+     true iff all the objects in `objects' are of type symbol.
+
+ -- Applicative: symbol->string (symbol->string symbol)
+     Applicative `symbol->string' returns the name of `symbol' as a
+     string.  The string returned is immutable.
+
+ -- Applicative: string->symbol (string->symbol string)
+     Applicative `string->symbol' returns the symbol with name
+     `string'.  The symbol is always interned, which means, that it is
+     always the case that:
+          (eq? <symbol> (string->symbol (symbol->string <symbol>)))
+               => #t
+       `string->symbol' can create symbols whose external
+     representation aren't identifiers.  Right now klisp uses an
+     output-only representation, but in the near future it will
+     probably include some kind of escaping mechanism to allow
+     arbitrary symbols to have readable external representations as in
+     R7RS Scheme.
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Symbols,  Up: Top
 
 Index
 *****
@@ -451,25 +484,30 @@ Index
                                                                (line  6)
 * or?:                                   Booleans.             (line 24)
 * printing notation:                     Printing Notation.    (line  6)
+* string->symbol:                        Symbols.              (line 20)
+* symbol->string:                        Symbols.              (line 16)
+* symbol?:                               Symbols.              (line 12)
+* symbols:                               Symbols.              (line  6)
 
 
 
 Tag Table:
 Node: Top302
-Node: License1025
-Node: Introduction2696
-Node: Caveats5505
-Node: Kernel History6287
-Node: Conventions7725
-Node: Some Terms8395
-Node: Evaluation Notation9064
-Node: Printing Notation9805
-Node: Error Messages10281
-Node: Format of Descriptions10927
-Node: A Sample Applicative Description11490
-Node: Acknowledgements13146
-Node: Booleans13531
-Node: Equivalence16039
-Node: Index16828
+Node: License1077
+Node: Introduction2748
+Node: Caveats5571
+Node: Kernel History6357
+Node: Conventions7802
+Node: Some Terms8473
+Node: Evaluation Notation9144
+Node: Printing Notation9888
+Node: Error Messages10364
+Node: Format of Descriptions11012
+Node: A Sample Applicative Description11576
+Node: Acknowledgements13236
+Node: Booleans13622
+Node: Equivalence16148
+Node: Symbols16941
+Node: Index18304
 
 End Tag Table

@@ -75,6 +75,7 @@ in part.
 * Booleans::                Boolean module features.
 * Equivalence::             Equivalence under mutation & Equivalence up to
 mutation module features.
+* Symbols::                 Symbol module features.
 @c TODO complete
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
@@ -88,6 +89,7 @@ mutation module features.
 @include intro.texi
 @include booleans.texi
 @include equivalence.texi
+@include symbols.texi
 
 @c appendices
 @c TODO
