@@ -27,11 +27,12 @@ in part.
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
 * Booleans::                Booleans module features.
-* Equivalence::             Equivalence under mutation & Equivalence up to
-mutation module features.
+* Equivalence::             Equivalence (under & up to) mutation modules features.
 * Symbols::                 Symbols module features.
 * Control::                 Control module features.
-* Pairs and lists::         Pairs and lists and Pair mutation module features.
+* Pairs and lists::         Pairs and lists and Pair mutation modules features.
+* Environments::            Environments and Environment mutation modules features.
+* Combiners::               Combiners module features.
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -510,7 +511,7 @@ consists of a single immutable value, having external representation
      discarded and the result returned by `for-each' is inert.
 
 
-File: klisp.info,  Node: Pairs and lists,  Next: Index,  Prev: Control,  Up: Top
+File: klisp.info,  Node: Pairs and lists,  Next: Environments,  Prev: Control,  Up: Top
 
 6 Pairs and lists
 *****************
@@ -851,7 +852,19 @@ output using, modulo whitespace, external representation `(1 2 3)'.
      element of `list' is `eq?' to `object'.
 
 
-File: klisp.info,  Node: Index,  Next: (dir),  Prev: Pairs and lists,  Up: Top
+File: klisp.info,  Node: Environments,  Next: Combiners,  Prev: Pairs and lists,  Up: Top
+
+7 Environments
+**************
+
+
+File: klisp.info,  Node: Combiners,  Next: Index,  Prev: Environments,  Up: Top
+
+8 Combiners
+***********
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Combiners,  Up: Top
 
 Index
 *****
@@ -869,6 +882,7 @@ Index
 * append!:                               Pairs and lists.     (line 306)
 * applicative descriptions:              A Sample Applicative Description.
                                                               (line   6)
+* applicatives:                          Combiners.           (line   6)
 * assoc:                                 Pairs and lists.     (line 252)
 * assq:                                  Pairs and lists.     (line 333)
 * boolean?:                              Booleans.            (line  12)
@@ -903,6 +917,7 @@ Index
 * cdddr:                                 Pairs and lists.     (line 100)
 * cddr:                                  Pairs and lists.     (line  92)
 * cdr:                                   Pairs and lists.     (line  86)
+* combiners:                             Combiners.           (line   6)
 * cons:                                  Pairs and lists.     (line  35)
 * control:                               Control.             (line   6)
 * copy-es:                               Pairs and lists.     (line 321)
@@ -913,6 +928,7 @@ Index
 * documentation notation:                Evaluation Notation. (line   6)
 * empty list:                            Pairs and lists.     (line   6)
 * encycle!:                              Pairs and lists.     (line 158)
+* environments:                          Environments.        (line   6)
 * eq?:                                   Equivalence.         (line  12)
 * equal?:                                Equivalence.         (line  16)
 * equivalence:                           Equivalence.         (line   6)
@@ -925,6 +941,8 @@ Index
                                                               (line  15)
 * for-each:                              Control.             (line  42)
 * get-list-metrics:                      Pairs and lists.     (line 123)
+* ignore:                                Environments.        (line   6)
+* inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
 * Kernel history:                        Kernel History.      (line   6)
 * length:                                Pairs and lists.     (line 191)
@@ -944,6 +962,7 @@ Index
                                                               (line   6)
 * operative descriptions:                A Sample Applicative Description.
                                                               (line   6)
+* operatives:                            Combiners.           (line   6)
 * or?:                                   Booleans.            (line  24)
 * pair?:                                 Pairs and lists.     (line  27)
 * pairs:                                 Pairs and lists.     (line   6)
@@ -960,23 +979,25 @@ Index
 
 Tag Table:
 Node: Top302
-Node: License1211
-Node: Introduction2882
-Node: Caveats5705
-Node: Kernel History6491
-Node: Conventions7936
-Node: Some Terms8607
-Node: Evaluation Notation9278
-Node: Printing Notation10299
-Node: Error Messages10775
-Node: Format of Descriptions11423
-Node: A Sample Applicative Description11987
-Node: Acknowledgements13750
-Node: Booleans14136
-Node: Equivalence16678
-Node: Symbols17471
-Node: Control18836
-Node: Pairs and lists21153
-Node: Index38167
+Node: License1333
+Node: Introduction3004
+Node: Caveats5827
+Node: Kernel History6613
+Node: Conventions8058
+Node: Some Terms8729
+Node: Evaluation Notation9400
+Node: Printing Notation10421
+Node: Error Messages10897
+Node: Format of Descriptions11545
+Node: A Sample Applicative Description12109
+Node: Acknowledgements13872
+Node: Booleans14258
+Node: Equivalence16800
+Node: Symbols17593
+Node: Control18958
+Node: Pairs and lists21275
+Node: Environments38296
+Node: Combiners38420
+Node: Index38528
 
 End Tag Table

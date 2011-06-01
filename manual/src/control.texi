@@ -6,6 +6,7 @@
 
 @chapter Control
 @cindex control
+@cindex inert
   The inert data type is provided for use with control combiners.  It
 consists of a single immutable value, having external representation
 @code{#inert}.  The inert type is encapsulated.

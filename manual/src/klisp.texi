@@ -73,11 +73,12 @@ in part.
 * Introduction::            Introduction and conventions used.
 @c TODO lisp types and other introductions
 * Booleans::                Booleans module features.
-* Equivalence::             Equivalence under mutation & Equivalence up to
-mutation module features.
+* Equivalence::             Equivalence (under & up to) mutation modules features.
 * Symbols::                 Symbols module features.
 * Control::                 Control module features.
-* Pairs and lists::         Pairs and lists and Pair mutation module features. 
+* Pairs and lists::         Pairs and lists and Pair mutation modules features. 
+* Environments::            Environments and Environment mutation modules features. 
+* Combiners::               Combiners module features.
 @c TODO complete
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
@@ -94,6 +95,8 @@ mutation module features.
 @include symbols.texi
 @include control.texi
 @include pairs_lists.texi
+@include environments.texi
+@include combiners.texi
 
 @c appendices
 @c TODO

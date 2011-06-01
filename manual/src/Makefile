@@ -4,7 +4,8 @@
 srcs = klisp.texi index.texi \
 	intro.texi \
 	booleans.texi equivalence.texi symbols.texi \
-	control.texi pairs_lists.texi
+	control.texi pairs_lists.texi \
+	environments.texi combiners.texi
 
 #TODO add dvi/pdf output
 #TODO check what happens with xrefs

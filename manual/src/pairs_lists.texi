@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/pairs_lists
 
-@node Pairs and lists, Index, Control, Top
+@node Pairs and lists, Environments, Control, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Pairs and lists
