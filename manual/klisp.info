@@ -26,10 +26,10 @@ in part.
 
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
-* Booleans::                Boolean module features.
+* Booleans::                Booleans module features.
 * Equivalence::             Equivalence under mutation & Equivalence up to
 mutation module features.
-* Symbols::                 Symbol module features.
+* Symbols::                 Symbols module features.
 * Control::                 Control module features.
 * Pairs and lists::         Pairs and lists and Pair mutation module features.
 * Index::                   Index including concepts, functions, variables,
@@ -736,6 +736,120 @@ output using, modulo whitespace, external representation `(1 2 3)'.
           (append () h . t) == (append h . t)
           (append (cons a b) h . t) == (cons a (append b h . t))
 
+ -- Applicative: list-neighbors (list-neighbors list)
+     The `list-neighbors' applicative constructs and returns a list of
+     all the consecutive sublists of `list' of length 2, in order.  If
+     `list' is nil, the result is nil.  If `list' is non-nil, the
+     length of the result is one less than the length of `list'. If
+     `list' is cyclic, the result is structurally isomorphic to it
+     (i.e., has the same acyclic prefix length and cycle length).
+
+     For example:
+          (list-neighbors (list 1 2 3 4)) => ((1 2) (2 3) (3 4))
+
+ -- Applicative: filter (filter applicative list)
+     Applicative `filter' passes each of the elements of `list' as an
+     argument to `applicative', one at a time in no particular order,
+     using a fresh empty environment for each call.  The result of each
+     call to `applicative' must be boolean, otherwise an error is
+     signaled.  `filter' constructs and returns a list of all elements
+     of `list' on which `applicative' returned true, in the same order
+     as in `list'.  `applicative' is called exactly as many times as
+     there are pairs in `list'.  The resultant list has a cycle
+     containing exactly those elements accepted by `applicative' that
+     were in the cycle of `list'; if there were no such elements, the
+     result is acyclic.
+
+ -- Applicative: assoc (assoc object pairs)
+     Applicative `assoc' returns the first element of `pairs' whose car
+     is `equal?' to `object'.  If there is no such element in `pairs',
+     nil is returned.
+
+ -- Applicative: member? (member? object list)
+     Applicative `member?' is a predicate that returns true iff some
+     element of `list' is `equal?' to `object'.
+
+ -- Applicative: finite-list? (finite-list? . objects)
+     This is the type predicate for type finite-list.  `finite-list?'
+     returns true iff all the objects in `objects' are acyclic lists.
+
+ -- Applicative: countable-list? (countable-list? . objects)
+     This is the type predicate for type list.  `countable-list?'
+     returns true iff all the objects in `objects' are lists.
+
+ -- Applicative: reduce (reduce list binary identity [precycle incycle
+          postcycle])
+     `binary' should be an applicative. If the short form is used,
+     `list' should be an acyclic. If the long form is used, `precycle',
+     `incycle', and `postcycle' should be applicatives.
+
+     If `list' is empty, applicative `reduce' returns `identity'.  If
+     `list' is nonempty but acyclic, applicative `reduce' uses binary
+     operation `binary' to merge all the elements of `list' into a
+     single object, using any associative grouping of the elements.
+     That is, the sequence of objects initially found in `list' is
+     repeatedly decremented in length by applying `binary' to a list of
+     any two consecutive objects, replacing those two objects with the
+     result at the point in the sequence where they occurred; and when
+     the sequence contains only one object, that object is returned.
+     If `list' is cyclic, the long form must be used.  The elements of
+     the cycle are passed, one at a time (but just once for each
+     position in the cycle), as arguments to unary applicative
+     `precycle'; the finite, cyclic sequence of results from `precycle'
+     is reduced using binary applicative `incycle'; and the result from
+     reducing the cycle is passed as an argument to unary applicative
+     `postcycle'. Binary operation `binary' is used to reduce the
+     sequence consisting of the elements of the acyclic prefix of
+     `list' followed by the result returned by `postcycle'. The only
+     constraint on the order of calls to the applicatives is that each
+     call must be made before its result is needed (thus, parts of the
+     reduction of the acyclic prefix may occur before the contribution
+     from the cycle has been completed).
+
+     Each call to `binary', `precycle', `incycle', or `postcycle' uses
+     the dynamic environment of the call to `reduce'.
+
+     If `list' is acyclic with length `n >= 1', `binary' is called `n -
+     1' times.  If `list' is cyclic with acyclic prefix length `a' and
+     cycle length `c', `binary' is called `a' times; `precycle', `c'
+     times; `incycle', `c - 1' times; and `postcycle', once.
+
+ -- Applicative: append! (append! . lists)
+     `lists' must be a nonempty list; its first element must be an
+     acyclic nonempty list, and all of its elements except the last
+     element (if any) must be acyclic lists.
+
+     The `append!' applicative sets the cdr of the last pair in each
+     nonempty list argument to refer to the next non-nil argument,
+     except that if there is a last non-nil argument, it isn’t mutated.
+     It is an error for any two of the list arguments to have the same
+     last pair.  The result returned by this applicative is inert.
+
+     The following equivalences hold:
+          (append! v) == #inert
+          (append! u v . w) == ($sequence (append! u v) (append! u . w))
+
+ -- Applicative: copy-es (copy-es object)
+     Briefly, applicative `copy-es' returns an object initially
+     `equal?' to `object' with a freshly constructed evaluation
+     structure made up of mutable pairs.  If `object' is not a pair,
+     the applicative returns `object'.  If `object' is a pair, the
+     applicative returns a freshly constructed pair whose car and cdr
+     would be suitable results for `(copy-es (car object))' and
+     `(copy-es (cdr object))', respectively.  Further, the evaluation
+     structure of the returned value is structurally isomorphic to that
+     of `object' at the time of copying, with corresponding non-pair
+     referents being `eq?'.
+
+ -- Applicative: assq (assq object pairs)
+     Applicative `assq' returns the first element of `pairs' whose car
+     is `eq?' to `object'.  If there is no such element in `pairs', nil
+     is returned.
+
+ -- Applicative: memq? (memq? object list)
+     Applicative `memq?' is a predicate that returns true iff some
+     element of `list' is `eq?' to `object'.
+
 
 File: klisp.info,  Node: Index,  Next: (dir),  Prev: Pairs and lists,  Up: Top
 
@@ -752,8 +866,11 @@ Index
 * $sequence:                             Control.             (line  23)
 * and?:                                  Booleans.            (line  20)
 * append:                                Pairs and lists.     (line 208)
+* append!:                               Pairs and lists.     (line 306)
 * applicative descriptions:              A Sample Applicative Description.
                                                               (line   6)
+* assoc:                                 Pairs and lists.     (line 252)
+* assq:                                  Pairs and lists.     (line 333)
 * boolean?:                              Booleans.            (line  12)
 * booleans:                              Booleans.            (line   6)
 * caaaar:                                Pairs and lists.     (line 101)
@@ -788,7 +905,9 @@ Index
 * cdr:                                   Pairs and lists.     (line  86)
 * cons:                                  Pairs and lists.     (line  35)
 * control:                               Control.             (line   6)
+* copy-es:                               Pairs and lists.     (line 321)
 * copy-es-immutable!:                    Pairs and lists.     (line  49)
+* countable-list?:                       Pairs and lists.     (line 265)
 * description format:                    Format of Descriptions.
                                                               (line   6)
 * documentation notation:                Evaluation Notation. (line   6)
@@ -799,6 +918,8 @@ Index
 * equivalence:                           Equivalence.         (line   6)
 * error message notation:                Error Messages.      (line   6)
 * evaluation notation:                   Evaluation Notation. (line   6)
+* filter:                                Pairs and lists.     (line 239)
+* finite-list?:                          Pairs and lists.     (line 261)
 * fonts:                                 Some Terms.          (line  13)
 * foo:                                   A Sample Applicative Description.
                                                               (line  15)
@@ -809,10 +930,13 @@ Index
 * length:                                Pairs and lists.     (line 191)
 * list:                                  Pairs and lists.     (line  72)
 * list*:                                 Pairs and lists.     (line  78)
+* list-neighbors:                        Pairs and lists.     (line 228)
 * list-ref:                              Pairs and lists.     (line 198)
 * list-tail:                             Pairs and lists.     (line 147)
 * lists:                                 Pairs and lists.     (line   6)
 * map:                                   Pairs and lists.     (line 169)
+* member?:                               Pairs and lists.     (line 257)
+* memq?:                                 Pairs and lists.     (line 338)
 * nil:                                   Pairs and lists.     (line   6)
 * not?:                                  Booleans.            (line  16)
 * null?:                                 Pairs and lists.     (line  31)
@@ -824,6 +948,7 @@ Index
 * pair?:                                 Pairs and lists.     (line  27)
 * pairs:                                 Pairs and lists.     (line   6)
 * printing notation:                     Printing Notation.   (line   6)
+* reduce:                                Pairs and lists.     (line 270)
 * set-car!:                              Pairs and lists.     (line  41)
 * set-cdr!:                              Pairs and lists.     (line  42)
 * string->symbol:                        Symbols.             (line  20)
@@ -835,23 +960,23 @@ Index
 
 Tag Table:
 Node: Top302
-Node: License1209
-Node: Introduction2880
-Node: Caveats5703
-Node: Kernel History6489
-Node: Conventions7934
-Node: Some Terms8605
-Node: Evaluation Notation9276
-Node: Printing Notation10297
-Node: Error Messages10773
-Node: Format of Descriptions11421
-Node: A Sample Applicative Description11985
-Node: Acknowledgements13748
-Node: Booleans14134
-Node: Equivalence16676
-Node: Symbols17469
-Node: Control18834
-Node: Pairs and lists21151
-Node: Index32148
+Node: License1211
+Node: Introduction2882
+Node: Caveats5705
+Node: Kernel History6491
+Node: Conventions7936
+Node: Some Terms8607
+Node: Evaluation Notation9278
+Node: Printing Notation10299
+Node: Error Messages10775
+Node: Format of Descriptions11423
+Node: A Sample Applicative Description11987
+Node: Acknowledgements13750
+Node: Booleans14136
+Node: Equivalence16678
+Node: Symbols17471
+Node: Control18836
+Node: Pairs and lists21153
+Node: Index38167
 
 End Tag Table

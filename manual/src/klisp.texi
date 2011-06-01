@@ -72,10 +72,10 @@ in part.
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
 @c TODO lisp types and other introductions
-* Booleans::                Boolean module features.
+* Booleans::                Booleans module features.
 * Equivalence::             Equivalence under mutation & Equivalence up to
 mutation module features.
-* Symbols::                 Symbol module features.
+* Symbols::                 Symbols module features.
 * Control::                 Control module features.
 * Pairs and lists::         Pairs and lists and Pair mutation module features. 
 @c TODO complete
