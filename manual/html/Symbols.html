@@ -1,0 +1,75 @@
+<html lang="en">
+<head>
+<title>Symbols - klisp Reference Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="klisp Reference Manual">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Equivalence.html#Equivalence" title="Equivalence">
+<link rel="next" href="Control.html#Control" title="Control">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Symbols"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="Control.html#Control">Control</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Equivalence.html#Equivalence">Equivalence</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<!-- node-name,  next,  previous,  up -->
+<h2 class="chapter">4 Symbols</h2>
+
+<p><a name="index-symbols-22"></a><!-- TODO add xref to eq?, identifiers, etc -->
+  Two symbols are eq? iff they have the same external
+representation. Symbols are immutable, and the symbol type is
+encapsulated.  The external representations of symbols are usually
+identifiers.  However, symbols with other external representations may
+<!-- TODO add xref to string->symbol -->
+be created.
+
+<div class="defun">
+&mdash; Applicative: <b>symbol?</b> (<var>symbol? . objects</var>)<var><a name="index-symbol_003f-23"></a></var><br>
+<blockquote><p>  The primitive type predicate for type symbol. <code>symbol?</code>
+returns true iff all the objects in <code>objects</code> are of type symbol. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>symbol-&gt;string</b> (<var>symbol-&gt;string symbol</var>)<var><a name="index-symbol_002d_003estring-24"></a></var><br>
+<blockquote><p>  Applicative <code>symbol-&gt;string</code> returns the name of <code>symbol</code>
+as a string.  The string returned is immutable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-&gt;symbol</b> (<var>string-&gt;symbol string</var>)<var><a name="index-string_002d_003esymbol-25"></a></var><br>
+<blockquote><p>  Applicative <code>string-&gt;symbol</code> returns the symbol with name
+<code>string</code>.  The symbol is always interned, which means, that it is
+always the case that:
+     <pre class="example">          (eq? &lt;symbol&gt; (string-&gt;symbol (symbol-&gt;string &lt;symbol&gt;)))
+               &rArr; #t
+</pre>
+        <!-- TODO add xrefs for external representation -->
+        <p><code>string-&gt;symbol</code> can create symbols whose external
+representation aren't identifiers.  Right now klisp uses an output-only
+representation, but in the near future it will probably include some
+kind of escaping mechanism to allow arbitrary symbols to have readable
+external representations as in R7RS Scheme. 
+</p></blockquote></div>
+
+<!-- *-texinfo-*- -->
+   </body></html>
+

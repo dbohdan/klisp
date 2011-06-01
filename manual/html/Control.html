@@ -1,0 +1,99 @@
+<html lang="en">
+<head>
+<title>Control - klisp Reference Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="klisp Reference Manual">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Symbols.html#Symbols" title="Symbols">
+<link rel="next" href="Pairs-and-lists.html#Pairs-and-lists" title="Pairs and lists">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Control"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbols.html#Symbols">Symbols</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<!-- node-name,  next,  previous,  up -->
+<h2 class="chapter">5 Control</h2>
+
+<p><a name="index-control-26"></a><a name="index-inert-27"></a>  The inert data type is provided for use with control combiners.  It
+consists of a single immutable value, having external representation
+<code>#inert</code>.  The inert type is encapsulated.
+
+<div class="defun">
+&mdash; Applicative: <b>inert?</b> (<var>inert? . objects</var>)<var><a name="index-inert_003f-28"></a></var><br>
+<blockquote><p>  The primitive type predicate for type inert. <code>inert?</code>
+returns true iff all the objects in <code>objects</code> are of type inert. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$if</b> (<var>$if &lt;test&gt; &lt;consequent&gt; &lt;alternative&gt;</var>)<var><a name="index-g_t_0024if-29"></a></var><br>
+<blockquote><p>  The <code>$if</code> operative first evaluates <code>&lt;test&gt;</code> in the
+dynamic environment.  If the result is not of type boolean, an error
+is signaled.  If the result is true, <code>&lt;consequent&gt;</code> is then
+<!-- TODO add xref to tail context -->
+evaluated in the dynamic environment as a tail context.  Otherwise,
+<code>&lt;alternative&gt;</code> is evaluated in the dynamic environment as a tail
+context. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$sequence</b> (<var>$sequence . &lt;objects&gt;</var>)<var><a name="index-g_t_0024sequence-30"></a></var><br>
+<blockquote><p>The <code>$sequence</code> operative evaluates the elements of the list
+<code>&lt;objects&gt;</code> in the dynamic environment, one at a time from left
+to right.  If <code>&lt;objects&gt;</code> is a cyclic list, element evaluation
+continues indefinitely, with elements in the cycle being evaluated
+repeatedly.  If <code>&lt;objects&gt;</code> is a nonempty finite list, its last
+<!-- TODO add xref for tail context. -->
+element is evaluated as a tail context.  If <code>&lt;objects&gt;</code> is the
+empty list, the result is inert. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$cond</b> (<var>$cond . &lt;clauses&gt;</var>)<var><a name="index-g_t_0024cond-31"></a></var><br>
+<blockquote><p><code>&lt;clauses&gt;</code> should be a list of clause expressions, each of the
+form <code>(&lt;test&gt; . &lt;body&gt;)</code>, where body is a list of expressions.
+
+        <p>The following equivalences define
+the behaviour of the <code>$cond</code> operative:
+     <pre class="example">          ($cond) == #inert
+          ($cond (&lt;test&gt; . &lt;body&gt;) . &lt;clauses&gt;) ==
+            ($if &lt;test&gt; ($sequence . &lt;body&gt;) ($cond . &lt;clauses&gt;))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>for-each</b> (<var>for-each . lists</var>)<var><a name="index-for_002deach-32"></a></var><br>
+<blockquote><p><code>lists</code> must be a nonempty list of lists; if there are two or
+more, they should all be the same length. If lists is empty, or if all
+of its elements are not lists of the same length, an error is
+signaled.
+
+     <!-- TODO add xref to map -->
+        <p><code>for-each</code> behaves identically to <code>map</code>, except that instead
+of accumulating and returning a list of the results of the
+element-wise applications, the results of the applications are
+discarded and the result returned by <code>for-each</code> is inert. 
+</p></blockquote></div>
+
+<!-- *-texinfo-*- -->
+   </body></html>
+

@@ -863,6 +863,124 @@ File: klisp.info,  Node: Combiners,  Next: Index,  Prev: Environments,  Up: Top
 8 Combiners
 ***********
 
+There are two types of combiners in Kernel, operative and applicative.
+Both types are encapsulated. All combiners are immutable.  Two
+applicatives are `eq?' iff their underlying combiners are `eq?'.
+However, `eq?'-ness of operatives is only constrained by the general
+rules for `eq?', which leave considerable leeway for variation between
+implementations.  klisp only considers `eq?' those operatives
+constructed by the same call to a constructor (e.g. `$vau').  Two
+combiners are `equal?' iff they are `eq?'.
+
+ -- Applicative: operative? (operative? . objects)
+     The primitive type predicate for type operative. `operative?'
+     returns true iff all the objects in `objects' are of type
+     operative.
+
+ -- Applicative: applicative? (applicative? . objects)
+     The primitive type predicate for type applicative.  `applicative?'
+     returns true iff all the objects in `objects' are of type
+     applicative.
+
+ -- Operative: $vau ($vau <formals> <eformal> . <objects>)
+     `formals' should be a formal parameter tree; `eformal' should be
+     either a symbol or `#ignore'.  If `formals' does not have the
+     correct form for a formal parameter tree, or if `eformal' is a
+     symbol that also occurs in `formals', an error is signaled.
+
+     A `vau' expression evaluates to an operative; an operative created
+     in this way is said to be compound. The environment in which the
+     `vau' expression was evaluated is remembered as part of the
+     compound operative, called the compound operative’s static
+     environment.  `formals' and `objects' are copied as by
+     `copy-es-immutable' and the copies are stored as part of the
+     operative being constructed.  This avoids problem if these
+     structures are later mutated.
+
+     When the compound operative created by `$vau' is later called with
+     an object and an environment, here called respectively the operand
+     tree and the dynamic environment, the following happens:
+
+       1. A new, initially empty environment is created, with the static
+          environment as its parent. This will be called the local
+          environment.
+
+       2. A stored copy of the formal parameter tree formals is matched
+          in the local environment to the operand tree, locally binding
+          the symbols of formals to the corresponding parts of the
+          operand tree.  eformal is matched to the dynamic environment;
+          that is, if eformal is a symbol then that symbol is bound in
+          the local environment to the dynamic environment.
+
+       3. A stored copy of the expressions is evaluated sequentially in
+          the local environment as if by `$sequence'.  In particular,
+          if there is a last expression, it is evaluated in a tail
+          context.
+
+     NOTE: Because compound operatives are not a distinct type in
+     Kernel, they are covered by the encapsulation of type operative.
+     In particular, an implementation of Kernel cannot provide a
+     feature that supports extracting the static environment of any
+     given compound operative, nor that supports determining whether or
+     not a given operative is compound.
+
+ -- Applicative: wrap (wrap combiner)
+     The `wrap' applicative returns an applicative whose underlying
+     combiner is `combiner'.
+
+ -- Applicative: unwrap (unwrap applicative)
+     The `unwrap' applicative returns the underlying combiner of
+     `applicative'.
+
+ -- Operative: $lambda ($lambda formals . objects)
+     `formals' should be a formal parameter tree.
+
+     The `$lambda' operative is defined by the following equivalence:
+          ($lambda formals . objects) ==
+            (wrap ($vau formals #ignore . objects))
+
+ -- Applicative: apply (apply applicative object [environment])
+     Applicative `apply' combines the underlying combiner of
+     `applicative' with `object' in a tail context with dynamic
+     environment `environment' (if the long form is used) or in an
+     empty environment (if the short form is used).
+
+     The following equivalences hold:
+          (apply applicative object environment) ==
+            (eval (cons (unwrap applicative) object) environment)
+
+          (apply applicative object) ==
+            (apply applicative object (make-environment))
+
+ -- Applicative: map (map applicative . lists)
+     `lists' must be a nonempty list of lists; if there are two or
+     more, they must all have the same length. If `lists' is empty, or
+     if all of its elements are not lists of the same length, an error
+     is signaled.
+
+     The `map' applicative applies `applicative' element-wise to the
+     elements of the lists in `lists' (i.e., applies it to a list of
+     the first elements of the `lists', to a list of the second
+     elements of the `lists', etc.), using the dynamic environment from
+     which `map' was called, and returns a list of the results, in
+     order. The applications may be performed in any order, as long as
+     their results occur in the resultant list in the order of their
+     arguments in the original `lists'.  If `lists' is a cyclic list,
+     each argument list to which `applicative' is applied is
+     structurally isomorphic to `lists'.  If any of the elements of
+     `lists' is a cyclic list, they all must be, or they wouldn’t all
+     have the same length.  Let `a1...an' be their acyclic prefix
+     lengths, and `c1...cn' be their cycle lengths.  The acyclic prefix
+     length `a' of the resultant list will be the maximum of the `ak',
+     while the cycle length `c' of the resultant list will be the least
+     common multiple of the `ck'.  In the construction of the result,
+     applicative is called exactly `a + c' times.
+
+ -- Applicative: combiner? (combiner? . objects)
+     The primitive type predicate for type combiner. `combiner?'
+     returns true iff all the objects in `objects' are of type combiner
+     (i.e. applicative or operative).
+
 
 File: klisp.info,  Node: Index,  Next: (dir),  Prev: Combiners,  Up: Top
 
@@ -875,14 +993,18 @@ Index
 * $and?:                                 Booleans.            (line  28)
 * $cond:                                 Control.             (line  32)
 * $if:                                   Control.             (line  15)
+* $lambda:                               Combiners.           (line  76)
 * $or?:                                  Booleans.            (line  41)
 * $sequence:                             Control.             (line  23)
+* $vau:                                  Combiners.           (line  26)
 * and?:                                  Booleans.            (line  20)
 * append:                                Pairs and lists.     (line 208)
 * append!:                               Pairs and lists.     (line 306)
 * applicative descriptions:              A Sample Applicative Description.
                                                               (line   6)
+* applicative?:                          Combiners.           (line  21)
 * applicatives:                          Combiners.           (line   6)
+* apply:                                 Combiners.           (line  83)
 * assoc:                                 Pairs and lists.     (line 252)
 * assq:                                  Pairs and lists.     (line 333)
 * boolean?:                              Booleans.            (line  12)
@@ -917,6 +1039,7 @@ Index
 * cdddr:                                 Pairs and lists.     (line 100)
 * cddr:                                  Pairs and lists.     (line  92)
 * cdr:                                   Pairs and lists.     (line  86)
+* combiner?:                             Combiners.           (line 120)
 * combiners:                             Combiners.           (line   6)
 * cons:                                  Pairs and lists.     (line  35)
 * control:                               Control.             (line   6)
@@ -952,6 +1075,7 @@ Index
 * list-ref:                              Pairs and lists.     (line 198)
 * list-tail:                             Pairs and lists.     (line 147)
 * lists:                                 Pairs and lists.     (line   6)
+* map <1>:                               Combiners.           (line  96)
 * map:                                   Pairs and lists.     (line 169)
 * member?:                               Pairs and lists.     (line 257)
 * memq?:                                 Pairs and lists.     (line 338)
@@ -962,6 +1086,7 @@ Index
                                                               (line   6)
 * operative descriptions:                A Sample Applicative Description.
                                                               (line   6)
+* operative?:                            Combiners.           (line  16)
 * operatives:                            Combiners.           (line   6)
 * or?:                                   Booleans.            (line  24)
 * pair?:                                 Pairs and lists.     (line  27)
@@ -974,6 +1099,8 @@ Index
 * symbol->string:                        Symbols.             (line  16)
 * symbol?:                               Symbols.             (line  12)
 * symbols:                               Symbols.             (line   6)
+* unwrap:                                Combiners.           (line  72)
+* wrap:                                  Combiners.           (line  68)
 
 
 
@@ -998,6 +1125,6 @@ Node: Control18958
 Node: Pairs and lists21275
 Node: Environments38296
 Node: Combiners38420
-Node: Index38528
+Node: Index44424
 
 End Tag Table

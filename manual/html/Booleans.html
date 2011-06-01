@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+<title>Booleans - klisp Reference Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="klisp Reference Manual">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Introduction.html#Introduction" title="Introduction">
+<link rel="next" href="Equivalence.html#Equivalence" title="Equivalence">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Booleans"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="Equivalence.html#Equivalence">Equivalence</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Introduction.html#Introduction">Introduction</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<!-- node-name,  next,  previous,  up -->
+<h2 class="chapter">2 Booleans</h2>
+
+<p><a name="index-booleans-12"></a>
+  The boolean data type consists of two values, which are called true
+and false, and have respectively external representations <code>#t</code>
+and <code>#f</code>.  There are no possible mutations of either of these two
+<!-- add encapsulated cross ref -->
+values, and the boolean type is encapsulated.
+
+<div class="defun">
+&mdash; Applicative: <b>boolean?</b> (<var>boolean? . objects</var>)<var><a name="index-boolean_003f-13"></a></var><br>
+<blockquote><p>  The primitive type predicate for type boolean.  <code>boolean?</code>
+returns true iff all the objects in <code>objects</code> are of type boolean. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>not?</b> (<var>not? boolean</var>)<var><a name="index-not_003f-14"></a></var><br>
+<blockquote><p>  Applicative <code>not?</code> is a predicate that returns the logical
+negation of its argument. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>and?</b> (<var>and? . booleans</var>)<var><a name="index-and_003f-15"></a></var><br>
+<blockquote><p>  Applicative <code>and?</code> is a predicate that returns true unless one
+or more of its arguments are false. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>or?</b> (<var>or? . booleans</var>)<var><a name="index-or_003f-16"></a></var><br>
+<blockquote><p>  Applicative <code>or?</code> is a predicate that returns false unless one
+or more of its arguments are true. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$and?</b> (<var>$and? . &lt;list&gt;</var>)<var><a name="index-g_t_0024and_003f-17"></a></var><br>
+<blockquote><p>  The <code>$and?</code> operative performs a &ldquo;short-circuit and&rdquo; of its
+operands.  It evaluates them from left to right, until either an
+operand evaluates to false, or the end of the list is reached.  If the
+end of the list is reached (which is immediate if <code>&lt;list&gt;</code> is
+<code>nil</code>), the operative returns true.  If an operand evaluates to
+false, no further operand evaluations are performed, and the operative
+returns false.  If <code>&lt;list&gt;</code> is acyclic, and the last operand is
+<!-- TODO cross ref tail-contect -->
+evaluated, it is evaluated as a tail context.  If <code>&lt;list&gt;</code> is
+cyclic, an unbounded number of operand evaluations may be
+performed.  If any of the operands evaluates to a non-boolean value, an
+error is signaled (even if it's the last one). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$or?</b> (<var>$or? . &lt;list&gt;</var>)<var><a name="index-g_t_0024or_003f-18"></a></var><br>
+<blockquote><p>  The <code>$or?</code> operative performs a &ldquo;short-circuit or&rdquo; of its
+operands.  It evaluates them from left to right, until either an
+operand evaluates to true, or the end of the list is reached.  If the
+end of the list is reached (which is immediate if <code>&lt;list&gt;</code> is
+<code>nil</code>), the operative returns false.  If an operand evaluates to
+true, no further operand evaluations are performed, and the operative
+returns true.  If <code>&lt;list&gt;</code> is acyclic, and the last operand is
+<!-- TODO cross ref tail-context -->
+evaluated, it is evaluated as a tail context.  If <code>&lt;list&gt;</code> is
+cyclic, an unbounded number of operand evaluations may be
+performed.  If any of the operands evaluates to a non-boolean value, an
+error is signaled (even if it's the last one). 
+</p></blockquote></div>
+
+<!-- *-texinfo-*- -->
+   </body></html>
+

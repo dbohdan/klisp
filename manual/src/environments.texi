@@ -1,0 +1,10 @@
+@c -*-texinfo-*-
+@setfilename ../src/environments
+
+@node Environments, Combiners, Pairs and lists, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Environments
+@cindex environments
+@cindex ignore
+

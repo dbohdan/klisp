@@ -1,0 +1,466 @@
+<html lang="en">
+<head>
+<title>Pairs and lists - klisp Reference Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="klisp Reference Manual">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Control.html#Control" title="Control">
+<link rel="next" href="Environments.html#Environments" title="Environments">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Pairs-and-lists"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="Environments.html#Environments">Environments</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Control.html#Control">Control</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<!-- node-name,  next,  previous,  up -->
+<h2 class="chapter">6 Pairs and lists</h2>
+
+<p><a name="index-pairs-33"></a><a name="index-nil-34"></a><a name="index-empty-list-35"></a><a name="index-lists-36"></a>
+A pair is an object that refers to two other objects, called its car
+and cdr.  The Kernel data type pair is encapsulated.
+
+   <p>The null data type consists of a single immutable value, called nil
+or the empty list and having external representation <code>()</code>, with
+or without whitespace between the parentheses. It is immutable, and
+the null type is encapsulated.
+
+   <p>If <code>a</code> and <code>d</code> are external representations of
+respectively the car and cdr of a pair <code>p</code>, then <code>(a . d)</code>
+is an external representation of <code>p</code>. If the cdr of <code>p</code> is
+nil, then <code>(a)</code> is also an external representation of
+<code>p</code>. If the cdr of <code>p</code> is a pair <code>p2</code>, and <code>(r)</code>
+is an external representation of <code>p2</code>, then <code>(a r)</code> is an
+external representation of <code>p</code>. 
+<!-- add xref for write -->
+  When a pair is output (as by write), an external representation with
+the fewest parentheses is used; in the case of a finite list, only one
+set of parentheses is required beyond those used in representing the
+elements of the list. For example, an object with external
+representation <code>(1 . (2 . (3 . ())))</code> would be output using,
+modulo whitespace, external representation <code>(1 2 3)</code>.
+
+<div class="defun">
+&mdash; Applicative: <b>pair?</b> (<var>pair? . objects</var>)<var><a name="index-pair_003f-37"></a></var><br>
+<blockquote><p>  The primitive type predicate for type pair. <code>pair?</code>
+returns true iff all the objects in <code>objects</code> are of type pair. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>null?</b> (<var>null? . objects</var>)<var><a name="index-null_003f-38"></a></var><br>
+<blockquote><p>  The primitive type predicate for type null. <code>null?</code>
+returns true iff all the objects in <code>objects</code> are of type null. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>cons</b> (<var>cons object1 object2</var>)<var><a name="index-cons-39"></a></var><br>
+<blockquote><p>  A new mutable pair object is constructed and returned, whose car and
+cdr referents are respectively <code>object1</code> and <code>object2</code>.  No
+two objects returned by different calls to cons are <code>eq?</code> to each
+other. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>set-car!</b> (<var>set-car! pair object</var>)<var><a name="index-set_002dcar_0021-40"></a></var><br>
+&mdash; Applicative: <b>set-cdr!</b> (<var>set-cdr! pair object</var>)<var><a name="index-set_002dcdr_0021-41"></a></var><br>
+<blockquote><p>  <code>pair</code> should be a mutable pair.
+
+        <p>These applicatives set the referent of, respectively, the car
+reference or the cdr reference of <code>pair</code> to <code>object</code>.  The
+result of the expression is inert. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>copy-es-immutable!</b> (<var>copy-es-immutable object</var>)<var><a name="index-copy_002des_002dimmutable_0021-42"></a></var><br>
+<blockquote><p>  The short description of this applicative is that it returns an object
+<code>equal?</code> to <code>object</code> with an immutable evaluation structure. The
+&ldquo;-es-&rdquo; in the name is short for &ldquo;evaluation structure&rdquo;.
+
+     <!-- TODO move the evaluation structure description to the intro -->
+        <p>The evaluation structure of an object <code>o</code> is defined to be the
+set of all pairs that can be reached by following chains of references
+from <code>o</code> without ever passing through a non-pair object. The
+evaluation structure of a non-pair object is empty.
+
+        <p>If <code>object</code> is not a pair, the applicative returns <code>object</code>. 
+Otherwise (if <code>object</code> is a pair), the applicative returns an
+immutable pair whose car and cdr would be suitable results for
+<code>(copy-es-immutable (car object))</code> and <code>(copy-es-immutable
+(cdr object))</code>, respectively.  Further, the evaluation structure of
+<!-- TODO add xref for isomorphic (and add isomorphic to the intro) -->
+the returned value is isomorphic to that of <code>object</code> at the time
+of copying, with corresponding non-pair referents being <code>eq?</code>.
+
+        <p>NOTE: In Kernel it's undefined whether immutable pairs are copied or
+left &ldquo;as is&rdquo; in the result.  klisp doesn't copy immutable pairs, but
+that behaviour should not be depended upon. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>list</b> (<var>list . objects</var>)<var><a name="index-list-43"></a></var><br>
+<blockquote><p>The <code>list</code> applicative returns <code>objects</code>.
+
+        <p>The underlying operative of <code>list</code> returns its undifferentiated
+operand tree, regardless of whether that tree is or is not a list. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>list*</b> (<var>list* . objects</var>)<var><a name="index-list_002a-44"></a></var><br>
+<blockquote><p><code>objects</code> should be a finite nonempty list of arguments.
+
+        <p>The following equivalences hold:
+     <pre class="example">          (list* arg1) == arg1
+          (list* arg1 arg2 . args) == (cons arg1 (list* arg2 . args))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>car</b> (<var>car pair</var>)<var><a name="index-car-45"></a></var><br>
+&mdash; Applicative: <b>cdr</b> (<var>cdr pair</var>)<var><a name="index-cdr-46"></a></var><br>
+<blockquote><p>These applicatives return, respectively, the car and cdr of <code>pair</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>caar</b> (<var>caar pair</var>)<var><a name="index-caar-47"></a></var><br>
+&mdash; Applicative: <b>cadr</b> (<var>cadr pair</var>)<var><a name="index-cadr-48"></a></var><br>
+&mdash; Applicative: <b>cdar</b> (<var>cdar pair</var>)<var><a name="index-cdar-49"></a></var><br>
+&mdash; Applicative: <b>cddr</b> (<var>cddr pair</var>)<var><a name="index-cddr-50"></a></var><br>
+&mdash; Applicative: <b>caaar</b> (<var>caaar pair</var>)<var><a name="index-caaar-51"></a></var><br>
+&mdash; Applicative: <b>caadr</b> (<var>caadr pair</var>)<var><a name="index-caadr-52"></a></var><br>
+&mdash; Applicative: <b>cadar</b> (<var>cadar pair</var>)<var><a name="index-cadar-53"></a></var><br>
+&mdash; Applicative: <b>caddr</b> (<var>caddr pair</var>)<var><a name="index-caddr-54"></a></var><br>
+&mdash; Applicative: <b>cdaar</b> (<var>cdaar pair</var>)<var><a name="index-cdaar-55"></a></var><br>
+&mdash; Applicative: <b>cdadr</b> (<var>cdadr pair</var>)<var><a name="index-cdadr-56"></a></var><br>
+&mdash; Applicative: <b>cddar</b> (<var>cddar pair</var>)<var><a name="index-cddar-57"></a></var><br>
+&mdash; Applicative: <b>cdddr</b> (<var>cdddr pair</var>)<var><a name="index-cdddr-58"></a></var><br>
+&mdash; Applicative: <b>caaaar</b> (<var>caaaar pair</var>)<var><a name="index-caaaar-59"></a></var><br>
+&mdash; Applicative: <b>caaadr</b> (<var>caaadr pair</var>)<var><a name="index-caaadr-60"></a></var><br>
+&mdash; Applicative: <b>caadar</b> (<var>caadar pair</var>)<var><a name="index-caadar-61"></a></var><br>
+&mdash; Applicative: <b>caaddr</b> (<var>caaddr pair</var>)<var><a name="index-caaddr-62"></a></var><br>
+&mdash; Applicative: <b>cadaar</b> (<var>cadaar pair</var>)<var><a name="index-cadaar-63"></a></var><br>
+&mdash; Applicative: <b>cadadr</b> (<var>cadadr pair</var>)<var><a name="index-cadadr-64"></a></var><br>
+&mdash; Applicative: <b>caddar</b> (<var>caddar pair</var>)<var><a name="index-caddar-65"></a></var><br>
+&mdash; Applicative: <b>cadddr</b> (<var>cadddr pair</var>)<var><a name="index-cadddr-66"></a></var><br>
+&mdash; Applicative: <b>cdaaar</b> (<var>cdaaar pair</var>)<var><a name="index-cdaaar-67"></a></var><br>
+&mdash; Applicative: <b>cdaadr</b> (<var>cdaadr pair</var>)<var><a name="index-cdaadr-68"></a></var><br>
+&mdash; Applicative: <b>cdadar</b> (<var>cdadar pair</var>)<var><a name="index-cdadar-69"></a></var><br>
+&mdash; Applicative: <b>cdaddr</b> (<var>cdaddr pair</var>)<var><a name="index-cdaddr-70"></a></var><br>
+&mdash; Applicative: <b>cddaar</b> (<var>cddaar pair</var>)<var><a name="index-cddaar-71"></a></var><br>
+&mdash; Applicative: <b>cddadr</b> (<var>cddadr pair</var>)<var><a name="index-cddadr-72"></a></var><br>
+&mdash; Applicative: <b>cdddar</b> (<var>cdddar pair</var>)<var><a name="index-cdddar-73"></a></var><br>
+&mdash; Applicative: <b>cddddr</b> (<var>cddddr pair</var>)<var><a name="index-cddddr-74"></a></var><br>
+<blockquote>
+     <!-- TODO add note about pronunciation -->
+        <p>These applicatives are compositions of <code>car</code> and <code>cdr</code>, with
+the &ldquo;a’s&rdquo; and &ldquo;d’s&rdquo; in the same order as they would appear if all
+the individual &ldquo;car’s&rdquo; and &ldquo;cdr’s&rdquo; were written out in prefix
+order.  Arbitrary compositions up to four deep are provided. There are
+twenty-eight of these applicatives in all. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>get-list-metrics</b> (<var>get-list-metrics object</var>)<var><a name="index-get_002dlist_002dmetrics-75"></a></var><br>
+<blockquote><!-- TODO move definition of improper list to intro, xref data structure -->
+        <p>By definition, an improper list is a data structure whose objects
+are its start together with all objects reachable from the start by
+following the cdr references of pairs, and whose internal references
+are just the cdr references of its pairs.  Every object, of whatever
+type, is the start of an improper list.  If the start is not a pair,
+the improper list consists of just that object.  The acyclic prefix
+length of an improper list <code>L</code> is the number of pairs of <code>L</code>
+that a naive traversal of <code>L</code> would visit only once. The cycle
+length of <code>L</code> is the number of pairs of <code>L</code> that a naive
+traversal would visit repeatedly. Two improper lists are structurally
+<!-- TODO add xref to isomorphic -->
+isomorphic iff they have the same acyclic prefix length and cycle
+length and, if they are terminated by non-pair objects rather than by
+cycles, the non-pair objects have the same type.  Applicative
+<code>get-list-metrics</code> constructs and returns a list of exact
+integers of the form <code>(p n a c)</code>, where <code>p</code>, <code>n</code>,
+<code>a</code>, and <code>c</code> are, respectively, the number of pairs in, the
+number of nil objects in, the acyclic prefix length of, and the cycle
+length of, the improper list starting with <code>object</code>. <code>n</code> is
+either <code>0</code> or <code>1</code>, <code>a + c = p</code>, and <code>n</code> and
+<code>c</code> cannot both be non-zero. If <code>c = 0</code>, the improper list
+is acyclic; if <code>n = 1</code>, the improper list is a finite list; if
+<code>n = c = 0</code>, the improper list is not a list; if <code>a = c =
+0</code>, <code>object</code> is not a pair. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>list-tail</b> (<var>list-tail object k</var>)<var><a name="index-list_002dtail-76"></a></var><br>
+<blockquote><p><code>object</code> must be the start of an improper list containing at
+least <code>k</code> pairs.
+
+        <p>The <code>list-tail</code> applicative follows <code>k</code> cdr references
+starting from <code>object</code>.
+
+        <p>The following equivalences hold:
+     <pre class="example">          (list-tail object 0) == object
+          (list-tail object (+ k 1)) == (list-tail (cdr object) k)
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>encycle!</b> (<var>encycle! object k1 k2</var>)<var><a name="index-encycle_0021-77"></a></var><br>
+<blockquote><p>  The improper list starting at <code>object</code> must contain at least
+<code>k1 + k2</code> pairs.
+
+        <p>If <code>k2 = 0</code>, the applicative does nothing. If <code>k2 &gt; 0</code>,
+the applicative mutates the improper list starting at <code>object</code> to
+have acyclic prefix length <code>k1</code> and cycle length <code>k2</code>, by
+setting the cdr of the <code>(k1+k2)</code>th pair in the list to refer to
+the <code>(k1 + 1)</code>th pair in the list.  The result returned by
+<code>encycle!</code> is inert. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>map</b> (<var>map applicative . lists</var>)<var><a name="index-map-78"></a></var><br>
+<blockquote><p>  <code>lists</code> must be a nonempty list of lists; if there are two or
+<!-- TODO add xref to length -->
+more, they must all have the same length.
+
+        <p>The map applicative applies <code>applicative</code> element-wise to the
+elements of the lists in lists (i.e., applies it to a list of the
+first elements of the lists, to a list of the second elements of the
+lists, etc.), using the dynamic environment from which map was called,
+and returns a list of the results, in order. The applications may be
+performed in any order, as long as their results occur in the
+resultant list in the order of their arguments in the original lists. 
+If <code>lists</code> is a cyclic list, each argument list to which
+<!-- TODO xref to ismorphic -->
+<code>applicative</code> is applied is structurally isomorphic to <code>lists</code>.  If
+any of the elements of <code>lists</code> is a cyclic list, they all must
+be, or they wouldn’t all have the same length.  Let <code>a1...an</code> be
+their acyclic prefix lengths, and <code>c1...cn</code> be their cycle
+lengths.  The acyclic prefix length <code>a</code> of the resultant list
+will be the maximum of the <code>ak</code>, while the cycle length <code>c</code>
+of the resultant list will be the least common multiple of the
+<code>ck</code>.  In the construction of the result, <code>applicative</code> is
+called exactly <code>a + c</code> times. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>length</b> (<var>length object</var>)<var><a name="index-length-79"></a></var><br>
+<blockquote><!-- TODO xref improper-list -->
+        <p>Applicative <code>length</code> returns the (exact) improper-list length
+of <code>object</code>.  That is, it returns the number of consecutive cdr
+references that can be followed starting from <code>object</code>.  If
+<code>object</code> is not a pair, it returns zero; if <code>object</code> is a
+cyclic list, it returns positive infinity. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>list-ref</b> (<var>list-ref object k</var>)<var><a name="index-list_002dref-80"></a></var><br>
+<blockquote><p>  The <code>list-ref</code> applicative returns the <code>car</code> of the object
+obtained by following <code>k</code> cdr references starting from
+<code>object</code>.
+
+        <p>NOTE: In the current report, object is required to be a list. In
+klisp, for now, we prefer the behaviour presented here, as it is more
+in line with the applicative <code>list-tail</code>.  That is, we define
+<code>list-ref</code> by the following equivalence:
+     <pre class="example">          (list-ref object k) == (car (list-tail object k))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>append</b> (<var>append . lists</var>)<var><a name="index-append-81"></a></var><br>
+<blockquote><p>  Here, all the elements of <code>lists</code> except the last element (if
+any) must be acyclic lists.  The <code>append</code> applicative returns a
+freshly allocated list of the elements of all the specified
+<code>lists</code>, in order, except that if there is a last specified
+element of <code>lists</code>, it is not copied, but is simply referenced by
+the cdr of the preceding pair (if any) in the resultant list.  If
+<code>lists</code> is cyclic, the cycle of the result list consists of just
+the elements of the lists specified in the cycle in <code>lists</code>. In
+this case, the acyclic prefix length of the result is the sum of the
+lengths of the lists specified in the acyclic prefix of <code>lists</code>,
+and the cycle length of the result is the sum of the lengths of the
+lists specified in the cycle of <code>lists</code>.
+
+        <p>The following equivalences hold:
+     <pre class="example">          (append) == ()
+          (append h) == h
+          (append () h . t) == (append h . t)
+          (append (cons a b) h . t) == (cons a (append b h . t))
+</pre>
+        <!-- TODO add xref/comp to append -->
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>list-neighbors</b> (<var>list-neighbors list</var>)<var><a name="index-list_002dneighbors-82"></a></var><br>
+<blockquote><p>  The <code>list-neighbors</code> applicative constructs and returns a list
+of all the consecutive sublists of <code>list</code> of length 2, in order. 
+If <code>list</code> is nil, the result is nil.  If <code>list</code> is non-nil,
+the length of the result is one less than the length of
+<code>list</code>. If <code>list</code> is cyclic, the result is structurally
+isomorphic to it (i.e., has the same acyclic prefix length and cycle
+length). 
+<!-- TODO add xref to isomorphic -->
+
+        <p>For example:
+     <pre class="example">          (list-neighbors (list 1 2 3 4)) &rArr; ((1 2) (2 3) (3 4))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>filter</b> (<var>filter applicative list</var>)<var><a name="index-filter-83"></a></var><br>
+<blockquote><p>  Applicative <code>filter</code> passes each of the elements of <code>list</code>
+as an argument to <code>applicative</code>, one at a time in no particular
+order, using a fresh empty environment for each call.  The result of
+each call to <code>applicative</code> must be boolean, otherwise an error is
+signaled.  <code>filter</code> constructs and returns a list of all elements
+of <code>list</code> on which <code>applicative</code> returned true, in the same
+order as in <code>list</code>.  <code>applicative</code> is called exactly as many
+times as there are pairs in <code>list</code>.  The resultant list has a
+cycle containing exactly those elements accepted by <code>applicative</code>
+that were in the cycle of <code>list</code>; if there were no such elements,
+the result is acyclic. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>assoc</b> (<var>assoc object pairs</var>)<var><a name="index-assoc-84"></a></var><br>
+<blockquote><p>  Applicative <code>assoc</code> returns the first element of <code>pairs</code>
+whose car is <code>equal?</code> to <code>object</code>.  If there is no such
+element in <code>pairs</code>, nil is returned. 
+<!-- TODO add xref/comp to assq -->
+<!-- TODO add xref to equal? -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>member?</b> (<var>member? object list</var>)<var><a name="index-member_003f-85"></a></var><br>
+<blockquote><p>  Applicative <code>member?</code> is a predicate that returns true iff some
+element of <code>list</code> is <code>equal?</code> to <code>object</code>. 
+<!-- TODO add xref/comp to memq -->
+<!-- TODO add xref to equal? -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>finite-list?</b> (<var>finite-list? . objects</var>)<var><a name="index-finite_002dlist_003f-86"></a></var><br>
+<blockquote><p>  This is the type predicate for type finite-list. 
+<code>finite-list?</code>  returns true iff all the objects in
+<code>objects</code> are acyclic lists. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>countable-list?</b> (<var>countable-list? . objects</var>)<var><a name="index-countable_002dlist_003f-87"></a></var><br>
+<blockquote><p>This is the type predicate for type list.  <code>countable-list?</code>
+returns true iff all the objects in <code>objects</code> are lists. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>reduce</b> (<var>reduce list binary identity </var>[<var>precycle incycle postcycle</var>])<var><a name="index-reduce-88"></a></var><br>
+<blockquote><p>  <code>binary</code> should be an applicative. If the short form is used,
+<code>list</code> should be an acyclic. If the long form is used,
+<code>precycle</code>, <code>incycle</code>, and <code>postcycle</code> should be
+applicatives.
+
+        <p>If <code>list</code> is empty, applicative <code>reduce</code> returns
+<code>identity</code>.  If <code>list</code> is nonempty but acyclic, applicative
+<code>reduce</code> uses binary operation <code>binary</code> to merge all the
+elements of <code>list</code> into a single object, using any associative
+grouping of the elements. That is, the sequence of objects initially
+found in <code>list</code> is repeatedly decremented in length by applying
+<code>binary</code> to a list of any two consecutive objects, replacing
+those two objects with the result at the point in the sequence where
+they occurred; and when the sequence contains only one object, that
+object is returned.  If <code>list</code> is cyclic, the long form must be
+used.  The elements of the cycle are passed, one at a time (but just
+once for each position in the cycle), as arguments to unary
+applicative <code>precycle</code>; the finite, cyclic sequence of results
+from <code>precycle</code> is reduced using binary applicative
+<code>incycle</code>; and the result from reducing the cycle is passed as an
+argument to unary applicative <code>postcycle</code>. Binary operation
+<code>binary</code> is used to reduce the sequence consisting of the
+elements of the acyclic prefix of <code>list</code> followed by the result
+returned by <code>postcycle</code>. The only constraint on the order of
+calls to the applicatives is that each call must be made before its
+result is needed (thus, parts of the reduction of the acyclic prefix
+may occur before the contribution from the cycle has been completed).
+
+        <p>Each call to <code>binary</code>, <code>precycle</code>, <code>incycle</code>, or
+<code>postcycle</code> uses the dynamic environment of the call to
+<code>reduce</code>.
+
+        <p>If <code>list</code> is acyclic with length <code>n &gt;= 1</code>,
+<code>binary</code> is called <code>n - 1</code> times.  If <code>list</code> is cyclic
+with acyclic prefix length <code>a</code> and cycle length <code>c</code>,
+<code>binary</code> is called <code>a</code> times; <code>precycle</code>, <code>c</code>
+times; <code>incycle</code>, <code>c - 1</code> times; and <code>postcycle</code>, once. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>append!</b> (<var>append! . lists</var>)<var><a name="index-append_0021-89"></a></var><br>
+<blockquote><p>  <code>lists</code> must be a nonempty list; its first element must be an
+acyclic nonempty list, and all of its elements except the last element
+(if any) must be acyclic lists.
+
+        <p>The <code>append!</code> applicative sets the cdr of the last pair in each
+nonempty list argument to refer to the next non-nil argument, except
+that if there is a last non-nil argument, it isn’t mutated.  It is an
+error for any two of the list arguments to have the same last pair. 
+The result returned by this applicative is inert.
+
+        <p>The following equivalences hold:
+     <pre class="example">          (append! v) == #inert
+          (append! u v . w) == ($sequence (append! u v) (append! u . w))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>copy-es</b> (<var>copy-es object</var>)<var><a name="index-copy_002des-90"></a></var><br>
+<blockquote><p>  Briefly, applicative <code>copy-es</code> returns an object initially
+<code>equal?</code> to <code>object</code> with a freshly constructed evaluation
+<!-- TODO add xref to evaluation structure -->
+structure made up of mutable pairs.  If <code>object</code> is not a pair,
+the applicative returns <code>object</code>.  If <code>object</code> is a pair,
+the applicative returns a freshly constructed pair whose car and cdr
+would be suitable results for <code>(copy-es (car object))</code> and
+<code>(copy-es (cdr object))</code>, respectively.  Further, the evaluation
+<!-- TODO add xref to isomorphic -->
+structure of the returned value is structurally isomorphic to that of
+<code>object</code> at the time of copying, with corresponding non-pair
+referents being <code>eq?</code>. 
+<!-- TODO add xref/comp to copy-es-immutable and the reverse too! -->
+<!-- TODO add xref to eq?/equal? -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>assq</b> (<var>assq object pairs</var>)<var><a name="index-assq-91"></a></var><br>
+<blockquote><p>  Applicative <code>assq</code> returns the first element of <code>pairs</code>
+whose car is <code>eq?</code> to <code>object</code>.  If there is no such element
+in <code>pairs</code>, nil is returned. 
+<!-- TODO add xref/comp to assoc -->
+<!-- TODO add xref to eq? -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>memq?</b> (<var>memq? object list</var>)<var><a name="index-memq_003f-92"></a></var><br>
+<blockquote><p>  Applicative <code>memq?</code> is a predicate that returns true iff some
+element of <code>list</code> is <code>eq?</code> to <code>object</code>. 
+<!-- TODO add xref/comp to member? -->
+<!-- TODO add xref to eq? -->
+</p></blockquote></div>
+
+<!-- *-texinfo-*- -->
+   </body></html>
+
