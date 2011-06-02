@@ -34,17 +34,17 @@ operative.
 
 @deffn Operative $vau ($vau <formals> <eformal> . <objects>)
 @c TODO add xref to formal parameter tree
-@code{formals} should be a formal parameter tree; @code{eformal}
-should be either a symbol or @code{#ignore}.  If @code{formals} does
+@code{<formals>} should be a formal parameter tree; @code{<eformal>}
+should be either a symbol or @code{#ignore}.  If @code{<formals>} does
 not have the correct form for a formal parameter tree, or if
-@code{eformal} is a symbol that also occurs in @code{formals}, an
-error is signaled.  
+@code{<eformal>} is a symbol that also occurs in @code{<formals>}, an
+error is signaled.
 
   A @code{vau} expression evaluates to an operative; an operative
 created in this way is said to be compound. The environment in which
 the @code{vau} expression was evaluated is remembered as part of the compound
 operative, called the compound operative’s static environment.
-@code{formals} and @code{objects} are copied as by
+@code{<formals>} and @code{<objects>} are copied as by
 @code{copy-es-immutable} and the copies are stored as part of the
 operative being constructed.  This avoids problem if these structures
 are later mutated.
@@ -69,11 +69,10 @@ then that symbol is bound in the local environment to the dynamic
 environment.
 
 @item
-A stored copy of the expressions is evaluated sequentially in the
-@c TODO add xref to sequence 
-local environment as if by @code{$sequence}.  In particular, if there
 @c TODO add xref to tail context.
-is a last expression, it is evaluated in a tail context.
+A stored copy of the expressions is evaluated sequentially from left
+to right, with the last (if any) evaluated as a tail context, or if
+the list of expressions is empty, the result is inert.
 @end enumerate
 
   NOTE: Because compound operatives are not a distinct type in Kernel,
@@ -95,8 +94,8 @@ combiner is @code{combiner}.
 @code{applicative}.
 @end deffn
 
-@deffn Operative $lambda ($lambda formals . objects)
-  @code{formals} should be a formal parameter tree.
+@deffn Operative $lambda ($lambda <formals> . <objects>)
+  @code{<formals>} should be a formal parameter tree.
 
   The @code{$lambda} operative is defined by the following equivalence:
 @example

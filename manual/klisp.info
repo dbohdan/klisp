@@ -537,11 +537,11 @@ object with external representation `(1 . (2 . (3 . ())))' would be
 output using, modulo whitespace, external representation `(1 2 3)'.
 
  -- Applicative: pair? (pair? . objects)
-     The primitive type predicate for type pair. `pair?' returns true
+     The primitive type predicate for type pair.  `pair?' returns true
      iff all the objects in `objects' are of type pair.
 
  -- Applicative: null? (null? . objects)
-     The primitive type predicate for type null. `null?' returns true
+     The primitive type predicate for type null.  `null?' returns true
      iff all the objects in `objects' are of type null.
 
  -- Applicative: cons (cons object1 object2)
@@ -857,6 +857,220 @@ File: klisp.info,  Node: Environments,  Next: Combiners,  Prev: Pairs and lists,
 7 Environments
 **************
 
+An environment consists of a set of bindings, and a list of zero or
+more references to other environments called its parents.  Changing the
+set of bindings of an environment, or setting the referent of the
+reference in a binding, is a mutation of the environment. (Changing the
+parent list, or a referent in the list, would be a mutation of the
+environment too, but there is no facility provided to do it.) The
+Kernel data type environment is encapsulated.  Among other things,
+there is no facility provided for enumerating all the variables
+exhibited by an environment (which is not required, after all, to be a
+finite set), and no facility for identifying the parents of an
+environment.  Two environments are `equal?' iff they are `eq?'.
+
+   An auxiliary data type used by combiners that perform binding is
+ignore. The ignore type consists of a single immutable value, having
+external representation `#ignore'.  The ignore type is encapsulated.
+
+ -- Applicative: environment? (environment? . objects)
+     The primitive type predicate for type environment.  `environment?'
+     returns true iff all the objects in `objects' are of type
+     environment.
+
+ -- Applicative: ignore? (ignore? . objects)
+     The primitive type predicate for type ignore.  `ignore?' returns
+     true iff all the objects in `objects' are of type ignore.
+
+ -- Applicative: eval (eval expression environment)
+     The `eval' applicative evaluates `expression' as a tail context in
+     `environment', and returns the resulting value.
+
+ -- Applicative: make-environment (make-environment . environments)
+     The applicative constructs and returns a new environment, with
+     initially no local bindings, and parent environments the
+     environments listed in `environments'. The constructed environment
+     internally stores its list of parents independent of the
+     first-class list `environments', so that subsequent mutation of
+     `environments' will not change the parentage of the constructed
+     environment. If the provided list `environments' is cyclic, the
+     constructed environment will still check each of its parents at
+     most once, and signal an error if no binding is found locally or
+     in any of the parents.  No two objects returned by different calls
+     to `make-environment' are `eq?' to each other.
+
+ -- Operative: $define! ($define! <definiend> <expression>)
+     `<definiend>' should be a formal parameter tree, as described
+     below; otherwise, an error is signaled.
+
+     The `$define!' operative evaluates `<expression>' in the dynamic
+     environment and matches `<definiend>' to the result in the dynamic
+     environment, binding each symbol in definiend in the dynamic
+     environment to the corresponding part of the result; the matching
+     process will be further described below. The ancestors of the
+     dynamic environment, if any, are unaffected by the matching
+     process, as are all bindings, local to the dynamic environment, of
+     symbols not in `<definiend>'.  The result returned by `$define!' is
+     inert.
+
+     A formal parameter tree has the following context-free structure:
+          ptree:: symbol | #ignore | () | (ptree . ptree)
+
+     That is, a formal parameter tree is either a symbol, or ignore, or
+     nil, or a pair whose car and cdr referents are formal parameter
+     trees.  A formal parameter tree must also be acyclic, and no one
+     symbol can occur more than once in it.  It is not an error for a
+     pair in the tree to be reachable from the root by more than one
+     path, as long as there is no cycle; but if any particular symbol
+     were reachable from the root by more than one path, that would
+     count as occurring more than once.  Thus, if a pair is reachable
+     by more than one path, there must be no symbols reachable from it.
+
+     Matching of a formal parameter tree `t' to an object `o' in an
+     environment `e' proceeds recursively as follows.  If the matching
+     process fails, an error is signaled.
+        * If `t' is a symbol, then `t' is bound to `o' in `e'.
+
+        * If `t' is `#ignore', no action is taken.
+
+        * If `t' is nil, then `o' must be nil (else matching fails).
+
+        * If `t' is a pair, then `o' must be a pair (else matching
+          fails). The car of `t' is matched to the car of `o' in `e',
+          and the cdr of `t' is matched to the cdr of `o' in `e'.
+
+ -- Operative: $let ($let <bindings> . <objects>)
+     `<bindings>' should be a finite list of
+     formal-parameter-tree/expression pairings, each of the form
+     `(formals expression)', where each `formals' is a formal
+     parameter, and no symbol occurs in more than one of the `formals'.
+
+     The following equivalence holds:
+
+          ($let ((form1 exp1) ... (formn expn)) . objects) ==
+            (($lambda (form1 ... formn) . objects) exp1 ... expn)
+
+     Thus, the `expk' are first evaluated in the dynamic environment,
+     in any order; then a child environment `e' of the dynamic
+     environment is created, with the `formk' matched in `e' to the
+     results of the evaluations of the `expk'; and finally the
+     subexpressions of `objects' are evaluated in `e' from left to
+     right, with the last (if any) evaluated as a tail context, or if
+     `objects' is empty the result is inert.
+
+ -- Operative: $binds? ($binds? <exp> . <symbols>)
+     Operative `$binds' evaluates `<exp>' in the dynamic environment;
+     call the result `env'.  `env' must be an environment.  The
+     operative is a predicate that returns true iff all its later
+     operands, `<symbols>', are visibly bound in `env'.
+
+ -- Applicative: get-current-environment (get-current-environment)
+     The `get-current-environment' applicative returns the dynamic
+     environment in which it is called.
+
+ -- Applicative: make-kernel-standard-environment
+          (make-kernel-standard-environment)
+     The `make-kernel-standard-environment' applicative returns a
+     standard environment; that is, a child of the ground environment
+     with no local bindings.
+
+ -- Operative: $let* ($let* <bindings> . <body>)
+     `<bindings>' should be a finite list of
+     formal-parameter-tree/expression pairings, each of the form
+     `(formals expression)', where each `formals' is a formal parameter
+     tree; `<body>' should be a list of expressions.
+
+     The following equivalences hold:
+
+          ($let* () . body) == ($let () . body)
+
+          ($let* ((form exp) . bindings) . body) ==
+            ($let ((form exp)) ($let* bindings . body))
+
+ -- Operative: $letrec ($letrec <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let'.
+
+     The following equivalence holds:
+          ($letrec ((form1 exp1) ... (formn expn)) . body) ==
+            ($let () ($define! (form1 ... formn) (list exp1 ... expn)) . body)
+
+ -- Operative: $letrec* ($letrec* <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let*'.
+
+     The following equivalences hold:
+          ($letrec* () . body) == ($letrec () . body)
+
+          ($letrec* ((form exp) . bindings) . body) ==
+            ($letrec ((form exp)) ($letrec* bindings . body))
+
+ -- Operative: $let-redirect ($let-redirect <exp> <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let'.
+
+     The following equivalence holds:
+
+          ($let-redirect exp ((form1 exp1) ... (formn . body) expn)) ==
+            ((eval (list $lambda (form1 ... formn) body) exp) expn ... expn)
+
+ -- Operative: $let-safe ($let-safe <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let'.
+
+     The following equivalence holds:
+
+          ($let-safe bindings . body) ==
+            ($let-redirect (make-kernel-standard-environment) bindings . body)
+
+ -- Operative: $remote-eval ($remote-eval <exp1> <exp2>)
+     Operative `$remote-eval' evaluates `<exp2>' in the dynamic
+     environment, then evaluates `<exp1>' as a tail context in the
+     environment that must result from the first evaluation.
+
+ -- Operative: ($bindings-environment . <bindings>)
+     `<bindings>' should be as described for `$let'.
+
+     The following equivalence holds:
+
+          ($bindings->environment . bindings) ==
+            ($let-redirect (make-environment) bindings (get-current-environment))
+
+ -- Operative: $set! ($set! <exp1> <formals> <exp2>)
+     `<formals>' should be as described for the `$define!' operative.
+     The `$set!' operative evaluates `<exp1>' and `<exp2>' in the
+     dynamic environment; call the results `env' and `obj'.  If `env'
+     is not an environment, an error is signaled.  Then the operative
+     matches `<formals>' to `obj' in environment `env'.  Thus, the
+     symbols of `<formals>' are bound in `env' to the corresponding
+     parts of `obj'.  The result returned by `$set!' is inert.
+
+ -- Operative: $provide! ($provide! <symbols> . <body>)
+     `<symbols>' must be a finite list of symbols, containing no
+     duplicates.  `<body>' must be a finite list.
+
+     The `$provide!' operative constructs a child `e' of the dynamic
+     environment `d'; evaluates the elements of `<body>' in `e', from
+     left to right, discarding all of the results; and exports all of
+     the bindings of symbols in `<symbols>' from `e' to `d', i.e.,
+     binds each symbol in `d' to the result of looking it up in `e'.
+     The result returned by `$provide!'  is inert.
+
+     The following equivalence holds:
+
+          ($provide!  symbols . body) ==
+          ($define!  symbols ($let () ($sequence . body) (list . symbols)))
+
+ -- Operative: $import! ($import! <exp> . <symbols>)
+     `<symbols>' must be a list of symbols.
+
+     The `$import!' operative evaluates `<exp>' in the dynamic
+     environment; call the result `env'. `env' must be an environment.
+     Each distinct symbol `s' in `<symbols>' is evaluated in `env', and
+     `s' is bound in the dynamic environment to the result of this
+     evaluation.
+
+     The following equivalence holds:
+
+          ($import! exp . symbols) ==
+          ($define! symbols ($remote-eval (list symbols) exp))
+
 
 File: klisp.info,  Node: Combiners,  Next: Index,  Prev: Environments,  Up: Top
 
@@ -883,16 +1097,16 @@ combiners are `equal?' iff they are `eq?'.
      applicative.
 
  -- Operative: $vau ($vau <formals> <eformal> . <objects>)
-     `formals' should be a formal parameter tree; `eformal' should be
-     either a symbol or `#ignore'.  If `formals' does not have the
-     correct form for a formal parameter tree, or if `eformal' is a
-     symbol that also occurs in `formals', an error is signaled.
+     `<formals>' should be a formal parameter tree; `<eformal>' should
+     be either a symbol or `#ignore'.  If `<formals>' does not have the
+     correct form for a formal parameter tree, or if `<eformal>' is a
+     symbol that also occurs in `<formals>', an error is signaled.
 
      A `vau' expression evaluates to an operative; an operative created
      in this way is said to be compound. The environment in which the
      `vau' expression was evaluated is remembered as part of the
      compound operative, called the compound operative’s static
-     environment.  `formals' and `objects' are copied as by
+     environment.  `<formals>' and `<objects>' are copied as by
      `copy-es-immutable' and the copies are stored as part of the
      operative being constructed.  This avoids problem if these
      structures are later mutated.
@@ -912,10 +1126,10 @@ combiners are `equal?' iff they are `eq?'.
           that is, if eformal is a symbol then that symbol is bound in
           the local environment to the dynamic environment.
 
-       3. A stored copy of the expressions is evaluated sequentially in
-          the local environment as if by `$sequence'.  In particular,
-          if there is a last expression, it is evaluated in a tail
-          context.
+       3. A stored copy of the expressions is evaluated sequentially
+          from left to right, with the last (if any) evaluated as a
+          tail context, or if the list of expressions is empty, the
+          result is inert.
 
      NOTE: Because compound operatives are not a distinct type in
      Kernel, they are covered by the encapsulation of type operative.
@@ -932,8 +1146,8 @@ combiners are `equal?' iff they are `eq?'.
      The `unwrap' applicative returns the underlying combiner of
      `applicative'.
 
- -- Operative: $lambda ($lambda formals . objects)
-     `formals' should be a formal parameter tree.
+ -- Operative: $lambda ($lambda <formals> . <objects>)
+     `<formals>' should be a formal parameter tree.
 
      The `$lambda' operative is defined by the following equivalence:
           ($lambda formals . objects) ==
@@ -991,12 +1205,25 @@ Index
 * Menu:
 
 * $and?:                                 Booleans.            (line  28)
+* $binds?:                               Environments.        (line 108)
 * $cond:                                 Control.             (line  32)
+* $define!:                              Environments.        (line  49)
 * $if:                                   Control.             (line  15)
+* $import!:                              Environments.        (line 207)
 * $lambda:                               Combiners.           (line  76)
+* $let:                                  Environments.        (line  89)
+* $let*:                                 Environments.        (line 124)
+* $let-redirect:                         Environments.        (line 153)
+* $let-safe:                             Environments.        (line 161)
+* $letrec:                               Environments.        (line 137)
+* $letrec*:                              Environments.        (line 144)
 * $or?:                                  Booleans.            (line  41)
+* $provide!:                             Environments.        (line 191)
+* $remote-eval:                          Environments.        (line 169)
 * $sequence:                             Control.             (line  23)
+* $set!:                                 Environments.        (line 182)
 * $vau:                                  Combiners.           (line  26)
+* (:                                     Environments.        (line 174)
 * and?:                                  Booleans.            (line  20)
 * append:                                Pairs and lists.     (line 208)
 * append!:                               Pairs and lists.     (line 306)
@@ -1051,11 +1278,13 @@ Index
 * documentation notation:                Evaluation Notation. (line   6)
 * empty list:                            Pairs and lists.     (line   6)
 * encycle!:                              Pairs and lists.     (line 158)
+* environment?:                          Environments.        (line  23)
 * environments:                          Environments.        (line   6)
 * eq?:                                   Equivalence.         (line  12)
 * equal?:                                Equivalence.         (line  16)
 * equivalence:                           Equivalence.         (line   6)
 * error message notation:                Error Messages.      (line   6)
+* eval:                                  Environments.        (line  32)
 * evaluation notation:                   Evaluation Notation. (line   6)
 * filter:                                Pairs and lists.     (line 239)
 * finite-list?:                          Pairs and lists.     (line 261)
@@ -1063,8 +1292,10 @@ Index
 * foo:                                   A Sample Applicative Description.
                                                               (line  15)
 * for-each:                              Control.             (line  42)
+* get-current-environment:               Environments.        (line 114)
 * get-list-metrics:                      Pairs and lists.     (line 123)
 * ignore:                                Environments.        (line   6)
+* ignore?:                               Environments.        (line  28)
 * inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
 * Kernel history:                        Kernel History.      (line   6)
@@ -1075,6 +1306,8 @@ Index
 * list-ref:                              Pairs and lists.     (line 198)
 * list-tail:                             Pairs and lists.     (line 147)
 * lists:                                 Pairs and lists.     (line   6)
+* make-environment:                      Environments.        (line  36)
+* make-kernel-standard-environment:      Environments.        (line 119)
 * map <1>:                               Combiners.           (line  96)
 * map:                                   Pairs and lists.     (line 169)
 * member?:                               Pairs and lists.     (line 257)
@@ -1123,8 +1356,8 @@ Node: Equivalence16800
 Node: Symbols17593
 Node: Control18958
 Node: Pairs and lists21275
-Node: Environments38296
-Node: Combiners38420
-Node: Index44424
+Node: Environments38298
+Node: Combiners48505
+Node: Index54533
 
 End Tag Table

@@ -34,7 +34,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <!-- node-name,  next,  previous,  up -->
 <h2 class="chapter">8 Combiners</h2>
 
-<p><a name="index-combiners-95"></a><a name="index-applicatives-96"></a><a name="index-operatives-97"></a>
+<p><a name="index-combiners-114"></a><a name="index-applicatives-115"></a><a name="index-operatives-116"></a>
   There are two types of combiners in Kernel, operative and
 applicative. Both types are encapsulated. All combiners are immutable. 
 Two applicatives are <code>eq?</code> iff their underlying combiners are
@@ -47,33 +47,33 @@ iff they are <code>eq?</code>.
 <!-- TODO add xref for eq? and equal? -->
 
 <div class="defun">
-&mdash; Applicative: <b>operative?</b> (<var>operative? . objects</var>)<var><a name="index-operative_003f-98"></a></var><br>
+&mdash; Applicative: <b>operative?</b> (<var>operative? . objects</var>)<var><a name="index-operative_003f-117"></a></var><br>
 <blockquote><p>  The primitive type predicate for type operative. <code>operative?</code>
 returns true iff all the objects in <code>objects</code> are of type
 operative. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>applicative?</b> (<var>applicative? . objects</var>)<var><a name="index-applicative_003f-99"></a></var><br>
+&mdash; Applicative: <b>applicative?</b> (<var>applicative? . objects</var>)<var><a name="index-applicative_003f-118"></a></var><br>
 <blockquote><p>  The primitive type predicate for type applicative. 
 <code>applicative?</code> returns true iff all the objects in
 <code>objects</code> are of type applicative. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$vau</b> (<var>$vau &lt;formals&gt; &lt;eformal&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024vau-100"></a></var><br>
+&mdash; Operative: <b>$vau</b> (<var>$vau &lt;formals&gt; &lt;eformal&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024vau-119"></a></var><br>
 <blockquote><!-- TODO add xref to formal parameter tree -->
-        <p><code>formals</code> should be a formal parameter tree; <code>eformal</code>
-should be either a symbol or <code>#ignore</code>.  If <code>formals</code> does
+        <p><code>&lt;formals&gt;</code> should be a formal parameter tree; <code>&lt;eformal&gt;</code>
+should be either a symbol or <code>#ignore</code>.  If <code>&lt;formals&gt;</code> does
 not have the correct form for a formal parameter tree, or if
-<code>eformal</code> is a symbol that also occurs in <code>formals</code>, an
+<code>&lt;eformal&gt;</code> is a symbol that also occurs in <code>&lt;formals&gt;</code>, an
 error is signaled.
 
         <p>A <code>vau</code> expression evaluates to an operative; an operative
 created in this way is said to be compound. The environment in which
 the <code>vau</code> expression was evaluated is remembered as part of the compound
 operative, called the compound operative’s static environment. 
-<code>formals</code> and <code>objects</code> are copied as by
+<code>&lt;formals&gt;</code> and <code>&lt;objects&gt;</code> are copied as by
 <code>copy-es-immutable</code> and the copies are stored as part of the
 operative being constructed.  This avoids problem if these structures
 are later mutated.
@@ -95,11 +95,10 @@ matched to the dynamic environment; that is, if eformal is a symbol
 then that symbol is bound in the local environment to the dynamic
 environment.
 
-          <li>A stored copy of the expressions is evaluated sequentially in the
-<!-- TODO add xref to sequence -->
-local environment as if by <code>$sequence</code>.  In particular, if there
-<!-- TODO add xref to tail context. -->
-is a last expression, it is evaluated in a tail context.
+          <li><!-- TODO add xref to tail context. -->
+A stored copy of the expressions is evaluated sequentially from left
+to right, with the last (if any) evaluated as a tail context, or if
+the list of expressions is empty, the result is inert.
              </ol>
 
         <p>NOTE: Because compound operatives are not a distinct type in Kernel,
@@ -111,20 +110,20 @@ operative is compound.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>wrap</b> (<var>wrap combiner</var>)<var><a name="index-wrap-101"></a></var><br>
+&mdash; Applicative: <b>wrap</b> (<var>wrap combiner</var>)<var><a name="index-wrap-120"></a></var><br>
 <blockquote><p>  The <code>wrap</code> applicative returns an applicative whose underlying
 combiner is <code>combiner</code>. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>unwrap</b> (<var>unwrap applicative</var>)<var><a name="index-unwrap-102"></a></var><br>
+&mdash; Applicative: <b>unwrap</b> (<var>unwrap applicative</var>)<var><a name="index-unwrap-121"></a></var><br>
 <blockquote><p>  The <code>unwrap</code> applicative returns the underlying combiner of
 <code>applicative</code>. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$lambda</b> (<var>$lambda formals . objects</var>)<var><a name="index-g_t_0024lambda-103"></a></var><br>
-<blockquote><p>  <code>formals</code> should be a formal parameter tree.
+&mdash; Operative: <b>$lambda</b> (<var>$lambda &lt;formals&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024lambda-122"></a></var><br>
+<blockquote><p>  <code>&lt;formals&gt;</code> should be a formal parameter tree.
 
         <p>The <code>$lambda</code> operative is defined by the following equivalence:
      <pre class="example">          ($lambda formals . objects) ==
@@ -133,7 +132,7 @@ combiner is <code>combiner</code>.
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>apply</b> (<var>apply applicative object </var>[<var>environment</var>])<var><a name="index-apply-104"></a></var><br>
+&mdash; Applicative: <b>apply</b> (<var>apply applicative object </var>[<var>environment</var>])<var><a name="index-apply-123"></a></var><br>
 <blockquote><p>  Applicative <code>apply</code> combines the underlying combiner of
 <code>applicative</code> with <code>object</code> in a tail context with dynamic
 environment <code>environment</code> (if the long form is used) or in an
@@ -149,7 +148,7 @@ empty environment (if the short form is used).
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>map</b> (<var>map applicative . lists</var>)<var><a name="index-map-105"></a></var><br>
+&mdash; Applicative: <b>map</b> (<var>map applicative . lists</var>)<var><a name="index-map-124"></a></var><br>
 <blockquote><p>  <code>lists</code> must be a nonempty list of lists; if there are two or
 <!-- TODO add xref to length -->
 more, they must all have the same length. If <code>lists</code> is empty, or
@@ -178,7 +177,7 @@ times.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>combiner?</b> (<var>combiner? . objects</var>)<var><a name="index-combiner_003f-106"></a></var><br>
+&mdash; Applicative: <b>combiner?</b> (<var>combiner? . objects</var>)<var><a name="index-combiner_003f-125"></a></var><br>
 <blockquote><p>  The primitive type predicate for type combiner. <code>combiner?</code>
 returns true iff all the objects in <code>objects</code> are of type
 combiner (i.e. applicative or operative). 

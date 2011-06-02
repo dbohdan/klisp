@@ -34,13 +34,13 @@ representation @code{(1 . (2 . (3 . ())))} would be output using,
 modulo whitespace, external representation @code{(1 2 3)}.
 
 @deffn Applicative pair? (pair? . objects)
-  The primitive type predicate for type pair. @code{pair?}
-returns true iff all the objects in @code{objects} are of type pair.
+  The primitive type predicate for type pair.  @code{pair?} returns
+true iff all the objects in @code{objects} are of type pair.
 @end deffn
 
 @deffn Applicative null? (null? . objects)
-  The primitive type predicate for type null. @code{null?}
-returns true iff all the objects in @code{objects} are of type null.
+  The primitive type predicate for type null.  @code{null?} returns
+true iff all the objects in @code{objects} are of type null.
 @end deffn
 
 @deffn Applicative cons (cons object1 object2)

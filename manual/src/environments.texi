@@ -8,3 +8,291 @@
 @cindex environments
 @cindex ignore
 
+  An environment consists of a set of bindings, and a list of zero or
+more references to other environments called its parents.  
+@c TODO add xref to lookup algo & ground env
+Changing the set of bindings of an environment, or setting the
+referent of the reference in a binding, is a mutation of the
+environment. (Changing the parent list, or a referent in the list,
+would be a mutation of the environment too, but there is no facility
+provided to do it.) The Kernel data type environment is encapsulated.
+Among other things, there is no facility provided for enumerating all
+the variables exhibited by an environment (which is not required,
+after all, to be a finite set), and no facility for identifying the
+parents of an environment.  Two environments are @code{equal?} iff
+they are @code{eq?}.
+  
+  An auxiliary data type used by combiners that perform binding is
+ignore. The ignore type consists of a single immutable value, having
+external representation @code{#ignore}.  The ignore type is
+encapsulated.
+
+@deffn Applicative environment? (environment? . objects)
+  The primitive type predicate for type environment.
+@code{environment?} returns true iff all the objects in @code{objects}
+are of type environment.
+@end deffn
+
+@deffn Applicative ignore? (ignore? . objects)
+  The primitive type predicate for type ignore.  @code{ignore?}
+returns true iff all the objects in @code{objects} are of type ignore.
+@end deffn
+
+@deffn Applicative eval (eval expression environment)
+@c TODO add xref to tail context
+@c TODO add xref to evaluation description
+  The @code{eval} applicative evaluates @code{expression} as a tail
+context in @code{environment}, and returns the resulting value.
+@end deffn
+
+@deffn Applicative make-environment (make-environment . environments)
+  The applicative constructs and returns a new environment, with
+initially no local bindings, and parent environments the environments
+listed in @code{environments}. The constructed environment internally
+stores its list of parents independent of the first-class list
+@code{environments}, so that subsequent mutation of
+@code{environments} will not change the parentage of the constructed
+environment. If the provided list @code{environments} is cyclic, the
+constructed environment will still check each of its parents at most
+once, and signal an error if no binding is found locally or in any of
+@c TODO add xref to cons, mutation, eq? and equal?
+the parents.  No two objects returned by different calls to
+@code{make-environment} are @code{eq?} to each other.
+@end deffn
+
+@deffn Operative $define! ($define! <definiend> <expression>)
+@c TODO move formal parameter tree definition to the intro
+@c TODO move matching definition to the intro
+  @code{<definiend>} should be a formal parameter tree, as described
+below; otherwise, an error is signaled.  
+
+  The @code{$define!} operative evaluates @code{<expression>} in the
+dynamic environment and matches @code{<definiend>} to the result in
+the dynamic environment, binding each symbol in definiend in the
+dynamic environment to the corresponding part of the result; the
+matching process will be further described below. The ancestors of the
+dynamic environment, if any, are unaffected by the matching process,
+as are all bindings, local to the dynamic environment, of symbols not
+in @code{<definiend>}.  The result returned by @code{$define!} is
+inert.
+
+  A formal parameter tree has the following context-free structure:
+@example
+ptree:: symbol | #ignore | () | (ptree . ptree) 
+@end example
+
+  That is, a formal parameter tree is either a symbol, or ignore, or
+nil, or a pair whose car and cdr referents are formal parameter trees.
+A formal parameter tree must also be acyclic, and no one symbol can
+occur more than once in it.  It is not an error for a pair in the tree
+to be reachable from the root by more than one path, as long as there
+is no cycle; but if any particular symbol were reachable from the root
+by more than one path, that would count as occurring more than once.
+Thus, if a pair is reachable by more than one path, there must be no
+symbols reachable from it.
+
+  Matching of a formal parameter tree @code{t} to an object @code{o}
+in an environment @code{e} proceeds recursively as follows.  If the
+matching process fails, an error is signaled.  
+@itemize @bullet
+@item
+If @code{t} is a symbol, then @code{t} is bound to @code{o} in
+@code{e}.
+
+@item
+If @code{t} is @code{#ignore}, no action is taken.
+
+@item
+If @code{t} is nil, then @code{o} must be nil (else matching fails).  
+
+@item
+If @code{t} is a pair, then @code{o} must be a pair (else matching
+fails). The car of @code{t} is matched to the car of @code{o} in
+@code{e}, and the cdr of @code{t} is matched to the cdr of @code{o} in
+@code{e}.
+@end itemize
+@end deffn
+
+@deffn Operative $let ($let <bindings> . <objects>)
+@c TODO add xref to formal parameter tree
+  @code{<bindings>} should be a finite list of
+formal-parameter-tree/expression pairings, each of the form
+@code{(formals expression)}, where each @code{formals} is a formal
+parameter, and no symbol occurs in more than one of the
+@code{formals}.  
+
+The following equivalence holds:
+
+@example
+($let ((form1 exp1) ... (formn expn)) . objects) @equiv{}
+  (($lambda (form1 ... formn) . objects) exp1 ... expn) 
+@end example
+
+@c TODO add xref to tail context
+Thus, the @code{expk} are first evaluated in the dynamic environment,
+in any order; then a child environment @code{e} of the dynamic
+environment is created, with the @code{formk} matched in @code{e} to
+the results of the evaluations of the @code{expk}; and finally the
+subexpressions of @code{objects} are evaluated in @code{e} from left
+to right, with the last (if any) evaluated as a tail context, or if
+@code{objects} is empty the result is inert.
+@end deffn
+
+@deffn Operative $binds? ($binds? <exp> . <symbols>)
+  Operative @code{$binds} evaluates @code{<exp>} in the dynamic
+environment; call the result @code{env}.  @code{env} must be an
+environment.  The operative is a predicate that returns true iff all
+its later operands, @code{<symbols>}, are visibly bound in @code{env}.
+@end deffn
+
+@deffn Applicative get-current-environment (get-current-environment)
+  The @code{get-current-environment} applicative returns the dynamic
+environment in which it is called.
+@end deffn
+
+@deffn Applicative make-kernel-standard-environment (make-kernel-standard-environment)
+@c TODO add xref to ground environment/standard environment
+  The @code{make-kernel-standard-environment} applicative returns a
+standard environment; that is, a child of the ground environment with
+no local bindings.
+@end deffn
+
+@deffn Operative $let* ($let* <bindings> . <body>)
+@c TODO add xref to formal ptree
+  @code{<bindings>} should be a finite list of
+formal-parameter-tree/expression pairings, each of the form
+@code{(formals expression)}, where each @code{formals} is a formal
+parameter tree; @code{<body>} should be a list of expressions.  
+
+The following equivalences hold:
+
+@example
+($let* () . body) @equiv{} ($let () . body)
+
+($let* ((form exp) . bindings) . body) @equiv{}
+  ($let ((form exp)) ($let* bindings . body))
+@end example
+@end deffn
+
+@deffn Operative $letrec ($letrec <bindings> . <body>)
+@c add xref for $let
+  @code{<bindings>} and @code{<body>} should be as described for
+@code{$let}.  
+
+  The following equivalence holds:
+@example
+($letrec ((form1 exp1) ... (formn expn)) . body) @equiv{}
+  ($let () ($define! (form1 ... formn) (list exp1 ... expn)) . body)
+@end example
+@end deffn
+
+@deffn Operative $letrec* ($letrec* <bindings> . <body>)
+@c TODO add xref to $let*
+  @code{<bindings>} and @code{<body>} should be as described for
+@code{$let*}.  
+
+  The following equivalences hold:
+@example
+($letrec* () . body) @equiv{} ($letrec () . body) 
+
+($letrec* ((form exp) . bindings) . body) @equiv{} 
+  ($letrec ((form exp)) ($letrec* bindings . body))
+@end example
+@end deffn
+
+@deffn Operative $let-redirect ($let-redirect <exp> <bindings> . <body>)
+@c TODO add xref to $let
+  @code{<bindings>} and @code{<body>} should be as described for
+@code{$let}.  
+
+  The following equivalence holds:
+
+@example
+($let-redirect exp ((form1 exp1) ... (formn . body) expn)) @equiv{}
+  ((eval (list $lambda (form1 ... formn) body) exp) expn ... expn)
+@end example
+@end deffn
+
+@deffn Operative $let-safe ($let-safe <bindings> . <body>)
+@c TODO add xref to $let
+  @code{<bindings>} and @code{<body>} should be as described for
+@code{$let}.  
+
+  The following equivalence holds:
+
+@example
+($let-safe bindings . body) @equiv{}
+  ($let-redirect (make-kernel-standard-environment) bindings . body)
+@end example
+@end deffn
+
+@deffn Operative $remote-eval ($remote-eval <exp1> <exp2>)
+@c TODO add xref to tail context
+  Operative @code{$remote-eval} evaluates @code{<exp2>} in the dynamic
+environment, then evaluates @code{<exp1>} as a tail context in the
+environment that must result from the first evaluation.
+@end deffn
+
+@deffn Operative ($bindings-environment . <bindings>)
+@c TODO add xref to $let
+  @code{<bindings>} should be as described for @code{$let}.
+
+  The following equivalence holds:
+
+@example
+($bindings->environment . bindings) @equiv{}
+  ($let-redirect (make-environment) bindings (get-current-environment))
+@end example
+@end deffn
+
+@deffn Operative $set! ($set! <exp1> <formals> <exp2>)
+@c TODO add xref to $define!
+@c TODO add xref to matching algo
+  @code{<formals>} should be as described for the @code{$define!}
+operative.  The @code{$set!} operative evaluates @code{<exp1>} and
+@code{<exp2>} in the dynamic environment; call the results @code{env}
+and @code{obj}.  If @code{env} is not an environment, an error is
+signaled.  Then the operative matches @code{<formals>} to @code{obj}
+in environment @code{env}.  Thus, the symbols of @code{<formals>} are
+bound in @code{env} to the corresponding parts of @code{obj}. 
+The result returned by @code{$set!} is inert.
+@end deffn
+
+@deffn Operative $provide! ($provide! <symbols> . <body>)
+  @code{<symbols>} must be a finite list of symbols, containing no
+duplicates.  @code{<body>} must be a finite list.
+  
+  The @code{$provide!} operative constructs a child @code{e} of the
+dynamic environment @code{d}; evaluates the elements of @code{<body>}
+in @code{e}, from left to right, discarding all of the results; and
+exports all of the bindings of symbols in @code{<symbols>} from
+@code{e} to @code{d}, i.e., binds each symbol in @code{d} to the
+result of looking it up in @code{e}.  The result returned by
+@code{$provide!}  is inert.
+
+The following equivalence holds:
+
+@example
+($provide!  symbols . body) @equiv{}
+($define!  symbols ($let () ($sequence . body) (list . symbols)))
+@end example
+@end deffn
+
+@deffn Operative $import! ($import! <exp> . <symbols>)
+  @code{<symbols>} must be a list of symbols.
+
+  The @code{$import!} operative evaluates @code{<exp>} in the dynamic
+environment; call the result @code{env}. @code{env} must be an
+environment. Each distinct symbol @code{s} in @code{<symbols>} is
+evaluated in @code{env}, and @code{s} is bound in the dynamic
+environment to the result of this evaluation.
+
+The following equivalence holds:
+
+@example
+($import! exp . symbols) @equiv{}
+($define! symbols ($remote-eval (list symbols) exp))
+@end example
+@end deffn
+
+
