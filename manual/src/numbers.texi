@@ -1,0 +1,8 @@
+@c -*-texinfo-*-
+@setfilename ../src/numbers
+
+@node Numbers, Strings, Keyed Variables, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Numbers
+@cindex numbers

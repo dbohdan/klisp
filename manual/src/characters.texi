@@ -1,0 +1,8 @@
+@c -*-texinfo-*-
+@setfilename ../src/characters
+
+@node Characters, Ports, Strings, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Characters
+@cindex characters

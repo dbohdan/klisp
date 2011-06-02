@@ -5,7 +5,7 @@
 <meta name="description" content="klisp Reference Manual">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
-<link rel="prev" href="Combiners.html#Combiners" title="Combiners">
+<link rel="prev" href="Ports.html#Ports" title="Ports">
 <link rel="next" href="../index.html#dir" title="(dir)">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <meta http-equiv="Content-Style-Type" content="text/css">
@@ -26,7 +26,7 @@
 <a name="Index"></a>
 <p>
 Next:&nbsp;<a rel="next" accesskey="n" href="../index.html#dir">(dir)</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="Combiners.html#Combiners">Combiners</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Ports.html#Ports">Ports</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <hr>
 </div>
@@ -96,9 +96,11 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Pairs-and-lists.html#index-cdddr-58"><code>cdddr</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-cddr-50"><code>cddr</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-cdr-46"><code>cdr</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
+<li><a href="Characters.html#index-characters-134">characters</a>: <a href="Characters.html#Characters">Characters</a></li>
 <li><a href="Combiners.html#index-combiner_003f-125"><code>combiner?</code></a>: <a href="Combiners.html#Combiners">Combiners</a></li>
 <li><a href="Combiners.html#index-combiners-114">combiners</a>: <a href="Combiners.html#Combiners">Combiners</a></li>
 <li><a href="Pairs-and-lists.html#index-cons-39"><code>cons</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
+<li><a href="Continuations.html#index-continuations-126">continuations</a>: <a href="Continuations.html#Continuations">Continuations</a></li>
 <li><a href="Control.html#index-control-26">control</a>: <a href="Control.html#Control">Control</a></li>
 <li><a href="Pairs-and-lists.html#index-copy_002des-90"><code>copy-es</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-copy_002des_002dimmutable_0021-42"><code>copy-es-immutable!</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
@@ -106,6 +108,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Format-of-Descriptions.html#index-description-format-7">description format</a>: <a href="Format-of-Descriptions.html#Format-of-Descriptions">Format of Descriptions</a></li>
 <li><a href="Evaluation-Notation.html#index-documentation-notation-4">documentation notation</a>: <a href="Evaluation-Notation.html#Evaluation-Notation">Evaluation Notation</a></li>
 <li><a href="Pairs-and-lists.html#index-empty-list-35">empty list</a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
+<li><a href="Encapsulations.html#index-encapsulations-127">encapsulations</a>: <a href="Encapsulations.html#Encapsulations">Encapsulations</a></li>
 <li><a href="Pairs-and-lists.html#index-encycle_0021-77"><code>encycle!</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Environments.html#index-environment_003f-95"><code>environment?</code></a>: <a href="Environments.html#Environments">Environments</a></li>
 <li><a href="Environments.html#index-environments-93">environments</a>: <a href="Environments.html#Environments">Environments</a></li>
@@ -127,6 +130,9 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Control.html#index-inert-27">inert</a>: <a href="Control.html#Control">Control</a></li>
 <li><a href="Control.html#index-inert_003f-28"><code>inert?</code></a>: <a href="Control.html#Control">Control</a></li>
 <li><a href="Kernel-History.html#index-Kernel-history-1">Kernel history</a>: <a href="Kernel-History.html#Kernel-History">Kernel History</a></li>
+<li><a href="Keyed-Variables.html#index-keyed-dynamic-variables-130">keyed dynamic variables</a>: <a href="Keyed-Variables.html#Keyed-Variables">Keyed Variables</a></li>
+<li><a href="Keyed-Variables.html#index-keyed-static-variables-131">keyed static variables</a>: <a href="Keyed-Variables.html#Keyed-Variables">Keyed Variables</a></li>
+<li><a href="Keyed-Variables.html#index-keyed-variables-129">keyed variables</a>: <a href="Keyed-Variables.html#Keyed-Variables">Keyed Variables</a></li>
 <li><a href="Pairs-and-lists.html#index-length-79"><code>length</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-list-43"><code>list</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-list_002a-44"><code>list*</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
@@ -143,6 +149,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Pairs-and-lists.html#index-nil-34">nil</a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Booleans.html#index-not_003f-14"><code>not?</code></a>: <a href="Booleans.html#Booleans">Booleans</a></li>
 <li><a href="Pairs-and-lists.html#index-null_003f-38"><code>null?</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
+<li><a href="Numbers.html#index-numbers-132">numbers</a>: <a href="Numbers.html#Numbers">Numbers</a></li>
 <li><a href="A-Sample-Applicative-Description.html#index-object-descriptions-10">object descriptions</a>: <a href="A-Sample-Applicative-Description.html#A-Sample-Applicative-Description">A Sample Applicative Description</a></li>
 <li><a href="A-Sample-Applicative-Description.html#index-operative-descriptions-9">operative descriptions</a>: <a href="A-Sample-Applicative-Description.html#A-Sample-Applicative-Description">A Sample Applicative Description</a></li>
 <li><a href="Combiners.html#index-operative_003f-117"><code>operative?</code></a>: <a href="Combiners.html#Combiners">Combiners</a></li>
@@ -150,11 +157,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Booleans.html#index-or_003f-16"><code>or?</code></a>: <a href="Booleans.html#Booleans">Booleans</a></li>
 <li><a href="Pairs-and-lists.html#index-pair_003f-37"><code>pair?</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-pairs-33">pairs</a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
+<li><a href="Ports.html#index-ports-135">ports</a>: <a href="Ports.html#Ports">Ports</a></li>
 <li><a href="Printing-Notation.html#index-printing-notation-5">printing notation</a>: <a href="Printing-Notation.html#Printing-Notation">Printing Notation</a></li>
+<li><a href="Promises.html#index-promises-128">promises</a>: <a href="Promises.html#Promises">Promises</a></li>
 <li><a href="Pairs-and-lists.html#index-reduce-88"><code>reduce</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-set_002dcar_0021-40"><code>set-car!</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Pairs-and-lists.html#index-set_002dcdr_0021-41"><code>set-cdr!</code></a>: <a href="Pairs-and-lists.html#Pairs-and-lists">Pairs and lists</a></li>
 <li><a href="Symbols.html#index-string_002d_003esymbol-25"><code>string-&gt;symbol</code></a>: <a href="Symbols.html#Symbols">Symbols</a></li>
+<li><a href="Strings.html#index-strings-133">strings</a>: <a href="Strings.html#Strings">Strings</a></li>
 <li><a href="Symbols.html#index-symbol_002d_003estring-24"><code>symbol-&gt;string</code></a>: <a href="Symbols.html#Symbols">Symbols</a></li>
 <li><a href="Symbols.html#index-symbol_003f-23"><code>symbol?</code></a>: <a href="Symbols.html#Symbols">Symbols</a></li>
 <li><a href="Symbols.html#index-symbols-22">symbols</a>: <a href="Symbols.html#Symbols">Symbols</a></li>
@@ -174,6 +184,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a href="Index.html#toc_Pairs-and-lists">6 Pairs and lists</a></li>
 <li><a href="Index.html#toc_Environments">7 Environments</a></li>
 <li><a href="Index.html#toc_Combiners">8 Combiners</a></li>
+<li><a href="Index.html#toc_Continuations">9 Continuations</a></li>
+<li><a href="Index.html#toc_Encapsulations">10 Encapsulations</a></li>
+<li><a href="Index.html#toc_Promises">11 Promises</a></li>
+<li><a href="Index.html#toc_Keyed-Variables">12 Keyed Variables</a></li>
+<li><a href="Index.html#toc_Numbers">13 Numbers</a></li>
+<li><a href="Index.html#toc_Strings">14 Strings</a></li>
+<li><a href="Index.html#toc_Characters">15 Characters</a></li>
+<li><a href="Index.html#toc_Ports">16 Ports</a></li>
 <li><a href="Index.html#toc_Index">Index</a></li>
 </ul>
 </div>
@@ -206,6 +224,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <li><a name="toc_Pairs-and-lists" href="Pairs-and-lists.html#Pairs-and-lists">6 Pairs and lists</a>
 <li><a name="toc_Environments" href="Environments.html#Environments">7 Environments</a>
 <li><a name="toc_Combiners" href="Combiners.html#Combiners">8 Combiners</a>
+<li><a name="toc_Continuations" href="Continuations.html#Continuations">9 Continuations</a>
+<li><a name="toc_Encapsulations" href="Encapsulations.html#Encapsulations">10 Encapsulations</a>
+<li><a name="toc_Promises" href="Promises.html#Promises">11 Promises</a>
+<li><a name="toc_Keyed-Variables" href="Keyed-Variables.html#Keyed-Variables">12 Keyed Variables</a>
+<li><a name="toc_Numbers" href="Numbers.html#Numbers">13 Numbers</a>
+<li><a name="toc_Strings" href="Strings.html#Strings">14 Strings</a>
+<li><a name="toc_Characters" href="Characters.html#Characters">15 Characters</a>
+<li><a name="toc_Ports" href="Ports.html#Ports">16 Ports</a>
 <li><a name="toc_Index" href="Index.html#Index">Index</a>
 </li></ul>
 </div>

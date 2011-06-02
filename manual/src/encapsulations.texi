@@ -1,0 +1,8 @@
+@c -*-texinfo-*-
+@setfilename ../src/encapsulations
+
+@node Encapsulations, Promises, Continuations, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Encapsulations
+@cindex encapsulations

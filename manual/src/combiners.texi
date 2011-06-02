@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/combiners
 
-@node Combiners, Index, Environments, Top
+@node Combiners, Continuations, Environments, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Combiners

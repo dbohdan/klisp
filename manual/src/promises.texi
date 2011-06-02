@@ -1,0 +1,9 @@
+@c -*-texinfo-*-
+@setfilename ../src/promises
+
+@node Promises, Keyed Variables, Encapsulations, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Promises
+@cindex promises
+

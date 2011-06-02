@@ -33,6 +33,14 @@ in part.
 * Pairs and lists::         Pairs and lists and Pair mutation modules features.
 * Environments::            Environments and Environment mutation modules features.
 * Combiners::               Combiners module features.
+* Continuations::           Continuations module features.
+* Encapsulations::          Encapsulations module features.
+* Promises::                Promises module features.
+* Keyed Variables::         Keyed (dynamic & static) variables module features.
+* Numbers::                 Numbers module features.
+* Strings::                 Strings module features.
+* Characters::              Characters module features.
+* Ports::                   Ports module features.
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -1072,7 +1080,7 @@ external representation `#ignore'.  The ignore type is encapsulated.
           ($define! symbols ($remote-eval (list symbols) exp))
 
 
-File: klisp.info,  Node: Combiners,  Next: Index,  Prev: Environments,  Up: Top
+File: klisp.info,  Node: Combiners,  Next: Continuations,  Prev: Environments,  Up: Top
 
 8 Combiners
 ***********
@@ -1196,7 +1204,55 @@ combiners are `equal?' iff they are `eq?'.
      (i.e. applicative or operative).
 
 
-File: klisp.info,  Node: Index,  Next: (dir),  Prev: Combiners,  Up: Top
+File: klisp.info,  Node: Continuations,  Next: Encapsulations,  Prev: Combiners,  Up: Top
+
+9 Continuations
+***************
+
+
+File: klisp.info,  Node: Encapsulations,  Next: Promises,  Prev: Continuations,  Up: Top
+
+10 Encapsulations
+*****************
+
+
+File: klisp.info,  Node: Promises,  Next: Keyed Variables,  Prev: Encapsulations,  Up: Top
+
+11 Promises
+***********
+
+
+File: klisp.info,  Node: Keyed Variables,  Next: Numbers,  Prev: Promises,  Up: Top
+
+12 Keyed Variables
+******************
+
+
+File: klisp.info,  Node: Numbers,  Next: Strings,  Prev: Keyed Variables,  Up: Top
+
+13 Numbers
+**********
+
+
+File: klisp.info,  Node: Strings,  Next: Characters,  Prev: Numbers,  Up: Top
+
+14 Strings
+**********
+
+
+File: klisp.info,  Node: Characters,  Next: Ports,  Prev: Strings,  Up: Top
+
+15 Characters
+*************
+
+
+File: klisp.info,  Node: Ports,  Next: Index,  Prev: Characters,  Up: Top
+
+16 Ports
+********
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Ports,  Up: Top
 
 Index
 *****
@@ -1266,9 +1322,11 @@ Index
 * cdddr:                                 Pairs and lists.     (line 100)
 * cddr:                                  Pairs and lists.     (line  92)
 * cdr:                                   Pairs and lists.     (line  86)
+* characters:                            Characters.          (line   6)
 * combiner?:                             Combiners.           (line 120)
 * combiners:                             Combiners.           (line   6)
 * cons:                                  Pairs and lists.     (line  35)
+* continuations:                         Continuations.       (line   6)
 * control:                               Control.             (line   6)
 * copy-es:                               Pairs and lists.     (line 321)
 * copy-es-immutable!:                    Pairs and lists.     (line  49)
@@ -1277,6 +1335,7 @@ Index
                                                               (line   6)
 * documentation notation:                Evaluation Notation. (line   6)
 * empty list:                            Pairs and lists.     (line   6)
+* encapsulations:                        Encapsulations.      (line   6)
 * encycle!:                              Pairs and lists.     (line 158)
 * environment?:                          Environments.        (line  23)
 * environments:                          Environments.        (line   6)
@@ -1299,6 +1358,9 @@ Index
 * inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
 * Kernel history:                        Kernel History.      (line   6)
+* keyed dynamic variables:               Keyed Variables.     (line   6)
+* keyed static variables:                Keyed Variables.     (line   6)
+* keyed variables:                       Keyed Variables.     (line   6)
 * length:                                Pairs and lists.     (line 191)
 * list:                                  Pairs and lists.     (line  72)
 * list*:                                 Pairs and lists.     (line  78)
@@ -1315,6 +1377,7 @@ Index
 * nil:                                   Pairs and lists.     (line   6)
 * not?:                                  Booleans.            (line  16)
 * null?:                                 Pairs and lists.     (line  31)
+* numbers:                               Numbers.             (line   6)
 * object descriptions:                   A Sample Applicative Description.
                                                               (line   6)
 * operative descriptions:                A Sample Applicative Description.
@@ -1324,11 +1387,14 @@ Index
 * or?:                                   Booleans.            (line  24)
 * pair?:                                 Pairs and lists.     (line  27)
 * pairs:                                 Pairs and lists.     (line   6)
+* ports:                                 Ports.               (line   6)
 * printing notation:                     Printing Notation.   (line   6)
+* promises:                              Promises.            (line   6)
 * reduce:                                Pairs and lists.     (line 270)
 * set-car!:                              Pairs and lists.     (line  41)
 * set-cdr!:                              Pairs and lists.     (line  42)
 * string->symbol:                        Symbols.             (line  20)
+* strings:                               Strings.             (line   6)
 * symbol->string:                        Symbols.             (line  16)
 * symbol?:                               Symbols.             (line  12)
 * symbols:                               Symbols.             (line   6)
@@ -1339,25 +1405,33 @@ Index
 
 Tag Table:
 Node: Top302
-Node: License1333
-Node: Introduction3004
-Node: Caveats5827
-Node: Kernel History6613
-Node: Conventions8058
-Node: Some Terms8729
-Node: Evaluation Notation9400
-Node: Printing Notation10421
-Node: Error Messages10897
-Node: Format of Descriptions11545
-Node: A Sample Applicative Description12109
-Node: Acknowledgements13872
-Node: Booleans14258
-Node: Equivalence16800
-Node: Symbols17593
-Node: Control18958
-Node: Pairs and lists21275
-Node: Environments38298
-Node: Combiners48505
-Node: Index54533
+Node: License1799
+Node: Introduction3470
+Node: Caveats6293
+Node: Kernel History7079
+Node: Conventions8524
+Node: Some Terms9195
+Node: Evaluation Notation9866
+Node: Printing Notation10887
+Node: Error Messages11363
+Node: Format of Descriptions12011
+Node: A Sample Applicative Description12575
+Node: Acknowledgements14338
+Node: Booleans14724
+Node: Equivalence17266
+Node: Symbols18059
+Node: Control19424
+Node: Pairs and lists21741
+Node: Environments38764
+Node: Combiners48971
+Node: Continuations55007
+Node: Encapsulations55133
+Node: Promises55262
+Node: Keyed Variables55381
+Node: Numbers55507
+Node: Strings55616
+Node: Characters55720
+Node: Ports55828
+Node: Index55924
 
 End Tag Table

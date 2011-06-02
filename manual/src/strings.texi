@@ -1,0 +1,8 @@
+@c -*-texinfo-*-
+@setfilename ../src/strings
+
+@node Strings, Characters, Numbers, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Strings
+@cindex strings

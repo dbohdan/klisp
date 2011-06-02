@@ -1,0 +1,9 @@
+@c -*-texinfo-*-
+@setfilename ../src/continuations
+
+@node Continuations, Encapsulations, Combiners, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Continuations
+@cindex continuations
+

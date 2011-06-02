@@ -5,7 +5,11 @@ srcs = klisp.texi index.texi \
 	intro.texi \
 	booleans.texi equivalence.texi symbols.texi \
 	control.texi pairs_lists.texi \
-	environments.texi combiners.texi
+	environments.texi combiners.texi \
+	continuations.texi encapsulations.texi \
+	promises.texi keyed_vars.texi \
+	numbers.texi strings.texi \
+	characters.texi ports.texi
 
 #TODO add dvi/pdf output
 #TODO check what happens with xrefs

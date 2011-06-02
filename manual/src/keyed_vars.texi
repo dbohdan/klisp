@@ -1,0 +1,10 @@
+@c -*-texinfo-*-
+@setfilename ../src/keyed variables
+
+@node Keyed Variables, Numbers, Promises, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Keyed Variables
+@cindex keyed variables
+@cindex keyed dynamic variables
+@cindex keyed static variables

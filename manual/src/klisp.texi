@@ -79,7 +79,15 @@ in part.
 * Pairs and lists::         Pairs and lists and Pair mutation modules features. 
 * Environments::            Environments and Environment mutation modules features. 
 * Combiners::               Combiners module features.
-@c TODO complete
+* Continuations::           Continuations module features.
+* Encapsulations::          Encapsulations module features.
+* Promises::                Promises module features.
+* Keyed Variables::         Keyed (dynamic & static) variables module features.
+* Numbers::                 Numbers module features.
+* Strings::                 Strings module features.
+* Characters::              Characters module features.
+* Ports::                   Ports module features.
+@c TODO add error objs to both klisp and the manual
 * Index::                   Index including concepts, functions, variables,
                               and other terms.
 
@@ -97,6 +105,14 @@ in part.
 @include pairs_lists.texi
 @include environments.texi
 @include combiners.texi
+@include continuations.texi
+@include encapsulations.texi
+@include promises.texi
+@include keyed_vars.texi
+@include numbers.texi
+@include strings.texi
+@include characters.texi
+@include ports.texi
 
 @c appendices
 @c TODO
