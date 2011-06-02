@@ -35,6 +35,198 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <h2 class="chapter">9 Continuations</h2>
 
 <p><a name="index-continuations-126"></a>
+  A continuation is a plan for all future computation, parameterized
+by a value to be provided, and contingent on the states of all mutable
+data structures (which notably may include environments). When the
+Kernel evaluator is invoked, the invoker provides a continuation to
+which the result of the evaluation will normally be returned.
+
+   <p>For example, when <code>$if</code> evaluates its test operand, the
+continuation provided for the result expects to be given a boolean
+value; and, depending on which boolean it gets, it will evaluate
+either the consequent or the alternative operand as a tail context —
+that is, the continuation provided for the result of evaluating the
+selected operand is the same continuation that was provided for the
+result of the call to <code>$if</code>.
+
+   <p>A Kernel program may sometimes capture a continuation; that is,
+acquire a reference to it as a first-class object. The basic means of
+continuation capture is applicative <code>call/cc</code>.  Given a
+first-class continuation <code>c</code>, a combiner can be constructed that
+will abnormally pass its operand tree to <code>c</code> (as opposed to the
+<!-- TODO add xref to abnormal pass -->
+normal return of values to continuations). In the simplest case, the
+abnormally passed value arrives at <code>c</code> as if it had been normally
+returned to <code>c</code>. In general, continuations bypassed by the
+abnormal pass may have entry/exit guards attached to them, and these
+guards can intercept the abnormal pass before it reaches <code>c</code>. 
+Each entry/exit guard consists of a selector continuation, which
+designates which abnormal passes the guard will intercept, and an
+interceptor applicative that performs the interception when selected. 
+<!-- TODO add xref to guard-continuation, continuation->applicative -->
+<!-- and abnormal pass -->
+
+   <p>Continuations are immutable, and are <code>equal?</code> iff <code>eq?</code>. 
+The continuation type is encapsulated.
+
+<!-- TODO add dynamic extent & guard selection/interception to the intro -->
+<div class="defun">
+&mdash; Applicative: <b>continuation?</b> (<var>continuation? . objects</var>)<var><a name="index-continuation_003f-127"></a></var><br>
+<blockquote><p>  The primitive type predicate for type continuation. 
+<code>continuation?</code> returns true iff all the objects in
+<code>objects</code> are of type continuation. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>call/cc</b> (<var>call/cc combiner</var>)<var><a name="index-call_002fcc-128"></a></var><br>
+<blockquote><p>  Calls <code>combiner</code> in the dynamic environment as a tail context,
+passing as sole operand to it the continuation to which <code>call/cc</code>
+would normally return its result.  (That is, constructs such a
+combination and evaluates it in the dynamic environment.) 
+<!-- TODO add xref Cf. operative $let/cc , §7.3.2. -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>extend-continuation</b> (<var>extend-continuation continuation applicative </var>[<var>environment</var>])<var><a name="index-extend_002dcontinuation-129"></a></var><br>
+<blockquote><p>  The <code>extend-continuation</code> applicative constructs and returns a
+new child of <code>continuation</code> that, when it normally receives a
+value v, calls the underlying combiner of <code>applicative</code> with
+dynamic environment <code>environment</code> (or an empty environment if
+none was specified) and operand tree <code>v</code>, the result of the call
+normally to be returned to <code>continuation</code>.
+
+        <p>The following equivalnece defines the short version:
+     <pre class="example">          (extend-continuation c a) ==
+            (extend-continuation c a (make-environment))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>guard-continuation</b> (<var>guard-continuation entry-guards continuation exit-guards</var>)<var><a name="index-guard_002dcontinuation-130"></a></var><br>
+<blockquote><p>  <code>entry-guards</code> and <code>exit-guards</code> should each be a list of
+clauses; each clause should be a list of length two, whose first
+element is a continuation, and whose second element is an applicative
+whose underlying combiner is operative.
+
+        <p>Applicative <code>guard-continuation</code> constructs two continuations:
+a child of continuation, called the <code>outer continuation</code>; and a
+child of the <code>outer continuation</code>, called the <code>inner
+continuation</code>.  The <code>inner continuation</code> is returned as the
+result of the call to <code>guard-continuation</code>.
+
+        <p>When the <code>inner continuation</code> normally receives a value, it
+passes the value normally to the <code>outer continuation</code>; and when
+the <code>outer continuation</code> normally receives a value, it passes the
+value normally to <code>continuation</code>. Thus, in the absence of
+abnormal passing, the inner and outer continuations each have the same
+behavior as <code>continuation</code>.
+
+        <p>The two elements of each guard clause are called, respectively, the
+<code>selector</code> and the <code>interceptor</code>.  The <code>selector</code>
+continuation is used in deciding whether to intercept a given abnormal
+pass, and the <code>interceptor</code> applicative is called to perform
+<!-- TODO add xref to selection and interception -->
+customized action when interception occurs.
+
+     <!-- TODO add xref to evaluation structure -->
+        <p>At the beginning of the call to <code>guard-continuation</code>, internal
+copies are made of the evaluation structures of <code>entry-guards</code>
+and <code>exit-guards</code>, so that the selectors and interceptors
+contained in the arguments at that time remain fixed thereafter,
+independent of any subsequent mutations to the arguments. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>continuation-&gt;applicative</b> (<var>continuation-&gt;applicative continuation</var>)<var><a name="index-continuation_002d_003eapplicative-131"></a></var><br>
+<blockquote><p>  Returns an applicative whose underlying operative abnormally passes
+its operand tree to <code>continuation</code>, thus: A series of
+interceptors are selected to handle the abnormal pass, and a
+continuation is derived that will normally perform all the
+interceptions in sequence and pass some value to the destination of
+the originally abnormal pass.  The operand tree is then normally
+passed to the derived continuation. 
+<!-- TODO add xref to selection and interception -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>root-continuation</b><var><a name="index-root_002dcontinuation-132"></a></var><br>
+<blockquote><p>  This continuation is the ancestor of all other continuations. When
+it normally receives a value, it terminates the Kernel session. (For
+example, if the system is running a read-eval-print loop, it exits the
+loop.) 
+<!-- TODO add xref  Cf. applicative exit, §7.3.4. -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>error-continuation</b><var><a name="index-error_002dcontinuation-133"></a></var><br>
+<blockquote><p>  The dynamic extent of this continuation is mutually disjoint from
+the dynamic extent in which Kernel computation usually occurs (such as
+the dynamic extent in which the Kernel system would run a
+read-eval-print loop).
+
+        <p>When this continuation normally receives a value, it provides a
+diagnostic message to the user of the Kernel system, on the assumption
+that the received value is an attempt to describe some error that
+aborted a computation; and then resumes operation of the Kernel system
+at some point that is outside of all user-defined computation. (For
+example, if the system is running a read-eval-print loop, operation
+may resume by continuing from the top of the loop.)
+
+        <p>The diagnostic message is not made available to any Kernel
+computation, and is therefore permitted to contain information that
+violates abstractions within the system.
+
+     <!-- TODO add details about klisp error messages -->
+        <p>When an error is signaled during a Kernel computation, the signaling
+action consists of an abnormal pass to some continuation in the
+dynamic extent of <code>error-continuation</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>apply-continuation</b> (<var>apply-continuation continuation object</var>)<var><a name="index-apply_002dcontinuation-134"></a></var><br>
+<blockquote><p>  Applicative <code>apply-continuation</code> converts its first argument to
+an applicative as if by <code>continuation-&gt;applicative</code>, and then
+applies it as usual.
+
+        <p>That is:
+     <pre class="example">          (apply-continuation continuation object) ==
+            (apply (continuation-&gt;applicative continuation) object)
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>(</b><var>$let/cc &lt;symbol&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0028-135"></a></var><br>
+<blockquote><p>  A child environment <code>e</code> of the dynamic environment is created,
+containing a binding of <code>&lt;symbol&gt;</code> to the continuation to which
+the result of the call to <code>$let/cc</code> should normally return; then,
+the subexpressions of <code>&lt;objects&gt;</code> are evaluated in <code>e</code> from
+left to right, with the last (if any) evaluated as a tail context, or
+if <code>&lt;objects&gt;</code> is empty the result is inert.
+
+        <p>That is:
+     <pre class="example">          ($let/cc symbol . objects) ==
+            (call/cc ($lambda (symbol) . objects))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>guard-dynamic-extent</b> (<var>guard-dynamic-extent entry-guards combiner exit-guards</var>)<var><a name="index-guard_002ddynamic_002dextent-136"></a></var><br>
+<blockquote><p>  This applicative extends the current continuation with the specified
+guards, and calls <code>combiner</code> in the dynamic extent of the new
+continuation, with no operands and the dynamic environment of the call
+to <code>guard-dynamic-extent</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>exit</b> (<var>exit</var>)<var><a name="index-exit-137"></a></var><br>
+<blockquote><!-- TODO add xref -->
+        <p>Applicative <code>exit</code> initiates an abnormal transfer of
+<code>#inert</code> to <code>root-continuation</code>.
+
+        <p>That is:
+     <pre class="example">          (exit ) == (apply-continuation root-continuation #inert)
+</pre>
+        </blockquote></div>
 
 <!-- *-texinfo-*- -->
    </body></html>

@@ -1209,6 +1209,168 @@ File: klisp.info,  Node: Continuations,  Next: Encapsulations,  Prev: Combiners,
 9 Continuations
 ***************
 
+A continuation is a plan for all future computation, parameterized by a
+value to be provided, and contingent on the states of all mutable data
+structures (which notably may include environments). When the Kernel
+evaluator is invoked, the invoker provides a continuation to which the
+result of the evaluation will normally be returned.
+
+   For example, when `$if' evaluates its test operand, the continuation
+provided for the result expects to be given a boolean value; and,
+depending on which boolean it gets, it will evaluate either the
+consequent or the alternative operand as a tail context — that is, the
+continuation provided for the result of evaluating the selected operand
+is the same continuation that was provided for the result of the call
+to `$if'.
+
+   A Kernel program may sometimes capture a continuation; that is,
+acquire a reference to it as a first-class object. The basic means of
+continuation capture is applicative `call/cc'.  Given a first-class
+continuation `c', a combiner can be constructed that will abnormally
+pass its operand tree to `c' (as opposed to the normal return of values
+to continuations). In the simplest case, the abnormally passed value
+arrives at `c' as if it had been normally returned to `c'. In general,
+continuations bypassed by the abnormal pass may have entry/exit guards
+attached to them, and these guards can intercept the abnormal pass
+before it reaches `c'.  Each entry/exit guard consists of a selector
+continuation, which designates which abnormal passes the guard will
+intercept, and an interceptor applicative that performs the
+interception when selected.
+
+   Continuations are immutable, and are `equal?' iff `eq?'.  The
+continuation type is encapsulated.
+
+ -- Applicative: continuation? (continuation? . objects)
+     The primitive type predicate for type continuation.
+     `continuation?' returns true iff all the objects in `objects' are
+     of type continuation.
+
+ -- Applicative: call/cc (call/cc combiner)
+     Calls `combiner' in the dynamic environment as a tail context,
+     passing as sole operand to it the continuation to which `call/cc'
+     would normally return its result.  (That is, constructs such a
+     combination and evaluates it in the dynamic environment.)
+
+ -- Applicative: extend-continuation (extend-continuation continuation
+          applicative [environment])
+     The `extend-continuation' applicative constructs and returns a new
+     child of `continuation' that, when it normally receives a value v,
+     calls the underlying combiner of `applicative' with dynamic
+     environment `environment' (or an empty environment if none was
+     specified) and operand tree `v', the result of the call normally
+     to be returned to `continuation'.
+
+     The following equivalnece defines the short version:
+          (extend-continuation c a) ==
+            (extend-continuation c a (make-environment))
+
+ -- Applicative: guard-continuation (guard-continuation entry-guards
+          continuation exit-guards)
+     `entry-guards' and `exit-guards' should each be a list of clauses;
+     each clause should be a list of length two, whose first element is
+     a continuation, and whose second element is an applicative whose
+     underlying combiner is operative.
+
+     Applicative `guard-continuation' constructs two continuations: a
+     child of continuation, called the `outer continuation'; and a
+     child of the `outer continuation', called the `inner
+     continuation'.  The `inner continuation' is returned as the result
+     of the call to `guard-continuation'.
+
+     When the `inner continuation' normally receives a value, it passes
+     the value normally to the `outer continuation'; and when the
+     `outer continuation' normally receives a value, it passes the
+     value normally to `continuation'. Thus, in the absence of abnormal
+     passing, the inner and outer continuations each have the same
+     behavior as `continuation'.
+
+     The two elements of each guard clause are called, respectively, the
+     `selector' and the `interceptor'.  The `selector' continuation is
+     used in deciding whether to intercept a given abnormal pass, and
+     the `interceptor' applicative is called to perform customized
+     action when interception occurs.
+
+     At the beginning of the call to `guard-continuation', internal
+     copies are made of the evaluation structures of `entry-guards' and
+     `exit-guards', so that the selectors and interceptors contained in
+     the arguments at that time remain fixed thereafter, independent of
+     any subsequent mutations to the arguments.
+
+ -- Applicative: continuation->applicative (continuation->applicative
+          continuation)
+     Returns an applicative whose underlying operative abnormally passes
+     its operand tree to `continuation', thus: A series of interceptors
+     are selected to handle the abnormal pass, and a continuation is
+     derived that will normally perform all the interceptions in
+     sequence and pass some value to the destination of the originally
+     abnormal pass.  The operand tree is then normally passed to the
+     derived continuation.
+
+ -- Variable: root-continuation
+     This continuation is the ancestor of all other continuations. When
+     it normally receives a value, it terminates the Kernel session.
+     (For example, if the system is running a read-eval-print loop, it
+     exits the loop.)
+
+ -- Variable: error-continuation
+     The dynamic extent of this continuation is mutually disjoint from
+     the dynamic extent in which Kernel computation usually occurs
+     (such as the dynamic extent in which the Kernel system would run a
+     read-eval-print loop).
+
+     When this continuation normally receives a value, it provides a
+     diagnostic message to the user of the Kernel system, on the
+     assumption that the received value is an attempt to describe some
+     error that aborted a computation; and then resumes operation of
+     the Kernel system at some point that is outside of all
+     user-defined computation. (For example, if the system is running a
+     read-eval-print loop, operation may resume by continuing from the
+     top of the loop.)
+
+     The diagnostic message is not made available to any Kernel
+     computation, and is therefore permitted to contain information that
+     violates abstractions within the system.
+
+     When an error is signaled during a Kernel computation, the
+     signaling action consists of an abnormal pass to some continuation
+     in the dynamic extent of `error-continuation'.
+
+ -- Applicative: apply-continuation (apply-continuation continuation
+          object)
+     Applicative `apply-continuation' converts its first argument to an
+     applicative as if by `continuation->applicative', and then applies
+     it as usual.
+
+     That is:
+          (apply-continuation continuation object) ==
+            (apply (continuation->applicative continuation) object)
+
+ -- Operative: ($let/cc <symbol> . <objects>)
+     A child environment `e' of the dynamic environment is created,
+     containing a binding of `<symbol>' to the continuation to which
+     the result of the call to `$let/cc' should normally return; then,
+     the subexpressions of `<objects>' are evaluated in `e' from left
+     to right, with the last (if any) evaluated as a tail context, or
+     if `<objects>' is empty the result is inert.
+
+     That is:
+          ($let/cc symbol . objects) ==
+            (call/cc ($lambda (symbol) . objects))
+
+ -- Applicative: guard-dynamic-extent (guard-dynamic-extent
+          entry-guards combiner exit-guards)
+     This applicative extends the current continuation with the
+     specified guards, and calls `combiner' in the dynamic extent of
+     the new continuation, with no operands and the dynamic environment
+     of the call to `guard-dynamic-extent'.
+
+ -- Applicative: exit (exit)
+     Applicative `exit' initiates an abnormal transfer of `#inert' to
+     `root-continuation'.
+
+     That is:
+          (exit ) == (apply-continuation root-continuation #inert)
+
 
 File: klisp.info,  Node: Encapsulations,  Next: Promises,  Prev: Continuations,  Up: Top
 
@@ -1279,6 +1441,7 @@ Index
 * $sequence:                             Control.             (line  23)
 * $set!:                                 Environments.        (line 182)
 * $vau:                                  Combiners.           (line  26)
+* ( <1>:                                 Continuations.       (line 143)
 * (:                                     Environments.        (line 174)
 * and?:                                  Booleans.            (line  20)
 * append:                                Pairs and lists.     (line 208)
@@ -1288,6 +1451,7 @@ Index
 * applicative?:                          Combiners.           (line  21)
 * applicatives:                          Combiners.           (line   6)
 * apply:                                 Combiners.           (line  83)
+* apply-continuation:                    Continuations.       (line 134)
 * assoc:                                 Pairs and lists.     (line 252)
 * assq:                                  Pairs and lists.     (line 333)
 * boolean?:                              Booleans.            (line  12)
@@ -1306,6 +1470,7 @@ Index
 * cadddr:                                Pairs and lists.     (line 108)
 * caddr:                                 Pairs and lists.     (line  96)
 * cadr:                                  Pairs and lists.     (line  90)
+* call/cc:                               Continuations.       (line  43)
 * car:                                   Pairs and lists.     (line  85)
 * cdaaar:                                Pairs and lists.     (line 109)
 * cdaadr:                                Pairs and lists.     (line 110)
@@ -1326,6 +1491,8 @@ Index
 * combiner?:                             Combiners.           (line 120)
 * combiners:                             Combiners.           (line   6)
 * cons:                                  Pairs and lists.     (line  35)
+* continuation->applicative:             Continuations.       (line  95)
+* continuation?:                         Continuations.       (line  38)
 * continuations:                         Continuations.       (line   6)
 * control:                               Control.             (line   6)
 * copy-es:                               Pairs and lists.     (line 321)
@@ -1343,8 +1510,11 @@ Index
 * equal?:                                Equivalence.         (line  16)
 * equivalence:                           Equivalence.         (line   6)
 * error message notation:                Error Messages.      (line   6)
+* error-continuation:                    Continuations.       (line 110)
 * eval:                                  Environments.        (line  32)
 * evaluation notation:                   Evaluation Notation. (line   6)
+* exit:                                  Continuations.       (line 162)
+* extend-continuation:                   Continuations.       (line  50)
 * filter:                                Pairs and lists.     (line 239)
 * finite-list?:                          Pairs and lists.     (line 261)
 * fonts:                                 Some Terms.          (line  13)
@@ -1353,6 +1523,8 @@ Index
 * for-each:                              Control.             (line  42)
 * get-current-environment:               Environments.        (line 114)
 * get-list-metrics:                      Pairs and lists.     (line 123)
+* guard-continuation:                    Continuations.       (line  63)
+* guard-dynamic-extent:                  Continuations.       (line 156)
 * ignore:                                Environments.        (line   6)
 * ignore?:                               Environments.        (line  28)
 * inert:                                 Control.             (line   6)
@@ -1391,6 +1563,7 @@ Index
 * printing notation:                     Printing Notation.   (line   6)
 * promises:                              Promises.            (line   6)
 * reduce:                                Pairs and lists.     (line 270)
+* root-continuation:                     Continuations.       (line 104)
 * set-car!:                              Pairs and lists.     (line  41)
 * set-cdr!:                              Pairs and lists.     (line  42)
 * string->symbol:                        Symbols.             (line  20)
@@ -1425,13 +1598,13 @@ Node: Pairs and lists21741
 Node: Environments38764
 Node: Combiners48971
 Node: Continuations55007
-Node: Encapsulations55133
-Node: Promises55262
-Node: Keyed Variables55381
-Node: Numbers55507
-Node: Strings55616
-Node: Characters55720
-Node: Ports55828
-Node: Index55924
+Node: Encapsulations63181
+Node: Promises63310
+Node: Keyed Variables63429
+Node: Numbers63555
+Node: Strings63664
+Node: Characters63768
+Node: Ports63876
+Node: Index63972
 
 End Tag Table

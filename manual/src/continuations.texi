@@ -7,3 +7,192 @@
 @chapter Continuations
 @cindex continuations
 
+  A continuation is a plan for all future computation, parameterized
+by a value to be provided, and contingent on the states of all mutable
+data structures (which notably may include environments). When the
+Kernel evaluator is invoked, the invoker provides a continuation to
+which the result of the evaluation will normally be returned.
+
+  For example, when @code{$if} evaluates its test operand, the
+continuation provided for the result expects to be given a boolean
+value; and, depending on which boolean it gets, it will evaluate
+either the consequent or the alternative operand as a tail context —
+that is, the continuation provided for the result of evaluating the
+selected operand is the same continuation that was provided for the
+result of the call to @code{$if}.
+
+  A Kernel program may sometimes capture a continuation; that is,
+acquire a reference to it as a first-class object. The basic means of
+continuation capture is applicative @code{call/cc}.  Given a
+first-class continuation @code{c}, a combiner can be constructed that
+will abnormally pass its operand tree to @code{c} (as opposed to the
+@c TODO add xref to abnormal pass
+normal return of values to continuations). In the simplest case, the
+abnormally passed value arrives at @code{c} as if it had been normally
+returned to @code{c}. In general, continuations bypassed by the
+abnormal pass may have entry/exit guards attached to them, and these
+guards can intercept the abnormal pass before it reaches @code{c}.
+Each entry/exit guard consists of a selector continuation, which
+designates which abnormal passes the guard will intercept, and an
+interceptor applicative that performs the interception when selected.
+@c TODO add xref to guard-continuation, continuation->applicative
+@c and abnormal pass
+
+  Continuations are immutable, and are @code{equal?} iff @code{eq?}.
+The continuation type is encapsulated.
+
+@c TODO add dynamic extent & guard selection/interception to the intro
+@deffn Applicative continuation? (continuation? . objects)
+  The primitive type predicate for type continuation.
+@code{continuation?} returns true iff all the objects in
+@code{objects} are of type continuation.
+@end deffn
+
+@deffn Applicative call/cc (call/cc combiner)
+  Calls @code{combiner} in the dynamic environment as a tail context,
+passing as sole operand to it the continuation to which @code{call/cc}
+would normally return its result.  (That is, constructs such a
+combination and evaluates it in the dynamic environment.)
+@c TODO add xref Cf. operative $let/cc , §7.3.2.
+@end deffn
+
+@deffn Applicative extend-continuation (extend-continuation continuation applicative [environment]) 
+  The @code{extend-continuation} applicative constructs and returns a
+new child of @code{continuation} that, when it normally receives a
+value v, calls the underlying combiner of @code{applicative} with
+dynamic environment @code{environment} (or an empty environment if
+none was specified) and operand tree @code{v}, the result of the call
+normally to be returned to @code{continuation}.
+
+  The following equivalnece defines the short version:
+@example
+(extend-continuation c a) @equiv{} 
+  (extend-continuation c a (make-environment))
+@end example
+@end deffn
+
+@deffn Applicative guard-continuation (guard-continuation entry-guards continuation exit-guards)
+  @code{entry-guards} and @code{exit-guards} should each be a list of
+clauses; each clause should be a list of length two, whose first
+element is a continuation, and whose second element is an applicative
+whose underlying combiner is operative.  
+
+  Applicative @code{guard-continuation} constructs two continuations:
+a child of continuation, called the @code{outer continuation}; and a
+child of the @code{outer continuation}, called the @code{inner
+continuation}.  The @code{inner continuation} is returned as the
+result of the call to @code{guard-continuation}.
+
+  When the @code{inner continuation} normally receives a value, it
+passes the value normally to the @code{outer continuation}; and when
+the @code{outer continuation} normally receives a value, it passes the
+value normally to @code{continuation}. Thus, in the absence of
+abnormal passing, the inner and outer continuations each have the same
+behavior as @code{continuation}.
+
+  The two elements of each guard clause are called, respectively, the
+@code{selector} and the @code{interceptor}.  The @code{selector}
+continuation is used in deciding whether to intercept a given abnormal
+pass, and the @code{interceptor} applicative is called to perform
+@c TODO add xref to selection and interception
+customized action when interception occurs.
+
+@c TODO add xref to evaluation structure
+At the beginning of the call to @code{guard-continuation}, internal
+copies are made of the evaluation structures of @code{entry-guards}
+and @code{exit-guards}, so that the selectors and interceptors
+contained in the arguments at that time remain fixed thereafter,
+independent of any subsequent mutations to the arguments.
+@end deffn
+
+@deffn Applicative continuation->applicative (continuation->applicative continuation)
+  Returns an applicative whose underlying operative abnormally passes
+its operand tree to @code{continuation}, thus: A series of
+interceptors are selected to handle the abnormal pass, and a
+continuation is derived that will normally perform all the
+interceptions in sequence and pass some value to the destination of
+the originally abnormal pass.  The operand tree is then normally
+passed to the derived continuation.
+@c TODO add xref to selection and interception
+@end deffn
+
+@defvar root-continuation
+  This continuation is the ancestor of all other continuations. When
+it normally receives a value, it terminates the Kernel session. (For
+example, if the system is running a read-eval-print loop, it exits the
+loop.)
+@c TODO add xref  Cf. applicative exit, §7.3.4.
+@end defvar
+
+@defvar error-continuation
+  The dynamic extent of this continuation is mutually disjoint from
+the dynamic extent in which Kernel computation usually occurs (such as
+the dynamic extent in which the Kernel system would run a
+read-eval-print loop).  
+
+  When this continuation normally receives a value, it provides a
+diagnostic message to the user of the Kernel system, on the assumption
+that the received value is an attempt to describe some error that
+aborted a computation; and then resumes operation of the Kernel system
+at some point that is outside of all user-defined computation. (For
+example, if the system is running a read-eval-print loop, operation
+may resume by continuing from the top of the loop.)
+
+  The diagnostic message is not made available to any Kernel
+computation, and is therefore permitted to contain information that
+violates abstractions within the system.  
+
+@c TODO add details about klisp error messages
+  When an error is signaled during a Kernel computation, the signaling
+action consists of an abnormal pass to some continuation in the
+dynamic extent of @code{error-continuation}.
+@end defvar
+
+@deffn Applicative apply-continuation (apply-continuation continuation object)
+  Applicative @code{apply-continuation} converts its first argument to
+an applicative as if by @code{continuation->applicative}, and then
+applies it as usual.
+
+  That is:
+@example
+(apply-continuation continuation object) @equiv{}
+  (apply (continuation->applicative continuation) object)
+@end example
+@end deffn
+
+@deffn Operative ($let/cc <symbol> . <objects>)
+  A child environment @code{e} of the dynamic environment is created,
+containing a binding of @code{<symbol>} to the continuation to which
+the result of the call to @code{$let/cc} should normally return; then,
+the subexpressions of @code{<objects>} are evaluated in @code{e} from
+left to right, with the last (if any) evaluated as a tail context, or
+if @code{<objects>} is empty the result is inert.
+
+  That is:
+@example
+($let/cc symbol . objects) @equiv{} 
+  (call/cc ($lambda (symbol) . objects))
+@end example
+@end deffn
+
+@deffn Applicative guard-dynamic-extent (guard-dynamic-extent entry-guards combiner exit-guards)
+  This applicative extends the current continuation with the specified
+guards, and calls @code{combiner} in the dynamic extent of the new
+continuation, with no operands and the dynamic environment of the call
+to @code{guard-dynamic-extent}.
+@end deffn
+
+@deffn Applicative exit (exit)
+@c TODO add xref
+  Applicative @code{exit} initiates an abnormal transfer of
+@code{#inert} to @code{root-continuation}.
+
+  That is:
+@example
+(exit ) @equiv{} (apply-continuation root-continuation #inert)
+@end example
+@end deffn
+
+
+
+
