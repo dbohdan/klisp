@@ -446,7 +446,7 @@ external representations of symbols are usually identifiers.  However,
 symbols with other external representations may be created.
 
  -- Applicative: symbol? (symbol? . objects)
-     The primitive type predicate for type symbol. `symbol?' returns
+     The primitive type predicate for type symbol.  `symbol?' returns
      true iff all the objects in `objects' are of type symbol.
 
  -- Applicative: symbol->string (symbol->string symbol)
@@ -1412,6 +1412,78 @@ File: klisp.info,  Node: Promises,  Next: Keyed Variables,  Prev: Encapsulations
 11 Promises
 ***********
 
+A promise is an object that represents the potential to determine a
+value.  The value may be the result of an arbitrary computation that
+will not be performed until the value must be determined (constructor
+`$lazy'); or, in advanced usage, the value may be determined before the
+promise is constructed (constructor `memoize').
+
+   The value determined by a promise is obtained by forcing it
+(applicative `force').  A given promise cannot determine different
+values on different occasions that it is forced.  Also, if a promise
+determines its value by computation, and that computation has already
+been completed, forcing the promise again will produce the previously
+determined result without re-initiating the computation to determine it.
+
+   The Kernel data type promise is encapsulated.
+
+   The general rules for predicate `eq?' only require it to distinguish
+promises if they can exhibit different behavior; the resulting leeway
+for variation between implementations is similar, in both cause and
+effect, to that for `eq?'-ness of operatives.  For example, if two
+promises, constructed on different occasions, would perform the same
+computation to determine their values, and that computation has no
+side-effects and must always return the same value, the promises may or
+may not be `eq?'.  Two promises are `equal?' iff they are `eq?'.
+
+ -- Applicative: promise? (promise? . objects)
+     The primitive type predicate for type promise.  `promise?' returns
+     true iff all the objects in `objects' are of type promise.
+
+ -- Applicative: force (force object)
+     If `object' is a promise, applicative `force' returns the value
+     determined by promise; otherwise, it returns `object'.
+
+     The means used to force a promise depend on how the promise was
+     constructed.  The description of each promise constructor specifies
+     how to force promises constructed by that constructor.
+
+ -- Operative: $lazy ($lazy expression)
+     Operative `$lazy' constructs and returns a new object of type
+     promise, representing potential evaluation of expression in the
+     dynamic environment from which `$lazy' was called.
+
+     When the promise is forced, if a value has not previously been
+     determined for it, `expression' is evaluated in the dynamic
+     environment of the constructing call to `$lazy'.  If, when the
+     evaluation returns a result, a value is found to have been
+     determined for the promise during the evaluation, the result is
+     discarded in favor of the previously determined value; otherwise,
+     the result is forced, and the value returned by that forcing
+     becomes the value determined by the promise.
+
+     Forcing an undetermined lazy promise (i.e., a promise constructed
+     by $lazy for which no value has yet been determined) may cause a
+     sequential series of evaluations, each of which returns a promise
+     that is forced and thus initiates the next evaluation in the
+     series.  The implementation must support series of this kind with
+     unbounded length (i.e., unbounded number of sequential
+     evaluations).
+
+     Note that forcing concerns the value determined by a given promise,
+     not the result of evaluating a given expression in a given
+     environment. Distinct promises (judged by `eq?' represent
+     different occasions of evaluation; so, even if they do represent
+     evaluation of the same expression in the same environment, forcing
+     one does not necessarily determine the value for the other, and
+     actual evaluation will take place the first time each of them is
+     forced.
+
+ -- Applicative: memoize (memoize object)
+     Applicative `memoize' constructs and returns a new object of type
+     promise, representing memoization of `object'.  Whenever the
+     promise is forced, it determines `object'.
+
 
 File: klisp.info,  Node: Keyed Variables,  Next: Numbers,  Prev: Promises,  Up: Top
 
@@ -1458,6 +1530,7 @@ Index
 * $if:                                   Control.             (line  15)
 * $import!:                              Environments.        (line 207)
 * $lambda:                               Combiners.           (line  76)
+* $lazy:                                 Promises.            (line  43)
 * $let:                                  Environments.        (line  89)
 * $let*:                                 Environments.        (line 124)
 * $let-redirect:                         Environments.        (line 153)
@@ -1550,6 +1623,7 @@ Index
 * foo:                                   A Sample Applicative Description.
                                                               (line  15)
 * for-each:                              Control.             (line  42)
+* force:                                 Promises.            (line  35)
 * get-current-environment:               Environments.        (line 114)
 * get-list-metrics:                      Pairs and lists.     (line 123)
 * guard-continuation:                    Continuations.       (line  63)
@@ -1575,6 +1649,7 @@ Index
 * map <1>:                               Combiners.           (line  96)
 * map:                                   Pairs and lists.     (line 169)
 * member?:                               Pairs and lists.     (line 257)
+* memoize:                               Promises.            (line  74)
 * memq?:                                 Pairs and lists.     (line 338)
 * nil:                                   Pairs and lists.     (line   6)
 * not?:                                  Booleans.            (line  16)
@@ -1591,6 +1666,7 @@ Index
 * pairs:                                 Pairs and lists.     (line   6)
 * ports:                                 Ports.               (line   6)
 * printing notation:                     Printing Notation.   (line   6)
+* promise?:                              Promises.            (line  31)
 * promises:                              Promises.            (line   6)
 * reduce:                                Pairs and lists.     (line 270)
 * root-continuation:                     Continuations.       (line 104)
@@ -1623,18 +1699,18 @@ Node: Acknowledgements14338
 Node: Booleans14724
 Node: Equivalence17266
 Node: Symbols18059
-Node: Control19424
-Node: Pairs and lists21741
-Node: Environments38764
-Node: Combiners48971
-Node: Continuations55007
-Node: Encapsulations63181
-Node: Promises64634
-Node: Keyed Variables64753
-Node: Numbers64879
-Node: Strings64988
-Node: Characters65092
-Node: Ports65200
-Node: Index65296
+Node: Control19425
+Node: Pairs and lists21742
+Node: Environments38765
+Node: Combiners48972
+Node: Continuations55008
+Node: Encapsulations63182
+Node: Promises64635
+Node: Keyed Variables68558
+Node: Numbers68684
+Node: Strings68793
+Node: Characters68897
+Node: Ports69005
+Node: Index69101
 
 End Tag Table

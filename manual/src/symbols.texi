@@ -15,7 +15,7 @@ identifiers.  However, symbols with other external representations may
 be created.
 
 @deffn Applicative symbol? (symbol? . objects)
-  The primitive type predicate for type symbol. @code{symbol?}
+  The primitive type predicate for type symbol.  @code{symbol?}
 returns true iff all the objects in @code{objects} are of type symbol.
 @end deffn
 
