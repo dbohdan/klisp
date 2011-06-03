@@ -15,7 +15,7 @@
 #include "kstring.h"
 #include "kgc.h"
 
-/* XXX: per the c spec, this truncates the file if it extists! */
+/* XXX: per the c spec, this truncates the file if it exists! */
 /* Ask John: what would be best? Probably should also include delete,
    file-exists? and a mechanism to truncate or append to a file, or 
    throw error if it exists.
