@@ -25,8 +25,15 @@ for klisp version 0.1.
 Copyright (C) 2011 Andres Navarro
 
 Permission is granted to copy and distribute this manual, in whole or
-in part. 
-@c TODO put up better text for this.
+in part, without fee.  Please note that most text of this
+manual is derived from @cite{The Revised(-1) Report on the Kernel
+Programming Language} by John N. Shutt.  There's a clause in that
+reports, under the header ``Permission to copy this report'', that
+reads:
+@quotation
+This report is intended to belong to the programming community, and so
+permission is granted to copy it in whole or in part without fee.
+@end quotation
 @end ifinfo
 
 @setchapternewpage odd
@@ -51,7 +58,15 @@ May 2011.@*
 @sp 2
 
 Permission is granted to copy and distribute this manual, in whole or
-in part. 
+in part, without fee.  Please note that most text of this
+manual is derived from @cite{The Revised(-1) Report on the Kernel
+Programming Language} by John N. Shutt.  There's a clause in that
+reports, under the header ``Permission to copy this report'', that
+reads:
+@quotation
+This report is intended to belong to the programming community, and so
+permission is granted to copy it in whole or in part without fee.
+@end quotation
 @end titlepage
 @page
 
@@ -64,8 +79,15 @@ corresponding to klisp version 0.1.
 Copyright @copyright{} 2011 Andres Navarro
 
 Permission is granted to copy and distribute this manual, in whole or
-in part. 
-@c TODO put up better text for this.
+in part, without fee.  Please note that most text of this
+manual is derived from @cite{The Revised(-1) Report on the Kernel
+Programming Language} by John N. Shutt.  There's a clause in that
+reports, under the header ``Permission to copy this report'', that
+reads:
+@quotation
+This report is intended to belong to the programming community, and so
+permission is granted to copy it in whole or in part without fee.
+@end quotation
 @end ifinfo
 
 @menu

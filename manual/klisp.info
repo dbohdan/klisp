@@ -9,7 +9,14 @@ This file documents klisp.
    Copyright (C) 2011 Andres Navarro
 
    Permission is granted to copy and distribute this manual, in whole or
-in part.
+in part, without fee.  Please note that most text of this manual is
+derived from `The Revised(-1) Report on the Kernel Programming
+Language' by John N. Shutt.  There's a clause in that reports, under
+the header "Permission to copy this report", that reads:
+
+     This report is intended to belong to the programming community,
+     and so permission is granted to copy it in whole or in part
+     without fee.
 
 
 File: klisp.info,  Node: Top,  Next: License,  Prev: (dir),  Up: (dir)
@@ -20,7 +27,14 @@ corresponding to klisp version 0.1.
    Copyright (C) 2011 Andres Navarro
 
    Permission is granted to copy and distribute this manual, in whole or
-in part.
+in part, without fee.  Please note that most text of this manual is
+derived from `The Revised(-1) Report on the Kernel Programming
+Language' by John N. Shutt.  There's a clause in that reports, under
+the header "Permission to copy this report", that reads:
+
+     This report is intended to belong to the programming community,
+     and so permission is granted to copy it in whole or in part
+     without fee.
 
 * Menu:
 
@@ -1683,34 +1697,34 @@ Index
 
 
 Tag Table:
-Node: Top302
-Node: License1799
-Node: Introduction3470
-Node: Caveats6293
-Node: Kernel History7079
-Node: Conventions8524
-Node: Some Terms9195
-Node: Evaluation Notation9866
-Node: Printing Notation10887
-Node: Error Messages11363
-Node: Format of Descriptions12011
-Node: A Sample Applicative Description12575
-Node: Acknowledgements14338
-Node: Booleans14724
-Node: Equivalence17266
-Node: Symbols18059
-Node: Control19425
-Node: Pairs and lists21742
-Node: Environments38765
-Node: Combiners48972
-Node: Continuations55008
-Node: Encapsulations63182
-Node: Promises64635
-Node: Keyed Variables68558
-Node: Numbers68684
-Node: Strings68793
-Node: Characters68897
-Node: Ports69005
-Node: Index69101
+Node: Top703
+Node: License2601
+Node: Introduction4272
+Node: Caveats7095
+Node: Kernel History7881
+Node: Conventions9326
+Node: Some Terms9997
+Node: Evaluation Notation10668
+Node: Printing Notation11689
+Node: Error Messages12165
+Node: Format of Descriptions12813
+Node: A Sample Applicative Description13377
+Node: Acknowledgements15140
+Node: Booleans15526
+Node: Equivalence18068
+Node: Symbols18861
+Node: Control20227
+Node: Pairs and lists22544
+Node: Environments39567
+Node: Combiners49774
+Node: Continuations55810
+Node: Encapsulations63984
+Node: Promises65437
+Node: Keyed Variables69360
+Node: Numbers69486
+Node: Strings69595
+Node: Characters69699
+Node: Ports69807
+Node: Index69903
 
 End Tag Table
