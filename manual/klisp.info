@@ -1504,6 +1504,61 @@ File: klisp.info,  Node: Keyed Variables,  Next: Numbers,  Prev: Promises,  Up: 
 12 Keyed Variables
 ******************
 
+A keyed variable is a device that associates a non-symbolic key (in the
+form of an accessor applicative) with a value depending on the context
+in which lookup occurs.  Kernel provides two types of keyed variables:
+dynamic & static.  Keyed Dynamic Variables use the dynamic extent as
+context and Keyed Static Variables use the dynamic environment.
+
+12.1 Keyed Dynamic Variables
+============================
+
+A keyed dynamic variable is a device that associates a non-symbolic key
+(in the form of an accessor applicative) with a value depending on the
+dynamic extent in which lookup occurs.
+
+ -- Applicative: make-keyed-dynamic-variable
+          (make-keyed-dynamic-variable)
+     Returns a list of the form `(b a)', where `b' and `a' are
+     applicatives, as follows.  Each call to
+     `make-keyed-dynamic-variable' returns different `b' and `a'.
+
+        * `b' is an applicative that takes two arguments, the second of
+          which must be a combiner.  It calls its second argument with
+          no operands (nil operand tree) in a fresh empty environment,
+          and returns the result.
+
+        * `a' is an applicative that takes zero arguments. If the call
+          to `a' occurs within the dynamic extent of a call to `b', then
+          `a' returns the value of the first argument passed to `b' in
+          the smallest enclosing dynamic extent of a call to `b'. If the
+          call to `a' is not within the dynamic extent of any call to
+          `b', an error is signaled.
+
+12.2 Keyed Static Variables
+===========================
+
+A keyed static variable is a device that binds data in an environment
+by a non-symbolic key, where the key is an accessor applicative.
+
+ -- Applicative: make-keyed-static-variable (make-keyed-static-variable)
+     Returns a list of the form `(b a)', where `b' and `a' are
+     applicatives, as follows.  Each call to
+     `make-keyed-static-variable' returns different `b' and `a'.
+
+        * `b' is an applicative that takes two arguments, the second of
+          which must be an environment.  It constructs and returns a
+          child-environment of its second argument, with initially no
+          local bindings.
+
+        * `a' is an applicative that takes zero arguments. If the
+          dynamic environment `e' of the call to a has an improper
+          ancestor that was constructed by a call to `b', then a
+          returns the value of the first argument passed to `b' in the
+          first such environment encountered by a depth-first traversal
+          of the improper ancestors of `e'. If `e' has no improper
+          ancestors constructed via `b', an error is signaled.
+
 
 File: klisp.info,  Node: Numbers,  Next: Strings,  Prev: Keyed Variables,  Up: Top
 
@@ -1647,8 +1702,8 @@ Index
 * inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
 * Kernel history:                        Kernel History.      (line   6)
-* keyed dynamic variables:               Keyed Variables.     (line   6)
-* keyed static variables:                Keyed Variables.     (line   6)
+* keyed dynamic variables:               Keyed Variables.     (line  15)
+* keyed static variables:                Keyed Variables.     (line  40)
 * keyed variables:                       Keyed Variables.     (line   6)
 * length:                                Pairs and lists.     (line 191)
 * list:                                  Pairs and lists.     (line  72)
@@ -1660,6 +1715,8 @@ Index
 * make-encapsulation-type:               Encapsulations.      (line  12)
 * make-environment:                      Environments.        (line  36)
 * make-kernel-standard-environment:      Environments.        (line 119)
+* make-keyed-dynamic-variable:           Keyed Variables.     (line  21)
+* make-keyed-static-variable:            Keyed Variables.     (line  44)
 * map <1>:                               Combiners.           (line  96)
 * map:                                   Pairs and lists.     (line 169)
 * member?:                               Pairs and lists.     (line 257)
@@ -1721,10 +1778,10 @@ Node: Continuations55810
 Node: Encapsulations63984
 Node: Promises65437
 Node: Keyed Variables69360
-Node: Numbers69486
-Node: Strings69595
-Node: Characters69699
-Node: Ports69807
-Node: Index69903
+Node: Numbers72131
+Node: Strings72240
+Node: Characters72344
+Node: Ports72452
+Node: Index72548
 
 End Tag Table
