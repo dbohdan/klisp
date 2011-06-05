@@ -2213,3 +2213,140 @@ void kexpt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     arith_kapply_cc(K, res);
 }
+
+
+/* init ground */
+void kinit_numbers_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* No complex or bounded reals for now */
+    /* 12.5.1 number?, finite?, integer? */
+    add_applicative(K, ground_env, "number?", ftypep, 2, symbol, 
+		    p2tv(knumberp));
+    add_applicative(K, ground_env, "finite?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kfinitep));
+    add_applicative(K, ground_env, "integer?", ftypep, 2, symbol, 
+		    p2tv(kintegerp));
+    /* 12.5.2 =? */
+    add_applicative(K, ground_env, "=?", ftyped_kbpredp, 3,
+		    symbol, p2tv(knumber_wpvp), p2tv(knum_eqp));
+    /* 12.5.3 <?, <=?, >?, >=? */
+    add_applicative(K, ground_env, "<?", ftyped_kbpredp, 3,
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_ltp));
+    add_applicative(K, ground_env, "<=?", ftyped_kbpredp, 3,
+		    symbol, p2tv(kreal_wpvp),  p2tv(knum_lep));
+    add_applicative(K, ground_env, ">?", ftyped_kbpredp, 3,
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_gtp));
+    add_applicative(K, ground_env, ">=?", ftyped_kbpredp, 3,
+		    symbol, p2tv(kreal_wpvp), p2tv(knum_gep));
+    /* 12.5.4 + */
+    add_applicative(K, ground_env, "+", kplus, 0);
+    /* 12.5.5 * */
+    add_applicative(K, ground_env, "*", ktimes, 0);
+    /* 12.5.6 - */
+    add_applicative(K, ground_env, "-", kminus, 0);
+    /* 12.5.7 zero? */
+    add_applicative(K, ground_env, "zero?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kzerop));
+    /* 12.5.8 div, mod, div-and-mod */
+    add_applicative(K, ground_env, "div", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_DIV));
+    add_applicative(K, ground_env, "mod", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_MOD));
+    add_applicative(K, ground_env, "div-and-mod", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_DIV | FDIV_MOD));
+    /* 12.5.9 div0, mod0, div0-and-mod0 */
+    add_applicative(K, ground_env, "div0", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_ZERO | FDIV_DIV));
+    add_applicative(K, ground_env, "mod0", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_ZERO | FDIV_MOD));
+    add_applicative(K, ground_env, "div0-and-mod0", kdiv_mod, 2, symbol, 
+		    i2tv(FDIV_ZERO | FDIV_DIV | FDIV_MOD));
+    /* 12.5.10 positive?, negative? */
+    add_applicative(K, ground_env, "positive?", ftyped_predp, 3, symbol, 
+		    p2tv(krealp), p2tv(kpositivep));
+    add_applicative(K, ground_env, "negative?", ftyped_predp, 3, symbol, 
+		    p2tv(krealp), p2tv(knegativep));
+    /* 12.5.11 odd?, even? */
+    add_applicative(K, ground_env, "odd?", ftyped_predp, 3, symbol, 
+		    p2tv(kintegerp), p2tv(koddp));
+    add_applicative(K, ground_env, "even?", ftyped_predp, 3, symbol, 
+		    p2tv(kintegerp), p2tv(kevenp));
+    /* 12.5.12 abs */
+    add_applicative(K, ground_env, "abs", kabs, 0);
+    /* 12.5.13 min, max */
+    add_applicative(K, ground_env, "min", kmin_max, 2, symbol, b2tv(FMIN));
+    add_applicative(K, ground_env, "max", kmin_max, 2, symbol, b2tv(FMAX));
+    /* 12.5.14 gcd, lcm */
+    add_applicative(K, ground_env, "gcd", kgcd, 0);
+    add_applicative(K, ground_env, "lcm", klcm, 0);
+    /* 12.6.1 exact?, inexact?, robust?, undefined? */
+    add_applicative(K, ground_env, "exact?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kexactp));
+    add_applicative(K, ground_env, "inexact?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kinexactp));
+    add_applicative(K, ground_env, "robust?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(krobustp));
+    add_applicative(K, ground_env, "undefined?", ftyped_predp, 3, symbol, 
+		    p2tv(knumberp), p2tv(kundefinedp));
+    /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
+    add_applicative(K, ground_env, "get-real-internal-bounds", 
+		    kget_real_internal_bounds, 0);
+    add_applicative(K, ground_env, "get-real-exact-bounds", 
+		    kget_real_exact_bounds, 0);
+    /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
+    add_applicative(K, ground_env, "get-real-internal-primary", 
+		    kget_real_internal_primary, 0);
+    add_applicative(K, ground_env, "get-real-exact-primary", 
+		    kget_real_exact_primary, 0);
+    /* 12.6.4 make-inexact */
+    add_applicative(K, ground_env, "make-inexact", kmake_inexact, 0);
+    /* 12.6.5 real->inexact, real->exact */
+    add_applicative(K, ground_env, "real->inexact", kreal_to_inexact, 0);
+    add_applicative(K, ground_env, "real->exact", kreal_to_exact, 0);
+    /* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
+    add_applicative(K, ground_env, "with-strict-arithmetic", 
+		    kwith_strict_arithmetic, 0);
+    add_applicative(K, ground_env, "get-strict-arithmetic?", 
+		    kget_strict_arithmeticp, 0);
+    /* 12.8.1 rational? */
+    add_applicative(K, ground_env, "rational?", ftypep, 2, symbol, 
+		    p2tv(krationalp));
+    /* 12.8.2 / */
+    add_applicative(K, ground_env, "/", kdivided, 0);
+    /* 12.8.3 numerator, denominator */
+    add_applicative(K, ground_env, "numerator", knumerator, 0);
+    add_applicative(K, ground_env, "denominator", kdenominator, 0);
+    /* 12.8.4 floor, ceiling, truncate, round */
+    add_applicative(K, ground_env, "floor", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_FLOOR));
+    add_applicative(K, ground_env, "ceiling", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_CEILING));
+    add_applicative(K, ground_env, "truncate", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_TRUNCATE));
+    add_applicative(K, ground_env, "round", kreal_to_integer, 2,
+		    symbol, i2tv((int32_t) K_ROUND_EVEN));
+    /* 12.8.5 rationalize, simplest-rational */
+    add_applicative(K, ground_env, "rationalize", krationalize, 0);
+    add_applicative(K, ground_env, "simplest-rational", ksimplest_rational, 0);
+    /* 12.9.1 real? */
+    add_applicative(K, ground_env, "real?", ftypep, 2, symbol, 
+		    p2tv(krealp));
+    /* 12.9.2 exp, log */
+    add_applicative(K, ground_env, "exp", kexp, 0);
+    add_applicative(K, ground_env, "log", klog, 0);
+    /* 12.9.3 sin, cos, tan */
+    add_applicative(K, ground_env, "sin", ktrig, 1, sin);
+    add_applicative(K, ground_env, "cos", ktrig, 1, cos);
+    add_applicative(K, ground_env, "tan", ktrig, 1, tan);
+    /* 12.9.4 asin, acos, atan */
+    add_applicative(K, ground_env, "asin", katrig, 1, asin);
+    add_applicative(K, ground_env, "acos", katrig, 1, acos);
+    add_applicative(K, ground_env, "atan", katan, 0);
+    /* 12.9.5 sqrt */
+    add_applicative(K, ground_env, "sqrt", ksqrt, 0);
+    /* 12.9.6 expt */
+    add_applicative(K, ground_env, "expt", kexpt, 0);
+}

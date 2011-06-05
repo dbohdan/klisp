@@ -221,4 +221,7 @@ inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2)
     return kpositivep(K, n1) == kpositivep(K, n2); 
 }
 
+/* init ground */
+void kinit_numbers_ground_env(klisp_State *K);
+
 #endif

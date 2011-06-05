@@ -1,0 +1,150 @@
+input texinfo  @c -*-texinfo-*-
+@c %**start of header
+@setfilename klisp
+@settitle klisp Reference Manual
+@c %**end of header
+
+@c TODO probably don't use all of these, this is from elisp
+@c Combine indices.
+@synindex cp fn
+@syncodeindex vr fn
+@syncodeindex ky fn
+@syncodeindex pg fn
+@syncodeindex tp fn
+@c oops: texinfo-format-buffer ignores synindex
+@c
+
+@ifinfo
+This file documents klisp.
+
+@c The edition number appears in several places in this file
+@c and also in the file intro.texi.
+This is edition 0.1 of the klisp Reference Manual,  
+for klisp version 0.1.
+
+Copyright (C) 2011 Andres Navarro
+
+Permission is granted to copy and distribute this manual, in whole or
+in part, without fee.  Please note that most text of this
+manual is derived from @cite{The Revised(-1) Report on the Kernel
+Programming Language} by John N. Shutt.  There's a clause in that
+reports, under the header ``Permission to copy this report'', that
+reads:
+@quotation
+This report is intended to belong to the programming community, and so
+permission is granted to copy it in whole or in part without fee.
+@end quotation
+@end ifinfo
+
+@setchapternewpage odd
+
+@titlepage
+@title klisp Reference Manual
+@subtitle klisp version 0.1
+@c The edition number appears in several places in this file
+@c and also in the file intro.texi.
+@subtitle Edition 0.1, May 2011
+
+@author by Andres Navarro
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2011 Andres Navarro
+
+@sp 2
+This is edition 0.1 of the @cite{klisp Reference Manual},
+for klisp Version 01.,@*
+May 2011.@*
+
+@sp 2
+
+Permission is granted to copy and distribute this manual, in whole or
+in part, without fee.  Please note that most text of this
+manual is derived from @cite{The Revised(-1) Report on the Kernel
+Programming Language} by John N. Shutt.  There's a clause in that
+reports, under the header ``Permission to copy this report'', that
+reads:
+@quotation
+This report is intended to belong to the programming community, and so
+permission is granted to copy it in whole or in part without fee.
+@end quotation
+@end titlepage
+@page
+
+@node Top, License, (dir), (dir)
+
+@ifinfo
+This Info file contains edition 0.1 of the klisp Reference Manual,
+corresponding to klisp version 0.1.
+
+Copyright @copyright{} 2011 Andres Navarro
+
+Permission is granted to copy and distribute this manual, in whole or
+in part, without fee.  Please note that most text of this
+manual is derived from @cite{The Revised(-1) Report on the Kernel
+Programming Language} by John N. Shutt.  There's a clause in that
+reports, under the header ``Permission to copy this report'', that
+reads:
+@quotation
+This report is intended to belong to the programming community, and so
+permission is granted to copy it in whole or in part without fee.
+@end quotation
+@end ifinfo
+
+@menu
+* License::                 Conditions for copying and changing klisp.
+* Introduction::            Introduction and conventions used.
+@c TODO lisp types and other introductions
+* Booleans::                Booleans module features.
+* Equivalence::             Equivalence (under & up to) mutation modules features.
+* Symbols::                 Symbols module features.
+* Control::                 Control module features.
+* Pairs and lists::         Pairs and lists and Pair mutation modules features. 
+* Environments::            Environments and Environment mutation modules features. 
+* Combiners::               Combiners module features.
+* Continuations::           Continuations module features.
+* Encapsulations::          Encapsulations module features.
+* Promises::                Promises module features.
+* Keyed Variables::         Keyed (dynamic & static) variables module features.
+* Numbers::                 Numbers module features.
+* Strings::                 Strings module features.
+* Characters::              Characters module features.
+* Ports::                   Ports module features.
+@c TODO add error objs to both klisp and the manual
+* Index::                   Index including concepts, functions, variables,
+                              and other terms.
+
+@c Appendices
+@c TODO
+
+@c TODO add detailed node listing 
+@end menu
+
+@include intro.texi
+@include booleans.texi
+@include equivalence.texi
+@include symbols.texi
+@include control.texi
+@include pairs_lists.texi
+@include environments.texi
+@include combiners.texi
+@include continuations.texi
+@include encapsulations.texi
+@include promises.texi
+@include keyed_vars.texi
+@include numbers.texi
+@include strings.texi
+@include characters.texi
+@include ports.texi
+
+@c appendices
+@c TODO
+
+@include index.texi
+
+@c Print the tables of contents
+@summarycontents
+@contents
+
+@c That's all
+
+@bye

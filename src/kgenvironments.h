@@ -85,4 +85,7 @@ void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree,
 
 void do_let(klisp_State *K, TValue *xparams, TValue obj);
 
+/* init ground */
+void kinit_environments_ground_env(klisp_State *K);
+
 #endif

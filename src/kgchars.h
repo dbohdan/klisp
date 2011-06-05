@@ -76,4 +76,7 @@ bool kchar_ci_lep(TValue ch1, TValue ch2);
 bool kchar_ci_gtp(TValue ch1, TValue ch2);
 bool kchar_ci_gep(TValue ch1, TValue ch2);
 
+/* init ground */
+void kinit_chars_ground_env(klisp_State *K);
+
 #endif

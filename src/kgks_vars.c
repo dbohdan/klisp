@@ -76,3 +76,15 @@ void make_keyed_static_variable(klisp_State *K, TValue *xparams,
 
     kapply_cc(K, ls);
 }
+
+
+/* init ground */
+void kinit_kgks_vars_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 11.1.1 make-keyed-static-variable */
+    add_applicative(K, ground_env, "make-keyed-static-variable", 
+		    make_keyed_static_variable, 0); 
+}

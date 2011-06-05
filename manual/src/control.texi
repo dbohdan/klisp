@@ -1,0 +1,64 @@
+@c -*-texinfo-*-
+@setfilename ../src/control
+
+@node Control, Pairs and lists, Symbols, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Control
+@cindex control
+@cindex inert
+  The inert data type is provided for use with control combiners.  It
+consists of a single immutable value, having external representation
+@code{#inert}.  The inert type is encapsulated.
+
+@deffn Applicative inert? (inert? . objects)
+  The primitive type predicate for type inert. @code{inert?}
+returns true iff all the objects in @code{objects} are of type inert.
+@end deffn
+
+@deffn Operative $if ($if <test> <consequent> <alternative>)
+  The @code{$if} operative first evaluates @code{<test>} in the
+dynamic environment.  If the result is not of type boolean, an error
+is signaled.  If the result is true, @code{<consequent>} is then
+@c TODO add xref to tail context
+evaluated in the dynamic environment as a tail context.  Otherwise,
+@code{<alternative>} is evaluated in the dynamic environment as a tail
+context.
+@end deffn
+
+@deffn Operative $sequence ($sequence . <objects>)
+The @code{$sequence} operative evaluates the elements of the list
+@code{<objects>} in the dynamic environment, one at a time from left
+to right.  If @code{<objects>} is a cyclic list, element evaluation
+continues indefinitely, with elements in the cycle being evaluated
+repeatedly.  If @code{<objects>} is a nonempty finite list, its last
+@c TODO add xref for tail context.
+element is evaluated as a tail context.  If @code{<objects>} is the
+empty list, the result is inert.
+@end deffn
+
+@deffn Operative $cond ($cond . <clauses>)
+@code{<clauses>} should be a list of clause expressions, each of the
+form @code{(<test> . <body>)}, where body is a list of expressions.
+
+The following equivalences define
+the behaviour of the @code{$cond} operative:
+@example
+($cond) @equiv{} #inert
+($cond (<test> . <body>) . <clauses>) @equiv{} 
+  ($if <test> ($sequence . <body>) ($cond . <clauses>))
+@end example
+@end deffn
+
+@deffn Applicative for-each (for-each . lists)
+@code{lists} must be a nonempty list of lists; if there are two or
+more, they should all be the same length. If lists is empty, or if all
+of its elements are not lists of the same length, an error is
+signaled.
+
+@c TODO add xref to map
+@code{for-each} behaves identically to @code{map}, except that instead
+of accumulating and returning a list of the results of the
+element-wise applications, the results of the applications are
+discarded and the result returned by @code{for-each} is inert.
+@end deffn

@@ -12,7 +12,6 @@
 
 #include "kstate.h"
 #include "kobject.h"
-#include "kground.h"
 #include "kpair.h"
 #include "kstring.h" /* for kstring_equalp */
 #include "kcontinuation.h"
@@ -211,4 +210,15 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
     unmark_tree(K, saved_obj2);
     
     return result;
+}
+
+
+/* init ground */
+void kinit_equalp_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+    /* 4.3.1 equal? */
+    /* 6.6.1 equal? */
+    add_applicative(K, ground_env, "equal?", equalp, 0);
 }

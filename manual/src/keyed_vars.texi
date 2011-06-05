@@ -1,0 +1,76 @@
+@c -*-texinfo-*-
+@setfilename ../src/keyed variables
+
+@node Keyed Variables, Numbers, Promises, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Keyed Variables
+@cindex keyed variables
+
+  A keyed variable is a device that associates a non-symbolic key (in
+the form of an accessor applicative) with a value depending on the
+context in which lookup occurs.  Kernel provides two types of keyed
+variables: dynamic & static.  Keyed Dynamic Variables use the dynamic
+extent as context and Keyed Static Variables use the dynamic
+environment.
+
+@section Keyed Dynamic Variables
+@cindex keyed dynamic variables
+@c add cf xref static
+@c TODO add xref to dynamic extent
+  A keyed dynamic variable is a device that associates a non-symbolic
+key (in the form of an accessor applicative) with a value depending on
+the dynamic extent in which lookup occurs.
+
+@deffn Applicative make-keyed-dynamic-variable (make-keyed-dynamic-variable)
+  Returns a list of the form @code{(b a)}, where @code{b} and @code{a}
+are applicatives, as follows.  Each call to
+@code{make-keyed-dynamic-variable} returns different @code{b} and
+@code{a}.
+
+@itemize @bullet
+@item
+@code{b} is an applicative that takes two arguments, the second of
+which must be a combiner.  It calls its second argument with no
+operands (nil operand tree) in a fresh empty environment, and returns
+the result.
+
+@item
+@code{a} is an applicative that takes zero arguments. If the call to
+@code{a} occurs within the dynamic extent of a call to @code{b}, then
+@code{a} returns the value of the first argument passed to @code{b} in
+the smallest enclosing dynamic extent of a call to @code{b}. If the
+call to @code{a} is not within the dynamic extent of any call to
+@code{b}, an error is signaled.
+@end itemize
+@end deffn
+
+@section Keyed Static Variables
+@cindex keyed static variables
+  A keyed static variable is a device that binds data in an
+environment by a non-symbolic key, where the key is an accessor
+applicative.
+@c add cf xref dynamic
+
+@deffn Applicative make-keyed-static-variable (make-keyed-static-variable)
+  Returns a list of the form @code{(b a)}, where @code{b} and @code{a}
+are applicatives, as follows.  Each call to @code{make-keyed-static-variable}
+returns different @code{b} and @code{a}.
+
+@itemize @bullet
+@item
+@code{b} is an applicative that takes two arguments, the second of
+which must be an environment.  It constructs and returns a
+child-environment of its second argument, with initially no local
+bindings.
+
+@item
+@code{a} is an applicative that takes zero arguments. If the dynamic
+environment @code{e} of the call to a has an improper ancestor that
+was constructed by a call to @code{b}, then a returns the value of the
+first argument passed to @code{b} in the first such environment
+encountered by a depth-first traversal of the improper ancestors of
+@code{e}. If @code{e} has no improper ancestors constructed via
+@code{b}, an error is signaled.
+@end itemize
+@end deffn

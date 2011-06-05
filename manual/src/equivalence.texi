@@ -1,0 +1,27 @@
+@c -*-texinfo-*-
+@setfilename ../src/equivalence
+
+@node Equivalence, Symbols, Booleans, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Equivalence
+@cindex equivalence
+
+  Kernel has two general-purpose equivalence predicates (whereas R5RS
+Scheme has three).  The two Kernel predicates correspond to the
+abstract notions of equivalence up to mutation (@code{equal}) and
+equivalence in the presence of mutation (@code{eq?}).
+
+@deffn Applicative eq? (eq? . objects)
+  Predicate @code{eq?} returns true iff all of @code{objects} are
+effectively the same object, even in the presence of mutation. 
+@c todo maybe add more content here, specifical to klisp
+@end deffn
+
+@deffn Applicative equal? (equal? . objects)
+  Predicate @code{equal?} returns true iff all of @code{objects}
+``look'' the same as long as nothing is mutated.  This is a weaker
+predicate than @code{eq?}; that is, @code{equal?} must return true
+whenever @code{eq?} would return true.
+@c todo maybe add more content here, specifical to klisp
+@end deffn

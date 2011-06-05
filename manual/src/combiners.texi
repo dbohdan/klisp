@@ -1,0 +1,156 @@
+@c -*-texinfo-*-
+@setfilename ../src/combiners
+
+@node Combiners, Continuations, Environments, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Combiners
+@cindex combiners
+@cindex applicatives
+@cindex operatives
+
+  There are two types of combiners in Kernel, operative and
+applicative. Both types are encapsulated. All combiners are immutable.
+Two applicatives are @code{eq?} iff their underlying combiners are
+@code{eq?}.  However, @code{eq?}-ness of operatives is only
+constrained by the general rules for @code{eq?}, which leave
+considerable leeway for variation between implementations.  klisp only
+considers @code{eq?} those operatives constructed by the same call to
+a constructor (e.g. @code{$vau}).  Two combiners are @code{equal?}
+iff they are @code{eq?}.
+@c TODO add xref for eq? and equal?
+
+@deffn Applicative operative? (operative? . objects)
+  The primitive type predicate for type operative. @code{operative?}
+returns true iff all the objects in @code{objects} are of type
+operative.
+@end deffn
+
+@deffn Applicative applicative? (applicative? . objects) 
+  The primitive type predicate for type applicative.
+@code{applicative?} returns true iff all the objects in
+@code{objects} are of type applicative.
+@end deffn
+
+@deffn Operative $vau ($vau <formals> <eformal> . <objects>)
+@c TODO add xref to formal parameter tree
+@code{<formals>} should be a formal parameter tree; @code{<eformal>}
+should be either a symbol or @code{#ignore}.  If @code{<formals>} does
+not have the correct form for a formal parameter tree, or if
+@code{<eformal>} is a symbol that also occurs in @code{<formals>}, an
+error is signaled.
+
+  A @code{vau} expression evaluates to an operative; an operative
+created in this way is said to be compound. The environment in which
+the @code{vau} expression was evaluated is remembered as part of the compound
+operative, called the compound operative’s static environment.
+@code{<formals>} and @code{<objects>} are copied as by
+@code{copy-es-immutable} and the copies are stored as part of the
+operative being constructed.  This avoids problem if these structures
+are later mutated.
+
+@c TODO add xref to eval or apply as example
+When the compound operative created by @code{$vau} is later called
+with an object and an environment, here called respectively the
+operand tree and the dynamic environment, the following happens:
+
+@enumerate
+@item
+A new, initially empty environment is created, with the static
+environment as its parent. This will be called the local environment.
+
+@item
+A stored copy of the formal parameter tree formals is matched in the
+local environment to the operand tree, locally binding the symbols of
+@c TODO add xref to matching
+formals to the corresponding parts of the operand tree.  eformal is
+matched to the dynamic environment; that is, if eformal is a symbol
+then that symbol is bound in the local environment to the dynamic
+environment.
+
+@item
+@c TODO add xref to tail context.
+A stored copy of the expressions is evaluated sequentially from left
+to right, with the last (if any) evaluated as a tail context, or if
+the list of expressions is empty, the result is inert.
+@end enumerate
+
+  NOTE: Because compound operatives are not a distinct type in Kernel,
+they are covered by the encapsulation of type operative.  In
+particular, an implementation of Kernel cannot provide a feature that
+supports extracting the static environment of any given compound
+operative, nor that supports determining whether or not a given
+operative is compound.
+@end deffn
+
+
+@deffn Applicative wrap (wrap combiner)
+  The @code{wrap} applicative returns an applicative whose underlying
+combiner is @code{combiner}.
+@end deffn
+
+@deffn Applicative unwrap (unwrap applicative)
+  The @code{unwrap} applicative returns the underlying combiner of
+@code{applicative}.
+@end deffn
+
+@deffn Operative $lambda ($lambda <formals> . <objects>)
+  @code{<formals>} should be a formal parameter tree.
+
+  The @code{$lambda} operative is defined by the following equivalence:
+@example
+($lambda formals . objects) @equiv{} 
+  (wrap ($vau formals #ignore . objects))
+@end example
+@end deffn
+
+@deffn Applicative apply (apply applicative object [environment])
+  Applicative @code{apply} combines the underlying combiner of
+@code{applicative} with @code{object} in a tail context with dynamic
+environment @code{environment} (if the long form is used) or in an
+empty environment (if the short form is used).
+
+The following equivalences hold:
+@example
+(apply applicative object environment) @equiv{}
+  (eval (cons (unwrap applicative) object) environment) 
+
+(apply applicative object) @equiv{}
+  (apply applicative object (make-environment))
+@end example
+@end deffn
+
+@deffn Applicative map (map applicative . lists)
+  @code{lists} must be a nonempty list of lists; if there are two or
+@c TODO add xref to length
+more, they must all have the same length. If @code{lists} is empty, or
+if all of its elements are not lists of the same length, an error is
+signaled.
+  
+  The @code{map} applicative applies @code{applicative} element-wise
+to the elements of the lists in @code{lists} (i.e., applies it to a
+list of the first elements of the @code{lists}, to a list of the
+second elements of the @code{lists}, etc.), using the dynamic
+environment from which @code{map} was called, and returns a list of
+the results, in order. The applications may be performed in any order,
+as long as their results occur in the resultant list in the order of
+their arguments in the original @code{lists}.  If @code{lists} is a
+cyclic list, each argument list to which @code{applicative} is applied
+is structurally isomorphic to @code{lists}.  If any of the elements of
+@code{lists} is a cyclic list, they all must be, or they wouldn’t all
+have the same length.  Let @code{a1...an} be their acyclic prefix
+lengths, and @code{c1...cn} be their cycle lengths.  The acyclic
+prefix length @code{a} of the resultant list will be the maximum of
+the @code{ak}, while the cycle length @code{c} of the resultant list
+will be the least common multiple of the @code{ck}.  In the
+construction of the result, applicative is called exactly @code{a + c}
+times.
+@c TODO comp/xref for-each
+@end deffn
+
+@deffn Applicative combiner? (combiner? . objects)
+  The primitive type predicate for type combiner. @code{combiner?}
+returns true iff all the objects in @code{objects} are of type
+combiner (i.e. applicative or operative).
+@end deffn
+

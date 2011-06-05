@@ -625,3 +625,46 @@ void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree,
 
     ktail_eval(K, expr, denv);
 }
+
+/* init ground */
+void kinit_environments_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.8.1 environment? */
+    add_applicative(K, ground_env, "environment?", typep, 2, symbol, 
+		    i2tv(K_TENVIRONMENT));
+    /* 4.8.2 ignore? */
+    add_applicative(K, ground_env, "ignore?", typep, 2, symbol, 
+		    i2tv(K_TIGNORE));
+    /* 4.8.3 eval */
+    add_applicative(K, ground_env, "eval", eval, 0);
+    /* 4.8.4 make-environment */
+    add_applicative(K, ground_env, "make-environment", make_environment, 0);
+    /* 5.10.1 $let */
+    add_operative(K, ground_env, "$let", Slet, 1, symbol);
+    /* 6.7.1 $binds? */
+    add_operative(K, ground_env, "$binds?", Sbindsp, 0);
+    /* 6.7.2 get-current-environment */
+    add_applicative(K, ground_env, "get-current-environment", 
+		    get_current_environment, 0);
+    /* 6.7.3 make-kernel-standard-environment */
+    add_applicative(K, ground_env, "make-kernel-standard-environment", 
+		    make_kernel_standard_environment, 0);
+    /* 6.7.4 $let* */
+    add_operative(K, ground_env, "$let*", SletS, 1, symbol);
+    /* 6.7.5 $letrec */
+    add_operative(K, ground_env, "$letrec", Sletrec, 1, symbol);
+    /* 6.7.6 $letrec* */
+    add_operative(K, ground_env, "$letrec*", SletrecS, 1, symbol);
+    /* 6.7.7 $let-redirect */
+    add_operative(K, ground_env, "$let-redirect", Slet_redirect, 1, symbol);
+    /* 6.7.8 $let-safe */
+    add_operative(K, ground_env, "$let-safe", Slet_safe, 1, symbol);
+    /* 6.7.9 $remote-eval */
+    add_operative(K, ground_env, "$remote-eval", Sremote_eval, 0);
+    /* 6.7.10 $bindings->environment */
+    add_operative(K, ground_env, "$bindings->environment", 
+		  Sbindings_to_environment, 1, symbol);
+}

@@ -1,0 +1,188 @@
+<html lang="en">
+<head>
+<title>Combiners - klisp Reference Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="klisp Reference Manual">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Environments.html#Environments" title="Environments">
+<link rel="next" href="Continuations.html#Continuations" title="Continuations">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Combiners"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="Continuations.html#Continuations">Continuations</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Environments.html#Environments">Environments</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<!-- node-name,  next,  previous,  up -->
+<h2 class="chapter">8 Combiners</h2>
+
+<p><a name="index-combiners-114"></a><a name="index-applicatives-115"></a><a name="index-operatives-116"></a>
+  There are two types of combiners in Kernel, operative and
+applicative. Both types are encapsulated. All combiners are immutable. 
+Two applicatives are <code>eq?</code> iff their underlying combiners are
+<code>eq?</code>.  However, <code>eq?</code>-ness of operatives is only
+constrained by the general rules for <code>eq?</code>, which leave
+considerable leeway for variation between implementations.  klisp only
+considers <code>eq?</code> those operatives constructed by the same call to
+a constructor (e.g. <code>$vau</code>).  Two combiners are <code>equal?</code>
+iff they are <code>eq?</code>. 
+<!-- TODO add xref for eq? and equal? -->
+
+<div class="defun">
+&mdash; Applicative: <b>operative?</b> (<var>operative? . objects</var>)<var><a name="index-operative_003f-117"></a></var><br>
+<blockquote><p>  The primitive type predicate for type operative. <code>operative?</code>
+returns true iff all the objects in <code>objects</code> are of type
+operative. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>applicative?</b> (<var>applicative? . objects</var>)<var><a name="index-applicative_003f-118"></a></var><br>
+<blockquote><p>  The primitive type predicate for type applicative. 
+<code>applicative?</code> returns true iff all the objects in
+<code>objects</code> are of type applicative. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$vau</b> (<var>$vau &lt;formals&gt; &lt;eformal&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024vau-119"></a></var><br>
+<blockquote><!-- TODO add xref to formal parameter tree -->
+        <p><code>&lt;formals&gt;</code> should be a formal parameter tree; <code>&lt;eformal&gt;</code>
+should be either a symbol or <code>#ignore</code>.  If <code>&lt;formals&gt;</code> does
+not have the correct form for a formal parameter tree, or if
+<code>&lt;eformal&gt;</code> is a symbol that also occurs in <code>&lt;formals&gt;</code>, an
+error is signaled.
+
+        <p>A <code>vau</code> expression evaluates to an operative; an operative
+created in this way is said to be compound. The environment in which
+the <code>vau</code> expression was evaluated is remembered as part of the compound
+operative, called the compound operative’s static environment. 
+<code>&lt;formals&gt;</code> and <code>&lt;objects&gt;</code> are copied as by
+<code>copy-es-immutable</code> and the copies are stored as part of the
+operative being constructed.  This avoids problem if these structures
+are later mutated.
+
+     <!-- TODO add xref to eval or apply as example -->
+        <p>When the compound operative created by <code>$vau</code> is later called
+with an object and an environment, here called respectively the
+operand tree and the dynamic environment, the following happens:
+
+          <ol type=1 start=1>
+<li>A new, initially empty environment is created, with the static
+environment as its parent. This will be called the local environment.
+
+          <li>A stored copy of the formal parameter tree formals is matched in the
+local environment to the operand tree, locally binding the symbols of
+<!-- TODO add xref to matching -->
+formals to the corresponding parts of the operand tree.  eformal is
+matched to the dynamic environment; that is, if eformal is a symbol
+then that symbol is bound in the local environment to the dynamic
+environment.
+
+          <li><!-- TODO add xref to tail context. -->
+A stored copy of the expressions is evaluated sequentially from left
+to right, with the last (if any) evaluated as a tail context, or if
+the list of expressions is empty, the result is inert.
+             </ol>
+
+        <p>NOTE: Because compound operatives are not a distinct type in Kernel,
+they are covered by the encapsulation of type operative.  In
+particular, an implementation of Kernel cannot provide a feature that
+supports extracting the static environment of any given compound
+operative, nor that supports determining whether or not a given
+operative is compound. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>wrap</b> (<var>wrap combiner</var>)<var><a name="index-wrap-120"></a></var><br>
+<blockquote><p>  The <code>wrap</code> applicative returns an applicative whose underlying
+combiner is <code>combiner</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>unwrap</b> (<var>unwrap applicative</var>)<var><a name="index-unwrap-121"></a></var><br>
+<blockquote><p>  The <code>unwrap</code> applicative returns the underlying combiner of
+<code>applicative</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$lambda</b> (<var>$lambda &lt;formals&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024lambda-122"></a></var><br>
+<blockquote><p>  <code>&lt;formals&gt;</code> should be a formal parameter tree.
+
+        <p>The <code>$lambda</code> operative is defined by the following equivalence:
+     <pre class="example">          ($lambda formals . objects) ==
+            (wrap ($vau formals #ignore . objects))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>apply</b> (<var>apply applicative object </var>[<var>environment</var>])<var><a name="index-apply-123"></a></var><br>
+<blockquote><p>  Applicative <code>apply</code> combines the underlying combiner of
+<code>applicative</code> with <code>object</code> in a tail context with dynamic
+environment <code>environment</code> (if the long form is used) or in an
+empty environment (if the short form is used).
+
+        <p>The following equivalences hold:
+     <pre class="example">          (apply applicative object environment) ==
+            (eval (cons (unwrap applicative) object) environment)
+          
+          (apply applicative object) ==
+            (apply applicative object (make-environment))
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>map</b> (<var>map applicative . lists</var>)<var><a name="index-map-124"></a></var><br>
+<blockquote><p>  <code>lists</code> must be a nonempty list of lists; if there are two or
+<!-- TODO add xref to length -->
+more, they must all have the same length. If <code>lists</code> is empty, or
+if all of its elements are not lists of the same length, an error is
+signaled.
+
+        <p>The <code>map</code> applicative applies <code>applicative</code> element-wise
+to the elements of the lists in <code>lists</code> (i.e., applies it to a
+list of the first elements of the <code>lists</code>, to a list of the
+second elements of the <code>lists</code>, etc.), using the dynamic
+environment from which <code>map</code> was called, and returns a list of
+the results, in order. The applications may be performed in any order,
+as long as their results occur in the resultant list in the order of
+their arguments in the original <code>lists</code>.  If <code>lists</code> is a
+cyclic list, each argument list to which <code>applicative</code> is applied
+is structurally isomorphic to <code>lists</code>.  If any of the elements of
+<code>lists</code> is a cyclic list, they all must be, or they wouldn’t all
+have the same length.  Let <code>a1...an</code> be their acyclic prefix
+lengths, and <code>c1...cn</code> be their cycle lengths.  The acyclic
+prefix length <code>a</code> of the resultant list will be the maximum of
+the <code>ak</code>, while the cycle length <code>c</code> of the resultant list
+will be the least common multiple of the <code>ck</code>.  In the
+construction of the result, applicative is called exactly <code>a + c</code>
+times. 
+<!-- TODO comp/xref for-each -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>combiner?</b> (<var>combiner? . objects</var>)<var><a name="index-combiner_003f-125"></a></var><br>
+<blockquote><p>  The primitive type predicate for type combiner. <code>combiner?</code>
+returns true iff all the objects in <code>objects</code> are of type
+combiner (i.e. applicative or operative). 
+</p></blockquote></div>
+
+<!-- *-texinfo-*- -->
+   </body></html>
+

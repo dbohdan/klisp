@@ -200,3 +200,13 @@ void make_keyed_dynamic_variable(klisp_State *K, TValue *xparams,
     kapply_cc(K, ls);
 }
 
+/* init ground */
+void kinit_kgkd_vars_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 10.1.1 make-keyed-dynamic-variable */
+    add_applicative(K, ground_env, "make-keyed-dynamic-variable", 
+		    make_keyed_dynamic_variable, 0); 
+}

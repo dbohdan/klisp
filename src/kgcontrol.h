@@ -44,4 +44,7 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj);
 void do_select_clause(klisp_State *K, TValue *xparams, TValue obj);
 void do_for_each(klisp_State *K, TValue *xparams, TValue obj);
 
+/* init ground */
+void kinit_control_ground_env(klisp_State *K);
+
 #endif

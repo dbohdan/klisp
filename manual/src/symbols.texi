@@ -1,0 +1,41 @@
+@c -*-texinfo-*-
+@setfilename ../src/symbols
+
+@node Symbols, Control, Equivalence, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Symbols
+@cindex symbols
+@c TODO add xref to eq?, identifiers, etc
+  Two symbols are eq? iff they have the same external
+representation. Symbols are immutable, and the symbol type is
+encapsulated.  The external representations of symbols are usually
+identifiers.  However, symbols with other external representations may
+@c TODO add xref to string->symbol
+be created.
+
+@deffn Applicative symbol? (symbol? . objects)
+  The primitive type predicate for type symbol.  @code{symbol?}
+returns true iff all the objects in @code{objects} are of type symbol.
+@end deffn
+
+@deffn Applicative symbol->string (symbol->string symbol)
+  Applicative @code{symbol->string} returns the name of @code{symbol}
+as a string.  The string returned is immutable.
+@end deffn
+
+@deffn Applicative string->symbol (string->symbol string)
+  Applicative @code{string->symbol} returns the symbol with name
+@code{string}.  The symbol is always interned, which means, that it is 
+always the case that:
+@example
+(eq? <symbol> (string->symbol (symbol->string <symbol>)))
+     @result{} #t
+@end example
+@c TODO add xrefs for external representation
+  @code{string->symbol} can create symbols whose external
+representation aren't identifiers.  Right now klisp uses an output-only
+representation, but in the near future it will probably include some
+kind of escaping mechanism to allow arbitrary symbols to have readable
+external representations as in R7RS Scheme.
+@end deffn

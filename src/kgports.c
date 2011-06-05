@@ -341,6 +341,14 @@ TValue read_all_expr(klisp_State *K, TValue port)
 	    return kcutoff_dummy1(K);
 	} else {
 	    TValue new_pair = kimm_cons(K, obj, KNIL);
+#if KTRACK_SI
+	    /* put the source info */
+	    /* XXX: should first read all comments and whitespace,
+	     then save the source info, then read the object and
+	     lastly put the saved source info on the new pair...
+	     For now this will do, but it's not technically correct */
+	    kset_source_info(K, new_pair, ktry_get_si(K, obj));
+#endif
 	    kset_cdr_unsafe(K, tail, new_pair);
 	    tail = new_pair;
 	}
@@ -539,4 +547,88 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* true: don't quote strings, don't escape chars */
     kwrite_display_to_port(K, port, obj, true); 
     kapply_cc(K, KINERT);
+}
+
+/* init ground */
+void kinit_ports_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 15.1.1 port? */
+    add_applicative(K, ground_env, "port?", typep, 2, symbol, 
+		    i2tv(K_TPORT));
+    /* 15.1.2 input-port?, output-port? */
+    add_applicative(K, ground_env, "input-port?", ftypep, 2, symbol, 
+		    p2tv(kis_input_port));
+    add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
+		    p2tv(kis_output_port));
+    /* 15.1.3 with-input-from-file, with-ouput-to-file */
+    add_applicative(K, ground_env, "with-input-from-file", with_file, 
+		    3, symbol, b2tv(false), K->kd_in_port_key);
+    add_applicative(K, ground_env, "with-output-to-file", with_file, 
+		    3, symbol, b2tv(true), K->kd_out_port_key);
+    /* 15.1.4 get-current-input-port, get-current-output-port */
+    add_applicative(K, ground_env, "get-current-input-port", get_current_port, 
+		    2, symbol, K->kd_in_port_key);
+    add_applicative(K, ground_env, "get-current-output-port", get_current_port, 
+		    2, symbol, K->kd_out_port_key);
+    /* 15.1.5 open-input-file, open-output-file */
+    add_applicative(K, ground_env, "open-input-file", open_file, 2, symbol, 
+		    b2tv(false));
+    add_applicative(K, ground_env, "open-output-file", open_file, 2, symbol, 
+		    b2tv(true));
+    /* 15.1.6 close-input-file, close-output-file */
+    /* ASK John: should this be called close-input-port & close-ouput-port 
+       like in r5rs? that doesn't seem consistent with open thou */
+    add_applicative(K, ground_env, "close-input-file", close_file, 2, symbol, 
+		    b2tv(false));
+    add_applicative(K, ground_env, "close-output-file", close_file, 2, symbol, 
+		    b2tv(true));
+    /* 15.1.7 read */
+    add_applicative(K, ground_env, "read", read, 0);
+    /* 15.1.8 write */
+    add_applicative(K, ground_env, "write", write, 0);
+
+    /*
+    ** These are from scheme (r5rs)
+    */
+
+    /* 15.1.? eof-object? */
+    add_applicative(K, ground_env, "eof-object?", typep, 2, symbol, 
+		    i2tv(K_TEOF));
+    /* 15.1.? newline */
+    add_applicative(K, ground_env, "newline", newline, 0);
+    /* 15.1.? write-char */
+    add_applicative(K, ground_env, "write-char", write_char, 0);
+    /* 15.1.? read-char */
+    add_applicative(K, ground_env, "read-char", read_peek_char, 2, symbol, 
+		    b2tv(false));
+    /* 15.1.? peek-char */
+    add_applicative(K, ground_env, "peek-char", read_peek_char, 2, symbol, 
+		    b2tv(true));
+    /* 15.1.? char-ready? */
+    /* XXX: this always return #t, proper behaviour requires platform 
+       specific code (probably select for posix, a thread for windows
+       (at least for files & consoles), I think pipes and sockets may
+       have something */
+    add_applicative(K, ground_env, "char-ready?", char_readyp, 0);
+    /* 15.2.1 call-with-input-file, call-with-output-file */
+    add_applicative(K, ground_env, "call-with-input-file", call_with_file, 
+		    2, symbol, b2tv(false));
+    add_applicative(K, ground_env, "call-with-output-file", call_with_file, 
+		    2, symbol, b2tv(true));
+    /* 15.2.2 load */
+    add_applicative(K, ground_env, "load", load, 0);
+    /* 15.2.3 get-module */
+    add_applicative(K, ground_env, "get-module", get_module, 0);
+    /* 15.2.? display */
+    add_applicative(K, ground_env, "display", display, 0);
+
+    /* MAYBE: That's all there is in the report combined with r5rs scheme, 
+       but we will probably need: file-exists?, rename-file and remove-file.
+       It would also be good to be able to select between append, truncate and
+       error if a file exists, but that would need to be an option in all three 
+       methods of opening. Also some directory checking, traversing etc */
+    /* BUT SEE r7rs draft for some of the above */
 }

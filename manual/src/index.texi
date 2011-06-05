@@ -1,0 +1,10 @@
+@c -*-texinfo-*-
+@setfilename ../src/index
+
+@c TODO correct prev node
+@node Index, (dir), Ports, Top
+@c this is from the elisp manual... Should read a little about this.
+@unnumbered Index
+
+@printindex fn
+

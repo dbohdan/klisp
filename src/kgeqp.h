@@ -59,4 +59,7 @@ inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
     return res;
 }
 
+/* init ground */
+void kinit_eqp_ground_env(klisp_State *K);
+
 #endif

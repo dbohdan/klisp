@@ -1,0 +1,2038 @@
+This is ../klisp.info, produced by makeinfo version 4.13 from
+klisp.texi.
+
+This file documents klisp.
+
+   This is edition 0.1 of the klisp Reference Manual, for klisp version
+0.1.
+
+   Copyright (C) 2011 Andres Navarro
+
+   Permission is granted to copy and distribute this manual, in whole or
+in part, without fee.  Please note that most text of this manual is
+derived from `The Revised(-1) Report on the Kernel Programming
+Language' by John N. Shutt.  There's a clause in that reports, under
+the header "Permission to copy this report", that reads:
+
+     This report is intended to belong to the programming community,
+     and so permission is granted to copy it in whole or in part
+     without fee.
+
+
+File: klisp.info,  Node: Top,  Next: License,  Prev: (dir),  Up: (dir)
+
+   This Info file contains edition 0.1 of the klisp Reference Manual,
+corresponding to klisp version 0.1.
+
+   Copyright (C) 2011 Andres Navarro
+
+   Permission is granted to copy and distribute this manual, in whole or
+in part, without fee.  Please note that most text of this manual is
+derived from `The Revised(-1) Report on the Kernel Programming
+Language' by John N. Shutt.  There's a clause in that reports, under
+the header "Permission to copy this report", that reads:
+
+     This report is intended to belong to the programming community,
+     and so permission is granted to copy it in whole or in part
+     without fee.
+
+* Menu:
+
+* License::                 Conditions for copying and changing klisp.
+* Introduction::            Introduction and conventions used.
+* Booleans::                Booleans module features.
+* Equivalence::             Equivalence (under & up to) mutation modules features.
+* Symbols::                 Symbols module features.
+* Control::                 Control module features.
+* Pairs and lists::         Pairs and lists and Pair mutation modules features.
+* Environments::            Environments and Environment mutation modules features.
+* Combiners::               Combiners module features.
+* Continuations::           Continuations module features.
+* Encapsulations::          Encapsulations module features.
+* Promises::                Promises module features.
+* Keyed Variables::         Keyed (dynamic & static) variables module features.
+* Numbers::                 Numbers module features.
+* Strings::                 Strings module features.
+* Characters::              Characters module features.
+* Ports::                   Ports module features.
+* Index::                   Index including concepts, functions, variables,
+                              and other terms.
+
+
+File: klisp.info,  Node: License,  Next: Introduction,  Prev: Top,  Up: Top
+
+   klisp is licensed under the terms of the MIT license reproduced
+below.  This means that klisp is free software and can be used for both
+academic and commercial purposes at absolutely no cost.  The two
+projects whose code klisp uses, Lua & IMath, are also distributed under
+the MIT license.
+
+   * klisp Parts: Copyright (C) 2011 Andres Navarro.
+
+   * Lua Parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
+
+   * IMath Parts: Copyright (C) 2002-2007 Michael J. Fromberger.
+
+   * srfi-78: Copyright (C) 2005-2006 Sebastian Egner.
+
+MIT/X11 License
+***************
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+   The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+File: klisp.info,  Node: Introduction,  Next: Booleans,  Prev: License,  Up: Top
+
+1 Introduction
+**************
+
+klisp is an open source interpreter for the Kernel Programming
+Language.  It aims at being comprehensive and robust as specified in
+the `Revised(-1) Report on the Kernel Programming Language', but that
+probably won't happen for some time.  It is written in C99 under the
+MIT license.  It draws heavily from the Lua interpreter source code &
+file structure.  It uses the IMath library for arbitrary sized integers
+and rationals.
+
+   The Kernel programming language is a statically scoped and properly
+tail-recursive dialect of Lisp, descended from Scheme.  It is designed
+to be simpler and more general than Scheme, with an exceptionally
+clear, simple, and versatile semantics, only one way to form compound
+expressions, and no inessential restrictions on the power of that one
+compound form.  Imperative, functional, and message-passing programming
+styles (to name a few) may be conveniently expressed in Kernel.
+
+   An important property of Kernel is that all manipulable entities in
+Kernel are first-class objects.  In particular, Kernel has no
+second-class combiners; instead, the roles of special forms and macros
+are subsumed by operatives, which are first-class, statically scoped
+combiners that act directly on their unevaluated operands.  Kernel also
+has a second type of combiners, applicatives, which act on their evalu-
+ated arguments.  Applicatives are roughly equivalent to Scheme
+procedures.  However, an applicative is nothing more than a wrapper to
+induce operand evaluation, around an underlying operative (or, in
+principle, around another applicative, though that isn’t usually done);
+applicatives themselves are mere facilitators to computation.
+
+   You can read more about Kernel at
+`http://web.cs.wpi.edu/~jshutt/kernel.html'.
+
+   klisp is freely available for both academic and commercial purposes.
+See LICENSE for details.  it can be downloaded at
+`http://www.bitbucket.org/AndresNavarro/klisp'
+
+   klisp is developed by Andres Navarro, a Computer Science
+undergraduate at Buenos Aires University (UBA).  You can reach him at
+<canavarro82@gmail.com>.
+
+   This manual describes klisp version 0.1, presuming some familiarity
+with the Lisp family of languages in general, and with the Kernel
+Programming Language in particular.  There are frequent references to
+the Kernel Programming Language Report.  Unlike in the report, no
+rationale is provided for any feature, only a description of the
+implemented functionality.
+
+   This is edition 0.1.
+
+* Menu:
+
+* Caveats::                Flaws and a request for help.
+* Kernel History::         Kernel is descended from Scheme.
+* Conventions::            How the manual is formatted.
+* Acknowledgements::       Contributions to this manual.
+
+
+File: klisp.info,  Node: Caveats,  Next: Kernel History,  Prev: Introduction,  Up: Introduction
+
+1.1 Caveats
+===========
+
+This is the first draft of this manual.  It will be incomplete for some
+time.  It will also evolve, together with klisp and the Kernel
+Programming Language, both of which, right now, are in a quite fluid
+state.
+
+   The main reference on Kernel is the preliminary report: `Revised(-1)
+Report on the Kernel Programming Language'.  Some sections of the
+report are still incomplete, so both klisp and this manual will use
+specifications from other languages in these sections, trying to follow
+the Kernel spirit.  These instances will be documented throughout the
+manual.
+
+   Please mail comments and corrections to <canavarro82@gmail.com>.
+
+
+      -Andres Navarro
+
+
+File: klisp.info,  Node: Kernel History,  Next: Conventions,  Prev: Caveats,  Up: Introduction
+
+1.2 Kernel History
+==================
+
+The Kernel Programming Language is a work in progress.  It is being
+developed by John N. Shutt, Ph.D, who created it while studying at the
+Worcester Polytechnic Institute (I think about 2002, or so... ASK).  It
+is descended from scheme, with the idea that all objects should be
+first class values.  In particular, Kernel replaces macros with
+operatives (kinda like statically scoped fexprs and fsubrs) and has
+first class environments.  Kernel also has the notion of encapsulated
+objects which limits the ammount of information an implementation can
+share with a Kernel program (e.g. There is no way in Kernel to get the
+parents or a complete list of bindings of an environment object).
+
+   The main reference on Kernel is the preliminary report: `Revised(-1)
+Report on the Kernel Programming Language'.  Some sections of the
+report are still incomplete, so both klisp and this manual will use
+specifications from other languages in these sections, trying to follow
+the Kernel spirit.  These instances will be documented throughout the
+manual.
+
+   You can read all about Kernel at John's homepage at WPI
+`http://www.cs.wpi.edu/~jshutt/', including the preliminary report on
+the language and his doctoral dissertation which gives a theorethical
+frame for fexprs.  You can contact him at <jshutt@cs.wpi.edu>.
+
+
+File: klisp.info,  Node: Conventions,  Next: Acknowledgements,  Prev: Kernel History,  Up: Introduction
+
+1.3 Conventions
+===============
+
+This section explains the notational conventions that are used in this
+manual.  You may want to skip this section and refer back to it later.
+
+* Menu:
+
+* Some Terms::               Explanation of terms we use in this manual.
+* Evaluation Notation::      The format we use for examples of evaluation.
+* Printing Notation::        The format we use for examples that print output.
+* Error Messages::           The format we use for examples of errors.
+* Format of Descriptions::   Notation for describing functions, variables, etc.
+
+
+File: klisp.info,  Node: Some Terms,  Next: Evaluation Notation,  Prev: Conventions,  Up: Conventions
+
+1.3.1 Some Terms
+----------------
+
+Throughout this manual, the phrases "the Kernel reader" and "the Kernel
+printer" are used to refer to those routines in Lisp that convert
+textual representations of Kernel objects into actual objects, and vice
+versa.  XXX Printed Representation XXX, for more details.  You, the
+person reading this manual, are assumed to be "the programmer" or "the
+user".
+
+   Examples of Kernel code appear in this font or form: `(list 1 2 3)'.
+Names that represent arguments or metasyntactic variables appear in
+this font or form: FIRST-NUMBER.
+
+
+File: klisp.info,  Node: Evaluation Notation,  Next: Printing Notation,  Prev: Some Terms,  Up: Conventions
+
+1.3.2 Evaluation Notation
+-------------------------
+
+When you evaluate a piece of Kernel code, it produces a result.  In the
+examples in this manual, this is indicated with `=>':
+
+     (car (cons 1 2))
+          => 1
+
+You can read this as "`(car (cons 1 2))' evaluates to 1".
+
+   The semantics of a language feature are sometimes clarified, or even
+defined, in its entry by specifying that two expressions are
+equivalent.  This is notated with `=='.  For example, the semantics of
+applicative list* can be defined by following equivalences:
+     (list* arg1) == arg1
+     (list* arg1 . more-args) == (cons arg1 (list* . more-args))
+   Notice that in these kind of examples the applicatives or operatives
+referred to are the first class values and not the symbols bound to
+them in the ground environment.  This definition would hold even if
+`cons' or `list*' were redefined in the current dynamic environment.
+
+
+File: klisp.info,  Node: Printing Notation,  Next: Error Messages,  Prev: Evaluation Notation,  Up: Conventions
+
+1.3.3 Printing Notation
+-----------------------
+
+Many of the examples in this manual print text when they are evaluated.
+In examples that print text, the printed text is indicated with `-|'.
+The value returned by evaluating the form (here `#t') follows on a
+separate line.
+
+     ($sequence (write 1) (write 2) #t)
+          -| 1
+          -| 2
+          => #t
+
+
+File: klisp.info,  Node: Error Messages,  Next: Format of Descriptions,  Prev: Printing Notation,  Up: Conventions
+
+1.3.4 Error Messages
+--------------------
+
+Some examples cause errors to be signaled.  The report doesn't specify
+what objects are passed to the error continuation, but in klisp,
+objects passed to the error continuation are encapsulated error objects
+that have at least a message and possibly some additional objects and
+context informations (such as source code location).  In the examples,
+the error message is shown on a line starting with `error-->'.
+
+     (+ 23 #t)
+     error--> Wrong type argument: (expected number) (#t)
+
+
+File: klisp.info,  Node: Format of Descriptions,  Prev: Error Messages,  Up: Conventions
+
+1.3.5 Format of Descriptions
+----------------------------
+
+Applicatives, operatives, and other objects are described in this manual
+in a uniform format.  The first line of a description contains the name
+of the item followed by its operands or arguments, if any.  The
+category--operative, applicative, or whatever--appears at the beginning
+of the line.  The description follows on succeeding lines, sometimes
+with examples.
+
+* Menu:
+
+* A Sample Applicative Description::
+
+
+File: klisp.info,  Node: A Sample Applicative Description,  Prev: Format of Descriptions,  Up: Format of Descriptions
+
+1.3.5.1 A Sample Applicative Description
+........................................
+
+In an applicative description, the name of the applicative being
+described appears first.  It is followed on the same line by an
+applicative combination that includes the name of the applicative and
+the arguments, as would appear in a program.  The names used for the
+arguments are also used in the body of the description.
+
+   Here is a description of an imaginary applicative `foo':
+
+ -- Applicative: foo (foo integer1 integer2 . rest)
+     The applicative `foo' subtracts INTEGER1 from INTEGER2, then adds
+     all the rest of the arguments to the result.
+
+          (foo 1 5 3 9)
+               => 16
+
+     More generally,
+
+          (foo W X Y...)
+          ==
+          (+ (- X W) Y...)
+
+   Any parameter whose name contains the name of a type (e.g., INTEGER,
+INTEGER1 or CONTINUATION) is expected to be of that type.  A plural of
+a type (such as NUMBERS) often means a list of objects of that type.
+Parameters named OBJECT may be of any type.  Additionally parameters
+named K, or KN (for any value of N), should be exact, non-negative
+integers.  (XXX Types of Lisp Object XXX, for a list of Kernel object
+types.)  Parameters with other sorts of names are discussed
+specifically in the description of the combiner.  In some sections,
+features common to parameters of several combiners are described at the
+beginning.
+
+   Operative descriptions have the same format, but the word
+`Applicative' is  replaced by `Operative', and `Argument' is replaced
+by `Operand'.  Also Operatives always have an environment parameter
+(that can be #ignore or a symbol).
+
+
+File: klisp.info,  Node: Acknowledgements,  Prev: Conventions,  Up: Introduction
+
+1.4 Acknowledgements
+====================
+
+This manual was written by Andres Navarro.
+
+   The structure and some text for this introductory section were
+borrowed from the Elisp Manual by the Free Sofware Foundation.  This
+manual also borrows freely from both the Kernel Report and the Scheme
+Reports.
+
+
+File: klisp.info,  Node: Booleans,  Next: Equivalence,  Prev: Introduction,  Up: Top
+
+2 Booleans
+**********
+
+The boolean data type consists of two values, which are called true and
+false, and have respectively external representations `#t' and `#f'.
+There are no possible mutations of either of these two values, and the
+boolean type is encapsulated.
+
+ -- Applicative: boolean? (boolean? . objects)
+     The primitive type predicate for type boolean.  `boolean?' returns
+     true iff all the objects in `objects' are of type boolean.
+
+ -- Applicative: not? (not? boolean)
+     Applicative `not?' is a predicate that returns the logical
+     negation of its argument.
+
+ -- Applicative: and? (and? . booleans)
+     Applicative `and?' is a predicate that returns true unless one or
+     more of its arguments are false.
+
+ -- Applicative: or? (or? . booleans)
+     Applicative `or?' is a predicate that returns false unless one or
+     more of its arguments are true.
+
+ -- Operative: $and? ($and? . <list>)
+     The `$and?' operative performs a "short-circuit and" of its
+     operands.  It evaluates them from left to right, until either an
+     operand evaluates to false, or the end of the list is reached.  If
+     the end of the list is reached (which is immediate if `<list>' is
+     `nil'), the operative returns true.  If an operand evaluates to
+     false, no further operand evaluations are performed, and the
+     operative returns false.  If `<list>' is acyclic, and the last
+     operand is evaluated, it is evaluated as a tail context.  If
+     `<list>' is cyclic, an unbounded number of operand evaluations may
+     be performed.  If any of the operands evaluates to a non-boolean
+     value, an error is signaled (even if it's the last one).
+
+ -- Operative: $or? ($or? . <list>)
+     The `$or?' operative performs a "short-circuit or" of its
+     operands.  It evaluates them from left to right, until either an
+     operand evaluates to true, or the end of the list is reached.  If
+     the end of the list is reached (which is immediate if `<list>' is
+     `nil'), the operative returns false.  If an operand evaluates to
+     true, no further operand evaluations are performed, and the
+     operative returns true.  If `<list>' is acyclic, and the last
+     operand is evaluated, it is evaluated as a tail context.  If
+     `<list>' is cyclic, an unbounded number of operand evaluations may
+     be performed.  If any of the operands evaluates to a non-boolean
+     value, an error is signaled (even if it's the last one).
+
+
+File: klisp.info,  Node: Equivalence,  Next: Symbols,  Prev: Booleans,  Up: Top
+
+3 Equivalence
+*************
+
+Kernel has two general-purpose equivalence predicates (whereas R5RS
+Scheme has three).  The two Kernel predicates correspond to the
+abstract notions of equivalence up to mutation (`equal') and
+equivalence in the presence of mutation (`eq?').
+
+ -- Applicative: eq? (eq? . objects)
+     Predicate `eq?' returns true iff all of `objects' are effectively
+     the same object, even in the presence of mutation.
+
+ -- Applicative: equal? (equal? . objects)
+     Predicate `equal?' returns true iff all of `objects' "look" the
+     same as long as nothing is mutated.  This is a weaker predicate
+     than `eq?'; that is, `equal?' must return true whenever `eq?'
+     would return true.
+
+
+File: klisp.info,  Node: Symbols,  Next: Control,  Prev: Equivalence,  Up: Top
+
+4 Symbols
+*********
+
+Two symbols are eq? iff they have the same external representation.
+Symbols are immutable, and the symbol type is encapsulated.  The
+external representations of symbols are usually identifiers.  However,
+symbols with other external representations may be created.
+
+ -- Applicative: symbol? (symbol? . objects)
+     The primitive type predicate for type symbol.  `symbol?' returns
+     true iff all the objects in `objects' are of type symbol.
+
+ -- Applicative: symbol->string (symbol->string symbol)
+     Applicative `symbol->string' returns the name of `symbol' as a
+     string.  The string returned is immutable.
+
+ -- Applicative: string->symbol (string->symbol string)
+     Applicative `string->symbol' returns the symbol with name
+     `string'.  The symbol is always interned, which means, that it is
+     always the case that:
+          (eq? <symbol> (string->symbol (symbol->string <symbol>)))
+               => #t
+       `string->symbol' can create symbols whose external
+     representation aren't identifiers.  Right now klisp uses an
+     output-only representation, but in the near future it will
+     probably include some kind of escaping mechanism to allow
+     arbitrary symbols to have readable external representations as in
+     R7RS Scheme.
+
+
+File: klisp.info,  Node: Control,  Next: Pairs and lists,  Prev: Symbols,  Up: Top
+
+5 Control
+*********
+
+The inert data type is provided for use with control combiners.  It
+consists of a single immutable value, having external representation
+`#inert'.  The inert type is encapsulated.
+
+ -- Applicative: inert? (inert? . objects)
+     The primitive type predicate for type inert. `inert?' returns true
+     iff all the objects in `objects' are of type inert.
+
+ -- Operative: $if ($if <test> <consequent> <alternative>)
+     The `$if' operative first evaluates `<test>' in the dynamic
+     environment.  If the result is not of type boolean, an error is
+     signaled.  If the result is true, `<consequent>' is then evaluated
+     in the dynamic environment as a tail context.  Otherwise,
+     `<alternative>' is evaluated in the dynamic environment as a tail
+     context.
+
+ -- Operative: $sequence ($sequence . <objects>)
+     The `$sequence' operative evaluates the elements of the list
+     `<objects>' in the dynamic environment, one at a time from left to
+     right.  If `<objects>' is a cyclic list, element evaluation
+     continues indefinitely, with elements in the cycle being evaluated
+     repeatedly.  If `<objects>' is a nonempty finite list, its last
+     element is evaluated as a tail context.  If `<objects>' is the
+     empty list, the result is inert.
+
+ -- Operative: $cond ($cond . <clauses>)
+     `<clauses>' should be a list of clause expressions, each of the
+     form `(<test> . <body>)', where body is a list of expressions.
+
+     The following equivalences define the behaviour of the `$cond'
+     operative:
+          ($cond) == #inert
+          ($cond (<test> . <body>) . <clauses>) ==
+            ($if <test> ($sequence . <body>) ($cond . <clauses>))
+
+ -- Applicative: for-each (for-each . lists)
+     `lists' must be a nonempty list of lists; if there are two or
+     more, they should all be the same length. If lists is empty, or if
+     all of its elements are not lists of the same length, an error is
+     signaled.
+
+     `for-each' behaves identically to `map', except that instead of
+     accumulating and returning a list of the results of the
+     element-wise applications, the results of the applications are
+     discarded and the result returned by `for-each' is inert.
+
+
+File: klisp.info,  Node: Pairs and lists,  Next: Environments,  Prev: Control,  Up: Top
+
+6 Pairs and lists
+*****************
+
+A pair is an object that refers to two other objects, called its car
+and cdr.  The Kernel data type pair is encapsulated.
+
+   The null data type consists of a single immutable value, called nil
+or the empty list and having external representation `()', with or
+without whitespace between the parentheses. It is immutable, and the
+null type is encapsulated.
+
+   If `a' and `d' are external representations of respectively the car
+and cdr of a pair `p', then `(a . d)' is an external representation of
+`p'. If the cdr of `p' is nil, then `(a)' is also an external
+representation of `p'. If the cdr of `p' is a pair `p2', and `(r)' is
+an external representation of `p2', then `(a r)' is an external
+representation of `p'.    When a pair is output (as by write), an
+external representation with the fewest parentheses is used; in the
+case of a finite list, only one set of parentheses is required beyond
+those used in representing the elements of the list. For example, an
+object with external representation `(1 . (2 . (3 . ())))' would be
+output using, modulo whitespace, external representation `(1 2 3)'.
+
+ -- Applicative: pair? (pair? . objects)
+     The primitive type predicate for type pair.  `pair?' returns true
+     iff all the objects in `objects' are of type pair.
+
+ -- Applicative: null? (null? . objects)
+     The primitive type predicate for type null.  `null?' returns true
+     iff all the objects in `objects' are of type null.
+
+ -- Applicative: cons (cons object1 object2)
+     A new mutable pair object is constructed and returned, whose car
+     and cdr referents are respectively `object1' and `object2'.  No
+     two objects returned by different calls to cons are `eq?' to each
+     other.
+
+ -- Applicative: set-car! (set-car! pair object)
+ -- Applicative: set-cdr! (set-cdr! pair object)
+     `pair' should be a mutable pair.
+
+     These applicatives set the referent of, respectively, the car
+     reference or the cdr reference of `pair' to `object'.  The result
+     of the expression is inert.
+
+ -- Applicative: copy-es-immutable! (copy-es-immutable object)
+     The short description of this applicative is that it returns an
+     object `equal?' to `object' with an immutable evaluation
+     structure. The "-es-" in the name is short for "evaluation
+     structure".
+
+     The evaluation structure of an object `o' is defined to be the set
+     of all pairs that can be reached by following chains of references
+     from `o' without ever passing through a non-pair object. The
+     evaluation structure of a non-pair object is empty.
+
+     If `object' is not a pair, the applicative returns `object'.
+     Otherwise (if `object' is a pair), the applicative returns an
+     immutable pair whose car and cdr would be suitable results for
+     `(copy-es-immutable (car object))' and `(copy-es-immutable (cdr
+     object))', respectively.  Further, the evaluation structure of the
+     returned value is isomorphic to that of `object' at the time of
+     copying, with corresponding non-pair referents being `eq?'.
+
+     NOTE: In Kernel it's undefined whether immutable pairs are copied
+     or left "as is" in the result.  klisp doesn't copy immutable
+     pairs, but that behaviour should not be depended upon.
+
+ -- Applicative: list (list . objects)
+     The `list' applicative returns `objects'.
+
+     The underlying operative of `list' returns its undifferentiated
+     operand tree, regardless of whether that tree is or is not a list.
+
+ -- Applicative: list* (list* . objects)
+     `objects' should be a finite nonempty list of arguments.
+
+     The following equivalences hold:
+          (list* arg1) == arg1
+          (list* arg1 arg2 . args) == (cons arg1 (list* arg2 . args))
+
+ -- Applicative: car (car pair)
+ -- Applicative: cdr (cdr pair)
+     These applicatives return, respectively, the car and cdr of `pair'.
+
+ -- Applicative: caar (caar pair)
+ -- Applicative: cadr (cadr pair)
+ -- Applicative: cdar (cdar pair)
+ -- Applicative: cddr (cddr pair)
+ -- Applicative: caaar (caaar pair)
+ -- Applicative: caadr (caadr pair)
+ -- Applicative: cadar (cadar pair)
+ -- Applicative: caddr (caddr pair)
+ -- Applicative: cdaar (cdaar pair)
+ -- Applicative: cdadr (cdadr pair)
+ -- Applicative: cddar (cddar pair)
+ -- Applicative: cdddr (cdddr pair)
+ -- Applicative: caaaar (caaaar pair)
+ -- Applicative: caaadr (caaadr pair)
+ -- Applicative: caadar (caadar pair)
+ -- Applicative: caaddr (caaddr pair)
+ -- Applicative: cadaar (cadaar pair)
+ -- Applicative: cadadr (cadadr pair)
+ -- Applicative: caddar (caddar pair)
+ -- Applicative: cadddr (cadddr pair)
+ -- Applicative: cdaaar (cdaaar pair)
+ -- Applicative: cdaadr (cdaadr pair)
+ -- Applicative: cdadar (cdadar pair)
+ -- Applicative: cdaddr (cdaddr pair)
+ -- Applicative: cddaar (cddaar pair)
+ -- Applicative: cddadr (cddadr pair)
+ -- Applicative: cdddar (cdddar pair)
+ -- Applicative: cddddr (cddddr pair)
+     These applicatives are compositions of `car' and `cdr', with the
+     "a’s" and "d’s" in the same order as they would appear if all the
+     individual "car’s" and "cdr’s" were written out in prefix order.
+     Arbitrary compositions up to four deep are provided. There are
+     twenty-eight of these applicatives in all.
+
+ -- Applicative: get-list-metrics (get-list-metrics object)
+     By definition, an improper list is a data structure whose objects
+     are its start together with all objects reachable from the start by
+     following the cdr references of pairs, and whose internal
+     references are just the cdr references of its pairs.  Every
+     object, of whatever type, is the start of an improper list.  If
+     the start is not a pair, the improper list consists of just that
+     object.  The acyclic prefix length of an improper list `L' is the
+     number of pairs of `L' that a naive traversal of `L' would visit
+     only once. The cycle length of `L' is the number of pairs of `L'
+     that a naive traversal would visit repeatedly. Two improper lists
+     are structurally isomorphic iff they have the same acyclic prefix
+     length and cycle length and, if they are terminated by non-pair
+     objects rather than by cycles, the non-pair objects have the same
+     type.  Applicative `get-list-metrics' constructs and returns a
+     list of exact integers of the form `(p n a c)', where `p', `n',
+     `a', and `c' are, respectively, the number of pairs in, the number
+     of nil objects in, the acyclic prefix length of, and the cycle
+     length of, the improper list starting with `object'. `n' is either
+     `0' or `1', `a + c = p', and `n' and `c' cannot both be non-zero.
+     If `c = 0', the improper list is acyclic; if `n = 1', the improper
+     list is a finite list; if `n = c = 0', the improper list is not a
+     list; if `a = c = 0', `object' is not a pair.
+
+ -- Applicative: list-tail (list-tail object k)
+     `object' must be the start of an improper list containing at least
+     `k' pairs.
+
+     The `list-tail' applicative follows `k' cdr references starting
+     from `object'.
+
+     The following equivalences hold:
+          (list-tail object 0) == object
+          (list-tail object (+ k 1)) == (list-tail (cdr object) k)
+
+ -- Applicative: encycle! (encycle! object k1 k2)
+     The improper list starting at `object' must contain at least `k1 +
+     k2' pairs.
+
+     If `k2 = 0', the applicative does nothing. If `k2 > 0', the
+     applicative mutates the improper list starting at `object' to have
+     acyclic prefix length `k1' and cycle length `k2', by setting the
+     cdr of the `(k1+k2)'th pair in the list to refer to the `(k1 +
+     1)'th pair in the list.  The result returned by `encycle!' is
+     inert.
+
+ -- Applicative: map (map applicative . lists)
+     `lists' must be a nonempty list of lists; if there are two or
+     more, they must all have the same length.
+
+     The map applicative applies `applicative' element-wise to the
+     elements of the lists in lists (i.e., applies it to a list of the
+     first elements of the lists, to a list of the second elements of
+     the lists, etc.), using the dynamic environment from which map was
+     called, and returns a list of the results, in order. The
+     applications may be performed in any order, as long as their
+     results occur in the resultant list in the order of their
+     arguments in the original lists.  If `lists' is a cyclic list,
+     each argument list to which `applicative' is applied is
+     structurally isomorphic to `lists'.  If any of the elements of
+     `lists' is a cyclic list, they all must be, or they wouldn’t all
+     have the same length.  Let `a1...an' be their acyclic prefix
+     lengths, and `c1...cn' be their cycle lengths.  The acyclic prefix
+     length `a' of the resultant list will be the maximum of the `ak',
+     while the cycle length `c' of the resultant list will be the least
+     common multiple of the `ck'.  In the construction of the result,
+     `applicative' is called exactly `a + c' times.
+
+ -- Applicative: length (length object)
+     Applicative `length' returns the (exact) improper-list length of
+     `object'.  That is, it returns the number of consecutive cdr
+     references that can be followed starting from `object'.  If
+     `object' is not a pair, it returns zero; if `object' is a cyclic
+     list, it returns positive infinity.
+
+ -- Applicative: list-ref (list-ref object k)
+     The `list-ref' applicative returns the `car' of the object
+     obtained by following `k' cdr references starting from `object'.
+
+     NOTE: In the current report, object is required to be a list. In
+     klisp, for now, we prefer the behaviour presented here, as it is
+     more in line with the applicative `list-tail'.  That is, we define
+     `list-ref' by the following equivalence:
+          (list-ref object k) == (car (list-tail object k))
+
+ -- Applicative: append (append . lists)
+     Here, all the elements of `lists' except the last element (if any)
+     must be acyclic lists.  The `append' applicative returns a freshly
+     allocated list of the elements of all the specified `lists', in
+     order, except that if there is a last specified element of
+     `lists', it is not copied, but is simply referenced by the cdr of
+     the preceding pair (if any) in the resultant list.  If `lists' is
+     cyclic, the cycle of the result list consists of just the elements
+     of the lists specified in the cycle in `lists'. In this case, the
+     acyclic prefix length of the result is the sum of the lengths of
+     the lists specified in the acyclic prefix of `lists', and the
+     cycle length of the result is the sum of the lengths of the lists
+     specified in the cycle of `lists'.
+
+     The following equivalences hold:
+          (append) == ()
+          (append h) == h
+          (append () h . t) == (append h . t)
+          (append (cons a b) h . t) == (cons a (append b h . t))
+
+ -- Applicative: list-neighbors (list-neighbors list)
+     The `list-neighbors' applicative constructs and returns a list of
+     all the consecutive sublists of `list' of length 2, in order.  If
+     `list' is nil, the result is nil.  If `list' is non-nil, the
+     length of the result is one less than the length of `list'. If
+     `list' is cyclic, the result is structurally isomorphic to it
+     (i.e., has the same acyclic prefix length and cycle length).
+
+     For example:
+          (list-neighbors (list 1 2 3 4)) => ((1 2) (2 3) (3 4))
+
+ -- Applicative: filter (filter applicative list)
+     Applicative `filter' passes each of the elements of `list' as an
+     argument to `applicative', one at a time in no particular order,
+     using a fresh empty environment for each call.  The result of each
+     call to `applicative' must be boolean, otherwise an error is
+     signaled.  `filter' constructs and returns a list of all elements
+     of `list' on which `applicative' returned true, in the same order
+     as in `list'.  `applicative' is called exactly as many times as
+     there are pairs in `list'.  The resultant list has a cycle
+     containing exactly those elements accepted by `applicative' that
+     were in the cycle of `list'; if there were no such elements, the
+     result is acyclic.
+
+ -- Applicative: assoc (assoc object pairs)
+     Applicative `assoc' returns the first element of `pairs' whose car
+     is `equal?' to `object'.  If there is no such element in `pairs',
+     nil is returned.
+
+ -- Applicative: member? (member? object list)
+     Applicative `member?' is a predicate that returns true iff some
+     element of `list' is `equal?' to `object'.
+
+ -- Applicative: finite-list? (finite-list? . objects)
+     This is the type predicate for type finite-list.  `finite-list?'
+     returns true iff all the objects in `objects' are acyclic lists.
+
+ -- Applicative: countable-list? (countable-list? . objects)
+     This is the type predicate for type list.  `countable-list?'
+     returns true iff all the objects in `objects' are lists.
+
+ -- Applicative: reduce (reduce list binary identity [precycle incycle
+          postcycle])
+     `binary' should be an applicative. If the short form is used,
+     `list' should be an acyclic. If the long form is used, `precycle',
+     `incycle', and `postcycle' should be applicatives.
+
+     If `list' is empty, applicative `reduce' returns `identity'.  If
+     `list' is nonempty but acyclic, applicative `reduce' uses binary
+     operation `binary' to merge all the elements of `list' into a
+     single object, using any associative grouping of the elements.
+     That is, the sequence of objects initially found in `list' is
+     repeatedly decremented in length by applying `binary' to a list of
+     any two consecutive objects, replacing those two objects with the
+     result at the point in the sequence where they occurred; and when
+     the sequence contains only one object, that object is returned.
+     If `list' is cyclic, the long form must be used.  The elements of
+     the cycle are passed, one at a time (but just once for each
+     position in the cycle), as arguments to unary applicative
+     `precycle'; the finite, cyclic sequence of results from `precycle'
+     is reduced using binary applicative `incycle'; and the result from
+     reducing the cycle is passed as an argument to unary applicative
+     `postcycle'. Binary operation `binary' is used to reduce the
+     sequence consisting of the elements of the acyclic prefix of
+     `list' followed by the result returned by `postcycle'. The only
+     constraint on the order of calls to the applicatives is that each
+     call must be made before its result is needed (thus, parts of the
+     reduction of the acyclic prefix may occur before the contribution
+     from the cycle has been completed).
+
+     Each call to `binary', `precycle', `incycle', or `postcycle' uses
+     the dynamic environment of the call to `reduce'.
+
+     If `list' is acyclic with length `n >= 1', `binary' is called `n -
+     1' times.  If `list' is cyclic with acyclic prefix length `a' and
+     cycle length `c', `binary' is called `a' times; `precycle', `c'
+     times; `incycle', `c - 1' times; and `postcycle', once.
+
+ -- Applicative: append! (append! . lists)
+     `lists' must be a nonempty list; its first element must be an
+     acyclic nonempty list, and all of its elements except the last
+     element (if any) must be acyclic lists.
+
+     The `append!' applicative sets the cdr of the last pair in each
+     nonempty list argument to refer to the next non-nil argument,
+     except that if there is a last non-nil argument, it isn’t mutated.
+     It is an error for any two of the list arguments to have the same
+     last pair.  The result returned by this applicative is inert.
+
+     The following equivalences hold:
+          (append! v) == #inert
+          (append! u v . w) == ($sequence (append! u v) (append! u . w))
+
+ -- Applicative: copy-es (copy-es object)
+     Briefly, applicative `copy-es' returns an object initially
+     `equal?' to `object' with a freshly constructed evaluation
+     structure made up of mutable pairs.  If `object' is not a pair,
+     the applicative returns `object'.  If `object' is a pair, the
+     applicative returns a freshly constructed pair whose car and cdr
+     would be suitable results for `(copy-es (car object))' and
+     `(copy-es (cdr object))', respectively.  Further, the evaluation
+     structure of the returned value is structurally isomorphic to that
+     of `object' at the time of copying, with corresponding non-pair
+     referents being `eq?'.
+
+ -- Applicative: assq (assq object pairs)
+     Applicative `assq' returns the first element of `pairs' whose car
+     is `eq?' to `object'.  If there is no such element in `pairs', nil
+     is returned.
+
+ -- Applicative: memq? (memq? object list)
+     Applicative `memq?' is a predicate that returns true iff some
+     element of `list' is `eq?' to `object'.
+
+
+File: klisp.info,  Node: Environments,  Next: Combiners,  Prev: Pairs and lists,  Up: Top
+
+7 Environments
+**************
+
+An environment consists of a set of bindings, and a list of zero or
+more references to other environments called its parents.  Changing the
+set of bindings of an environment, or setting the referent of the
+reference in a binding, is a mutation of the environment. (Changing the
+parent list, or a referent in the list, would be a mutation of the
+environment too, but there is no facility provided to do it.) The
+Kernel data type environment is encapsulated.  Among other things,
+there is no facility provided for enumerating all the variables
+exhibited by an environment (which is not required, after all, to be a
+finite set), and no facility for identifying the parents of an
+environment.  Two environments are `equal?' iff they are `eq?'.
+
+   An auxiliary data type used by combiners that perform binding is
+ignore. The ignore type consists of a single immutable value, having
+external representation `#ignore'.  The ignore type is encapsulated.
+
+ -- Applicative: environment? (environment? . objects)
+     The primitive type predicate for type environment.  `environment?'
+     returns true iff all the objects in `objects' are of type
+     environment.
+
+ -- Applicative: ignore? (ignore? . objects)
+     The primitive type predicate for type ignore.  `ignore?' returns
+     true iff all the objects in `objects' are of type ignore.
+
+ -- Applicative: eval (eval expression environment)
+     The `eval' applicative evaluates `expression' as a tail context in
+     `environment', and returns the resulting value.
+
+ -- Applicative: make-environment (make-environment . environments)
+     The applicative constructs and returns a new environment, with
+     initially no local bindings, and parent environments the
+     environments listed in `environments'. The constructed environment
+     internally stores its list of parents independent of the
+     first-class list `environments', so that subsequent mutation of
+     `environments' will not change the parentage of the constructed
+     environment. If the provided list `environments' is cyclic, the
+     constructed environment will still check each of its parents at
+     most once, and signal an error if no binding is found locally or
+     in any of the parents.  No two objects returned by different calls
+     to `make-environment' are `eq?' to each other.
+
+ -- Operative: $define! ($define! <definiend> <expression>)
+     `<definiend>' should be a formal parameter tree, as described
+     below; otherwise, an error is signaled.
+
+     The `$define!' operative evaluates `<expression>' in the dynamic
+     environment and matches `<definiend>' to the result in the dynamic
+     environment, binding each symbol in definiend in the dynamic
+     environment to the corresponding part of the result; the matching
+     process will be further described below. The ancestors of the
+     dynamic environment, if any, are unaffected by the matching
+     process, as are all bindings, local to the dynamic environment, of
+     symbols not in `<definiend>'.  The result returned by `$define!' is
+     inert.
+
+     A formal parameter tree has the following context-free structure:
+          ptree:: symbol | #ignore | () | (ptree . ptree)
+
+     That is, a formal parameter tree is either a symbol, or ignore, or
+     nil, or a pair whose car and cdr referents are formal parameter
+     trees.  A formal parameter tree must also be acyclic, and no one
+     symbol can occur more than once in it.  It is not an error for a
+     pair in the tree to be reachable from the root by more than one
+     path, as long as there is no cycle; but if any particular symbol
+     were reachable from the root by more than one path, that would
+     count as occurring more than once.  Thus, if a pair is reachable
+     by more than one path, there must be no symbols reachable from it.
+
+     Matching of a formal parameter tree `t' to an object `o' in an
+     environment `e' proceeds recursively as follows.  If the matching
+     process fails, an error is signaled.
+        * If `t' is a symbol, then `t' is bound to `o' in `e'.
+
+        * If `t' is `#ignore', no action is taken.
+
+        * If `t' is nil, then `o' must be nil (else matching fails).
+
+        * If `t' is a pair, then `o' must be a pair (else matching
+          fails). The car of `t' is matched to the car of `o' in `e',
+          and the cdr of `t' is matched to the cdr of `o' in `e'.
+
+ -- Operative: $let ($let <bindings> . <objects>)
+     `<bindings>' should be a finite list of
+     formal-parameter-tree/expression pairings, each of the form
+     `(formals expression)', where each `formals' is a formal
+     parameter, and no symbol occurs in more than one of the `formals'.
+
+     The following equivalence holds:
+
+          ($let ((form1 exp1) ... (formn expn)) . objects) ==
+            (($lambda (form1 ... formn) . objects) exp1 ... expn)
+
+     Thus, the `expk' are first evaluated in the dynamic environment,
+     in any order; then a child environment `e' of the dynamic
+     environment is created, with the `formk' matched in `e' to the
+     results of the evaluations of the `expk'; and finally the
+     subexpressions of `objects' are evaluated in `e' from left to
+     right, with the last (if any) evaluated as a tail context, or if
+     `objects' is empty the result is inert.
+
+ -- Operative: $binds? ($binds? <exp> . <symbols>)
+     Operative `$binds' evaluates `<exp>' in the dynamic environment;
+     call the result `env'.  `env' must be an environment.  The
+     operative is a predicate that returns true iff all its later
+     operands, `<symbols>', are visibly bound in `env'.
+
+ -- Applicative: get-current-environment (get-current-environment)
+     The `get-current-environment' applicative returns the dynamic
+     environment in which it is called.
+
+ -- Applicative: make-kernel-standard-environment
+          (make-kernel-standard-environment)
+     The `make-kernel-standard-environment' applicative returns a
+     standard environment; that is, a child of the ground environment
+     with no local bindings.
+
+ -- Operative: $let* ($let* <bindings> . <body>)
+     `<bindings>' should be a finite list of
+     formal-parameter-tree/expression pairings, each of the form
+     `(formals expression)', where each `formals' is a formal parameter
+     tree; `<body>' should be a list of expressions.
+
+     The following equivalences hold:
+
+          ($let* () . body) == ($let () . body)
+
+          ($let* ((form exp) . bindings) . body) ==
+            ($let ((form exp)) ($let* bindings . body))
+
+ -- Operative: $letrec ($letrec <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let'.
+
+     The following equivalence holds:
+          ($letrec ((form1 exp1) ... (formn expn)) . body) ==
+            ($let () ($define! (form1 ... formn) (list exp1 ... expn)) . body)
+
+ -- Operative: $letrec* ($letrec* <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let*'.
+
+     The following equivalences hold:
+          ($letrec* () . body) == ($letrec () . body)
+
+          ($letrec* ((form exp) . bindings) . body) ==
+            ($letrec ((form exp)) ($letrec* bindings . body))
+
+ -- Operative: $let-redirect ($let-redirect <exp> <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let'.
+
+     The following equivalence holds:
+
+          ($let-redirect exp ((form1 exp1) ... (formn . body) expn)) ==
+            ((eval (list $lambda (form1 ... formn) body) exp) expn ... expn)
+
+ -- Operative: $let-safe ($let-safe <bindings> . <body>)
+     `<bindings>' and `<body>' should be as described for `$let'.
+
+     The following equivalence holds:
+
+          ($let-safe bindings . body) ==
+            ($let-redirect (make-kernel-standard-environment) bindings . body)
+
+ -- Operative: $remote-eval ($remote-eval <exp1> <exp2>)
+     Operative `$remote-eval' evaluates `<exp2>' in the dynamic
+     environment, then evaluates `<exp1>' as a tail context in the
+     environment that must result from the first evaluation.
+
+ -- Operative: ($bindings-environment . <bindings>)
+     `<bindings>' should be as described for `$let'.
+
+     The following equivalence holds:
+
+          ($bindings->environment . bindings) ==
+            ($let-redirect (make-environment) bindings (get-current-environment))
+
+ -- Operative: $set! ($set! <exp1> <formals> <exp2>)
+     `<formals>' should be as described for the `$define!' operative.
+     The `$set!' operative evaluates `<exp1>' and `<exp2>' in the
+     dynamic environment; call the results `env' and `obj'.  If `env'
+     is not an environment, an error is signaled.  Then the operative
+     matches `<formals>' to `obj' in environment `env'.  Thus, the
+     symbols of `<formals>' are bound in `env' to the corresponding
+     parts of `obj'.  The result returned by `$set!' is inert.
+
+ -- Operative: $provide! ($provide! <symbols> . <body>)
+     `<symbols>' must be a finite list of symbols, containing no
+     duplicates.  `<body>' must be a finite list.
+
+     The `$provide!' operative constructs a child `e' of the dynamic
+     environment `d'; evaluates the elements of `<body>' in `e', from
+     left to right, discarding all of the results; and exports all of
+     the bindings of symbols in `<symbols>' from `e' to `d', i.e.,
+     binds each symbol in `d' to the result of looking it up in `e'.
+     The result returned by `$provide!'  is inert.
+
+     The following equivalence holds:
+
+          ($provide!  symbols . body) ==
+          ($define!  symbols ($let () ($sequence . body) (list . symbols)))
+
+ -- Operative: $import! ($import! <exp> . <symbols>)
+     `<symbols>' must be a list of symbols.
+
+     The `$import!' operative evaluates `<exp>' in the dynamic
+     environment; call the result `env'. `env' must be an environment.
+     Each distinct symbol `s' in `<symbols>' is evaluated in `env', and
+     `s' is bound in the dynamic environment to the result of this
+     evaluation.
+
+     The following equivalence holds:
+
+          ($import! exp . symbols) ==
+          ($define! symbols ($remote-eval (list symbols) exp))
+
+
+File: klisp.info,  Node: Combiners,  Next: Continuations,  Prev: Environments,  Up: Top
+
+8 Combiners
+***********
+
+There are two types of combiners in Kernel, operative and applicative.
+Both types are encapsulated. All combiners are immutable.  Two
+applicatives are `eq?' iff their underlying combiners are `eq?'.
+However, `eq?'-ness of operatives is only constrained by the general
+rules for `eq?', which leave considerable leeway for variation between
+implementations.  klisp only considers `eq?' those operatives
+constructed by the same call to a constructor (e.g. `$vau').  Two
+combiners are `equal?' iff they are `eq?'.
+
+ -- Applicative: operative? (operative? . objects)
+     The primitive type predicate for type operative. `operative?'
+     returns true iff all the objects in `objects' are of type
+     operative.
+
+ -- Applicative: applicative? (applicative? . objects)
+     The primitive type predicate for type applicative.  `applicative?'
+     returns true iff all the objects in `objects' are of type
+     applicative.
+
+ -- Operative: $vau ($vau <formals> <eformal> . <objects>)
+     `<formals>' should be a formal parameter tree; `<eformal>' should
+     be either a symbol or `#ignore'.  If `<formals>' does not have the
+     correct form for a formal parameter tree, or if `<eformal>' is a
+     symbol that also occurs in `<formals>', an error is signaled.
+
+     A `vau' expression evaluates to an operative; an operative created
+     in this way is said to be compound. The environment in which the
+     `vau' expression was evaluated is remembered as part of the
+     compound operative, called the compound operative’s static
+     environment.  `<formals>' and `<objects>' are copied as by
+     `copy-es-immutable' and the copies are stored as part of the
+     operative being constructed.  This avoids problem if these
+     structures are later mutated.
+
+     When the compound operative created by `$vau' is later called with
+     an object and an environment, here called respectively the operand
+     tree and the dynamic environment, the following happens:
+
+       1. A new, initially empty environment is created, with the static
+          environment as its parent. This will be called the local
+          environment.
+
+       2. A stored copy of the formal parameter tree formals is matched
+          in the local environment to the operand tree, locally binding
+          the symbols of formals to the corresponding parts of the
+          operand tree.  eformal is matched to the dynamic environment;
+          that is, if eformal is a symbol then that symbol is bound in
+          the local environment to the dynamic environment.
+
+       3. A stored copy of the expressions is evaluated sequentially
+          from left to right, with the last (if any) evaluated as a
+          tail context, or if the list of expressions is empty, the
+          result is inert.
+
+     NOTE: Because compound operatives are not a distinct type in
+     Kernel, they are covered by the encapsulation of type operative.
+     In particular, an implementation of Kernel cannot provide a
+     feature that supports extracting the static environment of any
+     given compound operative, nor that supports determining whether or
+     not a given operative is compound.
+
+ -- Applicative: wrap (wrap combiner)
+     The `wrap' applicative returns an applicative whose underlying
+     combiner is `combiner'.
+
+ -- Applicative: unwrap (unwrap applicative)
+     The `unwrap' applicative returns the underlying combiner of
+     `applicative'.
+
+ -- Operative: $lambda ($lambda <formals> . <objects>)
+     `<formals>' should be a formal parameter tree.
+
+     The `$lambda' operative is defined by the following equivalence:
+          ($lambda formals . objects) ==
+            (wrap ($vau formals #ignore . objects))
+
+ -- Applicative: apply (apply applicative object [environment])
+     Applicative `apply' combines the underlying combiner of
+     `applicative' with `object' in a tail context with dynamic
+     environment `environment' (if the long form is used) or in an
+     empty environment (if the short form is used).
+
+     The following equivalences hold:
+          (apply applicative object environment) ==
+            (eval (cons (unwrap applicative) object) environment)
+
+          (apply applicative object) ==
+            (apply applicative object (make-environment))
+
+ -- Applicative: map (map applicative . lists)
+     `lists' must be a nonempty list of lists; if there are two or
+     more, they must all have the same length. If `lists' is empty, or
+     if all of its elements are not lists of the same length, an error
+     is signaled.
+
+     The `map' applicative applies `applicative' element-wise to the
+     elements of the lists in `lists' (i.e., applies it to a list of
+     the first elements of the `lists', to a list of the second
+     elements of the `lists', etc.), using the dynamic environment from
+     which `map' was called, and returns a list of the results, in
+     order. The applications may be performed in any order, as long as
+     their results occur in the resultant list in the order of their
+     arguments in the original `lists'.  If `lists' is a cyclic list,
+     each argument list to which `applicative' is applied is
+     structurally isomorphic to `lists'.  If any of the elements of
+     `lists' is a cyclic list, they all must be, or they wouldn’t all
+     have the same length.  Let `a1...an' be their acyclic prefix
+     lengths, and `c1...cn' be their cycle lengths.  The acyclic prefix
+     length `a' of the resultant list will be the maximum of the `ak',
+     while the cycle length `c' of the resultant list will be the least
+     common multiple of the `ck'.  In the construction of the result,
+     applicative is called exactly `a + c' times.
+
+ -- Applicative: combiner? (combiner? . objects)
+     The primitive type predicate for type combiner. `combiner?'
+     returns true iff all the objects in `objects' are of type combiner
+     (i.e. applicative or operative).
+
+
+File: klisp.info,  Node: Continuations,  Next: Encapsulations,  Prev: Combiners,  Up: Top
+
+9 Continuations
+***************
+
+A continuation is a plan for all future computation, parameterized by a
+value to be provided, and contingent on the states of all mutable data
+structures (which notably may include environments). When the Kernel
+evaluator is invoked, the invoker provides a continuation to which the
+result of the evaluation will normally be returned.
+
+   For example, when `$if' evaluates its test operand, the continuation
+provided for the result expects to be given a boolean value; and,
+depending on which boolean it gets, it will evaluate either the
+consequent or the alternative operand as a tail context — that is, the
+continuation provided for the result of evaluating the selected operand
+is the same continuation that was provided for the result of the call
+to `$if'.
+
+   A Kernel program may sometimes capture a continuation; that is,
+acquire a reference to it as a first-class object. The basic means of
+continuation capture is applicative `call/cc'.  Given a first-class
+continuation `c', a combiner can be constructed that will abnormally
+pass its operand tree to `c' (as opposed to the normal return of values
+to continuations). In the simplest case, the abnormally passed value
+arrives at `c' as if it had been normally returned to `c'. In general,
+continuations bypassed by the abnormal pass may have entry/exit guards
+attached to them, and these guards can intercept the abnormal pass
+before it reaches `c'.  Each entry/exit guard consists of a selector
+continuation, which designates which abnormal passes the guard will
+intercept, and an interceptor applicative that performs the
+interception when selected.
+
+   Continuations are immutable, and are `equal?' iff `eq?'.  The
+continuation type is encapsulated.
+
+ -- Applicative: continuation? (continuation? . objects)
+     The primitive type predicate for type continuation.
+     `continuation?' returns true iff all the objects in `objects' are
+     of type continuation.
+
+ -- Applicative: call/cc (call/cc combiner)
+     Calls `combiner' in the dynamic environment as a tail context,
+     passing as sole operand to it the continuation to which `call/cc'
+     would normally return its result.  (That is, constructs such a
+     combination and evaluates it in the dynamic environment.)
+
+ -- Applicative: extend-continuation (extend-continuation continuation
+          applicative [environment])
+     The `extend-continuation' applicative constructs and returns a new
+     child of `continuation' that, when it normally receives a value v,
+     calls the underlying combiner of `applicative' with dynamic
+     environment `environment' (or an empty environment if none was
+     specified) and operand tree `v', the result of the call normally
+     to be returned to `continuation'.
+
+     The following equivalnece defines the short version:
+          (extend-continuation c a) ==
+            (extend-continuation c a (make-environment))
+
+ -- Applicative: guard-continuation (guard-continuation entry-guards
+          continuation exit-guards)
+     `entry-guards' and `exit-guards' should each be a list of clauses;
+     each clause should be a list of length two, whose first element is
+     a continuation, and whose second element is an applicative whose
+     underlying combiner is operative.
+
+     Applicative `guard-continuation' constructs two continuations: a
+     child of continuation, called the `outer continuation'; and a
+     child of the `outer continuation', called the `inner
+     continuation'.  The `inner continuation' is returned as the result
+     of the call to `guard-continuation'.
+
+     When the `inner continuation' normally receives a value, it passes
+     the value normally to the `outer continuation'; and when the
+     `outer continuation' normally receives a value, it passes the
+     value normally to `continuation'. Thus, in the absence of abnormal
+     passing, the inner and outer continuations each have the same
+     behavior as `continuation'.
+
+     The two elements of each guard clause are called, respectively, the
+     `selector' and the `interceptor'.  The `selector' continuation is
+     used in deciding whether to intercept a given abnormal pass, and
+     the `interceptor' applicative is called to perform customized
+     action when interception occurs.
+
+     At the beginning of the call to `guard-continuation', internal
+     copies are made of the evaluation structures of `entry-guards' and
+     `exit-guards', so that the selectors and interceptors contained in
+     the arguments at that time remain fixed thereafter, independent of
+     any subsequent mutations to the arguments.
+
+ -- Applicative: continuation->applicative (continuation->applicative
+          continuation)
+     Returns an applicative whose underlying operative abnormally passes
+     its operand tree to `continuation', thus: A series of interceptors
+     are selected to handle the abnormal pass, and a continuation is
+     derived that will normally perform all the interceptions in
+     sequence and pass some value to the destination of the originally
+     abnormal pass.  The operand tree is then normally passed to the
+     derived continuation.
+
+ -- Variable: root-continuation
+     This continuation is the ancestor of all other continuations. When
+     it normally receives a value, it terminates the Kernel session.
+     (For example, if the system is running a read-eval-print loop, it
+     exits the loop.)
+
+ -- Variable: error-continuation
+     The dynamic extent of this continuation is mutually disjoint from
+     the dynamic extent in which Kernel computation usually occurs
+     (such as the dynamic extent in which the Kernel system would run a
+     read-eval-print loop).
+
+     When this continuation normally receives a value, it provides a
+     diagnostic message to the user of the Kernel system, on the
+     assumption that the received value is an attempt to describe some
+     error that aborted a computation; and then resumes operation of
+     the Kernel system at some point that is outside of all
+     user-defined computation. (For example, if the system is running a
+     read-eval-print loop, operation may resume by continuing from the
+     top of the loop.)
+
+     The diagnostic message is not made available to any Kernel
+     computation, and is therefore permitted to contain information that
+     violates abstractions within the system.
+
+     When an error is signaled during a Kernel computation, the
+     signaling action consists of an abnormal pass to some continuation
+     in the dynamic extent of `error-continuation'.
+
+ -- Applicative: apply-continuation (apply-continuation continuation
+          object)
+     Applicative `apply-continuation' converts its first argument to an
+     applicative as if by `continuation->applicative', and then applies
+     it as usual.
+
+     That is:
+          (apply-continuation continuation object) ==
+            (apply (continuation->applicative continuation) object)
+
+ -- Operative: ($let/cc <symbol> . <objects>)
+     A child environment `e' of the dynamic environment is created,
+     containing a binding of `<symbol>' to the continuation to which
+     the result of the call to `$let/cc' should normally return; then,
+     the subexpressions of `<objects>' are evaluated in `e' from left
+     to right, with the last (if any) evaluated as a tail context, or
+     if `<objects>' is empty the result is inert.
+
+     That is:
+          ($let/cc symbol . objects) ==
+            (call/cc ($lambda (symbol) . objects))
+
+ -- Applicative: guard-dynamic-extent (guard-dynamic-extent
+          entry-guards combiner exit-guards)
+     This applicative extends the current continuation with the
+     specified guards, and calls `combiner' in the dynamic extent of
+     the new continuation, with no operands and the dynamic environment
+     of the call to `guard-dynamic-extent'.
+
+ -- Applicative: exit (exit)
+     Applicative `exit' initiates an abnormal transfer of `#inert' to
+     `root-continuation'.
+
+     That is:
+          (exit ) == (apply-continuation root-continuation #inert)
+
+
+File: klisp.info,  Node: Encapsulations,  Next: Promises,  Prev: Continuations,  Up: Top
+
+10 Encapsulations
+*****************
+
+An encapsulation is an object that refers to another object, called its
+content.  The Kernel data type encapsulation is encapsulated.  Two
+encapsulations are `equal?' iff they are `eq?'.  Encapsulations are
+immutable.
+
+ -- Applicative: make-encapsulation-type (make-encapsulation-type)
+     Returns a list of the form `(e p? d)', where `e', `p'?, and `d'
+     are applicatives, as follows.  Each call to
+     `make-encapsulation-type' returns different applicatives `e',
+     `p?', and `d'.
+
+        * `e' is an applicative that takes one argument, and returns a
+          fresh encapsulation with the argument as content.
+          Encapsulations returned on different occasions are not `eq?'.
+
+        * `p?' is a primitive type predicate, that takes zero or more
+          arguments and returns true iff all of them are encapsulations
+          generated by `e'.
+
+        * `d' is an applicative that takes one argument; if the
+          argument is not an encapsulation generated by `e', an error
+          is signaled, otherwise the content of the encapsulation is
+          returned.
+
+     That is, the predicate `p?' only recognizes, and the decapsulator
+     `d' only extracts the content of, encapsulations created by the
+     encapsulator `e' that was returned by the same call to
+     `make-encapsulation-type'.
+
+
+File: klisp.info,  Node: Promises,  Next: Keyed Variables,  Prev: Encapsulations,  Up: Top
+
+11 Promises
+***********
+
+A promise is an object that represents the potential to determine a
+value.  The value may be the result of an arbitrary computation that
+will not be performed until the value must be determined (constructor
+`$lazy'); or, in advanced usage, the value may be determined before the
+promise is constructed (constructor `memoize').
+
+   The value determined by a promise is obtained by forcing it
+(applicative `force').  A given promise cannot determine different
+values on different occasions that it is forced.  Also, if a promise
+determines its value by computation, and that computation has already
+been completed, forcing the promise again will produce the previously
+determined result without re-initiating the computation to determine it.
+
+   The Kernel data type promise is encapsulated.
+
+   The general rules for predicate `eq?' only require it to distinguish
+promises if they can exhibit different behavior; the resulting leeway
+for variation between implementations is similar, in both cause and
+effect, to that for `eq?'-ness of operatives.  For example, if two
+promises, constructed on different occasions, would perform the same
+computation to determine their values, and that computation has no
+side-effects and must always return the same value, the promises may or
+may not be `eq?'.  Two promises are `equal?' iff they are `eq?'.
+
+ -- Applicative: promise? (promise? . objects)
+     The primitive type predicate for type promise.  `promise?' returns
+     true iff all the objects in `objects' are of type promise.
+
+ -- Applicative: force (force object)
+     If `object' is a promise, applicative `force' returns the value
+     determined by promise; otherwise, it returns `object'.
+
+     The means used to force a promise depend on how the promise was
+     constructed.  The description of each promise constructor specifies
+     how to force promises constructed by that constructor.
+
+ -- Operative: $lazy ($lazy expression)
+     Operative `$lazy' constructs and returns a new object of type
+     promise, representing potential evaluation of expression in the
+     dynamic environment from which `$lazy' was called.
+
+     When the promise is forced, if a value has not previously been
+     determined for it, `expression' is evaluated in the dynamic
+     environment of the constructing call to `$lazy'.  If, when the
+     evaluation returns a result, a value is found to have been
+     determined for the promise during the evaluation, the result is
+     discarded in favor of the previously determined value; otherwise,
+     the result is forced, and the value returned by that forcing
+     becomes the value determined by the promise.
+
+     Forcing an undetermined lazy promise (i.e., a promise constructed
+     by $lazy for which no value has yet been determined) may cause a
+     sequential series of evaluations, each of which returns a promise
+     that is forced and thus initiates the next evaluation in the
+     series.  The implementation must support series of this kind with
+     unbounded length (i.e., unbounded number of sequential
+     evaluations).
+
+     Note that forcing concerns the value determined by a given promise,
+     not the result of evaluating a given expression in a given
+     environment. Distinct promises (judged by `eq?' represent
+     different occasions of evaluation; so, even if they do represent
+     evaluation of the same expression in the same environment, forcing
+     one does not necessarily determine the value for the other, and
+     actual evaluation will take place the first time each of them is
+     forced.
+
+ -- Applicative: memoize (memoize object)
+     Applicative `memoize' constructs and returns a new object of type
+     promise, representing memoization of `object'.  Whenever the
+     promise is forced, it determines `object'.
+
+
+File: klisp.info,  Node: Keyed Variables,  Next: Numbers,  Prev: Promises,  Up: Top
+
+12 Keyed Variables
+******************
+
+A keyed variable is a device that associates a non-symbolic key (in the
+form of an accessor applicative) with a value depending on the context
+in which lookup occurs.  Kernel provides two types of keyed variables:
+dynamic & static.  Keyed Dynamic Variables use the dynamic extent as
+context and Keyed Static Variables use the dynamic environment.
+
+12.1 Keyed Dynamic Variables
+============================
+
+A keyed dynamic variable is a device that associates a non-symbolic key
+(in the form of an accessor applicative) with a value depending on the
+dynamic extent in which lookup occurs.
+
+ -- Applicative: make-keyed-dynamic-variable
+          (make-keyed-dynamic-variable)
+     Returns a list of the form `(b a)', where `b' and `a' are
+     applicatives, as follows.  Each call to
+     `make-keyed-dynamic-variable' returns different `b' and `a'.
+
+        * `b' is an applicative that takes two arguments, the second of
+          which must be a combiner.  It calls its second argument with
+          no operands (nil operand tree) in a fresh empty environment,
+          and returns the result.
+
+        * `a' is an applicative that takes zero arguments. If the call
+          to `a' occurs within the dynamic extent of a call to `b', then
+          `a' returns the value of the first argument passed to `b' in
+          the smallest enclosing dynamic extent of a call to `b'. If the
+          call to `a' is not within the dynamic extent of any call to
+          `b', an error is signaled.
+
+12.2 Keyed Static Variables
+===========================
+
+A keyed static variable is a device that binds data in an environment
+by a non-symbolic key, where the key is an accessor applicative.
+
+ -- Applicative: make-keyed-static-variable (make-keyed-static-variable)
+     Returns a list of the form `(b a)', where `b' and `a' are
+     applicatives, as follows.  Each call to
+     `make-keyed-static-variable' returns different `b' and `a'.
+
+        * `b' is an applicative that takes two arguments, the second of
+          which must be an environment.  It constructs and returns a
+          child-environment of its second argument, with initially no
+          local bindings.
+
+        * `a' is an applicative that takes zero arguments. If the
+          dynamic environment `e' of the call to a has an improper
+          ancestor that was constructed by a call to `b', then a
+          returns the value of the first argument passed to `b' in the
+          first such environment encountered by a depth-first traversal
+          of the improper ancestors of `e'. If `e' has no improper
+          ancestors constructed via `b', an error is signaled.
+
+
+File: klisp.info,  Node: Numbers,  Next: Strings,  Prev: Keyed Variables,  Up: Top
+
+13 Numbers
+**********
+
+
+File: klisp.info,  Node: Strings,  Next: Characters,  Prev: Numbers,  Up: Top
+
+14 Strings
+**********
+
+
+File: klisp.info,  Node: Characters,  Next: Ports,  Prev: Strings,  Up: Top
+
+15 Characters
+*************
+
+
+File: klisp.info,  Node: Ports,  Next: Index,  Prev: Characters,  Up: Top
+
+16 Ports
+********
+
+A port is an object that mediates character-based input from a source
+or character-based output to a destination. In the former case, the
+port is an input port, in the latter case, an output port.
+
+   Although ports are not considered immutable, none of the operations
+on ports described in this section constitute mutation.  Ports are
+`equal?' iff `eq?'.  The port type is encapsulated.
+
+   An auxiliary data type used to signal the end of file was reached is
+eof. The eof type consists of a single immutable value, having an
+output only external representation (so that it can never be the normal
+result of a call to read).  The eof type is encapsulated.
+
+   SOURCE NOTE:  the eof type is not in the Kernel report, it is used in
+klisp and was taken from Scheme.
+
+ -- Applicative: port? (port? . objects)
+     The primitive type predicate for type port.  `port?' returns true
+     iff all the objects in `objects' are of type port.
+
+ -- Applicative: input-port? (input-port? . objects)
+ -- Applicative: output-port? (output-port? . objects)
+     Applicative `input-port?' is a predicate that returns true unless
+     one or more of its arguments is not an input port.  Applicative
+     output-port? is a predicate that returns true unless one or more of
+     its arguments is not an output port.
+
+     Every port must be admitted by at least one of these two
+     predicates.
+
+ -- with-input-from-file: (with-input-from-file string combiner)
+ -- with-output-to-file: (with-output-to-file string combiner)
+     These two applicatives open the file named in `string' for input
+     or output, an invoke the binder of the input-port & output-port
+     keyed dynamic variables respectively with the opened port & the
+     passed `combiner' (this means that the combiner is called in a
+     fresh, empty dynamic environment).  When/if the binder normally
+     returns, the port is closed.  The result of the applicatives
+     `with-input-from-file' and `with-output-from-file' is inert.
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.  In the new scheme report there's also a third
+     error-port variable.  It is very likely that that will be added to
+     the klisp implementation in the near future.
+
+ -- get-current-input-port: (get-current-input-port)
+ -- get-current-output-port: (get-current-output-port)
+     These are the accessors for the input-port and output-port keyed
+     dynamic variables repectively.
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.  In the new scheme report there's also a third
+     error-port variable.  It is very likely that that will be added to
+     the klisp implementation in the near future.
+
+ -- Applicative: open-input-file (open-input-file string)
+     `string' should be the name/path for an existing file.
+
+     Applicative `open-input-file' creates and returns an input port
+     associated with the file represented with `string'.  If the file
+     can't be opened (e.g. because it doesn't exists, or there's a
+     permissions problem), an error is signaled.
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.
+
+ -- Applicative: open-output-file (open-output-file string)
+     `string' should be the name/path for an existing file.
+
+     Applicative `open-output-file' creates and returns an output port
+     associated with the file represented with `string'.  If the file
+     can't be opened (e.g. if there's a permissions problem), an error
+     is signaled.
+
+     In klisp, for now, applicative `open-output-file' truncates the
+     file if it already exists, but that could change later (i.e. like
+     in scheme the behaviour should be considered unspecified).
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.
+
+ -- close-input-file: (close-input-file input-port)
+ -- close-output-file: (close-output-file output-port)
+     These applicatives close the port argument, so that no more
+     input/output may be performed on them, and the resources can be
+     freed.  If the port was already closed these applicatives have no
+     effect.
+
+     The result returned by applicatives `close-input-file' and
+     `close-output-file' is inert.
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.  There's probably a name error here.  These
+     should probably be called close-input-port & close-output-port.
+
+ -- Applicative: read (read [input-port])
+     If the `port' optional argument is not specified, then the value
+     of the `input-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `read' reads & returns the next parseable object from
+     the given port, or the eof object if no objects remain.  If `read'
+     finds and unparseable object in the port, an error is signaled.
+     In that case, the remaining position in the port is unspecified.
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.
+
+ -- write: (write object [port])
+     If the `port' optional argument is not specified, then the value
+     of the `output-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `write' writes an external representation of `object'
+     to the specified port.  This may be an output-only representation
+     that can't be read by applicative `read' in cases where the type
+     of `object' doen't have a parseable external representation (e.g.
+     combiners and environments).  The result returned by `write' is
+     inert.
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.
+
+ -- Applicative: call-with-input-file (call-with-input-file string
+          combiner)
+ -- Applicative: call-with-output-file (call-with-output-file string
+          combiner)
+     These applicatives open file named in `string' and call their
+     `combiner' argument in a fresh empty environment passing it as a
+     sole operand the opened port.  When/if the combiner normally
+     returns a value the port is closed and that value is returned as
+     the result of the applicative.
+
+     SOURCE NOTE: this is enumerated in the Kernel report but the text
+     is still missing.
+
+ -- Applicative: load (load string)
+     Applicative `load' opens for input a file named `string'; reads
+     objects from the file until the end of the file is reached;
+     evaluates those objects consecutively in the created environment.
+     The result from applicative `load' is inert.
+
+     SOURCE NOTE: load is enumerated in the Kernel report, but the
+     description is not there yet.  This seems like a sane way to define
+     it, taking the description of `get-module' that there is in the
+     report.  The one detail that I think is still open, is whether to
+     return `#inert' (as is the case with klisp currently) or rather
+     return the value of the last evaluation.
+
+ -- Applicative: get-module (get-module string [environment])
+     Applicative `get-module' creates a fresh standard environment;
+     opens for input a file named `string'; reads objects from the file
+     until the end of the file is reached; evaluates those objects
+     consecutively in the created environment; and, lastly, returns the
+     created environment.  If the optional argument `environment' is
+     specified, the freshly created standard environment is augmented,
+     prior to evaluating read expressions, by binding symbol
+     `module-parameters' to the `environment' argument.
+
+ -- Applicative: eof-object? (eof-object? . objects)
+     The primitive type predicate for type eof.  `eof-object?' returns
+     true iff all the objects in `objects' are of type eof.
+
+     SOURCE NOTE: This is not in the report, the idea is from Scheme.
+     The `eof-object?' name is also from scheme, but this will probably
+     be changed to just `eof?', for consistency with the other
+     primitive type predicates.
+
+ -- read-char: (read-char [port])
+     If the `port' optional argument is not specified, then the value
+     of the `input-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `read-char' reads and returns a character (not an
+     external representation of a character) from the specified port, or
+     an eof if the end of file was reached.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- peek-char: (peek-char [port])
+     If the `port' optional argument is not specified, then the value
+     of the `input-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `peek-char' reads and returns a character (not an
+     external representation of a character) from the specified port, or
+     an eof if the end of file was reached.  The position of the port
+     remains unchanged so that new call to `peek-char' or `read-char'
+     on the same port return the same character.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- char-ready?: (char-ready? [port])
+     If the `port' optional argument is not specified, then the value
+     of the `input-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Predicate `char-ready?' checks to see if a character is available
+     in the specified port.  If it returns true, then a `read-char' or
+     `peek-char' on that port is guaranteed not to block/hang.  For now
+     in klisp this is hardcoded to `#t' because the code to do this is
+     non-portable.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- write-char: (write-char char [port])
+     If the `port' optional argument is not specified, then the value
+     of the `output-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `write-char' writes the `char' character (not an
+     external representation of the character) to the specified port.
+     The result returned by `write-char' is inert.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- newline: (newline [port])
+     If the `port' optional argument is not specified, then the value
+     of the `output-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `newline' writes a newline to the specified port.  The
+     result returned by `newline' is inert.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- display: (display object [port])
+     If the `port' optional argument is not specified, then the value
+     of the `output-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `display' behaves like `write' except that strings are
+     not enclosed in double quotes and no character is escaped within
+     those strings and character objects are output as if by
+     `write-char' instead of `read'. The result returned by `display'
+     is inert.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+
+File: klisp.info,  Node: Index,  Next: (dir),  Prev: Ports,  Up: Top
+
+Index
+*****
+
+ [index ]
+* Menu:
+
+* $and?:                                 Booleans.            (line  28)
+* $binds?:                               Environments.        (line 108)
+* $cond:                                 Control.             (line  32)
+* $define!:                              Environments.        (line  49)
+* $if:                                   Control.             (line  15)
+* $import!:                              Environments.        (line 207)
+* $lambda:                               Combiners.           (line  76)
+* $lazy:                                 Promises.            (line  43)
+* $let:                                  Environments.        (line  89)
+* $let*:                                 Environments.        (line 124)
+* $let-redirect:                         Environments.        (line 153)
+* $let-safe:                             Environments.        (line 161)
+* $letrec:                               Environments.        (line 137)
+* $letrec*:                              Environments.        (line 144)
+* $or?:                                  Booleans.            (line  41)
+* $provide!:                             Environments.        (line 191)
+* $remote-eval:                          Environments.        (line 169)
+* $sequence:                             Control.             (line  23)
+* $set!:                                 Environments.        (line 182)
+* $vau:                                  Combiners.           (line  26)
+* ( <1>:                                 Ports.               (line  37)
+* ( <2>:                                 Continuations.       (line 143)
+* (:                                     Environments.        (line 174)
+* and?:                                  Booleans.            (line  20)
+* append:                                Pairs and lists.     (line 208)
+* append!:                               Pairs and lists.     (line 306)
+* applicative descriptions:              A Sample Applicative Description.
+                                                              (line   6)
+* applicative?:                          Combiners.           (line  21)
+* applicatives:                          Combiners.           (line   6)
+* apply:                                 Combiners.           (line  83)
+* apply-continuation:                    Continuations.       (line 134)
+* assoc:                                 Pairs and lists.     (line 252)
+* assq:                                  Pairs and lists.     (line 333)
+* boolean?:                              Booleans.            (line  12)
+* booleans:                              Booleans.            (line   6)
+* caaaar:                                Pairs and lists.     (line 101)
+* caaadr:                                Pairs and lists.     (line 102)
+* caaar:                                 Pairs and lists.     (line  93)
+* caadar:                                Pairs and lists.     (line 103)
+* caaddr:                                Pairs and lists.     (line 104)
+* caadr:                                 Pairs and lists.     (line  94)
+* caar:                                  Pairs and lists.     (line  89)
+* cadaar:                                Pairs and lists.     (line 105)
+* cadadr:                                Pairs and lists.     (line 106)
+* cadar:                                 Pairs and lists.     (line  95)
+* caddar:                                Pairs and lists.     (line 107)
+* cadddr:                                Pairs and lists.     (line 108)
+* caddr:                                 Pairs and lists.     (line  96)
+* cadr:                                  Pairs and lists.     (line  90)
+* call-with-input-file:                  Ports.               (line 131)
+* call-with-output-file:                 Ports.               (line 133)
+* call/cc:                               Continuations.       (line  43)
+* car:                                   Pairs and lists.     (line  85)
+* cdaaar:                                Pairs and lists.     (line 109)
+* cdaadr:                                Pairs and lists.     (line 110)
+* cdaar:                                 Pairs and lists.     (line  97)
+* cdadar:                                Pairs and lists.     (line 111)
+* cdaddr:                                Pairs and lists.     (line 112)
+* cdadr:                                 Pairs and lists.     (line  98)
+* cdar:                                  Pairs and lists.     (line  91)
+* cddaar:                                Pairs and lists.     (line 113)
+* cddadr:                                Pairs and lists.     (line 114)
+* cddar:                                 Pairs and lists.     (line  99)
+* cdddar:                                Pairs and lists.     (line 115)
+* cddddr:                                Pairs and lists.     (line 116)
+* cdddr:                                 Pairs and lists.     (line 100)
+* cddr:                                  Pairs and lists.     (line  92)
+* cdr:                                   Pairs and lists.     (line  86)
+* characters:                            Characters.          (line   6)
+* combiner?:                             Combiners.           (line 120)
+* combiners:                             Combiners.           (line   6)
+* cons:                                  Pairs and lists.     (line  35)
+* continuation->applicative:             Continuations.       (line  95)
+* continuation?:                         Continuations.       (line  38)
+* continuations:                         Continuations.       (line   6)
+* control:                               Control.             (line   6)
+* copy-es:                               Pairs and lists.     (line 321)
+* copy-es-immutable!:                    Pairs and lists.     (line  49)
+* countable-list?:                       Pairs and lists.     (line 265)
+* description format:                    Format of Descriptions.
+                                                              (line   6)
+* documentation notation:                Evaluation Notation. (line   6)
+* empty list:                            Pairs and lists.     (line   6)
+* encapsulations:                        Encapsulations.      (line   6)
+* encycle!:                              Pairs and lists.     (line 158)
+* environment?:                          Environments.        (line  23)
+* environments:                          Environments.        (line   6)
+* eof-object?:                           Ports.               (line 166)
+* eq?:                                   Equivalence.         (line  12)
+* equal?:                                Equivalence.         (line  16)
+* equivalence:                           Equivalence.         (line   6)
+* error message notation:                Error Messages.      (line   6)
+* error-continuation:                    Continuations.       (line 110)
+* eval:                                  Environments.        (line  32)
+* evaluation notation:                   Evaluation Notation. (line   6)
+* exit:                                  Continuations.       (line 162)
+* extend-continuation:                   Continuations.       (line  50)
+* filter:                                Pairs and lists.     (line 239)
+* finite-list?:                          Pairs and lists.     (line 261)
+* fonts:                                 Some Terms.          (line  13)
+* foo:                                   A Sample Applicative Description.
+                                                              (line  15)
+* for-each:                              Control.             (line  42)
+* force:                                 Promises.            (line  35)
+* get-current-environment:               Environments.        (line 114)
+* get-list-metrics:                      Pairs and lists.     (line 123)
+* get-module:                            Ports.               (line 156)
+* guard-continuation:                    Continuations.       (line  63)
+* guard-dynamic-extent:                  Continuations.       (line 156)
+* ignore:                                Environments.        (line   6)
+* ignore?:                               Environments.        (line  28)
+* inert:                                 Control.             (line   6)
+* inert?:                                Control.             (line  11)
+* input-port?:                           Ports.               (line  27)
+* Kernel history:                        Kernel History.      (line   6)
+* keyed dynamic variables:               Keyed Variables.     (line  15)
+* keyed static variables:                Keyed Variables.     (line  40)
+* keyed variables:                       Keyed Variables.     (line   6)
+* length:                                Pairs and lists.     (line 191)
+* list:                                  Pairs and lists.     (line  72)
+* list*:                                 Pairs and lists.     (line  78)
+* list-neighbors:                        Pairs and lists.     (line 228)
+* list-ref:                              Pairs and lists.     (line 198)
+* list-tail:                             Pairs and lists.     (line 147)
+* lists:                                 Pairs and lists.     (line   6)
+* load:                                  Ports.               (line 143)
+* make-encapsulation-type:               Encapsulations.      (line  12)
+* make-environment:                      Environments.        (line  36)
+* make-kernel-standard-environment:      Environments.        (line 119)
+* make-keyed-dynamic-variable:           Keyed Variables.     (line  21)
+* make-keyed-static-variable:            Keyed Variables.     (line  44)
+* map <1>:                               Combiners.           (line  96)
+* map:                                   Pairs and lists.     (line 169)
+* member?:                               Pairs and lists.     (line 257)
+* memoize:                               Promises.            (line  74)
+* memq?:                                 Pairs and lists.     (line 338)
+* nil:                                   Pairs and lists.     (line   6)
+* not?:                                  Booleans.            (line  16)
+* null?:                                 Pairs and lists.     (line  31)
+* numbers:                               Numbers.             (line   6)
+* object descriptions:                   A Sample Applicative Description.
+                                                              (line   6)
+* open-input-file:                       Ports.               (line  62)
+* open-output-file:                      Ports.               (line  73)
+* operative descriptions:                A Sample Applicative Description.
+                                                              (line   6)
+* operative?:                            Combiners.           (line  16)
+* operatives:                            Combiners.           (line   6)
+* or?:                                   Booleans.            (line  24)
+* output-port?:                          Ports.               (line  28)
+* pair?:                                 Pairs and lists.     (line  27)
+* pairs:                                 Pairs and lists.     (line   6)
+* port?:                                 Ports.               (line  23)
+* ports:                                 Ports.               (line   6)
+* printing notation:                     Printing Notation.   (line   6)
+* promise?:                              Promises.            (line  31)
+* promises:                              Promises.            (line   6)
+* read:                                  Ports.               (line 102)
+* reduce:                                Pairs and lists.     (line 270)
+* root-continuation:                     Continuations.       (line 104)
+* set-car!:                              Pairs and lists.     (line  41)
+* set-cdr!:                              Pairs and lists.     (line  42)
+* string->symbol:                        Symbols.             (line  20)
+* strings:                               Strings.             (line   6)
+* symbol->string:                        Symbols.             (line  16)
+* symbol?:                               Symbols.             (line  12)
+* symbols:                               Symbols.             (line   6)
+* unwrap:                                Combiners.           (line  72)
+* wrap:                                  Combiners.           (line  68)
+
+
+
+Tag Table:
+Node: Top703
+Node: License2601
+Node: Introduction4272
+Node: Caveats7095
+Node: Kernel History7881
+Node: Conventions9326
+Node: Some Terms9997
+Node: Evaluation Notation10668
+Node: Printing Notation11689
+Node: Error Messages12165
+Node: Format of Descriptions12813
+Node: A Sample Applicative Description13377
+Node: Acknowledgements15140
+Node: Booleans15526
+Node: Equivalence18068
+Node: Symbols18861
+Node: Control20227
+Node: Pairs and lists22544
+Node: Environments39567
+Node: Combiners49774
+Node: Continuations55810
+Node: Encapsulations63984
+Node: Promises65437
+Node: Keyed Variables69360
+Node: Numbers72131
+Node: Strings72240
+Node: Characters72344
+Node: Ports72452
+Node: Index83737
+
+End Tag Table

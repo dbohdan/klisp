@@ -601,3 +601,33 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* Helper for combiner? */
 bool kcombinerp(TValue obj) { return ttiscombiner(obj); }
+
+/* init ground */
+void kinit_combiners_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.10.1 operative? */
+    add_applicative(K, ground_env, "operative?", typep, 2, symbol, 
+		    i2tv(K_TOPERATIVE));
+    /* 4.10.2 applicative? */
+    add_applicative(K, ground_env, "applicative?", typep, 2, symbol, 
+		    i2tv(K_TAPPLICATIVE));
+    /* 4.10.3 $vau */
+    /* 5.3.1 $vau */
+    add_operative(K, ground_env, "$vau", Svau, 0);
+    /* 4.10.4 wrap */
+    add_applicative(K, ground_env, "wrap", wrap, 0);
+    /* 4.10.5 unwrap */
+    add_applicative(K, ground_env, "unwrap", unwrap, 0);
+    /* 5.3.2 $lambda */
+    add_operative(K, ground_env, "$lambda", Slambda, 0);
+    /* 5.5.1 apply */
+    add_applicative(K, ground_env, "apply", apply, 0);
+    /* 5.9.1 map */
+    add_applicative(K, ground_env, "map", map, 0);
+    /* 6.2.1 combiner? */
+    add_applicative(K, ground_env, "combiner?", ftypep, 2, symbol, 
+		    p2tv(kcombinerp));
+}

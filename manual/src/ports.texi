@@ -1,0 +1,272 @@
+@c -*-texinfo-*-
+@setfilename ../src/ports
+
+@node Ports, Index, Characters, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Ports
+@cindex ports
+
+  A port is an object that mediates character-based input from a
+source or character-based output to a destination. In the former case,
+the port is an input port, in the latter case, an output port.
+
+@c TODO add xref to equal? & eq?
+  Although ports are not considered immutable, none of the operations
+on ports described in this section constitute mutation.  Ports are
+@code{equal?} iff @code{eq?}.  The port type is encapsulated.
+
+  An auxiliary data type used to signal the end of file was reached is
+eof. The eof type consists of a single immutable value, having
+an output only external representation (so that it can never be the
+normal result of a call to read).  The eof type is encapsulated.
+
+SOURCE NOTE:  the eof type is not in the Kernel report, it is used in
+klisp and was taken from Scheme.
+
+@deffn Applicative port? (port? . objects)
+  The primitive type predicate for type port.  @code{port?}
+returns true iff all the objects in @code{objects} are of type port.
+@end deffn
+
+@deffn Applicative input-port? (input-port? . objects)
+@deffnx Applicative output-port? (output-port? . objects)
+  Applicative @code{input-port?} is a predicate that returns true
+unless one or more of its arguments is not an input port.  Applicative
+output-port? is a predicate that returns true unless one or more of
+its arguments is not an output port.
+
+  Every port must be admitted by at least one of these two predicates.
+@end deffn
+
+@deffn with-input-from-file (with-input-from-file string combiner)
+@deffnx with-output-to-file (with-output-to-file string combiner)
+@c add xref get-current-input-port/get-current-output-port
+  These two applicatives open the file named in @code{string} for
+input or output, an invoke the binder of the input-port & output-port
+keyed dynamic variables respectively with the opened port & the passed
+@code{combiner} (this means that the combiner is called in a fresh, empty
+dynamic environment).  When/if the binder normally returns, the port is closed.
+The result of the applicatives @code{with-input-from-file} and
+@code{with-output-from-file} is inert.
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.  In the new scheme report there's also a third
+error-port variable.  It is very likely that that will be added to the
+klisp implementation in the near future.
+@end deffn
+
+@deffn get-current-input-port (get-current-input-port)
+@deffnx get-current-output-port (get-current-output-port)
+  These are the accessors for the input-port and output-port keyed
+dynamic variables repectively. 
+@c add xref to with-input-from-file, etc
+@c add xref and text for these dynamic vars
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.  In the new scheme report there's also a third
+error-port variable.  It is very likely that that will be added to the
+klisp implementation in the near future.
+@end deffn
+
+@deffn Applicative open-input-file (open-input-file string)
+  @code{string} should be the name/path for an existing file.
+
+  Applicative @code{open-input-file} creates and returns an input port
+associated with the file represented with @code{string}.  If the file
+can't be opened (e.g. because it doesn't exists, or there's a
+permissions problem), an error is signaled.
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.
+@end deffn
+
+@deffn Applicative open-output-file (open-output-file string)
+  @code{string} should be the name/path for an existing file.
+
+  Applicative @code{open-output-file} creates and returns an output
+port associated with the file represented with @code{string}.  If the
+file can't be opened (e.g. if there's a permissions problem), an error
+is signaled.  
+
+  In klisp, for now, applicative @code{open-output-file} truncates the
+file if it already exists, but that could change later (i.e. like in
+scheme the behaviour should be considered unspecified).
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.
+@end deffn
+
+@deffn close-input-file (close-input-file input-port)
+@deffnx close-output-file (close-output-file output-port)
+  These applicatives close the port argument, so that no more
+input/output may be performed on them, and the resources can be
+freed.  If the port was already closed these applicatives have no
+effect.
+
+  The result returned by applicatives @code{close-input-file} and
+@code{close-output-file} is inert.
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.  There's probably a name error here.  These should
+probably be called close-input-port & close-output-port.
+@end deffn
+
+@deffn Applicative read (read [input-port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{input-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+  Applicative @code{read} reads & returns the next parseable object
+from the given port, or the eof object if no objects remain.  If
+@code{read} finds and unparseable object in the port, an error is
+signaled.  In that case, the remaining position in the port is
+unspecified.
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.
+@end deffn
+
+@deffn write (write object [port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{output-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+@c TODO add xref to external representation
+  Applicative @code{write} writes an external representation of
+@code{object} to the specified port.  This may be an output-only
+representation that can't be read by applicative @code{read} in cases
+where the type of @code{object} doen't have a parseable external
+representation (e.g. combiners and environments).  The result returned
+by @code{write} is inert.
+
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.
+@end deffn
+
+@deffn Applicative call-with-input-file (call-with-input-file string combiner)
+@deffnx Applicative call-with-output-file (call-with-output-file string combiner)
+  These applicatives open file named in @code{string} and call their
+@code{combiner} argument in a fresh empty environment passing it as a
+sole operand the opened port.  When/if the combiner normally returns a
+value the port is closed and that value is returned as the result of
+the applicative.
+
+  SOURCE NOTE: this is enumerated in the Kernel report but the text is
+still missing.
+@end deffn
+
+@deffn Applicative load (load string)
+@c TODO add xref, open/input, read
+  Applicative @code{load} opens for input a file named @code{string};
+reads objects from the file until the end of the file is reached;
+evaluates those objects consecutively in the created environment.  The
+result from applicative @code{load} is inert.
+
+  SOURCE NOTE: load is enumerated in the Kernel report, but the
+description is not there yet.  This seems like a sane way to define
+it, taking the description of @code{get-module} that there is in the
+report.  The one detail that I think is still open, is whether to
+return @code{#inert} (as is the case with klisp currently) or rather
+return the value of the last evaluation.
+@end deffn
+
+@deffn Applicative get-module (get-module string [environment])
+@c TODO add xref standard-environment, open/input, read
+  Applicative @code{get-module} creates a fresh standard environment;
+opens for input a file named @code{string}; reads objects from the
+file until the end of the file is reached; evaluates those objects
+consecutively in the created environment; and, lastly, returns the
+created environment.  If the optional argument @code{environment} is
+specified, the freshly created standard environment is augmented,
+prior to evaluating read expressions, by binding symbol
+@code{module-parameters} to the @code{environment} argument.
+@end deffn
+
+@deffn Applicative eof-object? (eof-object? . objects)
+  The primitive type predicate for type eof.  @code{eof-object?}
+returns true iff all the objects in @code{objects} are of type eof.
+
+  SOURCE NOTE: This is not in the report, the idea is from Scheme.
+The @code{eof-object?} name is also from scheme, but this will
+probably be changed to just @code{eof?}, for consistency with the other
+primitive type predicates.
+@end deffn
+
+@deffn read-char (read-char [port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{input-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+  Applicative @code{read-char} reads and returns a character (not
+an external representation of a character) from the specified port, or
+an eof if the end of file was reached.
+
+  SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+@end deffn
+
+@deffn peek-char (peek-char [port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{input-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+  Applicative @code{peek-char} reads and returns a character (not
+an external representation of a character) from the specified port, or
+an eof if the end of file was reached.  The position of the port
+remains unchanged so that new call to @code{peek-char} or
+@code{read-char} on the same port return the same character.
+
+  SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+@end deffn
+
+@deffn char-ready? (char-ready? [port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{input-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+  Predicate @code{char-ready?} checks to see if a character is
+available in the specified port.  If it returns true, then a
+@code{read-char} or @code{peek-char} on that port is guaranteed not to
+block/hang.  For now in klisp this is hardcoded to @code{#t} because
+the code to do this is non-portable.
+
+  SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+@end deffn
+
+@deffn write-char (write-char char [port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{output-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+  Applicative @code{write-char} writes the @code{char} character (not
+an external representation of the character) to the specified port.
+The result returned by @code{write-char} is inert.
+
+  SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+@end deffn
+
+@deffn newline (newline [port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{output-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+  Applicative @code{newline} writes a newline to the specified port.
+The result returned by @code{newline} is inert.
+
+  SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+@end deffn
+
+@deffn display (display object [port])
+  If the @code{port} optional argument is not specified, then the
+value of the @code{output-port} keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+  Applicative @code{display} behaves like @code{write} except that
+strings are not enclosed in double quotes and no character is escaped
+within those strings and character objects are output as if by
+@code{write-char} instead of @code{read}. The result returned by
+@code{display} is inert.
+
+  SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+@end deffn

@@ -250,4 +250,7 @@ void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 6.8.3 $import! */
 void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* init ground */
+void kinit_env_mut_ground_env(klisp_State *K);
+
 #endif

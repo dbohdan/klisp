@@ -105,3 +105,20 @@ void memoize(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue new_prom = kmake_promise(K, exp, KNIL);
     kapply_cc(K, new_prom);
 }
+
+/* init ground */
+void kinit_promises_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 9.1.1 promise? */
+    add_applicative(K, ground_env, "promise?", typep, 2, symbol, 
+		    i2tv(K_TPROMISE));
+    /* 9.1.2 force */
+    add_applicative(K, ground_env, "force", force, 0); 
+    /* 9.1.3 $lazy */
+    add_operative(K, ground_env, "$lazy", Slazy, 0); 
+    /* 9.1.4 memoize */
+    add_applicative(K, ground_env, "memoize", memoize, 0); 
+}

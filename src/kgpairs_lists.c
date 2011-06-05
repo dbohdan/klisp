@@ -996,3 +996,109 @@ void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     kapply_cc(K, res);
 }
+
+/* init ground */
+void kinit_pairs_lists_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.6.1 pair? */
+    add_applicative(K, ground_env, "pair?", typep, 2, symbol, 
+		    i2tv(K_TPAIR));
+    /* 4.6.2 null? */
+    add_applicative(K, ground_env, "null?", typep, 2, symbol, 
+		    i2tv(K_TNIL));
+    /* 4.6.3 cons */
+    add_applicative(K, ground_env, "cons", cons, 0);
+    /* 5.2.1 list */
+    add_applicative(K, ground_env, "list", list, 0);
+    /* 5.2.2 list* */
+    add_applicative(K, ground_env, "list*", listS, 0);
+    /* 5.4.1 car, cdr */
+    add_applicative(K, ground_env, "car", c_ad_r, 2, symbol, 
+		    C_AD_R_PARAM(1, 0x0000));
+    add_applicative(K, ground_env, "cdr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(1, 0x0001));
+    /* 5.4.2 caar, cadr, ... cddddr */
+    add_applicative(K, ground_env, "caar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0000));
+    add_applicative(K, ground_env, "cadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0001));
+    add_applicative(K, ground_env, "cdar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0010));
+    add_applicative(K, ground_env, "cddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(2, 0x0011));
+    add_applicative(K, ground_env, "caaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0000));
+    add_applicative(K, ground_env, "caadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0001));
+    add_applicative(K, ground_env, "cadar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0010));
+    add_applicative(K, ground_env, "caddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0011));
+    add_applicative(K, ground_env, "cdaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0100));
+    add_applicative(K, ground_env, "cdadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0101));
+    add_applicative(K, ground_env, "cddar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0110));
+    add_applicative(K, ground_env, "cdddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(3, 0x0111));
+    add_applicative(K, ground_env, "caaaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0000));
+    add_applicative(K, ground_env, "caaadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0001));
+    add_applicative(K, ground_env, "caadar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0010));
+    add_applicative(K, ground_env, "caaddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0011));
+    add_applicative(K, ground_env, "cadaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0100));
+    add_applicative(K, ground_env, "cadadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0101));
+    add_applicative(K, ground_env, "caddar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0110));
+    add_applicative(K, ground_env, "cadddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x0111));
+    add_applicative(K, ground_env, "cdaaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1000));
+    add_applicative(K, ground_env, "cdaadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1001));
+    add_applicative(K, ground_env, "cdadar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1010));
+    add_applicative(K, ground_env, "cdaddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1011));
+    add_applicative(K, ground_env, "cddaar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1100));
+    add_applicative(K, ground_env, "cddadr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1101));
+    add_applicative(K, ground_env, "cdddar", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1110));
+    add_applicative(K, ground_env, "cddddr", c_ad_r, 2, symbol,
+		    C_AD_R_PARAM(4, 0x1111));
+    /* 5.7.1 get-list-metrics */
+    add_applicative(K, ground_env, "get-list-metrics", get_list_metrics, 0);
+    /* 5.7.2 list-tail */
+    add_applicative(K, ground_env, "list-tail", list_tail, 0);
+    /* 6.3.1 length */
+    add_applicative(K, ground_env, "length", length, 0);
+    /* 6.3.2 list-ref */
+    add_applicative(K, ground_env, "list-ref", list_ref, 0);
+    /* 6.3.3 append */
+    add_applicative(K, ground_env, "append", append, 0);
+    /* 6.3.4 list-neighbors */
+    add_applicative(K, ground_env, "list-neighbors", list_neighbors, 0);
+    /* 6.3.5 filter */
+    add_applicative(K, ground_env, "filter", filter, 0);
+    /* 6.3.6 assoc */
+    add_applicative(K, ground_env, "assoc", assoc, 0);
+    /* 6.3.7 member? */
+    add_applicative(K, ground_env, "member?", memberp, 0);
+    /* 6.3.8 finite-list? */
+    add_applicative(K, ground_env, "finite-list?", finite_listp, 0);
+    /* 6.3.9 countable-list? */
+    add_applicative(K, ground_env, "countable-list?", countable_listp, 0);
+    /* 6.3.10 reduce */
+    add_applicative(K, ground_env, "reduce", reduce, 0);
+}

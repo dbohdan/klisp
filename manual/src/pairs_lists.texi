@@ -1,0 +1,415 @@
+@c -*-texinfo-*-
+@setfilename ../src/pairs_lists
+
+@node Pairs and lists, Environments, Control, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Pairs and lists
+@cindex pairs
+@cindex nil
+@cindex empty list
+@cindex lists
+
+A pair is an object that refers to two other objects, called its car
+and cdr.  The Kernel data type pair is encapsulated.
+
+  The null data type consists of a single immutable value, called nil
+or the empty list and having external representation @code{()}, with
+or without whitespace between the parentheses. It is immutable, and
+the null type is encapsulated.
+
+  If @code{a} and @code{d} are external representations of
+respectively the car and cdr of a pair @code{p}, then @code{(a . d)}
+is an external representation of @code{p}. If the cdr of @code{p} is
+nil, then @code{(a)} is also an external representation of
+@code{p}. If the cdr of @code{p} is a pair @code{p2}, and @code{(r)}
+is an external representation of @code{p2}, then @code{(a r)} is an
+external representation of @code{p}.
+@c add xref for write
+  When a pair is output (as by write), an external representation with
+the fewest parentheses is used; in the case of a finite list, only one
+set of parentheses is required beyond those used in representing the
+elements of the list. For example, an object with external
+representation @code{(1 . (2 . (3 . ())))} would be output using,
+modulo whitespace, external representation @code{(1 2 3)}.
+
+@deffn Applicative pair? (pair? . objects)
+  The primitive type predicate for type pair.  @code{pair?} returns
+true iff all the objects in @code{objects} are of type pair.
+@end deffn
+
+@deffn Applicative null? (null? . objects)
+  The primitive type predicate for type null.  @code{null?} returns
+true iff all the objects in @code{objects} are of type null.
+@end deffn
+
+@deffn Applicative cons (cons object1 object2)
+  A new mutable pair object is constructed and returned, whose car and
+cdr referents are respectively @code{object1} and @code{object2}.  No
+two objects returned by different calls to cons are @code{eq?} to each
+other.
+@end deffn
+
+@deffn Applicative set-car! (set-car! pair object)
+@deffnx Applicative set-cdr! (set-cdr! pair object)
+  @code{pair} should be a mutable pair.
+  
+  These applicatives set the referent of, respectively, the car
+reference or the cdr reference of @code{pair} to @code{object}.  The
+result of the expression is inert.
+@end deffn
+
+@deffn Applicative copy-es-immutable! (copy-es-immutable object)
+  The short description of this applicative is that it returns an object
+@code{equal?} to @code{object} with an immutable evaluation structure. The
+``-es-'' in the name is short for ``evaluation structure''.  
+
+@c TODO move the evaluation structure description to the intro
+  The evaluation structure of an object @code{o} is defined to be the
+set of all pairs that can be reached by following chains of references
+from @code{o} without ever passing through a non-pair object. The
+evaluation structure of a non-pair object is empty.  
+
+  If @code{object} is not a pair, the applicative returns @code{object}.
+Otherwise (if @code{object} is a pair), the applicative returns an
+immutable pair whose car and cdr would be suitable results for
+@code{(copy-es-immutable (car object))} and @code{(copy-es-immutable
+(cdr object))}, respectively.  Further, the evaluation structure of
+@c TODO add xref for isomorphic (and add isomorphic to the intro)
+the returned value is isomorphic to that of @code{object} at the time
+of copying, with corresponding non-pair referents being @code{eq?}.
+
+  NOTE: In Kernel it's undefined whether immutable pairs are copied or
+left ``as is'' in the result.  klisp doesn't copy immutable pairs, but
+that behaviour should not be depended upon.
+@end deffn
+
+@deffn Applicative list (list . objects)
+The @code{list} applicative returns @code{objects}.
+
+  The underlying operative of @code{list} returns its undifferentiated
+operand tree, regardless of whether that tree is or is not a list.  
+@end deffn
+
+@deffn Applicative list* (list* . objects)
+@code{objects} should be a finite nonempty list of arguments.
+
+  The following equivalences hold: 
+@example
+(list* arg1) @equiv{} arg1 
+(list* arg1 arg2 . args) @equiv{} (cons arg1 (list* arg2 . args))
+@end example
+@end deffn
+
+@deffn Applicative car (car pair)
+@deffnx Applicative cdr (cdr pair)
+These applicatives return, respectively, the car and cdr of @code{pair}.
+@end deffn
+@deffn Applicative caar (caar pair)
+@deffnx Applicative cadr (cadr pair)
+@deffnx Applicative cdar (cdar pair)
+@deffnx Applicative cddr (cddr pair)
+@deffnx Applicative caaar (caaar pair)
+@deffnx Applicative caadr (caadr pair)
+@deffnx Applicative cadar (cadar pair)
+@deffnx Applicative caddr (caddr pair)
+@deffnx Applicative cdaar (cdaar pair)
+@deffnx Applicative cdadr (cdadr pair)
+@deffnx Applicative cddar (cddar pair)
+@deffnx Applicative cdddr (cdddr pair)
+@deffnx Applicative caaaar (caaaar pair)
+@deffnx Applicative caaadr (caaadr pair)
+@deffnx Applicative caadar (caadar pair)
+@deffnx Applicative caaddr (caaddr pair)
+@deffnx Applicative cadaar (cadaar pair)
+@deffnx Applicative cadadr (cadadr pair)
+@deffnx Applicative caddar (caddar pair)
+@deffnx Applicative cadddr (cadddr pair)
+@deffnx Applicative cdaaar (cdaaar pair)
+@deffnx Applicative cdaadr (cdaadr pair)
+@deffnx Applicative cdadar (cdadar pair)
+@deffnx Applicative cdaddr (cdaddr pair)
+@deffnx Applicative cddaar (cddaar pair)
+@deffnx Applicative cddadr (cddadr pair)
+@deffnx Applicative cdddar (cdddar pair)
+@deffnx Applicative cddddr (cddddr pair)
+
+@c TODO add note about pronunciation
+These applicatives are compositions of @code{car} and @code{cdr}, with
+the ``a’s'' and ``d’s'' in the same order as they would appear if all
+the individual ``car’s'' and ``cdr’s'' were written out in prefix
+order.  Arbitrary compositions up to four deep are provided. There are
+twenty-eight of these applicatives in all.
+@end deffn
+
+@deffn Applicative get-list-metrics (get-list-metrics object)
+@c TODO move definition of improper list to intro, xref data structure
+  By definition, an improper list is a data structure whose objects
+are its start together with all objects reachable from the start by
+following the cdr references of pairs, and whose internal references
+are just the cdr references of its pairs.  Every object, of whatever
+type, is the start of an improper list.  If the start is not a pair,
+the improper list consists of just that object.  The acyclic prefix
+length of an improper list @code{L} is the number of pairs of @code{L}
+that a naive traversal of @code{L} would visit only once. The cycle
+length of @code{L} is the number of pairs of @code{L} that a naive
+traversal would visit repeatedly. Two improper lists are structurally
+@c TODO add xref to isomorphic
+isomorphic iff they have the same acyclic prefix length and cycle
+length and, if they are terminated by non-pair objects rather than by
+cycles, the non-pair objects have the same type.  Applicative
+@code{get-list-metrics} constructs and returns a list of exact
+integers of the form @code{(p n a c)}, where @code{p}, @code{n},
+@code{a}, and @code{c} are, respectively, the number of pairs in, the
+number of nil objects in, the acyclic prefix length of, and the cycle
+length of, the improper list starting with @code{object}. @code{n} is
+either @code{0} or @code{1}, @code{a + c = p}, and @code{n} and
+@code{c} cannot both be non-zero. If @code{c = 0}, the improper list
+is acyclic; if @code{n = 1}, the improper list is a finite list; if
+@code{n = c = 0}, the improper list is not a list; if @code{a = c =
+0}, @code{object} is not a pair.
+@end deffn
+
+@deffn Applicative list-tail (list-tail object k)
+@code{object} must be the start of an improper list containing at
+least @code{k} pairs.
+
+  The @code{list-tail} applicative follows @code{k} cdr references
+starting from @code{object}.
+
+The following equivalences hold:
+@example
+(list-tail object 0) @equiv{} object
+(list-tail object (+ k 1)) @equiv{} (list-tail (cdr object) k)
+@end example
+@end deffn
+
+@deffn Applicative encycle! (encycle! object k1 k2)
+  The improper list starting at @code{object} must contain at least
+@code{k1 + k2} pairs.
+
+  If @code{k2 = 0}, the applicative does nothing. If @code{k2 > 0},
+the applicative mutates the improper list starting at @code{object} to
+have acyclic prefix length @code{k1} and cycle length @code{k2}, by
+setting the cdr of the @code{(k1+k2)}th pair in the list to refer to
+the @code{(k1 + 1)}th pair in the list.  The result returned by
+@code{encycle!} is inert.
+@end deffn
+
+@deffn Applicative map (map applicative . lists)
+  @code{lists} must be a nonempty list of lists; if there are two or
+@c TODO add xref to length
+more, they must all have the same length. 
+
+  The map applicative applies @code{applicative} element-wise to the
+elements of the lists in lists (i.e., applies it to a list of the
+first elements of the lists, to a list of the second elements of the
+lists, etc.), using the dynamic environment from which map was called,
+and returns a list of the results, in order. The applications may be
+performed in any order, as long as their results occur in the
+resultant list in the order of their arguments in the original lists.
+If @code{lists} is a cyclic list, each argument list to which
+@c TODO xref to ismorphic
+@code{applicative} is applied is structurally isomorphic to @code{lists}.  If
+any of the elements of @code{lists} is a cyclic list, they all must
+be, or they wouldn’t all have the same length.  Let @code{a1...an} be
+their acyclic prefix lengths, and @code{c1...cn} be their cycle
+lengths.  The acyclic prefix length @code{a} of the resultant list
+will be the maximum of the @code{ak}, while the cycle length @code{c}
+of the resultant list will be the least common multiple of the
+@code{ck}.  In the construction of the result, @code{applicative} is
+called exactly @code{a + c} times.
+@end deffn
+
+@deffn Applicative length (length object)
+@c TODO xref improper-list
+  Applicative @code{length} returns the (exact) improper-list length
+of @code{object}.  That is, it returns the number of consecutive cdr
+references that can be followed starting from @code{object}.  If
+@code{object} is not a pair, it returns zero; if @code{object} is a
+cyclic list, it returns positive infinity.
+@end deffn
+
+@deffn Applicative list-ref (list-ref object k)
+  The @code{list-ref} applicative returns the @code{car} of the object
+obtained by following @code{k} cdr references starting from
+@code{object}.
+
+NOTE: In the current report, object is required to be a list. In
+klisp, for now, we prefer the behaviour presented here, as it is more
+in line with the applicative @code{list-tail}.  That is, we define
+@code{list-ref} by the following equivalence:
+@example
+(list-ref object k) @equiv{} (car (list-tail object k))
+@end example
+@end deffn
+
+@deffn Applicative append (append . lists)
+  Here, all the elements of @code{lists} except the last element (if
+any) must be acyclic lists.  The @code{append} applicative returns a
+freshly allocated list of the elements of all the specified
+@code{lists}, in order, except that if there is a last specified
+element of @code{lists}, it is not copied, but is simply referenced by
+the cdr of the preceding pair (if any) in the resultant list.  If
+@code{lists} is cyclic, the cycle of the result list consists of just
+the elements of the lists specified in the cycle in @code{lists}. In
+this case, the acyclic prefix length of the result is the sum of the
+lengths of the lists specified in the acyclic prefix of @code{lists},
+and the cycle length of the result is the sum of the lengths of the
+lists specified in the cycle of @code{lists}.
+
+The following equivalences hold:
+@example
+(append) @equiv{} () 
+(append h) @equiv{} h
+(append () h . t) @equiv{} (append h . t) 
+(append (cons a b) h . t) @equiv{} (cons a (append b h . t))
+@end example
+@c TODO add xref/comp to append
+@end deffn
+
+@deffn Applicative list-neighbors (list-neighbors list)
+  The @code{list-neighbors} applicative constructs and returns a list
+of all the consecutive sublists of @code{list} of length 2, in order.
+If @code{list} is nil, the result is nil.  If @code{list} is non-nil,
+the length of the result is one less than the length of
+@code{list}. If @code{list} is cyclic, the result is structurally
+isomorphic to it (i.e., has the same acyclic prefix length and cycle
+length).
+@c TODO add xref to isomorphic
+
+  For example:
+@example
+(list-neighbors (list 1 2 3 4)) @result{} ((1 2) (2 3) (3 4))
+@end example
+@end deffn
+
+@deffn Applicative filter (filter applicative list)
+  Applicative @code{filter} passes each of the elements of @code{list}
+as an argument to @code{applicative}, one at a time in no particular
+order, using a fresh empty environment for each call.  The result of
+each call to @code{applicative} must be boolean, otherwise an error is
+signaled.  @code{filter} constructs and returns a list of all elements
+of @code{list} on which @code{applicative} returned true, in the same
+order as in @code{list}.  @code{applicative} is called exactly as many
+times as there are pairs in @code{list}.  The resultant list has a
+cycle containing exactly those elements accepted by @code{applicative}
+that were in the cycle of @code{list}; if there were no such elements,
+the result is acyclic.
+@end deffn
+
+@deffn Applicative assoc (assoc object pairs)
+  Applicative @code{assoc} returns the first element of @code{pairs}
+whose car is @code{equal?} to @code{object}.  If there is no such
+element in @code{pairs}, nil is returned.
+@c TODO add xref/comp to assq
+@c TODO add xref to equal?
+@end deffn
+
+@deffn Applicative member? (member? object list)
+  Applicative @code{member?} is a predicate that returns true iff some
+element of @code{list} is @code{equal?} to @code{object}.
+@c TODO add xref/comp to memq
+@c TODO add xref to equal?
+@end deffn
+
+@deffn Applicative finite-list? (finite-list? . objects)
+  This is the type predicate for type finite-list.
+@code{finite-list?}  returns true iff all the objects in
+@code{objects} are acyclic lists.
+@end deffn
+
+@deffn Applicative countable-list? (countable-list? . objects)
+This is the type predicate for type list.  @code{countable-list?}
+returns true iff all the objects in @code{objects} are lists.
+@end deffn
+
+@deffn Applicative reduce (reduce list binary identity [precycle incycle postcycle]) 
+  @code{binary} should be an applicative. If the short form is used,
+@code{list} should be an acyclic. If the long form is used,
+@code{precycle}, @code{incycle}, and @code{postcycle} should be
+applicatives.
+
+  If @code{list} is empty, applicative @code{reduce} returns
+@code{identity}.  If @code{list} is nonempty but acyclic, applicative
+@code{reduce} uses binary operation @code{binary} to merge all the
+elements of @code{list} into a single object, using any associative
+grouping of the elements. That is, the sequence of objects initially
+found in @code{list} is repeatedly decremented in length by applying
+@code{binary} to a list of any two consecutive objects, replacing
+those two objects with the result at the point in the sequence where
+they occurred; and when the sequence contains only one object, that
+object is returned.  If @code{list} is cyclic, the long form must be
+used.  The elements of the cycle are passed, one at a time (but just
+once for each position in the cycle), as arguments to unary
+applicative @code{precycle}; the finite, cyclic sequence of results
+from @code{precycle} is reduced using binary applicative
+@code{incycle}; and the result from reducing the cycle is passed as an
+argument to unary applicative @code{postcycle}. Binary operation
+@code{binary} is used to reduce the sequence consisting of the
+elements of the acyclic prefix of @code{list} followed by the result
+returned by @code{postcycle}. The only constraint on the order of
+calls to the applicatives is that each call must be made before its
+result is needed (thus, parts of the reduction of the acyclic prefix
+may occur before the contribution from the cycle has been completed).
+
+  Each call to @code{binary}, @code{precycle}, @code{incycle}, or
+@code{postcycle} uses the dynamic environment of the call to
+@code{reduce}.  
+  
+  If @code{list} is acyclic with length @code{n >= 1},
+@code{binary} is called @code{n - 1} times.  If @code{list} is cyclic
+with acyclic prefix length @code{a} and cycle length @code{c},
+@code{binary} is called @code{a} times; @code{precycle}, @code{c}
+times; @code{incycle}, @code{c - 1} times; and @code{postcycle}, once.
+@end deffn
+
+@deffn Applicative append! (append! . lists)
+  @code{lists} must be a nonempty list; its first element must be an
+acyclic nonempty list, and all of its elements except the last element
+(if any) must be acyclic lists. 
+
+  The @code{append!} applicative sets the cdr of the last pair in each
+nonempty list argument to refer to the next non-nil argument, except
+that if there is a last non-nil argument, it isn’t mutated.  It is an
+error for any two of the list arguments to have the same last pair.
+The result returned by this applicative is inert.  
+
+  The following equivalences hold:
+@example
+(append! v) @equiv{} #inert 
+(append! u v . w) @equiv{} ($sequence (append! u v) (append! u . w))
+@end example
+@end deffn
+
+@deffn Applicative copy-es (copy-es object)
+  Briefly, applicative @code{copy-es} returns an object initially
+@code{equal?} to @code{object} with a freshly constructed evaluation
+@c TODO add xref to evaluation structure
+structure made up of mutable pairs.  If @code{object} is not a pair,
+the applicative returns @code{object}.  If @code{object} is a pair,
+the applicative returns a freshly constructed pair whose car and cdr
+would be suitable results for @code{(copy-es (car object))} and
+@code{(copy-es (cdr object))}, respectively.  Further, the evaluation
+@c TODO add xref to isomorphic
+structure of the returned value is structurally isomorphic to that of
+@code{object} at the time of copying, with corresponding non-pair
+referents being @code{eq?}.
+@c TODO add xref/comp to copy-es-immutable and the reverse too!
+@c TODO add xref to eq?/equal?
+@end deffn
+
+@deffn Applicative assq (assq object pairs)
+  Applicative @code{assq} returns the first element of @code{pairs}
+whose car is @code{eq?} to @code{object}.  If there is no such element
+in @code{pairs}, nil is returned.  
+@c TODO add xref/comp to assoc
+@c TODO add xref to eq?
+@end deffn
+
+@deffn Applicative memq? (memq? object list) 
+  Applicative @code{memq?} is a predicate that returns true iff some
+element of @code{list} is @code{eq?} to @code{object}.
+@c TODO add xref/comp to member?
+@c TODO add xref to eq?
+@end deffn
