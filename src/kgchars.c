@@ -127,3 +127,66 @@ bool kchar_ci_gtp(TValue ch1, TValue ch2)
 bool kchar_ci_gep(TValue ch1, TValue ch2)
 { return tolower(chvalue(ch1)) >= tolower(chvalue(ch2)); }
 
+/* init ground */
+void kinit_chars_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /*
+    ** This section is still missing from the report. The bindings here are
+    ** taken from r5rs scheme and should not be considered standard. They are
+    ** provided in the meantime to allow programs to use character features
+    ** (ASCII only). 
+    */
+
+    /* 14.1.1? char? */
+    add_applicative(K, ground_env, "char?", typep, 2, symbol, 
+		    i2tv(K_TCHAR));
+    /* 14.1.2? char-alphabetic?, char-numeric?, char-whitespace? */
+    /* unlike in r5rs these take an arbitrary number of chars
+       (even cyclical list) */
+    add_applicative(K, ground_env, "char-alphabetic?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_alphabeticp));
+    add_applicative(K, ground_env, "char-numeric?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_numericp));
+    add_applicative(K, ground_env, "char-whitespace?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_whitespacep));
+    /* 14.1.3? char-upper-case?, char-lower-case? */
+    /* unlike in r5rs these take an arbitrary number of chars
+       (even cyclical list) */
+    add_applicative(K, ground_env, "char-upper-case?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_upper_casep));
+    add_applicative(K, ground_env, "char-lower-case?", ftyped_predp, 3, 
+		    symbol, p2tv(kcharp), p2tv(kchar_lower_casep));
+    /* 14.1.4? char->integer, integer->char */
+    add_applicative(K, ground_env, "char->integer", kchar_to_integer, 0);
+    add_applicative(K, ground_env, "integer->char", kinteger_to_char, 0);
+    /* 14.1.4? char-upcase, char-downcase */
+    add_applicative(K, ground_env, "char-upcase", kchar_upcase, 0);
+    add_applicative(K, ground_env, "char-downcase", kchar_downcase, 0);
+    /* 14.2.1? char=? */
+    add_applicative(K, ground_env, "char=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_eqp));
+    /* 14.2.2? char<?, char<=?, char>?, char>=? */
+    add_applicative(K, ground_env, "char<?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ltp));
+    add_applicative(K, ground_env, "char<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp),  p2tv(kchar_lep));
+    add_applicative(K, ground_env, "char>?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_gtp));
+    add_applicative(K, ground_env, "char>=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_gep));
+    /* 14.2.3? char-ci=? */
+    add_applicative(K, ground_env, "char-ci=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_eqp));
+    /* 14.2.4? char-ci<?, char-ci<=?, char-ci>?, char-ci>=? */
+    add_applicative(K, ground_env, "char-ci<?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_ltp));
+    add_applicative(K, ground_env, "char-ci<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp),  p2tv(kchar_ci_lep));
+    add_applicative(K, ground_env, "char-ci>?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_gtp));
+    add_applicative(K, ground_env, "char-ci>=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kcharp), p2tv(kchar_ci_gep));
+}

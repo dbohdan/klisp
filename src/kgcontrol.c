@@ -366,3 +366,22 @@ void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* this will be a nop */
     kapply_cc(K, KINERT);
 }
+
+/* init ground */
+void kinit_control_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.5.1 inert? */
+    add_applicative(K, ground_env, "inert?", typep, 2, symbol, 
+		    i2tv(K_TINERT));
+    /* 4.5.2 $if */
+    add_operative(K, ground_env, "$if", Sif, 0);
+    /* 5.1.1 $sequence */
+    add_operative(K, ground_env, "$sequence", Ssequence, 0);
+    /* 5.6.1 $cond */
+    add_operative(K, ground_env, "$cond", Scond, 0);
+    /* 6.9.1 for-each */
+    add_applicative(K, ground_env, "for-each", for_each, 0);
+}

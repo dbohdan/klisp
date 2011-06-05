@@ -111,3 +111,14 @@ void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
     krooted_tvs_pop(K);
     kapply_cc(K, ls);
 }
+
+/* init ground */
+void kinit_encapsulations_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 8.1.1 make-encapsulation-type */
+    add_applicative(K, ground_env, "make-encapsulation-type", 
+		    make_encapsulation_type, 0); 
+}

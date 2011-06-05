@@ -21,6 +21,8 @@
 #include "kapplicative.h"
 #include "koperative.h"
 #include "kcontinuation.h"
+#include "kenvironment.h"
+#include "ksymbol.h"
 
 /* to use in type checking binds when no check is needed */
 #define anytype(obj_) (true)
@@ -425,5 +427,54 @@ inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i)
 /* gcd for two numbers, used for gcd, lcm & map */
 int64_t kgcd32_64(int32_t a, int32_t b);
 int64_t klcm32_64(int32_t a, int32_t b);
+
+
+/*
+** Macros for ground environment initialization
+*/
+
+/*
+** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
+** "value", both of type TValue. symbol will be bound to a symbol named by
+** "n_" and can be referrenced in the var_args
+** GC: All of these should be called when GC is deactivated on startup
+*/
+
+/* TODO add si to the symbols */
+#if KTRACK_SI
+#define add_operative(K_, env_, n_, fn_, ...)		\
+    { symbol = ksymbol_new(K_, n_, KNIL);		\
+    value = kmake_operative(K_, fn_, __VA_ARGS__);	\
+    TValue str = kstring_new_b_imm(K_, __FILE__);	\
+    TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),	\
+				    i2tv(0)));		\
+    kset_source_info(K_, value, si);			\
+    kadd_binding(K_, env_, symbol, value); }
+
+#define add_applicative(K_, env_, n_, fn_, ...)				\
+    { symbol = ksymbol_new(K_, n_, KNIL);				\
+	value = kmake_applicative(K_, fn_, __VA_ARGS__);		\
+	TValue str = kstring_new_b_imm(K_, __FILE__);			\
+	TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),		\
+					i2tv(0)));			\
+	kset_source_info(K_, kunwrap(value), si);			\
+	kset_source_info(K_, value, si);				\
+	kadd_binding(K_, env_, symbol, value); }
+#else /* KTRACK_SI */
+#define add_operative(K_, env_, n_, fn_, ...)		\
+    { symbol = ksymbol_new(K_, n_, KNIL);		\
+	value = kmake_operative(K_, fn_, __VA_ARGS__);	\
+	kadd_binding(K_, env_, symbol, value); }
+
+#define add_applicative(K_, env_, n_, fn_, ...)			\
+    { symbol = ksymbol_new(K_, n_);				\
+	value = kmake_applicative(K_, fn_, __VA_ARGS__);	\
+	kadd_binding(K_, env_, symbol, value); }
+#endif /* KTRACK_SI */
+
+#define add_value(K_, env_, n_, v_)			\
+    { value = v_;					\
+	symbol = ksymbol_new(K_, n_, KNIL);		\
+	kadd_binding(K_, env_, symbol, v_); }
 
 #endif

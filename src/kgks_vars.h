@@ -22,4 +22,7 @@
 void make_keyed_static_variable(klisp_State *K, TValue *xparams, 
 				 TValue ptree, TValue denv);
 
+/* init ground */
+void kinit_kgks_vars_ground_env(klisp_State *K);
+
 #endif

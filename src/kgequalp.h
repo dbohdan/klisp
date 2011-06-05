@@ -26,4 +26,7 @@ void equalp(klisp_State *K, TValue *xparas, TValue ptree, TValue denv);
 /* compare two objects and check to see if they are "equal?". */
 bool equal2p(klisp_State *K, TValue obj1, TValue obj2);
 
+/* init ground */
+void kinit_equalp_ground_env(klisp_State *K);
+
 #endif

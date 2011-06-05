@@ -168,3 +168,24 @@ void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 6.1.5 $or? */
 /* uses Sandp_Sorp */
+
+/* init ground */
+void kinit_booleans_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.1.1 boolean? */
+    add_applicative(K, ground_env, "boolean?", typep, 2, symbol, 
+		    i2tv(K_TBOOLEAN));
+    /* 6.1.1 not? */
+    add_applicative(K, ground_env, "not?", notp, 0);
+    /* 6.1.2 and? */
+    add_applicative(K, ground_env, "and?", andp, 0);
+    /* 6.1.3 or? */
+    add_applicative(K, ground_env, "or?", orp, 0);
+    /* 6.1.4 $and? */
+    add_operative(K, ground_env, "$and?", Sandp_Sorp, 2, symbol, KFALSE);
+    /* 6.1.5 $or? */
+    add_operative(K, ground_env, "$or?", Sandp_Sorp, 2, symbol, KTRUE);
+}

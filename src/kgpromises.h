@@ -32,4 +32,7 @@ void memoize(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 void do_handle_result(klisp_State *K, TValue *xparams, TValue obj);
 
+/* init ground */
+void kinit_promises_ground_env(klisp_State *K);
+
 #endif

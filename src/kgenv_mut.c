@@ -287,3 +287,19 @@ void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     krooted_tvs_pop(K);
     ktail_eval(K, env_expr, denv);
 }
+
+/* init ground */
+void kinit_env_mut_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.9.1 $define! */
+    add_operative(K, ground_env, "$define!", SdefineB, 1, symbol);
+    /* 6.8.1 $set! */
+    add_operative(K, ground_env, "$set!", SsetB, 1, symbol);
+    /* 6.8.2 $provide! */
+    add_operative(K, ground_env, "$provide!", SprovideB, 1, symbol);
+    /* 6.8.3 $import! */
+    add_operative(K, ground_env, "$import!", SimportB, 1, symbol);
+}

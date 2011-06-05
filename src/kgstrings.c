@@ -420,37 +420,70 @@ void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
-
-/* 13.3.1? symbol->string */
-/* The strings in symbols are immutable so we can just return that */
-void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+/* init ground */
+void kinit_strings_ground_env(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
-    bind_1tp(K, ptree, "symbol", ttissymbol, sym);
-    TValue str = ksymbol_str(sym);
-    kapply_cc(K, str);
-}
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
 
-/* 13.3.2? string->symbol */
-/* TEMP: for now this can create symbols with no external representation
-   this includes all symbols with non identifiers characters.
-*/
-/* NOTE:
-   Symbols with uppercase alphabetic characters will write as lowercase and
-   so, when read again will not compare as either eq? or equal?. This is ok
-   because the report only says that read objects when written and read 
-   again must be equal? which happens here 
-*/
-/* If the string is mutable it is copied */
-void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
-{
-    UNUSED(xparams);
-    UNUSED(denv);
-    bind_1tp(K, ptree, "string", ttisstring, str);
-    /* TODO si */
-    TValue new_sym = ksymbol_new_check_i(K, str, KNIL);
-    kapply_cc(K, new_sym);
+   /*
+    ** This section is still missing from the report. The bindings here are
+    ** taken from r5rs scheme and should not be considered standard. They are
+    ** provided in the meantime to allow programs to use string features
+    ** (ASCII only). 
+    */
+
+    /* 13.1.1? string? */
+    add_applicative(K, ground_env, "string?", typep, 2, symbol, 
+		    i2tv(K_TSTRING));
+    /* 13.1.2? make-string */
+    add_applicative(K, ground_env, "make-string", make_string, 0);
+    /* 13.1.3? string-length */
+    add_applicative(K, ground_env, "string-length", string_length, 0);
+    /* 13.1.4? string-ref */
+    add_applicative(K, ground_env, "string-ref", string_ref, 0);
+    /* 13.1.5? string-set! */
+    add_applicative(K, ground_env, "string-set!", string_setS, 0);
+    /* 13.2.1? string */
+    add_applicative(K, ground_env, "string", string, 0);
+    /* 13.2.2? string=?, string-ci=? */
+    add_applicative(K, ground_env, "string=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_eqp));
+    add_applicative(K, ground_env, "string-ci=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_eqp));
+    /* 13.2.3? string<?, string<=?, string>?, string>=? */
+    add_applicative(K, ground_env, "string<?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ltp));
+    add_applicative(K, ground_env, "string<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_lep));
+    add_applicative(K, ground_env, "string>?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_gtp));
+    add_applicative(K, ground_env, "string>=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_gep));
+    /* 13.2.4? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
+    add_applicative(K, ground_env, "string-ci<?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_ltp));
+    add_applicative(K, ground_env, "string-ci<=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_lep));
+    add_applicative(K, ground_env, "string-ci>?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_gtp));
+    add_applicative(K, ground_env, "string-ci>=?", ftyped_bpredp, 3,
+		    symbol, p2tv(kstringp), p2tv(kstring_ci_gep));
+    /* 13.2.5? substring */
+    add_applicative(K, ground_env, "substring", substring, 0);
+    /* 13.2.6? string-append */
+    add_applicative(K, ground_env, "string-append", string_append, 0);
+    /* 13.2.7? string->list, list->string */
+    add_applicative(K, ground_env, "string->list", string_to_list, 0);
+    add_applicative(K, ground_env, "list->string", list_to_string, 0);
+    /* 13.2.8? string-copy */
+    add_applicative(K, ground_env, "string-copy", string_copy, 0);
+    /* 13.2.9? string->immutable-string */
+    add_applicative(K, ground_env, "string->immutable-string", 
+		    string_to_immutable_string, 0);
+
+    /* TODO: add string-immutable? or general immutable? */
+
+    /* 13.2.10? string-fill! */
+    add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
 }

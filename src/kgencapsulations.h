@@ -22,4 +22,7 @@
 void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
 			     TValue denv);
 
+/* init ground */
+void kinit_encapsulations_ground_env(klisp_State *K);
+
 #endif

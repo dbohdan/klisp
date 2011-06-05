@@ -97,4 +97,7 @@ void do_reduce_combine(klisp_State *K, TValue *xparams, TValue obj);
 void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj);
 void do_reduce(klisp_State *K, TValue *xparams, TValue obj);
 
+/* init ground */
+void kinit_pairs_lists_ground_env(klisp_State *K);
+
 #endif

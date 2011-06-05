@@ -24,7 +24,6 @@
 #include "kgcontinuations.h"
 #include "kgcontrol.h" /* for seq helpers in $let/cc */
 
-
 /* 7.1.1 continuation? */
 /* uses typep */
 
@@ -320,4 +319,44 @@ void kgexit(klisp_State *K, TValue *xparams, TValue ptree,
     /* TODO: look out for guards and dynamic variables */
     /* should be probably handled in kcall_cont() */
     kcall_cont(K, K->root_cont, KINERT);
+}
+
+/* init ground */
+void kinit_continuations_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 7.1.1 continuation? */
+    add_applicative(K, ground_env, "continuation?", typep, 2, symbol, 
+		    i2tv(K_TCONTINUATION));
+    /* 7.2.2 call/cc */
+    add_applicative(K, ground_env, "call/cc", call_cc, 0);
+    /* 7.2.3 extend-continuation */
+    add_applicative(K, ground_env, "extend-continuation", extend_continuation, 
+		    0);
+    /* 7.2.4 guard-continuation */
+    add_applicative(K, ground_env, "guard-continuation", guard_continuation, 
+		    0);
+    /* 7.2.5 continuation->applicative */
+    add_applicative(K, ground_env, "continuation->applicative",
+		    continuation_applicative, 0);
+    /* 7.2.6 root-continuation */
+    add_value(K, ground_env, "root-continuation",
+	      K->root_cont);
+    /* 7.2.7 error-continuation */
+    add_value(K, ground_env, "error-continuation",
+	      K->root_cont);
+    /* 7.3.1 apply-continuation */
+    add_applicative(K, ground_env, "apply-continuation", apply_continuation, 
+		    0);
+    /* 7.3.2 $let/cc */
+    add_operative(K, ground_env, "$let/cc", Slet_cc, 
+		    0);
+    /* 7.3.3 guard-dynamic-extent */
+    add_applicative(K, ground_env, "guard-dynamic-extent", 
+		    guard_dynamic_extent, 0);
+    /* 7.3.4 exit */    
+    add_applicative(K, ground_env, "exit", kgexit, 
+		    0);
 }

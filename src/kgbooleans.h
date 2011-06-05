@@ -43,4 +43,7 @@ void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* Helper */
 bool kbooleanp(TValue obj);
 
+/* init ground */
+void kinit_booleans_ground_env(klisp_State *K);
+
 #endif

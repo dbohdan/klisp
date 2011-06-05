@@ -48,3 +48,13 @@ void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     kapply_cc(K, res);
 }
+
+/* init ground */
+void kinit_eqp_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+    /* 4.2.1 eq? */
+    /* 6.5.1 eq? */
+    add_applicative(K, ground_env, "eq?", eqp, 0);
+}

@@ -490,3 +490,27 @@ void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     kapply_cc(K, res);
 }
+
+/* init ground */
+void kinit_pair_mut_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.7.1 set-car!, set-cdr! */
+    add_applicative(K, ground_env, "set-car!", set_carB, 0);
+    add_applicative(K, ground_env, "set-cdr!", set_cdrB, 0);
+    /* 4.7.2 copy-es-immutable */
+    add_applicative(K, ground_env, "copy-es-immutable", copy_es, 2, symbol, 
+		    b2tv(false));
+    /* 5.8.1 encycle! */
+    add_applicative(K, ground_env, "encycle!", encycleB, 0);
+    /* 6.4.1 append! */
+    add_applicative(K, ground_env, "append!", appendB, 0);
+    /* 6.4.2 copy-es */
+    add_applicative(K, ground_env, "copy-es", copy_es, 2, symbol, b2tv(true));
+    /* 6.4.3 assq */
+    add_applicative(K, ground_env, "assq", assq, 0);
+    /* 6.4.3 memq? */
+    add_applicative(K, ground_env, "memq?", memqp, 0);
+}

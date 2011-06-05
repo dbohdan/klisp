@@ -24,3 +24,65 @@
 
 /* 4.4.1 symbol? */
 /* uses typep */
+
+/* 13.3.1? symbol->string */
+/* The strings in symbols are immutable so we can just return that */
+void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, ptree, "symbol", ttissymbol, sym);
+    TValue str = ksymbol_str(sym);
+    kapply_cc(K, str);
+}
+
+/* 13.3.2? string->symbol */
+/* TEMP: for now this can create symbols with no external representation
+   this includes all symbols with non identifiers characters.
+*/
+/* NOTE:
+   Symbols with uppercase alphabetic characters will write as lowercase and
+   so, when read again will not compare as either eq? or equal?. This is ok
+   because the report only says that read objects when written and read 
+   again must be equal? which happens here 
+*/
+/* If the string is mutable it is copied */
+void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    /* TODO si */
+    TValue new_sym = ksymbol_new_check_i(K, str, KNIL);
+    kapply_cc(K, new_sym);
+}
+
+/* init ground */
+void kinit_symbols_ground_env(klisp_State *K)
+{
+    TValue ground_env = K->ground_env;
+    TValue symbol, value;
+
+    /* 4.4.1 symbol? */
+    add_applicative(K, ground_env, "symbol?", typep, 2, symbol, 
+		    i2tv(K_TSYMBOL));
+   /*
+    ** This section is still missing from the report. The bindings here are
+    ** taken from r5rs scheme and should not be considered standard. 
+    */
+    /* ?.?.1? symbol->string */
+    add_applicative(K, ground_env, "symbol->string", symbol_to_string, 0);
+    /* ?.?.2? string->symbol */
+    /* TEMP: for now this can create symbols with no external representation
+       this includes all symbols with non identifiers characters.
+    */
+    /* NOTE:
+       Symbols with uppercase alphabetic characters will write as lowercase and
+       so, when read again will not compare as either eq? or equal?. This is ok
+       because the report only says that read objects when written and read 
+       again must be equal? which happens here 
+    */
+    add_applicative(K, ground_env, "string->symbol", string_to_symbol, 0);
+}
