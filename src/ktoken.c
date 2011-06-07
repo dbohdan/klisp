@@ -13,9 +13,8 @@
 ** TODO:
 **
 ** From the Report:
-** - Support other number types besides integers, rationals and exact 
-** infinities
-** - Support for complete number syntax (inexacts, reals, complex)
+**
+** - Support for complete number syntax (complex)
 ** 
 ** NOT from the Report:
 ** - Support for unicode (strings, char and symbols).
@@ -565,8 +564,19 @@ TValue ktok_read_special(klisp_State *K)
     /* Then check for simple chars, this is the only thing
        that is case dependant, so after this we downcase buf */
     /* REFACTOR: move this to a new function */
-    /* char constant, needs at least 3 chars  */
-    if (buf_len > 2 && buf[1] == '\\') {
+    /* char constant, needs at least 3 chars unless it's a delimiter
+     * char! */
+    if (buf_len == 2 && buf[1] == '\\') {
+	/* was a delimiter char... read it */
+	int ch_i = ktok_getc(K);
+	if (ch_i == EOF) {
+	    ktok_error(K, "EOF found while reading character name");
+	    /* avoid warning */
+	    return KINERT;
+	}
+	ks_tbclear(K);
+	return ch2tv((char)ch_i);
+    } else if (buf[1] == '\\') {
 	/* 
 	** RATIONALE: in the scheme spec (R5RS) it says that only alphabetic 
 	** char constants need a delimiter to disambiguate the cases with 
@@ -575,7 +585,6 @@ TValue ktok_read_special(klisp_State *K)
 	** Kernel report (R-1RK))
 	** For now we follow the scheme report 
 	*/
-
 	char ch = buf[2];
 
 	if (ch < 0 || ch > 127) {
