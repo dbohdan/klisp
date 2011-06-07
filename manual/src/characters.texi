@@ -6,3 +6,76 @@
 
 @chapter Characters
 @cindex characters
+
+  A character is an object that represents an ASCII character (for
+now, only ASCII is supported in klisp, in the future, full UNICODE
+will be supported).  The external representation of characters
+consists of a leading ``#\'' and the character or character name.  The
+only supported names for now are ``newline'' and ``space'' (both from
+r5rs scheme).  Characters are immutable.  The character type is
+encapsulated.
+
+  SOURCE NOTE: This section is still missing from the report.  The
+features defined here were taken mostly from r5rs scheme.
+
+@deffn Applicative char? (char? . objects)
+  The primitive type predicate for type character.  @code{char?}
+returns true iff all the objects in @code{objects} are of type
+character.
+@end deffn
+
+@deffn Applicative char=? (char=? . chars)
+@deffnx Applicative char<? (char<? . chars)
+@deffnx Applicative char<=? (char<=? . chars)
+@deffnx Applicative char>? (char>? . chars)
+@deffnx Applicative char>=? (char>=? . chars)
+  These predicates compare any number of characters using their
+ASCII value for the comparison.
+@end deffn
+
+@deffn Applicative char-ci=? (char-ci=? . chars)
+@deffnx Applicative char-ci<? (char-ci<? . chars)
+@deffnx Applicative char-ci<=? (char-ci<=? . chars)
+@deffnx Applicative char-ci>? (char-ci>? . chars)
+@deffnx Applicative char-ci>=? (char-ci>=? . chars)
+  These predicates convert the chars to lowercase and then compare
+their ASCII values.
+@end deffn
+
+@deffn Applicative char-alphabetic? (char-alphabetic? . chars) 
+@deffnx Applicative char-numeric? (char-numeric? . chars) 
+@deffnx Applicative char-whitespace? (char-whitespace? . chars) 
+  These predicates return true iff all of their arguments are
+respectively ``alphabetic'', ``numeric'', or ``whitespace''.
+@end deffn
+
+@deffn Applicative char-upper-case? (char-upper-case? . chars) 
+@deffnx Applicative char-lower-case? (char-lower-case? . chars) 
+  These predicates return true iff all of their arguments are
+respectively ``upper case, or ``lower case''.
+@end deffn
+
+@deffn Applicative char-upcase (char-upcase char) 
+@deffnx Applicative char-downcase (char-downcase char) 
+  These applicatives return a character @code{char2} so that:
+@example
+(char-ci=? char char2) @result{} #t
+@end example
+
+  If @code{char} is alphabetic then the following holds:
+
+@example
+(char-upper-case? (char-upcase char)) @result{} #t
+(char-lower-case? (char-downcase char)) @result{} #t
+@end example
+@end deffn
+
+@deffn Applicative char->integer (char->integer char)
+@deffnx Applicative integer->char (integer->char k)
+  These applicatives convert between ASCII values (as exact integers
+between 0 and 127) and characters.  If an integer that is out of range
+for ASCII characters is passed to @code{integer->char}, an error is
+signaled.
+@end deffn
+
+

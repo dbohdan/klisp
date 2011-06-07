@@ -1577,6 +1577,64 @@ File: klisp.info,  Node: Characters,  Next: Ports,  Prev: Strings,  Up: Top
 15 Characters
 *************
 
+A character is an object that represents an ASCII character (for now,
+only ASCII is supported in klisp, in the future, full UNICODE will be
+supported).  The external representation of characters consists of a
+leading "#\" and the character or character name.  The only supported
+names for now are "newline" and "space" (both from r5rs scheme).
+Characters are immutable.  The character type is encapsulated.
+
+   SOURCE NOTE: This section is still missing from the report.  The
+features defined here were taken mostly from r5rs scheme.
+
+ -- Applicative: char? (char? . objects)
+     The primitive type predicate for type character.  `char?' returns
+     true iff all the objects in `objects' are of type character.
+
+ -- Applicative: char=? (char=? . chars)
+ -- Applicative: char<? (char<? . chars)
+ -- Applicative: char<=? (char<=? . chars)
+ -- Applicative: char>? (char>? . chars)
+ -- Applicative: char>=? (char>=? . chars)
+     These predicates compare any number of characters using their
+     ASCII value for the comparison.
+
+ -- Applicative: char-ci=? (char-ci=? . chars)
+ -- Applicative: char-ci<? (char-ci<? . chars)
+ -- Applicative: char-ci<=? (char-ci<=? . chars)
+ -- Applicative: char-ci>? (char-ci>? . chars)
+ -- Applicative: char-ci>=? (char-ci>=? . chars)
+     These predicates convert the chars to lowercase and then compare
+     their ASCII values.
+
+ -- Applicative: char-alphabetic? (char-alphabetic? . chars)
+ -- Applicative: char-numeric? (char-numeric? . chars)
+ -- Applicative: char-whitespace? (char-whitespace? . chars)
+     These predicates return true iff all of their arguments are
+     respectively "alphabetic", "numeric", or "whitespace".
+
+ -- Applicative: char-upper-case? (char-upper-case? . chars)
+ -- Applicative: char-lower-case? (char-lower-case? . chars)
+     These predicates return true iff all of their arguments are
+     respectively "upper case, or "lower case".
+
+ -- Applicative: char-upcase (char-upcase char)
+ -- Applicative: char-downcase (char-downcase char)
+     These applicatives return a character `char2' so that:
+          (char-ci=? char char2) => #t
+
+     If `char' is alphabetic then the following holds:
+
+          (char-upper-case? (char-upcase char)) => #t
+          (char-lower-case? (char-downcase char)) => #t
+
+ -- Applicative: char->integer (char->integer char)
+ -- Applicative: integer->char (integer->char k)
+     These applicatives convert between ASCII values (as exact integers
+     between 0 and 127) and characters.  If an integer that is out of
+     range for ASCII characters is passed to `integer->char', an error
+     is signaled.
+
 
 File: klisp.info,  Node: Ports,  Next: Index,  Prev: Characters,  Up: Top
 
@@ -1900,6 +1958,25 @@ Index
 * cdddr:                                 Pairs and lists.     (line 100)
 * cddr:                                  Pairs and lists.     (line  92)
 * cdr:                                   Pairs and lists.     (line  86)
+* char->integer:                         Characters.          (line  58)
+* char-alphabetic?:                      Characters.          (line  37)
+* char-ci<=?:                            Characters.          (line  31)
+* char-ci<?:                             Characters.          (line  30)
+* char-ci=?:                             Characters.          (line  29)
+* char-ci>=?:                            Characters.          (line  33)
+* char-ci>?:                             Characters.          (line  32)
+* char-downcase:                         Characters.          (line  49)
+* char-lower-case?:                      Characters.          (line  44)
+* char-numeric?:                         Characters.          (line  38)
+* char-upcase:                           Characters.          (line  48)
+* char-upper-case?:                      Characters.          (line  43)
+* char-whitespace?:                      Characters.          (line  39)
+* char<=?:                               Characters.          (line  23)
+* char<?:                                Characters.          (line  22)
+* char=?:                                Characters.          (line  21)
+* char>=?:                               Characters.          (line  25)
+* char>?:                                Characters.          (line  24)
+* char?:                                 Characters.          (line  17)
 * characters:                            Characters.          (line   6)
 * combiner?:                             Combiners.           (line 120)
 * combiners:                             Combiners.           (line   6)
@@ -1946,6 +2023,7 @@ Index
 * inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
 * input-port?:                           Ports.               (line  27)
+* integer->char:                         Characters.          (line  59)
 * Kernel history:                        Kernel History.      (line   6)
 * keyed dynamic variables:               Keyed Variables.     (line  15)
 * keyed static variables:                Keyed Variables.     (line  40)
@@ -2032,7 +2110,7 @@ Node: Keyed Variables69360
 Node: Numbers72131
 Node: Strings72240
 Node: Characters72344
-Node: Ports72452
-Node: Index83737
+Node: Ports75054
+Node: Index86339
 
 End Tag Table
