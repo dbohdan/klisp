@@ -35,7 +35,146 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <h2 class="chapter">14 Strings</h2>
 
 <p><a name="index-strings-151"></a>
+  A string is an object that represent a sequence of characters (for
+now, only ASCII is supported in klisp, in the future, full UNICODE
+will be supported).  The external representation of strings consists
+of a leading &ldquo;"&rdquo;, the characters of the string and a closing &ldquo;"&rdquo;. 
+Some characters should be escaped, by preceding them with a &ldquo;\&rdquo;: in
+klisp these are the double quote (&ldquo;"&rdquo;) and the backslash (&ldquo;\&rdquo;). 
+In the future more advanced escape mechanism may be added (like in
+r7rs-draft scheme, for escping common ASCII control codes and
+arbitrary unicode characters).  A string has a length that is fixed at
+creation time, and as many characters, indexed from <code>0</code> to
+<code>length-1</code>.
 
+   <p>Strings may be mutable or immutable.  If an attempt is made to
+mutate an immutable string, an error is signaled.  Two immutable
+strings are &ldquo;eq?&rdquo; iff they are &ldquo;equal?&rdquo;.  Two mutable strings are
+&ldquo;eq?&rdquo; if they were created by the same constructor call.  Two
+mutable strings are &ldquo;equal?&rdquo; iff they are &ldquo;string=?&rdquo;.  For now it
+is undefined if a mutable and an immutable strings that are
+&ldquo;string=?&rdquo; are &ldquo;equal?&rdquo; or not.  The only exception is the empty
+string.  There is only one empty string (all empty strings are &ldquo;eq?&rdquo;
+to each other) and it should be considered immutable.  Even if an
+attempt is made to return a new empty string (like calling
+<code>(string)</code>, the canonical immutable empty string is returned. 
+The string type is encapsulated.
+
+   <p>SOURCE NOTE: This section is still missing from the report.  The
+features defined here were taken mostly from r5rs scheme.  It is
+possible that in the future, klisp only admits immutable strings (like
+lua and java), and that operations for contructing strings are moved
+to a new type (like Java's StringBuilder/StringBuffer).  But for now,
+compatibility with r5rs was preferred/simpler.
+
+<div class="defun">
+&mdash; Applicative: <b>string?</b> (<var>string? . objects</var>)<var><a name="index-string_003f-152"></a></var><br>
+<blockquote><p>  The primitive type predicate for type string.  <code>string?</code>
+returns true iff all the objects in <code>objects</code> are of type
+string. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string=?</b> (<var>string=? . strings</var>)<var><a name="index-string_003d_003f-153"></a></var><br>
+&mdash; Applicative: <b>string&lt;?</b> (<var>string&lt;? . strings</var>)<var><a name="index-string_003c_003f-154"></a></var><br>
+&mdash; Applicative: <b>string&lt;=?</b> (<var>string&lt;=? . strings</var>)<var><a name="index-string_003c_003d_003f-155"></a></var><br>
+&mdash; Applicative: <b>string&gt;?</b> (<var>string&gt;? . strings</var>)<var><a name="index-string_003e_003f-156"></a></var><br>
+&mdash; Applicative: <b>string&gt;=?</b> (<var>string&gt;=? . strings</var>)<var><a name="index-string_003e_003d_003f-157"></a></var><br>
+<blockquote><p>  These predicates compare any number of strings by their
+lexicographic order. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-ci=?</b> (<var>string-ci=? . strings</var>)<var><a name="index-string_002dci_003d_003f-158"></a></var><br>
+&mdash; Applicative: <b>string-ci&lt;?</b> (<var>string-ci&lt;? . strings</var>)<var><a name="index-string_002dci_003c_003f-159"></a></var><br>
+&mdash; Applicative: <b>string-ci&lt;=?</b> (<var>string-ci&lt;=? . strings</var>)<var><a name="index-string_002dci_003c_003d_003f-160"></a></var><br>
+&mdash; Applicative: <b>string-ci&gt;?</b> (<var>string-ci&gt;? . strings</var>)<var><a name="index-string_002dci_003e_003f-161"></a></var><br>
+&mdash; Applicative: <b>string-ci&gt;=?</b> (<var>string-ci&gt;=? . strings</var>)<var><a name="index-string_002dci_003e_003d_003f-162"></a></var><br>
+<blockquote><p>  These predicates convert the strings to lowercase and then compare
+them using their lexicographic order. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>make-string</b> (<var>make-string k </var>[<var>char</var>])<var><a name="index-make_002dstring-163"></a></var><br>
+<blockquote><p>  Applicative <code>make-string</code> constructs and returns a new mutable
+string of length <code>k</code>.  If <code>char</code> is specified, then all
+characters in the returned string are <code>char</code>, otherwise the
+content of the string is unspecified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string</b> (<var>string . chars</var>)<var><a name="index-string-164"></a></var><br>
+<blockquote><p>  Applicative <code>string</code> contructs and return a new mutable string
+composed of the character arguments. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-length</b> (<var>string-length string</var>)<var><a name="index-string_002dlength-165"></a></var><br>
+<blockquote><p>  Applicative <code>string-length</code> returns the length of
+<code>string</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-ref</b> (<var>string-ref string k</var>)<var><a name="index-string_002dref-166"></a></var><br>
+<blockquote><p>  Applicative <code>string-ref</code> returns the character of <code>string</code>
+at position <code>k</code>.  If <code>k</code> is out of bounds (i.e. less than
+<code>0</code> or greater or equal than <code>(length string)</code>) an error is
+signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-set!</b> (<var>string-set! string k char</var>)<var><a name="index-string_002dset_0021-167"></a></var><br>
+<blockquote><p>  Applicative <code>string-set!</code> replaces the character with index
+<code>k</code> in <code>string</code> with character <code>char</code>.  If <code>k</code> is
+out of bounds, or <code>string</code> is immutable, an error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-fill!</b> (<var>string-fill! string char</var>)<var><a name="index-string_002dfill_0021-168"></a></var><br>
+<blockquote><p>  Applicative <code>string-fill!</code> replaces all the characters in
+<code>string</code> with character <code>char</code>.  If <code>string</code> is an
+immutable string, an error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>substring</b> (<var>substring string k1 k2</var>)<var><a name="index-substring-169"></a></var><br>
+<blockquote><p>  Both <code>k1</code> &amp; <code>k2</code> should be valid indexes in
+<code>string</code>.  Also it should be the case that <code>k1 &lt;= k2</code>.
+
+        <p>Applicative <code>substring</code> constructs and returns a new immutable
+string with length <code>k2 - k1</code>, with the characters from
+<code>string</code>, starting at index <code>k1</code> (inclusive) and ending at
+index <code>k2</code> (exclusive). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-append</b> (<var>string-append . strings</var>)<var><a name="index-string_002dappend-170"></a></var><br>
+<blockquote><p>  Applicative <code>string-append</code> constructs and returns a new
+mutable string consisting of the concatenation of all its arguments. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-copy</b> (<var>string-copy string</var>)<var><a name="index-string_002dcopy-171"></a></var><br>
+<blockquote><p>  Applicative <code>string-copy</code> constructs and returns a new mutable
+string with the same length and characters as <code>string</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-&gt;immutable-string</b> (<var>string-&gt;immutable-string string</var>)<var><a name="index-string_002d_003eimmutable_002dstring-172"></a></var><br>
+<blockquote><p>  Applicative <code>string-&gt;immutable-string</code> constructs and returns a
+new immutable string with the same length and characters as
+<code>string</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-&gt;list</b> (<var>string-&gt;list string</var>)<var><a name="index-string_002d_003elist-173"></a></var><br>
+&mdash; Applicative: <b>list-&gt;string</b> (<var>list-&gt;string chars</var>)<var><a name="index-list_002d_003estring-174"></a></var><br>
+<blockquote><p>  Applicatives <code>string-&gt;list</code> and <code>list-&gt;string</code> convert
+between strings and list of characters.  The strings returned by
+<code>list-&gt;string</code> are mutable. 
+</p></blockquote></div>
+
+<!-- TODO add upcase/downcase when added to klisp -->
 <!-- *-texinfo-*- -->
    </body></html>
 

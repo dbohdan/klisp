@@ -1571,6 +1571,113 @@ File: klisp.info,  Node: Strings,  Next: Characters,  Prev: Numbers,  Up: Top
 14 Strings
 **********
 
+A string is an object that represent a sequence of characters (for now,
+only ASCII is supported in klisp, in the future, full UNICODE will be
+supported).  The external representation of strings consists of a
+leading """, the characters of the string and a closing """.  Some
+characters should be escaped, by preceding them with a "\": in klisp
+these are the double quote (""") and the backslash ("\").  In the
+future more advanced escape mechanism may be added (like in r7rs-draft
+scheme, for escping common ASCII control codes and arbitrary unicode
+characters).  A string has a length that is fixed at creation time, and
+as many characters, indexed from `0' to `length-1'.
+
+   Strings may be mutable or immutable.  If an attempt is made to
+mutate an immutable string, an error is signaled.  Two immutable
+strings are "eq?" iff they are "equal?".  Two mutable strings are "eq?"
+if they were created by the same constructor call.  Two mutable strings
+are "equal?" iff they are "string=?".  For now it is undefined if a
+mutable and an immutable strings that are "string=?" are "equal?" or
+not.  The only exception is the empty string.  There is only one empty
+string (all empty strings are "eq?"  to each other) and it should be
+considered immutable.  Even if an attempt is made to return a new empty
+string (like calling `(string)', the canonical immutable empty string
+is returned.  The string type is encapsulated.
+
+   SOURCE NOTE: This section is still missing from the report.  The
+features defined here were taken mostly from r5rs scheme.  It is
+possible that in the future, klisp only admits immutable strings (like
+lua and java), and that operations for contructing strings are moved to
+a new type (like Java's StringBuilder/StringBuffer).  But for now,
+compatibility with r5rs was preferred/simpler.
+
+ -- Applicative: string? (string? . objects)
+     The primitive type predicate for type string.  `string?' returns
+     true iff all the objects in `objects' are of type string.
+
+ -- Applicative: string=? (string=? . strings)
+ -- Applicative: string<? (string<? . strings)
+ -- Applicative: string<=? (string<=? . strings)
+ -- Applicative: string>? (string>? . strings)
+ -- Applicative: string>=? (string>=? . strings)
+     These predicates compare any number of strings by their
+     lexicographic order.
+
+ -- Applicative: string-ci=? (string-ci=? . strings)
+ -- Applicative: string-ci<? (string-ci<? . strings)
+ -- Applicative: string-ci<=? (string-ci<=? . strings)
+ -- Applicative: string-ci>? (string-ci>? . strings)
+ -- Applicative: string-ci>=? (string-ci>=? . strings)
+     These predicates convert the strings to lowercase and then compare
+     them using their lexicographic order.
+
+ -- Applicative: make-string (make-string k [char])
+     Applicative `make-string' constructs and returns a new mutable
+     string of length `k'.  If `char' is specified, then all characters
+     in the returned string are `char', otherwise the content of the
+     string is unspecified.
+
+ -- Applicative: string (string . chars)
+     Applicative `string' contructs and return a new mutable string
+     composed of the character arguments.
+
+ -- Applicative: string-length (string-length string)
+     Applicative `string-length' returns the length of `string'.
+
+ -- Applicative: string-ref (string-ref string k)
+     Applicative `string-ref' returns the character of `string' at
+     position `k'.  If `k' is out of bounds (i.e. less than `0' or
+     greater or equal than `(length string)') an error is signaled.
+
+ -- Applicative: string-set! (string-set! string k char)
+     Applicative `string-set!' replaces the character with index `k' in
+     `string' with character `char'.  If `k' is out of bounds, or
+     `string' is immutable, an error is signaled.
+
+ -- Applicative: string-fill! (string-fill! string char)
+     Applicative `string-fill!' replaces all the characters in `string'
+     with character `char'.  If `string' is an immutable string, an
+     error is signaled.
+
+ -- Applicative: substring (substring string k1 k2)
+     Both `k1' & `k2' should be valid indexes in `string'.  Also it
+     should be the case that `k1 <= k2'.
+
+     Applicative `substring' constructs and returns a new immutable
+     string with length `k2 - k1', with the characters from `string',
+     starting at index `k1' (inclusive) and ending at index `k2'
+     (exclusive).
+
+ -- Applicative: string-append (string-append . strings)
+     Applicative `string-append' constructs and returns a new mutable
+     string consisting of the concatenation of all its arguments.
+
+ -- Applicative: string-copy (string-copy string)
+     Applicative `string-copy' constructs and returns a new mutable
+     string with the same length and characters as `string'.
+
+ -- Applicative: string->immutable-string (string->immutable-string
+          string)
+     Applicative `string->immutable-string' constructs and returns a
+     new immutable string with the same length and characters as
+     `string'.
+
+ -- Applicative: string->list (string->list string)
+ -- Applicative: list->string (list->string chars)
+     Applicatives `string->list' and `list->string' convert between
+     strings and list of characters.  The strings returned by
+     `list->string' are mutable.
+
 
 File: klisp.info,  Node: Characters,  Next: Ports,  Prev: Strings,  Up: Top
 
@@ -2031,6 +2138,7 @@ Index
 * length:                                Pairs and lists.     (line 191)
 * list:                                  Pairs and lists.     (line  72)
 * list*:                                 Pairs and lists.     (line  78)
+* list->string:                          Strings.             (line 109)
 * list-neighbors:                        Pairs and lists.     (line 228)
 * list-ref:                              Pairs and lists.     (line 198)
 * list-tail:                             Pairs and lists.     (line 147)
@@ -2041,6 +2149,7 @@ Index
 * make-kernel-standard-environment:      Environments.        (line 119)
 * make-keyed-dynamic-variable:           Keyed Variables.     (line  21)
 * make-keyed-static-variable:            Keyed Variables.     (line  44)
+* make-string:                           Strings.             (line  57)
 * map <1>:                               Combiners.           (line  96)
 * map:                                   Pairs and lists.     (line 169)
 * member?:                               Pairs and lists.     (line 257)
@@ -2072,8 +2181,29 @@ Index
 * root-continuation:                     Continuations.       (line 104)
 * set-car!:                              Pairs and lists.     (line  41)
 * set-cdr!:                              Pairs and lists.     (line  42)
+* string:                                Strings.             (line  63)
+* string->immutable-string:              Strings.             (line 103)
+* string->list:                          Strings.             (line 108)
 * string->symbol:                        Symbols.             (line  20)
+* string-append:                         Strings.             (line  94)
+* string-ci<=?:                          Strings.             (line  51)
+* string-ci<?:                           Strings.             (line  50)
+* string-ci=?:                           Strings.             (line  49)
+* string-ci>=?:                          Strings.             (line  53)
+* string-ci>?:                           Strings.             (line  52)
+* string-copy:                           Strings.             (line  98)
+* string-fill!:                          Strings.             (line  80)
+* string-length:                         Strings.             (line  67)
+* string-ref:                            Strings.             (line  70)
+* string-set!:                           Strings.             (line  75)
+* string<=?:                             Strings.             (line  43)
+* string<?:                              Strings.             (line  42)
+* string=?:                              Strings.             (line  41)
+* string>=?:                             Strings.             (line  45)
+* string>?:                              Strings.             (line  44)
+* string?:                               Strings.             (line  37)
 * strings:                               Strings.             (line   6)
+* substring:                             Strings.             (line  85)
 * symbol->string:                        Symbols.             (line  16)
 * symbol?:                               Symbols.             (line  12)
 * symbols:                               Symbols.             (line   6)
@@ -2109,8 +2239,8 @@ Node: Promises65437
 Node: Keyed Variables69360
 Node: Numbers72131
 Node: Strings72240
-Node: Characters72344
-Node: Ports75054
-Node: Index86339
+Node: Characters77587
+Node: Ports80297
+Node: Index91582
 
 End Tag Table

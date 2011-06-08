@@ -6,3 +6,131 @@
 
 @chapter Strings
 @cindex strings
+
+  A string is an object that represent a sequence of characters (for
+now, only ASCII is supported in klisp, in the future, full UNICODE
+will be supported).  The external representation of strings consists
+of a leading ``"'', the characters of the string and a closing ``"''.
+Some characters should be escaped, by preceding them with a ``\'': in
+klisp these are the double quote (``"'') and the backslash (``\'').
+In the future more advanced escape mechanism may be added (like in
+r7rs-draft scheme, for escping common ASCII control codes and
+arbitrary unicode characters).  A string has a length that is fixed at
+creation time, and as many characters, indexed from @code{0} to
+@code{length-1}.
+
+  Strings may be mutable or immutable.  If an attempt is made to
+mutate an immutable string, an error is signaled.  Two immutable
+strings are ``eq?'' iff they are ``equal?''.  Two mutable strings are
+``eq?'' if they were created by the same constructor call.  Two
+mutable strings are ``equal?'' iff they are ``string=?''.  For now it
+is undefined if a mutable and an immutable strings that are
+``string=?'' are ``equal?'' or not.  The only exception is the empty
+string.  There is only one empty string (all empty strings are ``eq?''
+to each other) and it should be considered immutable.  Even if an
+attempt is made to return a new empty string (like calling
+@code{(string)}, the canonical immutable empty string is returned.
+The string type is encapsulated.
+
+SOURCE NOTE: This section is still missing from the report.  The
+features defined here were taken mostly from r5rs scheme.  It is
+possible that in the future, klisp only admits immutable strings (like
+lua and java), and that operations for contructing strings are moved
+to a new type (like Java's StringBuilder/StringBuffer).  But for now,
+compatibility with r5rs was preferred/simpler.
+
+@deffn Applicative string? (string? . objects)
+  The primitive type predicate for type string.  @code{string?}
+returns true iff all the objects in @code{objects} are of type
+string.
+@end deffn
+
+@deffn Applicative string=? (string=? . strings)
+@deffnx Applicative string<? (string<? . strings)
+@deffnx Applicative string<=? (string<=? . strings)
+@deffnx Applicative string>? (string>? . strings)
+@deffnx Applicative string>=? (string>=? . strings)
+  These predicates compare any number of strings by their
+lexicographic order.
+@end deffn
+
+@deffn Applicative string-ci=? (string-ci=? . strings)
+@deffnx Applicative string-ci<? (string-ci<? . strings)
+@deffnx Applicative string-ci<=? (string-ci<=? . strings)
+@deffnx Applicative string-ci>? (string-ci>? . strings)
+@deffnx Applicative string-ci>=? (string-ci>=? . strings)
+  These predicates convert the strings to lowercase and then compare
+them using their lexicographic order.
+@end deffn
+
+@deffn Applicative make-string (make-string k [char])
+  Applicative @code{make-string} constructs and returns a new mutable
+string of length @code{k}.  If @code{char} is specified, then all
+characters in the returned string are @code{char}, otherwise the
+content of the string is unspecified.
+@end deffn
+
+@deffn Applicative string (string . chars)
+  Applicative @code{string} contructs and return a new mutable string
+composed of the character arguments.
+@end deffn
+
+@deffn Applicative string-length (string-length string)
+  Applicative @code{string-length} returns the length of
+@code{string}.
+@end deffn
+
+@deffn Applicative string-ref (string-ref string k)
+  Applicative @code{string-ref} returns the character of @code{string}
+at position @code{k}.  If @code{k} is out of bounds (i.e. less than
+@code{0} or greater or equal than @code{(length string)}) an error is
+signaled.
+@end deffn
+
+@deffn Applicative string-set! (string-set! string k char)
+  Applicative @code{string-set!} replaces the character with index
+@code{k} in @code{string} with character @code{char}.  If @code{k} is
+out of bounds, or @code{string} is immutable, an error is signaled.
+@end deffn
+
+@deffn Applicative string-fill! (string-fill! string char)
+  Applicative @code{string-fill!} replaces all the characters in
+@code{string} with character @code{char}.  If @code{string} is an
+immutable string, an error is signaled.
+@end deffn
+
+@deffn Applicative substring (substring string k1 k2)
+  Both @code{k1} & @code{k2} should be valid indexes in
+@code{string}.  Also it should be the case that @code{k1 <= k2}.
+
+  Applicative @code{substring} constructs and returns a new immutable
+string with length @code{k2 - k1}, with the characters from
+@code{string}, starting at index @code{k1} (inclusive) and ending at
+index @code{k2} (exclusive).
+@end deffn
+
+@deffn Applicative string-append (string-append . strings)
+  Applicative @code{string-append} constructs and returns a new
+mutable string consisting of the concatenation of all its arguments.
+@end deffn
+
+@deffn Applicative string-copy (string-copy string)
+  Applicative @code{string-copy} constructs and returns a new mutable
+string with the same length and characters as @code{string}.
+@end deffn
+
+@deffn Applicative string->immutable-string (string->immutable-string string)
+  Applicative @code{string->immutable-string} constructs and returns a
+new immutable string with the same length and characters as
+@code{string}.
+@end deffn
+
+@deffn Applicative string->list (string->list string)
+@deffnx Applicative list->string (list->string chars)
+  Applicatives @code{string->list} and @code{list->string} convert
+between strings and list of characters.  The strings returned by
+@code{list->string} are mutable.
+@end deffn
+
+@c TODO add upcase/downcase when added to klisp
+
