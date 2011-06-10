@@ -6,3 +6,461 @@
 
 @chapter Numbers
 @cindex numbers
+
+All numbers are immutable, and @code{equal?} iff @code{eq?}.  The
+number type is encapsulated.
+
+@c TODO add more content on numbers
+
+  The external representation of an undefined number is
+@code{#undefined}.  The external representation of a real with no
+primary value is @code{#real} (but this may change in the future, the
+report is missing the output representation for reals with no primary
+values).  All other rules for externally representing numbers pertain
+only to defined numbers with primary values.  
+
+  An external representation of a real number consists of optional
+radix and/or exactness prefixes, optional sign (@code{+} or @code{-}),
+and magnitude. The radix prefixes are @code{#b} (binary), @code{#o}
+(octal), @code{#d} (decimal), and @code{#x} (hexadecimal); the default
+is decimal.  The exactness prefixes are @code{#e} (exact) and
+@code{#i} (inexact); by default, the number is inexact iff the
+magnitude representation uses floating point. If both kinds of
+prefixes are used, they may occur in either order. The magnitude is
+either @code{infinity}; an unsigned integer (nonempty sequence of
+digits); a ratio of unsigned integers (two unsigned integers with a
+@code{/} between, of which the second is non-zero); or a floating
+point representation.  If the magnitude is @code{infinity}, there must
+be an exactness prefix and a sign, and no radix prefix.  Floating
+point representation can only be used with decimal radix; it consists
+of nonempty integer part, point (@code{.}), nonempty fraction part,
+and optional exponent part.  The optional exponent part consists of an
+exponent letter, and an (optionally signed) integer indicating a power
+of ten by which to multiply the magnitude.  The choice of exponent
+letter makes no difference in what mathematical number is indicated by
+the external representation, but does indicate internal representation
+precision. Exponent letters @code{s}, @code{f}, @code{d}, @code{f}
+indicate preference for successively higher internal precision -
+short, float, double, long.  When reading an inexact real number,
+exponent letter @code{e} accepts the default internal precision, which
+must be at least double.  When writeing an inexact real number,
+exponent letter @code{e} may be used for the default internal
+precision, and must be used for any internal number format not
+indicated by any of the other exponent letters.  Float and double must
+provide, respectively, at least as much precision as IEEE 32-bit and
+64-bit floating point standards [IE85].  For example, @code{#i#xa/c}
+represents an inexact number using hexadecimal notation, with signed
+magnitude positive five sixths (ten over twelve).  @code{-3.5l-2}
+represents an inexact number using decimal notation, with signed
+magnitude negative thirty five thousandths, and requested long
+precision (which must be at least IEEE 64-bit floating point).  When
+reading an external representation of an inexact real, the bounds on
+the resulting inexact number are chosen in accordance with the
+@c TODO add xref
+narrow-arithmetic keyed dynamic variable.
+
+NOTE: in klisp, all inexact numbers are stored as IEEE 64-bit floating
+point.  No bounding or robustness info is kept.
+
+@deffn Applicative number? (number? . objects)
+  The primitive type predicate for type number.  @code{number?}
+returns true iff all the objects in @code{objects} are of type number.
+@end deffn
+
+@deffn Applicative integer? (integer? . objects)
+  The primitive type predicate for number subtype integer.
+@code{integer?}  returns true iff all the objects in @code{objects}
+are of type integer.
+@end deffn
+
+@deffn Applicative rational? (rational? . objects)
+  The primitive type predicate for number subtype rational.
+@code{rational?}  returns true iff all the objects in @code{objects}
+are of type rational.
+@end deffn
+
+@deffn Applicative real? (real? . objects)
+  The primitive type predicate for number subtype real.
+@code{real?}  returns true iff all the objects in @code{objects}
+are of type real.
+@end deffn
+
+@deffn Applicative finite? (finite? . numbers)
+  Predicate @code{finite?} returns true iff all the numbers in
+@code{numbers} are finite.
+@end deffn
+
+@deffn Applicative exact? (exact? . numbers)
+  Predicate @code{exact?} returns true iff all the numbers in
+@code{numbers} are exact.
+@end deffn
+
+@deffn Applicative inexact? (inexact? . numbers)
+  Predicate @code{inexact?} returns true iff all the numbers in
+@code{numbers} are inexact.
+@end deffn
+
+@deffn Applicative robust? (robust? . numbers)
+  Predicate @code{robust?} returns true iff all the numbers in
+@code{numbers} are robust.
+@end deffn
+
+@deffn Applicative undefined? (undefined? . numbers)
+  Predicate @code{undefined?} returns true iff all the numbers in
+@code{numbers} are undefined.
+@end deffn
+
+@deffn Applicative =? (=? . numbers)
+  Applicative @code{=?} is a predicate that returns true iff all its
+arguments are numerically equal to each other.  If any of its
+arguments has no primary value, an error is signaled.
+@end deffn
+
+@deffn Applicative <? (<? . reals)
+@deffnx Applicative <=? (<=? . reals)
+@deffnx Applicative >? (>? . reals)
+@deffnx Applicative >=? (>=? . reals)
+  Each of these applicatives is a predicate that returns true iff
+every two consecutive elements of @code{reals} have primary values in
+the order indicated by the name of the applicative.  If any element of
+@code{reals} has no primary value, an error is signaled.
+@end deffn
+
+@deffn Applicative + (+ . numbers)
+  Applicative @code{+} returns the sum of the elements of numbers.  If
+numbers is empty, the sum of its elements is exact zero.  If a
+positive infinity is added to a negative infinity, the result has no
+primary value.  If all the elements of a cycle are zero, the sum of
+the cycle is zero.  If the acyclic sum of the elements of a cycle
+(i.e., the sum of an acyclic list containing just those elements) is
+non-zero, the sum of the cycle is positive infinity times the acyclic
+sum of the elements.  If the acyclic sum of the elements of a cycle is
+zero, but some of the elements of the cycle are non-zero, the sum of
+the cycle has no primary value.
+@end deffn
+
+@deffn Applicative * (* . numbers)
+  Applicative @code{*} returns the product of the elements of numbers.
+If numbers is empty, the product of its elements is exact one.  If an
+infinity is multiplied by zero, the result has no primary value.  If
+the acyclic product of the elements of a cycle is real greater than
+one, the product of the cycle is positive infinity. If all the
+elements of a cycle are positive one, the product of the cycle is
+positive one.  If the acyclic product of the elements of a cycle is
+positive one, but some of the elements of the cycle are not positive
+one, the product of the cycle has no primary value.  If the acyclic
+product of the elements of a cycle has magnitude less than one, the
+product of the cycle is zero.  If the acyclic product of the elements
+of a cycle has magnitude greater than or equal to one, and is not
+positive real, the product of the cycle has no primary value.
+@end deffn
+
+@deffn Applicative - (- number . numbers)
+  @code{numbers} should be a nonempty list of numbers. 
+
+  Applicative @code{-} returns the sum of @code{number} with the
+negation of the sum of @code{numbers}.
+@end deffn
+
+@deffn Applicative zero? (zero? . numbers)
+  Applicative @code{zero?} is a predicate that returns true iff every
+element of @code{numbers} is zero.  For this purpose, a real number is
+zero if its primary value is zero.  If any element of numbers has no
+primary value an error is signaled.
+@end deffn
+
+@deffn Applicative div (div real1 real2)
+@deffnx Applicative mod (mod real1 real2)
+@deffnx Applicative div-and-mod (div-and-mod real1 real2)
+  For all three applicatives, if @code{real1} is infinite or
+@code{real2} is zero, an error is signaled.  
+
+  Let @code{n} be the greatest integer such that @code{real2 * n <=
+real1}.  Applicative @code{div} returns @code{n}.  Applicative
+@code{mod} returns @code{real1 - (real2 * n)}.  Applicative
+@code{div-and-mod} returns a freshly allocated list of length two,
+whose first element is @code{n} and whose second element is
+@code{real1 - (real2 * n)}.
+
+  NOTE: I'm not really sure about this description...
+@end deffn
+
+@deffn Applicative div0 (div0 real1 real2)
+@deffnx Applicative mod0 (mod0 real1 real2)
+@deffnx Applicative div0-and-mod0 (div0-and-mod0 real1 real2)
+  For all three applicatives, if @code{real1} is infinite or
+@code{real2} is zero, an error is signaled.  
+
+  Let @code{n} be the greatest integer such that @code{real2 * n <=
+real1 + |real2/2|}.  Applicative @code{div0} returns @code{n}.
+Applicative @code{mod0} returns @code{real1 - (real2 * n)}.
+Applicative @code{div0-and-mod0} returns a freshly allocated list of
+length two, whose first element is @code{n} and whose second element
+is @code{real1 - (real2 * n)}.
+
+  NOTE: I'm not really sure about this description...
+@end deffn
+
+@deffn Applicative positive? (positive? . reals)
+@deffnx Applicative negative? (negative? . reals)
+  Applicative @code{positive?} is a predicate that returns true iff
+every element of @code{reals} is greater than zero. Applicative
+@code{negative?} is a predicate that returns true iff every element of
+@code{reals} is less than zero.  If any argument to either applicative
+has no primary value an error is signaled.
+@end deffn
+
+@deffn Applicative odd? (odd? . integers)
+@deffnx Applicative even? (even? . integers)
+  Applicative @code{odd?} is a predicate that returns true iff every
+element of @code{integers} is odd.  Applicative @code{even?} is a
+predicate that returns true iff every element of @code{integers} is
+even.  If any argument to either applicative has no primary value an
+error is signaled.
+@end deffn
+
+@deffn Applicative (abs real)
+  Applicative @code{abs} returns the nonnegative real number with the
+same magnitude as @code{real}; that is, if @code{real} is nonnegative
+it returns @code{real}, otherwise it returns the negation of
+@code{real}.
+@end deffn
+
+@deffn Applicative max (max . reals)
+@deffnx Applicative min (min . reals)
+  If @code{reals} is nil, applicative @code{max} returns exact
+negative infinity, and applicative @code{min} returns exact positive
+infinity.  If @code{reals} is non-nil, applicative @code{max} returns
+the largest number in @code{reals}, and applicative @code{min} returns
+the smallest number in @code{reals}.
+@end deffn
+
+
+@deffn Applicative lcm (lcm . impints)
+@deffnx Applicative gcd (gcd . impints)
+  @code{impints} should be a list of improper integers, that is, real
+numbers each of which is either an integer or an infinity.
+
+  Applicative @code{lcm} returns the smallest positive improper
+integer that is an improper0integer multiple of every element of
+@code{impints} (that is, smallest @code{n >= 1} such that for every
+argument @code{nk} there exists @code{n'k} with @code{nk * n'k = n}).
+If any of the arguments is zero, the result of @code{lcm} has no
+primary value.  According to these rules, @code{lcm} with nil argument
+list returns @code{1}, and @code{lcm} with any infinite argument
+returns positive infinity.  
+
+  Applicative @code{gcd} returns the largest positive improper integer
+such that every element of @code{impints} is an improper-integer
+multiple of it (that is, largest @code{n >= 1} such that for every
+argument @code{nk} there exists @code{n'k} with @code{n * n'k = nk}).
+@code{gcd} with nil argument list returns exact positive infinity.  If
+@code{gcd} is called with one or more arguments, and at least one of
+the arguments is zero, but none of the arguments is a non-zero finite
+integer, its result has no primary value.  According to these rules,
+if @code{gcd} is called with at least one finite non-zero argument,
+its result is the same as if all zero and infinite arguments were
+deleted.
+@end deffn
+
+@deffn Applicative get-real-internal-bounds (get-real-internal-bounds real)
+@deffnx Applicative get-real-exact-bounds (get-real-exact-bounds real)
+  Applicative @code{get-real-internal-bounds} returns a freshly
+allocated list of reals @code{(x1 x2)}, where the primary value of
+@code{x1} is the lower bound of @code{real}, using the same internal
+representation as the primary value of @code{real}, and the primary
+value of @code{x2} is the upper bound of @code{real}, using the same
+internal representation as the primary value of @code{real}.  The
+@code{xk} are inexact iff real is inexact.  The @code{xk} are robust
+(i.e., tagged if the implementation supports such), and the bounds of
+each @code{xk} are only required to contain its primary value (i.e.,
+the implementation is allowed to make the bounds equal to the primary
+value).  
+
+  Applicative @code{get-real-exact-bounds} returns a freshly allocated
+list of exact reals @code{(x1 x2)}, where @code{x1} is not greater
+than the lower bound of @code{real}, and @code{x2} is not less than
+the upper bound of @code{real}.
+@end deffn
+
+@deffn Applicative get-real-internal-primary (get-real-internal-primary real)
+@deffnx Applicative get-real-exact-primary (get-real-exact-primary real)
+  If @code{real} is exact, both applicatives return @code{real}.  If
+@code{real} has no primary value, both applicatives signal an error.
+
+  If @code{real} is inexact with a primary value, applicative
+@code{get-real-internal-primary} returns a real number @code{x0} whose
+primary value is the same as, and has the same internal format as, the
+primary value of @code{real}.  @code{x0} is robust, and its bounds are
+only required to contain its primary value.
+
+@c TODO add xref to get-real-exact-bounds
+  If @code{real} is inexact with a primary value, applicative
+@code{get-real-exact-primary} returns an exact real number @code{x0}
+within the exact bounds that would be returned for @code{real} by
+applicative @code{get-real-exact-bounds}.  Preferably, @code{x0}
+should be as close to the primary value of @code{real} as the
+implementation can reasonably arrange. If the implementation does not
+support any exact @code{real} that reasonably approximates
+@code{real}, an error may be signaled.
+@end deffn
+
+@deffn Applicative make-inexact (make-inexact real1 real2 real3)
+  Applicative @code{make-inexact} returns an inexact real number, as
+follows.  If @code{real2} is inexact, the result has the same primary
+value as @code{real2}; and if @code{real2} has no primary value, the
+result has no primary value.  The result has the same robustness as
+@code{real2}.  If possible, the result uses the same internal
+representation as @code{real2}.  If @code{real2} is exact, the primary
+value of the result is as close to @code{real2} as the implementation
+can reasonably arrange; overflow and underflow are handled as
+@c TODO add xref to overflow
+described in ....  The lower bound of the result is no greater than
+the lower bound of @code{real1}, the primary value of @code{real2},
+and the primary value of the result.  The upper bound of the result is
+no less than the upper bound of @code{real3}, the primary value of
+@code{real2}, and the primary value of the result.
+@end deffn
+
+@deffn Applicative real->inexact (real->inexact real)
+@deffnx Applicative real->exact (real->exact real)
+@c TODO add xref to get-real-exact-primary
+  Applicative @code{real->exact} behaves just as
+@code{get-real-exact-primary}.  
+
+  If @code{real} is inexact, applicative @code{real->inexact} returns
+@code{real}.  If @code{real} is exact, applicative
+@code{real->inexact} returns an inexact real @code{x0} such that
+@code{real} would be a permissible result of passing @code{x0} to
+@code{real->exact}.  If the implementation does not support any such
+@code{x0}, an error may be signaled.  Otherwise, @code{x0} is robust,
+and its bounds are only required to contain its primary value and
+@code{real}.
+@end deffn
+
+@deffn Applicative with-strict-arithmetic (with-strict-arithmetic boolean combiner)
+@deffnx Applicative get-string-arithmetic (get-strict-arithmetic?)
+@c TODO add xref to dynamic keys and under/over flow, no prim value
+  These applicatives are the binder and accessor of the
+@code{strict-arithmetic} keyed dynamic variable.  When this keyed
+variable is true, various survivable but dubious arithmetic events
+signal an error - notably, operation results with no primary value,
+and over- and underflows.
+@end deffn
+
+@deffn Applicative / (/ number . numbers)
+  @code{numbers} should be a nonempty list of numbers. 
+
+  Applicative @code{/} returns @code{number} divided by the product of
+@code{numbers}.  If the product of @code{numbers} is zero, an error is
+signaled.  If @code{number} is infinite and the product of @code{numbers} is
+infinite, an error is signaled.
+@end deffn
+
+@deffn Applicative numerator (numerator rational)
+@deffnx Applicative denominator (denominator rational)
+  These applicatives return the numerator and denominator of
+@code{rational}, in least terms (i.e., chosen for the least positive
+denominator).  Note that if @code{rational} is inexact, and either of
+its bounds is not its primary value, the denominator has upper bound
+positive infinity, and the numerator must have at least one infinite
+bound (two infinite bounds if the bounds of rational allow values of
+both signs).
+@end deffn
+
+
+@deffn Applicative floor (floor real)
+@deffnx Applicative ceiling (ceiling real)
+@deffnx Applicative truncate (truncate real)
+@deffnx Applicative round (round real)
+  Applicative @code{floor} returns the largest integer not greater
+than @code{real}.
+
+  Applicative @code{ceiling} returns the smallest integer not less
+than @code{real}.
+
+  Applicative @code{truncate} returns the integer closest to
+@code{real} whose absolute value is not greater than that of
+@code{real}.
+
+  Applicative @code{round} returns the closest integer to @code{real},
+rounding to even when @code{real} is halfway between two integers.
+@end deffn
+
+@deffn Applicative rationalize (rationalize real1 real2)
+@deffnx Applicative simplest-rational (simplest-rational real1 real2)
+  A rational number @code{r1} is simpler than another rational
+@code{r2} if @code{r1 = p1 / q1} and @code{r2 = p2 / q2}, both in
+lowest terms, and @code{|p1| <= |p2|} and @code{|q1| <= |q2|}. Thus
+@code{3/5} is simpler than @code{4/7}. Not all rationals are
+comparable in this ordering, as for example @code{2/7} and @code{3/5}.
+However, any interval (that contains rational numbers) contains a
+rational number that is simpler than every other rational number in
+that interval.  Note that @code{0 = 0/1} is simpler than any other
+rational (so that one never has to choose between @code{p/q} and
+@code{−p/q}).  
+
+  For applicative @code{simplest-rational}, let @code{x0} be the
+simplest rational mathematically not less than the primary value of
+@code{real1} and not greater than the primary value of @code{real2}.
+If no such @code{x0} exists (because the primary value of @code{real1}
+is greater, or because the primary values of the arguments are equal
+and irrational), or if either argument does not have a primary value,
+an error is signaled.  
+
+  For applicative @code{rationalize}, let @code{x0} be the simplest
+rational mathematical number within the interval bounded by the
+primary value of @code{real1} plus and minus the primary value of
+@code{real2}.  If no such @code{x0} exists (because the primary value
+of @code{real1} is irrational and the primary value @code{real2} is
+zero), or if either argument does not have a primary value, an error
+is signaled.  
+
+@c TODO add xref to real->inexact
+  If @code{real1} and @code{real2} are exact, the applicative
+(whichever it is) returns exact @code{x0}.  If one or both of
+@code{real1} and @code{real2} are inexact, the applicative returns an
+inexact rational approximating @code{x0} (as by @code{real->inexact}.
+Note that an inexact result returned is not necessarily bounded by the
+primary values of the arguments; but the result is an approximation of
+@code{x0}, which is so bounded, and the bounds of the result include
+@code{x0}.
+@end deffn
+
+@deffn Applicative exp (exp number)
+@deffnx Applicative log (log number)
+TODO
+@end deffn
+
+
+@deffn Applicative sin (sin number)
+@deffnx Applicative cos (cos number)
+@deffnx Applicative tan (tan number)
+TODO
+@end deffn
+
+@deffn Applicative asin (asin number)
+@deffnx Applicative acos (acos number)
+@deffnx Applicative atan (atan number1 [number2])
+TODO
+@end deffn
+
+@deffn Applicative sqrt (sqrt number)
+@deffnx Applicative expt (expt number1 number2)
+TODO
+@end deffn
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1565,6 +1565,392 @@ File: klisp.info,  Node: Numbers,  Next: Strings,  Prev: Keyed Variables,  Up: T
 13 Numbers
 **********
 
+All numbers are immutable, and `equal?' iff `eq?'.  The number type is
+encapsulated.
+
+   The external representation of an undefined number is `#undefined'.
+The external representation of a real with no primary value is `#real'
+(but this may change in the future, the report is missing the output
+representation for reals with no primary values).  All other rules for
+externally representing numbers pertain only to defined numbers with
+primary values.
+
+   An external representation of a real number consists of optional
+radix and/or exactness prefixes, optional sign (`+' or `-'), and
+magnitude. The radix prefixes are `#b' (binary), `#o' (octal), `#d'
+(decimal), and `#x' (hexadecimal); the default is decimal.  The
+exactness prefixes are `#e' (exact) and `#i' (inexact); by default, the
+number is inexact iff the magnitude representation uses floating point.
+If both kinds of prefixes are used, they may occur in either order. The
+magnitude is either `infinity'; an unsigned integer (nonempty sequence
+of digits); a ratio of unsigned integers (two unsigned integers with a
+`/' between, of which the second is non-zero); or a floating point
+representation.  If the magnitude is `infinity', there must be an
+exactness prefix and a sign, and no radix prefix.  Floating point
+representation can only be used with decimal radix; it consists of
+nonempty integer part, point (`.'), nonempty fraction part, and
+optional exponent part.  The optional exponent part consists of an
+exponent letter, and an (optionally signed) integer indicating a power
+of ten by which to multiply the magnitude.  The choice of exponent
+letter makes no difference in what mathematical number is indicated by
+the external representation, but does indicate internal representation
+precision. Exponent letters `s', `f', `d', `f' indicate preference for
+successively higher internal precision - short, float, double, long.
+When reading an inexact real number, exponent letter `e' accepts the
+default internal precision, which must be at least double.  When
+writeing an inexact real number, exponent letter `e' may be used for
+the default internal precision, and must be used for any internal
+number format not indicated by any of the other exponent letters.
+Float and double must provide, respectively, at least as much precision
+as IEEE 32-bit and 64-bit floating point standards [IE85].  For
+example, `#i#xa/c' represents an inexact number using hexadecimal
+notation, with signed magnitude positive five sixths (ten over twelve).
+`-3.5l-2' represents an inexact number using decimal notation, with
+signed magnitude negative thirty five thousandths, and requested long
+precision (which must be at least IEEE 64-bit floating point).  When
+reading an external representation of an inexact real, the bounds on
+the resulting inexact number are chosen in accordance with the
+narrow-arithmetic keyed dynamic variable.
+
+   NOTE: in klisp, all inexact numbers are stored as IEEE 64-bit
+floating point.  No bounding or robustness info is kept.
+
+ -- Applicative: number? (number? . objects)
+     The primitive type predicate for type number.  `number?' returns
+     true iff all the objects in `objects' are of type number.
+
+ -- Applicative: integer? (integer? . objects)
+     The primitive type predicate for number subtype integer.
+     `integer?'  returns true iff all the objects in `objects' are of
+     type integer.
+
+ -- Applicative: rational? (rational? . objects)
+     The primitive type predicate for number subtype rational.
+     `rational?'  returns true iff all the objects in `objects' are of
+     type rational.
+
+ -- Applicative: real? (real? . objects)
+     The primitive type predicate for number subtype real.  `real?'
+     returns true iff all the objects in `objects' are of type real.
+
+ -- Applicative: finite? (finite? . numbers)
+     Predicate `finite?' returns true iff all the numbers in `numbers'
+     are finite.
+
+ -- Applicative: exact? (exact? . numbers)
+     Predicate `exact?' returns true iff all the numbers in `numbers'
+     are exact.
+
+ -- Applicative: inexact? (inexact? . numbers)
+     Predicate `inexact?' returns true iff all the numbers in `numbers'
+     are inexact.
+
+ -- Applicative: robust? (robust? . numbers)
+     Predicate `robust?' returns true iff all the numbers in `numbers'
+     are robust.
+
+ -- Applicative: undefined? (undefined? . numbers)
+     Predicate `undefined?' returns true iff all the numbers in
+     `numbers' are undefined.
+
+ -- Applicative: =? (=? . numbers)
+     Applicative `=?' is a predicate that returns true iff all its
+     arguments are numerically equal to each other.  If any of its
+     arguments has no primary value, an error is signaled.
+
+ -- Applicative: <? (<? . reals)
+ -- Applicative: <=? (<=? . reals)
+ -- Applicative: >? (>? . reals)
+ -- Applicative: >=? (>=? . reals)
+     Each of these applicatives is a predicate that returns true iff
+     every two consecutive elements of `reals' have primary values in
+     the order indicated by the name of the applicative.  If any
+     element of `reals' has no primary value, an error is signaled.
+
+ -- Applicative: + (+ . numbers)
+     Applicative `+' returns the sum of the elements of numbers.  If
+     numbers is empty, the sum of its elements is exact zero.  If a
+     positive infinity is added to a negative infinity, the result has
+     no primary value.  If all the elements of a cycle are zero, the
+     sum of the cycle is zero.  If the acyclic sum of the elements of a
+     cycle (i.e., the sum of an acyclic list containing just those
+     elements) is non-zero, the sum of the cycle is positive infinity
+     times the acyclic sum of the elements.  If the acyclic sum of the
+     elements of a cycle is zero, but some of the elements of the cycle
+     are non-zero, the sum of the cycle has no primary value.
+
+ -- Applicative: * (* . numbers)
+     Applicative `*' returns the product of the elements of numbers.
+     If numbers is empty, the product of its elements is exact one.  If
+     an infinity is multiplied by zero, the result has no primary
+     value.  If the acyclic product of the elements of a cycle is real
+     greater than one, the product of the cycle is positive infinity.
+     If all the elements of a cycle are positive one, the product of
+     the cycle is positive one.  If the acyclic product of the elements
+     of a cycle is positive one, but some of the elements of the cycle
+     are not positive one, the product of the cycle has no primary
+     value.  If the acyclic product of the elements of a cycle has
+     magnitude less than one, the product of the cycle is zero.  If the
+     acyclic product of the elements of a cycle has magnitude greater
+     than or equal to one, and is not positive real, the product of the
+     cycle has no primary value.
+
+ -- Applicative: - (- number . numbers)
+     `numbers' should be a nonempty list of numbers.
+
+     Applicative `-' returns the sum of `number' with the negation of
+     the sum of `numbers'.
+
+ -- Applicative: zero? (zero? . numbers)
+     Applicative `zero?' is a predicate that returns true iff every
+     element of `numbers' is zero.  For this purpose, a real number is
+     zero if its primary value is zero.  If any element of numbers has
+     no primary value an error is signaled.
+
+ -- Applicative: div (div real1 real2)
+ -- Applicative: mod (mod real1 real2)
+ -- Applicative: div-and-mod (div-and-mod real1 real2)
+     For all three applicatives, if `real1' is infinite or `real2' is
+     zero, an error is signaled.
+
+     Let `n' be the greatest integer such that `real2 * n <= real1'.
+     Applicative `div' returns `n'.  Applicative `mod' returns `real1 -
+     (real2 * n)'.  Applicative `div-and-mod' returns a freshly
+     allocated list of length two, whose first element is `n' and whose
+     second element is `real1 - (real2 * n)'.
+
+     NOTE: I'm not really sure about this description...
+
+ -- Applicative: div0 (div0 real1 real2)
+ -- Applicative: mod0 (mod0 real1 real2)
+ -- Applicative: div0-and-mod0 (div0-and-mod0 real1 real2)
+     For all three applicatives, if `real1' is infinite or `real2' is
+     zero, an error is signaled.
+
+     Let `n' be the greatest integer such that `real2 * n <= real1 +
+     |real2/2|'.  Applicative `div0' returns `n'.  Applicative `mod0'
+     returns `real1 - (real2 * n)'.  Applicative `div0-and-mod0'
+     returns a freshly allocated list of length two, whose first
+     element is `n' and whose second element is `real1 - (real2 * n)'.
+
+     NOTE: I'm not really sure about this description...
+
+ -- Applicative: positive? (positive? . reals)
+ -- Applicative: negative? (negative? . reals)
+     Applicative `positive?' is a predicate that returns true iff every
+     element of `reals' is greater than zero. Applicative `negative?'
+     is a predicate that returns true iff every element of `reals' is
+     less than zero.  If any argument to either applicative has no
+     primary value an error is signaled.
+
+ -- Applicative: odd? (odd? . integers)
+ -- Applicative: even? (even? . integers)
+     Applicative `odd?' is a predicate that returns true iff every
+     element of `integers' is odd.  Applicative `even?' is a predicate
+     that returns true iff every element of `integers' is even.  If any
+     argument to either applicative has no primary value an error is
+     signaled.
+
+ -- Applicative: (abs real)
+     Applicative `abs' returns the nonnegative real number with the
+     same magnitude as `real'; that is, if `real' is nonnegative it
+     returns `real', otherwise it returns the negation of `real'.
+
+ -- Applicative: max (max . reals)
+ -- Applicative: min (min . reals)
+     If `reals' is nil, applicative `max' returns exact negative
+     infinity, and applicative `min' returns exact positive infinity.
+     If `reals' is non-nil, applicative `max' returns the largest
+     number in `reals', and applicative `min' returns the smallest
+     number in `reals'.
+
+ -- Applicative: lcm (lcm . impints)
+ -- Applicative: gcd (gcd . impints)
+     `impints' should be a list of improper integers, that is, real
+     numbers each of which is either an integer or an infinity.
+
+     Applicative `lcm' returns the smallest positive improper integer
+     that is an improper0integer multiple of every element of `impints'
+     (that is, smallest `n >= 1' such that for every argument `nk'
+     there exists `n'k' with `nk * n'k = n').  If any of the arguments
+     is zero, the result of `lcm' has no primary value.  According to
+     these rules, `lcm' with nil argument list returns `1', and `lcm'
+     with any infinite argument returns positive infinity.
+
+     Applicative `gcd' returns the largest positive improper integer
+     such that every element of `impints' is an improper-integer
+     multiple of it (that is, largest `n >= 1' such that for every
+     argument `nk' there exists `n'k' with `n * n'k = nk').  `gcd' with
+     nil argument list returns exact positive infinity.  If `gcd' is
+     called with one or more arguments, and at least one of the
+     arguments is zero, but none of the arguments is a non-zero finite
+     integer, its result has no primary value.  According to these
+     rules, if `gcd' is called with at least one finite non-zero
+     argument, its result is the same as if all zero and infinite
+     arguments were deleted.
+
+ -- Applicative: get-real-internal-bounds (get-real-internal-bounds
+          real)
+ -- Applicative: get-real-exact-bounds (get-real-exact-bounds real)
+     Applicative `get-real-internal-bounds' returns a freshly allocated
+     list of reals `(x1 x2)', where the primary value of `x1' is the
+     lower bound of `real', using the same internal representation as
+     the primary value of `real', and the primary value of `x2' is the
+     upper bound of `real', using the same internal representation as
+     the primary value of `real'.  The `xk' are inexact iff real is
+     inexact.  The `xk' are robust (i.e., tagged if the implementation
+     supports such), and the bounds of each `xk' are only required to
+     contain its primary value (i.e., the implementation is allowed to
+     make the bounds equal to the primary value).
+
+     Applicative `get-real-exact-bounds' returns a freshly allocated
+     list of exact reals `(x1 x2)', where `x1' is not greater than the
+     lower bound of `real', and `x2' is not less than the upper bound
+     of `real'.
+
+ -- Applicative: get-real-internal-primary (get-real-internal-primary
+          real)
+ -- Applicative: get-real-exact-primary (get-real-exact-primary real)
+     If `real' is exact, both applicatives return `real'.  If `real'
+     has no primary value, both applicatives signal an error.
+
+     If `real' is inexact with a primary value, applicative
+     `get-real-internal-primary' returns a real number `x0' whose
+     primary value is the same as, and has the same internal format as,
+     the primary value of `real'.  `x0' is robust, and its bounds are
+     only required to contain its primary value.
+
+     If `real' is inexact with a primary value, applicative
+     `get-real-exact-primary' returns an exact real number `x0' within
+     the exact bounds that would be returned for `real' by applicative
+     `get-real-exact-bounds'.  Preferably, `x0' should be as close to
+     the primary value of `real' as the implementation can reasonably
+     arrange. If the implementation does not support any exact `real'
+     that reasonably approximates `real', an error may be signaled.
+
+ -- Applicative: make-inexact (make-inexact real1 real2 real3)
+     Applicative `make-inexact' returns an inexact real number, as
+     follows.  If `real2' is inexact, the result has the same primary
+     value as `real2'; and if `real2' has no primary value, the result
+     has no primary value.  The result has the same robustness as
+     `real2'.  If possible, the result uses the same internal
+     representation as `real2'.  If `real2' is exact, the primary value
+     of the result is as close to `real2' as the implementation can
+     reasonably arrange; overflow and underflow are handled as
+     described in ....  The lower bound of the result is no greater than
+     the lower bound of `real1', the primary value of `real2', and the
+     primary value of the result.  The upper bound of the result is no
+     less than the upper bound of `real3', the primary value of
+     `real2', and the primary value of the result.
+
+ -- Applicative: real->inexact (real->inexact real)
+ -- Applicative: real->exact (real->exact real)
+     Applicative `real->exact' behaves just as `get-real-exact-primary'.
+
+     If `real' is inexact, applicative `real->inexact' returns `real'.
+     If `real' is exact, applicative `real->inexact' returns an inexact
+     real `x0' such that `real' would be a permissible result of
+     passing `x0' to `real->exact'.  If the implementation does not
+     support any such `x0', an error may be signaled.  Otherwise, `x0'
+     is robust, and its bounds are only required to contain its primary
+     value and `real'.
+
+ -- Applicative: with-strict-arithmetic (with-strict-arithmetic boolean
+          combiner)
+ -- Applicative: get-string-arithmetic (get-strict-arithmetic?)
+     These applicatives are the binder and accessor of the
+     `strict-arithmetic' keyed dynamic variable.  When this keyed
+     variable is true, various survivable but dubious arithmetic events
+     signal an error - notably, operation results with no primary value,
+     and over- and underflows.
+
+ -- Applicative: / (/ number . numbers)
+     `numbers' should be a nonempty list of numbers.
+
+     Applicative `/' returns `number' divided by the product of
+     `numbers'.  If the product of `numbers' is zero, an error is
+     signaled.  If `number' is infinite and the product of `numbers' is
+     infinite, an error is signaled.
+
+ -- Applicative: numerator (numerator rational)
+ -- Applicative: denominator (denominator rational)
+     These applicatives return the numerator and denominator of
+     `rational', in least terms (i.e., chosen for the least positive
+     denominator).  Note that if `rational' is inexact, and either of
+     its bounds is not its primary value, the denominator has upper
+     bound positive infinity, and the numerator must have at least one
+     infinite bound (two infinite bounds if the bounds of rational
+     allow values of both signs).
+
+ -- Applicative: floor (floor real)
+ -- Applicative: ceiling (ceiling real)
+ -- Applicative: truncate (truncate real)
+ -- Applicative: round (round real)
+     Applicative `floor' returns the largest integer not greater than
+     `real'.
+
+     Applicative `ceiling' returns the smallest integer not less than
+     `real'.
+
+     Applicative `truncate' returns the integer closest to `real' whose
+     absolute value is not greater than that of `real'.
+
+     Applicative `round' returns the closest integer to `real',
+     rounding to even when `real' is halfway between two integers.
+
+ -- Applicative: rationalize (rationalize real1 real2)
+ -- Applicative: simplest-rational (simplest-rational real1 real2)
+     A rational number `r1' is simpler than another rational `r2' if
+     `r1 = p1 / q1' and `r2 = p2 / q2', both in lowest terms, and `|p1|
+     <= |p2|' and `|q1| <= |q2|'. Thus `3/5' is simpler than `4/7'. Not
+     all rationals are comparable in this ordering, as for example
+     `2/7' and `3/5'.  However, any interval (that contains rational
+     numbers) contains a rational number that is simpler than every
+     other rational number in that interval.  Note that `0 = 0/1' is
+     simpler than any other rational (so that one never has to choose
+     between `p/q' and `−p/q').
+
+     For applicative `simplest-rational', let `x0' be the simplest
+     rational mathematically not less than the primary value of `real1'
+     and not greater than the primary value of `real2'.  If no such
+     `x0' exists (because the primary value of `real1' is greater, or
+     because the primary values of the arguments are equal and
+     irrational), or if either argument does not have a primary value,
+     an error is signaled.
+
+     For applicative `rationalize', let `x0' be the simplest rational
+     mathematical number within the interval bounded by the primary
+     value of `real1' plus and minus the primary value of `real2'.  If
+     no such `x0' exists (because the primary value of `real1' is
+     irrational and the primary value `real2' is zero), or if either
+     argument does not have a primary value, an error is signaled.
+
+     If `real1' and `real2' are exact, the applicative (whichever it
+     is) returns exact `x0'.  If one or both of `real1' and `real2' are
+     inexact, the applicative returns an inexact rational approximating
+     `x0' (as by `real->inexact'.  Note that an inexact result returned
+     is not necessarily bounded by the primary values of the arguments;
+     but the result is an approximation of `x0', which is so bounded,
+     and the bounds of the result include `x0'.
+
+ -- Applicative: exp (exp number)
+ -- Applicative: log (log number)
+     TODO
+
+ -- Applicative: sin (sin number)
+ -- Applicative: cos (cos number)
+ -- Applicative: tan (tan number)
+     TODO
+
+ -- Applicative: asin (asin number)
+ -- Applicative: acos (acos number)
+ -- Applicative: atan (atan number1 [number2])
+     TODO
+
+ -- Applicative: sqrt (sqrt number)
+ -- Applicative: expt (expt number1 number2)
+     TODO
+
 
 File: klisp.info,  Node: Strings,  Next: Characters,  Prev: Numbers,  Up: Top
 
@@ -2017,8 +2403,19 @@ Index
 * $set!:                                 Environments.        (line 182)
 * $vau:                                  Combiners.           (line  26)
 * ( <1>:                                 Ports.               (line  37)
-* ( <2>:                                 Continuations.       (line 143)
+* ( <2>:                                 Numbers.             (line 193)
+* ( <3>:                                 Continuations.       (line 143)
 * (:                                     Environments.        (line 174)
+* *:                                     Numbers.             (line 121)
+* +:                                     Numbers.             (line 109)
+* -:                                     Numbers.             (line 137)
+* /:                                     Numbers.             (line 306)
+* <=?:                                   Numbers.             (line 101)
+* <?:                                    Numbers.             (line 100)
+* =?:                                    Numbers.             (line  95)
+* >=?:                                   Numbers.             (line 103)
+* >?:                                    Numbers.             (line 102)
+* acos:                                  Numbers.             (line 385)
 * and?:                                  Booleans.            (line  20)
 * append:                                Pairs and lists.     (line 208)
 * append!:                               Pairs and lists.     (line 306)
@@ -2028,8 +2425,10 @@ Index
 * applicatives:                          Combiners.           (line   6)
 * apply:                                 Combiners.           (line  83)
 * apply-continuation:                    Continuations.       (line 134)
+* asin:                                  Numbers.             (line 384)
 * assoc:                                 Pairs and lists.     (line 252)
 * assq:                                  Pairs and lists.     (line 333)
+* atan:                                  Numbers.             (line 386)
 * boolean?:                              Booleans.            (line  12)
 * booleans:                              Booleans.            (line   6)
 * caaaar:                                Pairs and lists.     (line 101)
@@ -2065,6 +2464,7 @@ Index
 * cdddr:                                 Pairs and lists.     (line 100)
 * cddr:                                  Pairs and lists.     (line  92)
 * cdr:                                   Pairs and lists.     (line  86)
+* ceiling:                               Numbers.             (line 325)
 * char->integer:                         Characters.          (line  58)
 * char-alphabetic?:                      Characters.          (line  37)
 * char-ci<=?:                            Characters.          (line  31)
@@ -2094,9 +2494,15 @@ Index
 * control:                               Control.             (line   6)
 * copy-es:                               Pairs and lists.     (line 321)
 * copy-es-immutable!:                    Pairs and lists.     (line  49)
+* cos:                                   Numbers.             (line 380)
 * countable-list?:                       Pairs and lists.     (line 265)
+* denominator:                           Numbers.             (line 315)
 * description format:                    Format of Descriptions.
                                                               (line   6)
+* div:                                   Numbers.             (line 149)
+* div-and-mod:                           Numbers.             (line 151)
+* div0:                                  Numbers.             (line 163)
+* div0-and-mod0:                         Numbers.             (line 165)
 * documentation notation:                Evaluation Notation. (line   6)
 * empty list:                            Pairs and lists.     (line   6)
 * encapsulations:                        Encapsulations.      (line   6)
@@ -2111,30 +2517,45 @@ Index
 * error-continuation:                    Continuations.       (line 110)
 * eval:                                  Environments.        (line  32)
 * evaluation notation:                   Evaluation Notation. (line   6)
+* even?:                                 Numbers.             (line 186)
+* exact?:                                Numbers.             (line  79)
 * exit:                                  Continuations.       (line 162)
+* exp:                                   Numbers.             (line 375)
+* expt:                                  Numbers.             (line 390)
 * extend-continuation:                   Continuations.       (line  50)
 * filter:                                Pairs and lists.     (line 239)
 * finite-list?:                          Pairs and lists.     (line 261)
+* finite?:                               Numbers.             (line  75)
+* floor:                                 Numbers.             (line 324)
 * fonts:                                 Some Terms.          (line  13)
 * foo:                                   A Sample Applicative Description.
                                                               (line  15)
 * for-each:                              Control.             (line  42)
 * force:                                 Promises.            (line  35)
+* gcd:                                   Numbers.             (line 207)
 * get-current-environment:               Environments.        (line 114)
 * get-list-metrics:                      Pairs and lists.     (line 123)
 * get-module:                            Ports.               (line 156)
+* get-real-exact-bounds:                 Numbers.             (line 233)
+* get-real-exact-primary:                Numbers.             (line 252)
+* get-real-internal-bounds:              Numbers.             (line 232)
+* get-real-internal-primary:             Numbers.             (line 251)
+* get-string-arithmetic:                 Numbers.             (line 299)
 * guard-continuation:                    Continuations.       (line  63)
 * guard-dynamic-extent:                  Continuations.       (line 156)
 * ignore:                                Environments.        (line   6)
 * ignore?:                               Environments.        (line  28)
 * inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
+* inexact?:                              Numbers.             (line  83)
 * input-port?:                           Ports.               (line  27)
 * integer->char:                         Characters.          (line  59)
+* integer?:                              Numbers.             (line  61)
 * Kernel history:                        Kernel History.      (line   6)
 * keyed dynamic variables:               Keyed Variables.     (line  15)
 * keyed static variables:                Keyed Variables.     (line  40)
 * keyed variables:                       Keyed Variables.     (line   6)
+* lcm:                                   Numbers.             (line 206)
 * length:                                Pairs and lists.     (line 191)
 * list:                                  Pairs and lists.     (line  72)
 * list*:                                 Pairs and lists.     (line  78)
@@ -2144,23 +2565,33 @@ Index
 * list-tail:                             Pairs and lists.     (line 147)
 * lists:                                 Pairs and lists.     (line   6)
 * load:                                  Ports.               (line 143)
+* log:                                   Numbers.             (line 376)
 * make-encapsulation-type:               Encapsulations.      (line  12)
 * make-environment:                      Environments.        (line  36)
+* make-inexact:                          Numbers.             (line 270)
 * make-kernel-standard-environment:      Environments.        (line 119)
 * make-keyed-dynamic-variable:           Keyed Variables.     (line  21)
 * make-keyed-static-variable:            Keyed Variables.     (line  44)
 * make-string:                           Strings.             (line  57)
 * map <1>:                               Combiners.           (line  96)
 * map:                                   Pairs and lists.     (line 169)
+* max:                                   Numbers.             (line 198)
 * member?:                               Pairs and lists.     (line 257)
 * memoize:                               Promises.            (line  74)
 * memq?:                                 Pairs and lists.     (line 338)
+* min:                                   Numbers.             (line 199)
+* mod:                                   Numbers.             (line 150)
+* mod0:                                  Numbers.             (line 164)
+* negative?:                             Numbers.             (line 178)
 * nil:                                   Pairs and lists.     (line   6)
 * not?:                                  Booleans.            (line  16)
 * null?:                                 Pairs and lists.     (line  31)
+* number?:                               Numbers.             (line  57)
 * numbers:                               Numbers.             (line   6)
+* numerator:                             Numbers.             (line 314)
 * object descriptions:                   A Sample Applicative Description.
                                                               (line   6)
+* odd?:                                  Numbers.             (line 185)
 * open-input-file:                       Ports.               (line  62)
 * open-output-file:                      Ports.               (line  73)
 * operative descriptions:                A Sample Applicative Description.
@@ -2173,14 +2604,25 @@ Index
 * pairs:                                 Pairs and lists.     (line   6)
 * port?:                                 Ports.               (line  23)
 * ports:                                 Ports.               (line   6)
+* positive?:                             Numbers.             (line 177)
 * printing notation:                     Printing Notation.   (line   6)
 * promise?:                              Promises.            (line  31)
 * promises:                              Promises.            (line   6)
+* rational?:                             Numbers.             (line  66)
+* rationalize:                           Numbers.             (line 340)
 * read:                                  Ports.               (line 102)
+* real->exact:                           Numbers.             (line 286)
+* real->inexact:                         Numbers.             (line 285)
+* real?:                                 Numbers.             (line  71)
 * reduce:                                Pairs and lists.     (line 270)
+* robust?:                               Numbers.             (line  87)
 * root-continuation:                     Continuations.       (line 104)
+* round:                                 Numbers.             (line 327)
 * set-car!:                              Pairs and lists.     (line  41)
 * set-cdr!:                              Pairs and lists.     (line  42)
+* simplest-rational:                     Numbers.             (line 341)
+* sin:                                   Numbers.             (line 379)
+* sqrt:                                  Numbers.             (line 389)
 * string:                                Strings.             (line  63)
 * string->immutable-string:              Strings.             (line 103)
 * string->list:                          Strings.             (line 108)
@@ -2207,8 +2649,13 @@ Index
 * symbol->string:                        Symbols.             (line  16)
 * symbol?:                               Symbols.             (line  12)
 * symbols:                               Symbols.             (line   6)
+* tan:                                   Numbers.             (line 381)
+* truncate:                              Numbers.             (line 326)
+* undefined?:                            Numbers.             (line  91)
 * unwrap:                                Combiners.           (line  72)
+* with-strict-arithmetic:                Numbers.             (line 298)
 * wrap:                                  Combiners.           (line  68)
+* zero?:                                 Numbers.             (line 143)
 
 
 
@@ -2238,9 +2685,9 @@ Node: Encapsulations63984
 Node: Promises65437
 Node: Keyed Variables69360
 Node: Numbers72131
-Node: Strings72240
-Node: Characters77587
-Node: Ports80297
-Node: Index91582
+Node: Strings91630
+Node: Characters96977
+Node: Ports99687
+Node: Index110972
 
 End Tag Table

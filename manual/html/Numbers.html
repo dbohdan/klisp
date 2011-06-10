@@ -35,6 +35,479 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <h2 class="chapter">13 Numbers</h2>
 
 <p><a name="index-numbers-150"></a>
+All numbers are immutable, and <code>equal?</code> iff <code>eq?</code>.  The
+number type is encapsulated.
+
+<!-- TODO add more content on numbers -->
+   <p>The external representation of an undefined number is
+<code>#undefined</code>.  The external representation of a real with no
+primary value is <code>#real</code> (but this may change in the future, the
+report is missing the output representation for reals with no primary
+values).  All other rules for externally representing numbers pertain
+only to defined numbers with primary values.
+
+   <p>An external representation of a real number consists of optional
+radix and/or exactness prefixes, optional sign (<code>+</code> or <code>-</code>),
+and magnitude. The radix prefixes are <code>#b</code> (binary), <code>#o</code>
+(octal), <code>#d</code> (decimal), and <code>#x</code> (hexadecimal); the default
+is decimal.  The exactness prefixes are <code>#e</code> (exact) and
+<code>#i</code> (inexact); by default, the number is inexact iff the
+magnitude representation uses floating point. If both kinds of
+prefixes are used, they may occur in either order. The magnitude is
+either <code>infinity</code>; an unsigned integer (nonempty sequence of
+digits); a ratio of unsigned integers (two unsigned integers with a
+<code>/</code> between, of which the second is non-zero); or a floating
+point representation.  If the magnitude is <code>infinity</code>, there must
+be an exactness prefix and a sign, and no radix prefix.  Floating
+point representation can only be used with decimal radix; it consists
+of nonempty integer part, point (<code>.</code>), nonempty fraction part,
+and optional exponent part.  The optional exponent part consists of an
+exponent letter, and an (optionally signed) integer indicating a power
+of ten by which to multiply the magnitude.  The choice of exponent
+letter makes no difference in what mathematical number is indicated by
+the external representation, but does indicate internal representation
+precision. Exponent letters <code>s</code>, <code>f</code>, <code>d</code>, <code>f</code>
+indicate preference for successively higher internal precision -
+short, float, double, long.  When reading an inexact real number,
+exponent letter <code>e</code> accepts the default internal precision, which
+must be at least double.  When writeing an inexact real number,
+exponent letter <code>e</code> may be used for the default internal
+precision, and must be used for any internal number format not
+indicated by any of the other exponent letters.  Float and double must
+provide, respectively, at least as much precision as IEEE 32-bit and
+64-bit floating point standards [IE85].  For example, <code>#i#xa/c</code>
+represents an inexact number using hexadecimal notation, with signed
+magnitude positive five sixths (ten over twelve).  <code>-3.5l-2</code>
+represents an inexact number using decimal notation, with signed
+magnitude negative thirty five thousandths, and requested long
+precision (which must be at least IEEE 64-bit floating point).  When
+reading an external representation of an inexact real, the bounds on
+the resulting inexact number are chosen in accordance with the
+<!-- TODO add xref -->
+narrow-arithmetic keyed dynamic variable.
+
+   <p>NOTE: in klisp, all inexact numbers are stored as IEEE 64-bit floating
+point.  No bounding or robustness info is kept.
+
+<div class="defun">
+&mdash; Applicative: <b>number?</b> (<var>number? . objects</var>)<var><a name="index-number_003f-151"></a></var><br>
+<blockquote><p>  The primitive type predicate for type number.  <code>number?</code>
+returns true iff all the objects in <code>objects</code> are of type number. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>integer?</b> (<var>integer? . objects</var>)<var><a name="index-integer_003f-152"></a></var><br>
+<blockquote><p>  The primitive type predicate for number subtype integer. 
+<code>integer?</code>  returns true iff all the objects in <code>objects</code>
+are of type integer. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>rational?</b> (<var>rational? . objects</var>)<var><a name="index-rational_003f-153"></a></var><br>
+<blockquote><p>  The primitive type predicate for number subtype rational. 
+<code>rational?</code>  returns true iff all the objects in <code>objects</code>
+are of type rational. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>real?</b> (<var>real? . objects</var>)<var><a name="index-real_003f-154"></a></var><br>
+<blockquote><p>  The primitive type predicate for number subtype real. 
+<code>real?</code>  returns true iff all the objects in <code>objects</code>
+are of type real. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>finite?</b> (<var>finite? . numbers</var>)<var><a name="index-finite_003f-155"></a></var><br>
+<blockquote><p>  Predicate <code>finite?</code> returns true iff all the numbers in
+<code>numbers</code> are finite. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>exact?</b> (<var>exact? . numbers</var>)<var><a name="index-exact_003f-156"></a></var><br>
+<blockquote><p>  Predicate <code>exact?</code> returns true iff all the numbers in
+<code>numbers</code> are exact. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>inexact?</b> (<var>inexact? . numbers</var>)<var><a name="index-inexact_003f-157"></a></var><br>
+<blockquote><p>  Predicate <code>inexact?</code> returns true iff all the numbers in
+<code>numbers</code> are inexact. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>robust?</b> (<var>robust? . numbers</var>)<var><a name="index-robust_003f-158"></a></var><br>
+<blockquote><p>  Predicate <code>robust?</code> returns true iff all the numbers in
+<code>numbers</code> are robust. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>undefined?</b> (<var>undefined? . numbers</var>)<var><a name="index-undefined_003f-159"></a></var><br>
+<blockquote><p>  Predicate <code>undefined?</code> returns true iff all the numbers in
+<code>numbers</code> are undefined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>=?</b> (<var>=? . numbers</var>)<var><a name="index-g_t_003d_003f-160"></a></var><br>
+<blockquote><p>  Applicative <code>=?</code> is a predicate that returns true iff all its
+arguments are numerically equal to each other.  If any of its
+arguments has no primary value, an error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>&lt;?</b> (<var>&lt;? . reals</var>)<var><a name="index-g_t_003c_003f-161"></a></var><br>
+&mdash; Applicative: <b>&lt;=?</b> (<var>&lt;=? . reals</var>)<var><a name="index-g_t_003c_003d_003f-162"></a></var><br>
+&mdash; Applicative: <b>&gt;?</b> (<var>&gt;? . reals</var>)<var><a name="index-g_t_003e_003f-163"></a></var><br>
+&mdash; Applicative: <b>&gt;=?</b> (<var>&gt;=? . reals</var>)<var><a name="index-g_t_003e_003d_003f-164"></a></var><br>
+<blockquote><p>  Each of these applicatives is a predicate that returns true iff
+every two consecutive elements of <code>reals</code> have primary values in
+the order indicated by the name of the applicative.  If any element of
+<code>reals</code> has no primary value, an error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>+</b> (<var>+ . numbers</var>)<var><a name="index-g_t_002b-165"></a></var><br>
+<blockquote><p>  Applicative <code>+</code> returns the sum of the elements of numbers.  If
+numbers is empty, the sum of its elements is exact zero.  If a
+positive infinity is added to a negative infinity, the result has no
+primary value.  If all the elements of a cycle are zero, the sum of
+the cycle is zero.  If the acyclic sum of the elements of a cycle
+(i.e., the sum of an acyclic list containing just those elements) is
+non-zero, the sum of the cycle is positive infinity times the acyclic
+sum of the elements.  If the acyclic sum of the elements of a cycle is
+zero, but some of the elements of the cycle are non-zero, the sum of
+the cycle has no primary value. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>*</b> (<var>* . numbers</var>)<var><a name="index-g_t_002a-166"></a></var><br>
+<blockquote><p>  Applicative <code>*</code> returns the product of the elements of numbers. 
+If numbers is empty, the product of its elements is exact one.  If an
+infinity is multiplied by zero, the result has no primary value.  If
+the acyclic product of the elements of a cycle is real greater than
+one, the product of the cycle is positive infinity. If all the
+elements of a cycle are positive one, the product of the cycle is
+positive one.  If the acyclic product of the elements of a cycle is
+positive one, but some of the elements of the cycle are not positive
+one, the product of the cycle has no primary value.  If the acyclic
+product of the elements of a cycle has magnitude less than one, the
+product of the cycle is zero.  If the acyclic product of the elements
+of a cycle has magnitude greater than or equal to one, and is not
+positive real, the product of the cycle has no primary value. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>-</b> (<var>- number . numbers</var>)<var><a name="index-g_t_002d-167"></a></var><br>
+<blockquote><p>  <code>numbers</code> should be a nonempty list of numbers.
+
+        <p>Applicative <code>-</code> returns the sum of <code>number</code> with the
+negation of the sum of <code>numbers</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>zero?</b> (<var>zero? . numbers</var>)<var><a name="index-zero_003f-168"></a></var><br>
+<blockquote><p>  Applicative <code>zero?</code> is a predicate that returns true iff every
+element of <code>numbers</code> is zero.  For this purpose, a real number is
+zero if its primary value is zero.  If any element of numbers has no
+primary value an error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>div</b> (<var>div real1 real2</var>)<var><a name="index-div-169"></a></var><br>
+&mdash; Applicative: <b>mod</b> (<var>mod real1 real2</var>)<var><a name="index-mod-170"></a></var><br>
+&mdash; Applicative: <b>div-and-mod</b> (<var>div-and-mod real1 real2</var>)<var><a name="index-div_002dand_002dmod-171"></a></var><br>
+<blockquote><p>  For all three applicatives, if <code>real1</code> is infinite or
+<code>real2</code> is zero, an error is signaled.
+
+        <p>Let <code>n</code> be the greatest integer such that <code>real2 * n &lt;=
+real1</code>.  Applicative <code>div</code> returns <code>n</code>.  Applicative
+<code>mod</code> returns <code>real1 - (real2 * n)</code>.  Applicative
+<code>div-and-mod</code> returns a freshly allocated list of length two,
+whose first element is <code>n</code> and whose second element is
+<code>real1 - (real2 * n)</code>.
+
+        <p>NOTE: I'm not really sure about this description... 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>div0</b> (<var>div0 real1 real2</var>)<var><a name="index-div0-172"></a></var><br>
+&mdash; Applicative: <b>mod0</b> (<var>mod0 real1 real2</var>)<var><a name="index-mod0-173"></a></var><br>
+&mdash; Applicative: <b>div0-and-mod0</b> (<var>div0-and-mod0 real1 real2</var>)<var><a name="index-div0_002dand_002dmod0-174"></a></var><br>
+<blockquote><p>  For all three applicatives, if <code>real1</code> is infinite or
+<code>real2</code> is zero, an error is signaled.
+
+        <p>Let <code>n</code> be the greatest integer such that <code>real2 * n &lt;=
+real1 + |real2/2|</code>.  Applicative <code>div0</code> returns <code>n</code>. 
+Applicative <code>mod0</code> returns <code>real1 - (real2 * n)</code>. 
+Applicative <code>div0-and-mod0</code> returns a freshly allocated list of
+length two, whose first element is <code>n</code> and whose second element
+is <code>real1 - (real2 * n)</code>.
+
+        <p>NOTE: I'm not really sure about this description... 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>positive?</b> (<var>positive? . reals</var>)<var><a name="index-positive_003f-175"></a></var><br>
+&mdash; Applicative: <b>negative?</b> (<var>negative? . reals</var>)<var><a name="index-negative_003f-176"></a></var><br>
+<blockquote><p>  Applicative <code>positive?</code> is a predicate that returns true iff
+every element of <code>reals</code> is greater than zero. Applicative
+<code>negative?</code> is a predicate that returns true iff every element of
+<code>reals</code> is less than zero.  If any argument to either applicative
+has no primary value an error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>odd?</b> (<var>odd? . integers</var>)<var><a name="index-odd_003f-177"></a></var><br>
+&mdash; Applicative: <b>even?</b> (<var>even? . integers</var>)<var><a name="index-even_003f-178"></a></var><br>
+<blockquote><p>  Applicative <code>odd?</code> is a predicate that returns true iff every
+element of <code>integers</code> is odd.  Applicative <code>even?</code> is a
+predicate that returns true iff every element of <code>integers</code> is
+even.  If any argument to either applicative has no primary value an
+error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>(</b><var>abs real</var>)<var><a name="index-g_t_0028-179"></a></var><br>
+<blockquote><p>  Applicative <code>abs</code> returns the nonnegative real number with the
+same magnitude as <code>real</code>; that is, if <code>real</code> is nonnegative
+it returns <code>real</code>, otherwise it returns the negation of
+<code>real</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>max</b> (<var>max . reals</var>)<var><a name="index-max-180"></a></var><br>
+&mdash; Applicative: <b>min</b> (<var>min . reals</var>)<var><a name="index-min-181"></a></var><br>
+<blockquote><p>  If <code>reals</code> is nil, applicative <code>max</code> returns exact
+negative infinity, and applicative <code>min</code> returns exact positive
+infinity.  If <code>reals</code> is non-nil, applicative <code>max</code> returns
+the largest number in <code>reals</code>, and applicative <code>min</code> returns
+the smallest number in <code>reals</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>lcm</b> (<var>lcm . impints</var>)<var><a name="index-lcm-182"></a></var><br>
+&mdash; Applicative: <b>gcd</b> (<var>gcd . impints</var>)<var><a name="index-gcd-183"></a></var><br>
+<blockquote><p>  <code>impints</code> should be a list of improper integers, that is, real
+numbers each of which is either an integer or an infinity.
+
+        <p>Applicative <code>lcm</code> returns the smallest positive improper
+integer that is an improper0integer multiple of every element of
+<code>impints</code> (that is, smallest <code>n &gt;= 1</code> such that for every
+argument <code>nk</code> there exists <code>n'k</code> with <code>nk * n'k = n</code>). 
+If any of the arguments is zero, the result of <code>lcm</code> has no
+primary value.  According to these rules, <code>lcm</code> with nil argument
+list returns <code>1</code>, and <code>lcm</code> with any infinite argument
+returns positive infinity.
+
+        <p>Applicative <code>gcd</code> returns the largest positive improper integer
+such that every element of <code>impints</code> is an improper-integer
+multiple of it (that is, largest <code>n &gt;= 1</code> such that for every
+argument <code>nk</code> there exists <code>n'k</code> with <code>n * n'k = nk</code>). 
+<code>gcd</code> with nil argument list returns exact positive infinity.  If
+<code>gcd</code> is called with one or more arguments, and at least one of
+the arguments is zero, but none of the arguments is a non-zero finite
+integer, its result has no primary value.  According to these rules,
+if <code>gcd</code> is called with at least one finite non-zero argument,
+its result is the same as if all zero and infinite arguments were
+deleted. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>get-real-internal-bounds</b> (<var>get-real-internal-bounds real</var>)<var><a name="index-get_002dreal_002dinternal_002dbounds-184"></a></var><br>
+&mdash; Applicative: <b>get-real-exact-bounds</b> (<var>get-real-exact-bounds real</var>)<var><a name="index-get_002dreal_002dexact_002dbounds-185"></a></var><br>
+<blockquote><p>  Applicative <code>get-real-internal-bounds</code> returns a freshly
+allocated list of reals <code>(x1 x2)</code>, where the primary value of
+<code>x1</code> is the lower bound of <code>real</code>, using the same internal
+representation as the primary value of <code>real</code>, and the primary
+value of <code>x2</code> is the upper bound of <code>real</code>, using the same
+internal representation as the primary value of <code>real</code>.  The
+<code>xk</code> are inexact iff real is inexact.  The <code>xk</code> are robust
+(i.e., tagged if the implementation supports such), and the bounds of
+each <code>xk</code> are only required to contain its primary value (i.e.,
+the implementation is allowed to make the bounds equal to the primary
+value).
+
+        <p>Applicative <code>get-real-exact-bounds</code> returns a freshly allocated
+list of exact reals <code>(x1 x2)</code>, where <code>x1</code> is not greater
+than the lower bound of <code>real</code>, and <code>x2</code> is not less than
+the upper bound of <code>real</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>get-real-internal-primary</b> (<var>get-real-internal-primary real</var>)<var><a name="index-get_002dreal_002dinternal_002dprimary-186"></a></var><br>
+&mdash; Applicative: <b>get-real-exact-primary</b> (<var>get-real-exact-primary real</var>)<var><a name="index-get_002dreal_002dexact_002dprimary-187"></a></var><br>
+<blockquote><p>  If <code>real</code> is exact, both applicatives return <code>real</code>.  If
+<code>real</code> has no primary value, both applicatives signal an error.
+
+        <p>If <code>real</code> is inexact with a primary value, applicative
+<code>get-real-internal-primary</code> returns a real number <code>x0</code> whose
+primary value is the same as, and has the same internal format as, the
+primary value of <code>real</code>.  <code>x0</code> is robust, and its bounds are
+only required to contain its primary value.
+
+     <!-- TODO add xref to get-real-exact-bounds -->
+        <p>If <code>real</code> is inexact with a primary value, applicative
+<code>get-real-exact-primary</code> returns an exact real number <code>x0</code>
+within the exact bounds that would be returned for <code>real</code> by
+applicative <code>get-real-exact-bounds</code>.  Preferably, <code>x0</code>
+should be as close to the primary value of <code>real</code> as the
+implementation can reasonably arrange. If the implementation does not
+support any exact <code>real</code> that reasonably approximates
+<code>real</code>, an error may be signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>make-inexact</b> (<var>make-inexact real1 real2 real3</var>)<var><a name="index-make_002dinexact-188"></a></var><br>
+<blockquote><p>  Applicative <code>make-inexact</code> returns an inexact real number, as
+follows.  If <code>real2</code> is inexact, the result has the same primary
+value as <code>real2</code>; and if <code>real2</code> has no primary value, the
+result has no primary value.  The result has the same robustness as
+<code>real2</code>.  If possible, the result uses the same internal
+representation as <code>real2</code>.  If <code>real2</code> is exact, the primary
+value of the result is as close to <code>real2</code> as the implementation
+can reasonably arrange; overflow and underflow are handled as
+<!-- TODO add xref to overflow -->
+described in ....  The lower bound of the result is no greater than
+the lower bound of <code>real1</code>, the primary value of <code>real2</code>,
+and the primary value of the result.  The upper bound of the result is
+no less than the upper bound of <code>real3</code>, the primary value of
+<code>real2</code>, and the primary value of the result. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>real-&gt;inexact</b> (<var>real-&gt;inexact real</var>)<var><a name="index-real_002d_003einexact-189"></a></var><br>
+&mdash; Applicative: <b>real-&gt;exact</b> (<var>real-&gt;exact real</var>)<var><a name="index-real_002d_003eexact-190"></a></var><br>
+<blockquote><!-- TODO add xref to get-real-exact-primary -->
+        <p>Applicative <code>real-&gt;exact</code> behaves just as
+<code>get-real-exact-primary</code>.
+
+        <p>If <code>real</code> is inexact, applicative <code>real-&gt;inexact</code> returns
+<code>real</code>.  If <code>real</code> is exact, applicative
+<code>real-&gt;inexact</code> returns an inexact real <code>x0</code> such that
+<code>real</code> would be a permissible result of passing <code>x0</code> to
+<code>real-&gt;exact</code>.  If the implementation does not support any such
+<code>x0</code>, an error may be signaled.  Otherwise, <code>x0</code> is robust,
+and its bounds are only required to contain its primary value and
+<code>real</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>with-strict-arithmetic</b> (<var>with-strict-arithmetic boolean combiner</var>)<var><a name="index-with_002dstrict_002darithmetic-191"></a></var><br>
+&mdash; Applicative: <b>get-string-arithmetic</b> (<var>get-strict-arithmetic?</var>)<var><a name="index-get_002dstring_002darithmetic-192"></a></var><br>
+<blockquote><!-- TODO add xref to dynamic keys and under/over flow, no prim value -->
+        <p>These applicatives are the binder and accessor of the
+<code>strict-arithmetic</code> keyed dynamic variable.  When this keyed
+variable is true, various survivable but dubious arithmetic events
+signal an error - notably, operation results with no primary value,
+and over- and underflows. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>/</b> (<var>/ number . numbers</var>)<var><a name="index-g_t_002f-193"></a></var><br>
+<blockquote><p>  <code>numbers</code> should be a nonempty list of numbers.
+
+        <p>Applicative <code>/</code> returns <code>number</code> divided by the product of
+<code>numbers</code>.  If the product of <code>numbers</code> is zero, an error is
+signaled.  If <code>number</code> is infinite and the product of <code>numbers</code> is
+infinite, an error is signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>numerator</b> (<var>numerator rational</var>)<var><a name="index-numerator-194"></a></var><br>
+&mdash; Applicative: <b>denominator</b> (<var>denominator rational</var>)<var><a name="index-denominator-195"></a></var><br>
+<blockquote><p>  These applicatives return the numerator and denominator of
+<code>rational</code>, in least terms (i.e., chosen for the least positive
+denominator).  Note that if <code>rational</code> is inexact, and either of
+its bounds is not its primary value, the denominator has upper bound
+positive infinity, and the numerator must have at least one infinite
+bound (two infinite bounds if the bounds of rational allow values of
+both signs). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>floor</b> (<var>floor real</var>)<var><a name="index-floor-196"></a></var><br>
+&mdash; Applicative: <b>ceiling</b> (<var>ceiling real</var>)<var><a name="index-ceiling-197"></a></var><br>
+&mdash; Applicative: <b>truncate</b> (<var>truncate real</var>)<var><a name="index-truncate-198"></a></var><br>
+&mdash; Applicative: <b>round</b> (<var>round real</var>)<var><a name="index-round-199"></a></var><br>
+<blockquote><p>  Applicative <code>floor</code> returns the largest integer not greater
+than <code>real</code>.
+
+        <p>Applicative <code>ceiling</code> returns the smallest integer not less
+than <code>real</code>.
+
+        <p>Applicative <code>truncate</code> returns the integer closest to
+<code>real</code> whose absolute value is not greater than that of
+<code>real</code>.
+
+        <p>Applicative <code>round</code> returns the closest integer to <code>real</code>,
+rounding to even when <code>real</code> is halfway between two integers. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>rationalize</b> (<var>rationalize real1 real2</var>)<var><a name="index-rationalize-200"></a></var><br>
+&mdash; Applicative: <b>simplest-rational</b> (<var>simplest-rational real1 real2</var>)<var><a name="index-simplest_002drational-201"></a></var><br>
+<blockquote><p>  A rational number <code>r1</code> is simpler than another rational
+<code>r2</code> if <code>r1 = p1 / q1</code> and <code>r2 = p2 / q2</code>, both in
+lowest terms, and <code>|p1| &lt;= |p2|</code> and <code>|q1| &lt;= |q2|</code>. Thus
+<code>3/5</code> is simpler than <code>4/7</code>. Not all rationals are
+comparable in this ordering, as for example <code>2/7</code> and <code>3/5</code>. 
+However, any interval (that contains rational numbers) contains a
+rational number that is simpler than every other rational number in
+that interval.  Note that <code>0 = 0/1</code> is simpler than any other
+rational (so that one never has to choose between <code>p/q</code> and
+<code>−p/q</code>).
+
+        <p>For applicative <code>simplest-rational</code>, let <code>x0</code> be the
+simplest rational mathematically not less than the primary value of
+<code>real1</code> and not greater than the primary value of <code>real2</code>. 
+If no such <code>x0</code> exists (because the primary value of <code>real1</code>
+is greater, or because the primary values of the arguments are equal
+and irrational), or if either argument does not have a primary value,
+an error is signaled.
+
+        <p>For applicative <code>rationalize</code>, let <code>x0</code> be the simplest
+rational mathematical number within the interval bounded by the
+primary value of <code>real1</code> plus and minus the primary value of
+<code>real2</code>.  If no such <code>x0</code> exists (because the primary value
+of <code>real1</code> is irrational and the primary value <code>real2</code> is
+zero), or if either argument does not have a primary value, an error
+is signaled.
+
+     <!-- TODO add xref to real->inexact -->
+        <p>If <code>real1</code> and <code>real2</code> are exact, the applicative
+(whichever it is) returns exact <code>x0</code>.  If one or both of
+<code>real1</code> and <code>real2</code> are inexact, the applicative returns an
+inexact rational approximating <code>x0</code> (as by <code>real-&gt;inexact</code>. 
+Note that an inexact result returned is not necessarily bounded by the
+primary values of the arguments; but the result is an approximation of
+<code>x0</code>, which is so bounded, and the bounds of the result include
+<code>x0</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>exp</b> (<var>exp number</var>)<var><a name="index-exp-202"></a></var><br>
+&mdash; Applicative: <b>log</b> (<var>log number</var>)<var><a name="index-log-203"></a></var><br>
+<blockquote><p>TODO
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>sin</b> (<var>sin number</var>)<var><a name="index-sin-204"></a></var><br>
+&mdash; Applicative: <b>cos</b> (<var>cos number</var>)<var><a name="index-cos-205"></a></var><br>
+&mdash; Applicative: <b>tan</b> (<var>tan number</var>)<var><a name="index-tan-206"></a></var><br>
+<blockquote><p>TODO
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>asin</b> (<var>asin number</var>)<var><a name="index-asin-207"></a></var><br>
+&mdash; Applicative: <b>acos</b> (<var>acos number</var>)<var><a name="index-acos-208"></a></var><br>
+&mdash; Applicative: <b>atan</b> (<var>atan number1 </var>[<var>number2</var>])<var><a name="index-atan-209"></a></var><br>
+<blockquote><p>TODO
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>sqrt</b> (<var>sqrt number</var>)<var><a name="index-sqrt-210"></a></var><br>
+&mdash; Applicative: <b>expt</b> (<var>expt number1 number2</var>)<var><a name="index-expt-211"></a></var><br>
+<blockquote><p>TODO
+</p></blockquote></div>
 
 <!-- *-texinfo-*- -->
    </body></html>
