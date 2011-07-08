@@ -75,6 +75,63 @@ void blob_length(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
+/* 13.1.4? blob-ref */
+void blob_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "blob", ttisblob, blob,
+	     "exact integer", keintegerp, tv_i);
+
+    if (!ttisfixint(tv_i)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "index out of bounds");
+	return;
+    }
+    int32_t i = ivalue(tv_i);
+    
+    if (i < 0 || i >= kblob_size(blob)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "index out of bounds");
+	return;
+    }
+
+    TValue res = i2tv(kblob_buf(blob)[i]);
+    kapply_cc(K, res);
+}
+
+/* 13.1.5? blob-set! */
+void blob_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_3tp(K, ptree, "blob", ttisblob, blob,
+	     "exact integer", keintegerp, tv_i, "exact integer", keintegerp, tv_byte);
+
+    if (!ttisfixint(tv_i)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "index out of bounds");
+	return;
+    } else if (kblob_immutablep(blob)) {
+	klispE_throw_simple(K, "immutable blob");
+	return;
+    } else if (ivalue(tv_byte) < 0 || ivalue(tv_byte) > 255) {
+	klispE_throw_simple(K, "bad byte");
+	return;
+    }
+
+    int32_t i = ivalue(tv_i);
+    
+    if (i < 0 || i >= kblob_size(blob)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "index out of bounds");
+	return;
+    }
+
+    kblob_buf(blob)[i] = (uint8_t) ivalue(tv_byte);
+    kapply_cc(K, KINERT);
+}
+
 /* init ground */
 void kinit_blobs_ground_env(klisp_State *K)
 {
@@ -87,20 +144,21 @@ void kinit_blobs_ground_env(klisp_State *K)
     ** They are provided in the meantime to allow programs to use byte vectors.
     */
 
-    /* 13.1.1? blob? */
+    /* ??.1.1? blob? */
     add_applicative(K, ground_env, "blob?", typep, 2, symbol, 
 		    i2tv(K_TBLOB));
-    /* 13.1.2? make-blob */
+    /* ??.1.2? make-blob */
     add_applicative(K, ground_env, "make-blob", make_blob, 0);
-    /* 13.1.3? blob-length */
+    /* ??.1.3? blob-length */
     add_applicative(K, ground_env, "blob-length", blob_length, 0);
+
+    /* ??.1.4? blob-ref */
+    add_applicative(K, ground_env, "blob-ref", blob_ref, 0);
+    /* ??.1.5? blob-set! */
+    add_applicative(K, ground_env, "blob-set!", blob_setS, 0);
 
 /* TODO put the blob equivalents here */
 #if 0
-    /* 13.1.4? string-ref */
-    add_applicative(K, ground_env, "string-ref", string_ref, 0);
-    /* 13.1.5? string-set! */
-    add_applicative(K, ground_env, "string-set!", string_setS, 0);
     /* 13.2.1? string */
     add_applicative(K, ground_env, "string", string, 0);
     /* 13.2.2? string=?, string-ci=? */

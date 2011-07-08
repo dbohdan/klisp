@@ -28,6 +28,12 @@ void make_blob(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void blob_length(klisp_State *K, TValue *xparams, TValue ptree, 
 		     TValue denv);
 
+/* ??.1.4? blob-ref */
+void blob_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* ??.1.5? blob-set! */
+void blob_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* init ground */
 void kinit_blobs_ground_env(klisp_State *K);
 
