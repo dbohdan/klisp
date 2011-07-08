@@ -320,6 +320,11 @@ static int32_t propagatemark (klisp_State *K) {
 	markvalue(K, e->irritants);
 	return sizeof(Error);
     }
+    case K_TBLOB: {
+	Blob *b = cast(Blob *, o);
+	markvalue(K, b->mark); 
+	return sizeof(String) + b->size * sizeof(uint8_t);
+    }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
 		type);
@@ -449,6 +454,9 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	break;
     case K_TERROR:
 	klispE_free(K, (Error *)o);
+	break;
+    case K_TBLOB:
+	klispM_freemem(K, o, sizeof(Blob)+o->blob.size);
 	break;
     default:
 	/* shouldn't happen */

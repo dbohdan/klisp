@@ -548,6 +548,7 @@ union GCObject {
     Promise prom;
     Port port;
     Table table;
+    Blob blob;
 };
 
 
