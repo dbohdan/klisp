@@ -245,7 +245,7 @@ ktoken.o: ktoken.c ktoken.h kobject.h klimits.h klisp.h klispconf.h \
 kwrite.o: kwrite.c kwrite.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kinteger.h imath.h krational.h imrat.h kreal.h \
  kpair.h kgc.h kstring.h ksymbol.h kerror.h ktable.h kport.h \
- kenvironment.h
+ kenvironment.h kblob.h
 imath.o: imath.c imath.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kerror.h
 imrat.o: imrat.c imrat.h imath.h kobject.h klimits.h klisp.h klispconf.h \
