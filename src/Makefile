@@ -151,7 +151,7 @@ kgeqp.o: kgeqp.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kapplicative.h koperative.h kenvironment.h ksymbol.h kstring.h kgeqp.h \
  kinteger.h imath.h krational.h imrat.h
 kgequalp.o: kgequalp.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
- ktoken.h kmem.h kpair.h kgc.h kstring.h kcontinuation.h kerror.h \
+ ktoken.h kmem.h kpair.h kgc.h kstring.h kblob.h kcontinuation.h kerror.h \
  kghelpers.h kapplicative.h koperative.h kenvironment.h ksymbol.h kgeqp.h \
  kinteger.h imath.h krational.h imrat.h kgequalp.h
 kghelpers.o: kghelpers.c kghelpers.h kstate.h klimits.h klisp.h kobject.h \
