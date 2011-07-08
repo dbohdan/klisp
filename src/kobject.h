@@ -484,6 +484,7 @@ typedef struct __attribute__ ((__packed__)) {
 /* Blobs (binary vectors) */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
     uint32_t size;
     int32_t __dummy; /* for alignment to 64 bits */
     char b[]; /* buffer */

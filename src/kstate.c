@@ -34,6 +34,7 @@
 #include "kstring.h"
 #include "kport.h"
 #include "ktable.h"
+#include "kblob.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
 
@@ -148,6 +149,12 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* Empty string */
     /* MAYBE: fix it so we can remove empty_string from roots */
     K->empty_string = kstring_new_b_imm(K, "");
+
+    /* Empty blob */
+    /* MAYBE: fix it so we can remove empty_blob from roots */
+    /* XXX: find a better way to do this */
+    K->empty_blob = KNIL; /* trick constructor to create empty blob */
+    K->empty_blob = kblob_new_imm(K, 0);
 
     /* initialize tokenizer */
 

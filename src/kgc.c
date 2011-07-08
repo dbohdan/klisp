@@ -20,6 +20,7 @@
 #include "imrat.h"
 #include "ktable.h"
 #include "kstring.h"
+#include "kblob.h"
 #include "kerror.h"
 
 #define GCSTEPSIZE	1024u
@@ -574,6 +575,7 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->kd_in_port_key);
     markvalue(K, K->kd_out_port_key);
     markvalue(K, K->empty_string);
+    markvalue(K, K->empty_blob);
 
     markvalue(K, K->ktok_lparen);
     markvalue(K, K->ktok_rparen);

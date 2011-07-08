@@ -10,10 +10,10 @@
 #include "kobject.h"
 #include "kstate.h"
 
-/* General constructor for blobs */
+/* Constructors for blobs */
 TValue kblob_new_g(klisp_State *K, bool m, uint32_t size);
-TValue kblob_new_imm(klisp_State *K, bool m, uint32_t size);
-TValue kblob_new(klisp_State *K, bool m, uint32_t size);
+TValue kblob_new_imm(klisp_State *K, uint32_t size);
+TValue kblob_new(klisp_State *K, uint32_t size);
 
 /* both obj1 and obj2 should be blobs, this compares byte by byte
   and doesn't differentiate immutable from mutable blobs */
@@ -24,6 +24,7 @@ bool kblob(TValue obj);
 #define kblob_buf(tv_) (tv2blob(tv_)->b)
 #define kblob_size(tv_) (tv2blob(tv_)->size)
 
+#define kblob_emptyp(tv_) (kblob_size(tv_) == 0)
 #define kblob_mutablep(tv_) (kis_mutable(tv_))
 #define kblob_immutablep(tv_) (kis_immutable(tv_))
 

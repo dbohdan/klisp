@@ -29,7 +29,7 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
 	kencapsulation.o kpromise.o kport.o kinteger.o krational.o \
-	kreal.o ktable.o kgc.o imath.o imrat.o \
+	kreal.o ktable.o kgc.o imath.o imrat.o kblob.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
@@ -117,7 +117,8 @@ kgbooleans.o: kgbooleans.c kobject.h klimits.h klisp.h klispconf.h \
  kcontinuation.h kerror.h kghelpers.h kapplicative.h koperative.h \
  kenvironment.h
 kgc.o: kgc.c kgc.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
- ktoken.h kmem.h kport.h imath.h imrat.h ktable.h kstring.h kerror.h
+ ktoken.h kmem.h kport.h imath.h imrat.h ktable.h kstring.h kerror.h \
+ kblob.h
 kgchars.o: kgchars.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  kghelpers.h kpair.h kgc.h kenvironment.h ksymbol.h kstring.h kgchars.h
@@ -229,7 +230,7 @@ krepl.o: krepl.c klisp.h kobject.h klimits.h klispconf.h kstate.h \
 kstate.o: kstate.c klisp.h kobject.h klimits.h klispconf.h kstate.h \
  ktoken.h kmem.h kstring.h kpair.h kgc.h keval.h koperative.h \
  kapplicative.h kcontinuation.h kenvironment.h kground.h krepl.h \
- ksymbol.h kport.h ktable.h kgpairs_lists.h kghelpers.h kerror.h
+ ksymbol.h kport.h ktable.h kgpairs_lists.h kghelpers.h kerror.h kblob.h
 kstring.o: kstring.c kstring.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kgc.h
 ksymbol.o: ksymbol.c ksymbol.h kobject.h klimits.h klisp.h klispconf.h \
@@ -249,3 +250,5 @@ imath.o: imath.c imath.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kerror.h
 imrat.o: imrat.c imrat.h imath.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kerror.h
+kblob.o: kblob.c kblob.h kobject.h klimits.h klisp.h klispconf.h \
+ kstate.h ktoken.h kmem.h kgc.h
