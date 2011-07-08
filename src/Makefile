@@ -34,7 +34,7 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
 	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
-	kgstrings.o 
+	kgstrings.o kgblobs.o
 # TEMP: in klisp there is no distinction between core & lib
 LIB_O= 
 
@@ -252,3 +252,7 @@ imrat.o: imrat.c imrat.h imath.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kerror.h
 kblob.o: kblob.c kblob.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kgc.h
+kgblobs.o: kgblobs.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
+ ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
+ ksymbol.h kstring.h kghelpers.h kpair.h kgc.h kenvironment.h \
+ kgblobs.h kgnumbers.h

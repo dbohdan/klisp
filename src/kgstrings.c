@@ -487,6 +487,4 @@ void kinit_strings_ground_env(klisp_State *K)
 
     /* 13.2.10? string-fill! */
     add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
-
-    
 }
