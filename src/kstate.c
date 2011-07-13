@@ -91,6 +91,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* these are init later */
     K->kd_in_port_key = KINERT;
     K->kd_out_port_key = KINERT;
+    K->kd_error_port_key = KINERT;
 
     /* strict arithmetic dynamic key */
     /* this is init later */
@@ -196,8 +197,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 				    false, stdin);
     TValue out_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDOUT*"),
 				     true, stdout);
+    TValue error_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDERR*"),
+				     true, stderr);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
+    K->kd_error_port_key = kcons(K, KTRUE, error_port);
 
     /* strict arithmetic key, (starts as false) */
     K->kd_strict_arith_key = kcons(K, KTRUE, KFALSE);

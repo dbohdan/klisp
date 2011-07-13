@@ -103,9 +103,10 @@ struct klisp_State {
     FILE *curr_in;
     FILE *curr_out;
 
-    /* for current-input-port, current-output-port */
+    /* for current-input-port, current-output-port, current-error-port */
     TValue kd_in_port_key;
     TValue kd_out_port_key;
+    TValue kd_error_port_key;
 
     /* for strict-arithmetic */
     TValue kd_strict_arith_key;
@@ -498,6 +499,7 @@ void do_interception(klisp_State *K, TValue *xparams, TValue obj);
 /* TODO: use these where appropriate */
 #define kcurr_input_port(K) (tv2pair((K)->kd_in_port_key)->cdr)
 #define kcurr_output_port(K) (tv2pair((K)->kd_out_port_key)->cdr)
+#define kcurr_error_port(K) (tv2pair((K)->kd_error_port_key)->cdr)
 #define kcurr_strict_arithp(K) bvalue(tv2pair((K)->kd_strict_arith_key)->cdr)
 
 #endif
