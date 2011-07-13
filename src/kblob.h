@@ -10,6 +10,9 @@
 #include "kobject.h"
 #include "kstate.h"
 
+/* TODO change blob constructors to string like constructors */
+/* TODO change names to lua-like (e.g. klispB_new, etc) */
+
 /* Constructors for blobs */
 TValue kblob_new_g(klisp_State *K, bool m, uint32_t size);
 TValue kblob_new_imm(klisp_State *K, uint32_t size);

@@ -54,7 +54,7 @@ void make_blob(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /*    TValue new_blob = kblob_new_sf(K, ivalue(tv_s), fill); */
     TValue new_blob = kblob_new(K, ivalue(tv_s));
     if (fill != 0) {
-	int s = ivalue(tv_s);
+	int32_t s = ivalue(tv_s);
 	uint8_t *ptr = kblob_buf(new_blob);
 	while(s--)
 	    *ptr++ = fill;
@@ -75,8 +75,8 @@ void blob_length(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
-/* 13.1.4? blob-ref */
-void blob_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+/* 13.1.4? blob-u8-ref */
+void blob_u8_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -100,8 +100,8 @@ void blob_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
-/* 13.1.5? blob-set! */
-void blob_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+/* 13.1.5? blob-u8-set! */
+void blob_u8_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -132,6 +132,45 @@ void blob_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
+/* TODO change blob constructors to string like constructors */
+
+/* 13.2.8? blob-copy */
+/* TEMP: at least for now this always returns mutable blobs */
+void blob_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, ptree, "blob", ttisblob, blob);
+
+    TValue new_blob;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (tv_equal(blob, K->empty_blob)) {
+	new_blob = blob; 
+    } else {
+	new_blob = kblob_new(K, kblob_size(blob));
+	memcpy(kblob_buf(new_blob), kblob_buf(blob), kblob_size(blob));
+    }
+    kapply_cc(K, new_blob);
+}
+
+/* 13.2.9? blob->immutable-blob */
+void blob_to_immutable_blob(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, ptree, "blob", ttisblob, blob);
+
+    TValue res_blob;
+    if (kblob_immutablep(blob)) {/* this includes the empty blob */
+	res_blob = blob;
+    } else {
+	res_blob = kblob_new_imm(K, kblob_size(blob));
+	memcpy(kblob_buf(res_blob), kblob_buf(blob), kblob_size(blob));
+    }
+    kapply_cc(K, res_blob);
+}
+
 /* init ground */
 void kinit_blobs_ground_env(klisp_State *K)
 {
@@ -152,10 +191,15 @@ void kinit_blobs_ground_env(klisp_State *K)
     /* ??.1.3? blob-length */
     add_applicative(K, ground_env, "blob-length", blob_length, 0);
 
-    /* ??.1.4? blob-ref */
-    add_applicative(K, ground_env, "blob-ref", blob_ref, 0);
-    /* ??.1.5? blob-set! */
-    add_applicative(K, ground_env, "blob-set!", blob_setS, 0);
+    /* ??.1.4? blob-u8-ref */
+    add_applicative(K, ground_env, "blob-u8-ref", blob_u8_ref, 0);
+    /* ??.1.5? blob-u8-set! */
+    add_applicative(K, ground_env, "blob-u8-set!", blob_u8_setS, 0);
+
+    /* ??.1.?? blob-copy */
+    add_applicative(K, ground_env, "blob-copy", blob_copy, 0);
+    /* ??.1.?? blob->immutable-blob */
+    add_applicative(K, ground_env, "blob->immutable-blob", blob_to_immutable_blob, 0);
 
 /* TODO put the blob equivalents here */
 #if 0

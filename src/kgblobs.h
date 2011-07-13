@@ -28,11 +28,19 @@ void make_blob(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void blob_length(klisp_State *K, TValue *xparams, TValue ptree, 
 		     TValue denv);
 
-/* ??.1.4? blob-ref */
-void blob_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+/* ??.1.4? blob-u8-ref */
+void blob_u8_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
-/* ??.1.5? blob-set! */
-void blob_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+/* ??.1.5? blob-u8-set! */
+void blob_u8_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* ??.2.?? blob-copy */
+void blob_copy(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv);
+
+/* ??.2.?? blob->immutable-blob */
+void blob_to_immutable_blob(klisp_State *K, TValue *xparams, 
+				TValue ptree, TValue denv);
 
 /* init ground */
 void kinit_blobs_ground_env(klisp_State *K);
