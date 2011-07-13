@@ -582,6 +582,7 @@ static void markroot (klisp_State *K) {
 
     markvalue(K, K->kd_in_port_key);
     markvalue(K, K->kd_out_port_key);
+    markvalue(K, K->kd_error_port_key);
     markvalue(K, K->empty_string);
     markvalue(K, K->empty_blob);
 

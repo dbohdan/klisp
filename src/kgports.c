@@ -564,15 +564,21 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
 		    p2tv(kis_output_port));
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
+    /* 15.1.? with-error-to-file */
     add_applicative(K, ground_env, "with-input-from-file", with_file, 
 		    3, symbol, b2tv(false), K->kd_in_port_key);
     add_applicative(K, ground_env, "with-output-to-file", with_file, 
 		    3, symbol, b2tv(true), K->kd_out_port_key);
+    add_applicative(K, ground_env, "with-error-to-file", with_file, 
+		    3, symbol, b2tv(true), K->kd_error_port_key);
     /* 15.1.4 get-current-input-port, get-current-output-port */
+    /* 15.1.? get-current-error-port */
     add_applicative(K, ground_env, "get-current-input-port", get_current_port, 
 		    2, symbol, K->kd_in_port_key);
     add_applicative(K, ground_env, "get-current-output-port", get_current_port, 
 		    2, symbol, K->kd_out_port_key);
+    add_applicative(K, ground_env, "get-current-error-port", get_current_port, 
+		    2, symbol, K->kd_error_port_key);
     /* 15.1.5 open-input-file, open-output-file */
     add_applicative(K, ground_env, "open-input-file", open_file, 2, symbol, 
 		    b2tv(false));
