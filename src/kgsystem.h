@@ -18,7 +18,9 @@
 #include "kstate.h"
 #include "kghelpers.h"
 
-/* ??.?.? */
+/* ??.?.? current-second */
+void current_second(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv);
 
 /* init ground */
 void kinit_system_ground_env(klisp_State *K);

@@ -199,7 +199,7 @@ kground.o: kground.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kgequalp.h kgsymbols.h kgcontrol.h kgpairs_lists.h kgpair_mut.h \
  kgenvironments.h kgenv_mut.h kgcombiners.h kgcontinuations.h \
  kgencapsulations.h kgpromises.h kgkd_vars.h kgks_vars.h kgnumbers.h \
- kgstrings.h kgchars.h kgports.h kgblobs.h ktable.h keval.h krepl.h
+ kgstrings.h kgchars.h kgports.h kgblobs.h ktable.h keval.h krepl.h kgsystem.h
 kgstrings.o: kgstrings.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  ksymbol.h kstring.h kghelpers.h kpair.h kgc.h kenvironment.h kgchars.h \
