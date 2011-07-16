@@ -1,5 +1,5 @@
 /*
-** kgports.h
+** kgports.c
 ** Ports features for the ground environment
 ** See Copyright Notice in klisp.h
 */
