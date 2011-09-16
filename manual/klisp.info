@@ -55,7 +55,7 @@ the header "Permission to copy this report", that reads:
 * Strings::                 Strings module features.
 * Characters::              Characters module features.
 * Ports::                   Ports module features.
-* Index::                   Index including concepts, functions, variables,
+* Alphabetical Index::      Index including concepts, functions, variables,
                               and other terms.
 
 
@@ -2129,7 +2129,7 @@ features defined here were taken mostly from r5rs scheme.
      is signaled.
 
 
-File: klisp.info,  Node: Ports,  Next: Index,  Prev: Characters,  Up: Top
+File: klisp.info,  Node: Ports,  Next: Alphabetical Index,  Prev: Characters,  Up: Top
 
 16 Ports
 ********
@@ -2374,7 +2374,7 @@ klisp and was taken from Scheme.
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
 
-File: klisp.info,  Node: Index,  Next: (dir),  Prev: Ports,  Up: Top
+File: klisp.info,  Node: Alphabetical Index,  Next: (dir),  Prev: Ports,  Up: Top
 
 Index
 *****
@@ -2688,6 +2688,6 @@ Node: Numbers72131
 Node: Strings91630
 Node: Characters96977
 Node: Ports99687
-Node: Index110972
+Node: Alphabetical Index110985
 
 End Tag Table

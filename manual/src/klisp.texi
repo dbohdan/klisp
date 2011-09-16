@@ -110,7 +110,7 @@ permission is granted to copy it in whole or in part without fee.
 * Characters::              Characters module features.
 * Ports::                   Ports module features.
 @c TODO add error objs to both klisp and the manual
-* Index::                   Index including concepts, functions, variables,
+* Alphabetical Index::      Index including concepts, functions, variables,
                               and other terms.
 
 @c Appendices
