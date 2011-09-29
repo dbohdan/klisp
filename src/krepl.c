@@ -126,11 +126,9 @@ void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
     ** xparams[0]: dynamic environment
     */
 
-    /* TEMP: should be better to have an error port
-       like in scheme r6rs & r7rs (draft) */
     /* FOR NOW used only for irritant list */
-    TValue port = kcdr(K->kd_out_port_key);
-    klisp_assert(kport_file(port) == stdout);
+    TValue port = kcdr(K->kd_error_port_key);
+    klisp_assert(kport_file(port) == stderr);
 
     /* TEMP: obj should be an error obj */
     if (ttiserror(obj)) {
@@ -152,15 +150,15 @@ void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
 	    who_str = "?";
 	}
 	char *msg = kstring_buf(err_obj->msg);
-	fprintf(stdout, "\n*ERROR*: \n");
-	fprintf(stdout, "%s: %s", who_str, msg);
+	fprintf(stderr, "\n*ERROR*: \n");
+	fprintf(stderr, "%s: %s", who_str, msg);
 
 	krooted_tvs_push(K, obj);
 
 	/* Msg + irritants */
 	/* TODO move to a new function */
 	if (!ttisnil(err_obj->irritants)) {
-	    fprintf(stdout, ": ");
+	    fprintf(stderr, ": ");
 	    kwrite_display_to_port(K, port, err_obj->irritants, false);
 	}
 	kwrite_newline_to_port(K, port);
@@ -171,7 +169,7 @@ void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
 	/* TODO move to a new function */
 	/* MAYBE: remove */
 	if (khas_name(who) || khas_si(who)) {
-	    fprintf(stdout, "Location: ");
+	    fprintf(stderr, "Location: ");
 	    kwrite_display_to_port(K, port, who, false);
 	    kwrite_newline_to_port(K, port);
 	}
@@ -179,7 +177,7 @@ void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
 	/* Backtrace */
 	/* TODO move to a new function */
 	TValue tv_cont = err_obj->cont;
-	fprintf(stdout, "Backtrace: \n");
+	fprintf(stderr, "Backtrace: \n");
 	while(ttiscontinuation(tv_cont)) {
 	    kwrite_display_to_port(K, port, tv_cont, false);
 	    kwrite_newline_to_port(K, port);
@@ -192,7 +190,7 @@ void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
 #endif
 	krooted_tvs_pop(K);
     } else {
-	fprintf(stdout, "\n*ERROR*: not an error object passed to " 
+	fprintf(stderr, "\n*ERROR*: not an error object passed to " 
 		"error continuation");
     }
 

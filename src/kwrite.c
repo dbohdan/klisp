@@ -23,6 +23,7 @@
 #include "ktable.h"
 #include "kport.h"
 #include "kenvironment.h"
+#include "kblob.h"
 
 /*
 ** Stack for the write FSM
@@ -442,6 +443,15 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "]");
 	break;
     }
+    case K_TBLOB:
+	kw_printf(K, "#[blob");
+	#if KTRACK_NAMES
+	if (khas_name(obj)) {
+	    kw_print_name(K, obj);
+	}
+	#endif
+	kw_printf(K, "]");
+	break;
     default:
 	/* shouldn't happen */
 	kwrite_error(K, "unknown object type");

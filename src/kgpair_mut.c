@@ -273,7 +273,7 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
     TValue tail = lss;
     /* this is a list of last pairs using the marks to link the pairs) */
     TValue last_pairs = KNIL;
-    TValue last_apair;
+    TValue last_apair = KNIL;
 
     while(apairs != 0 || cpairs != 0) {
 	int32_t pairs;

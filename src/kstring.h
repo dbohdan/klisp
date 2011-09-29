@@ -17,13 +17,13 @@
 /* for immutable string table */
 void klispS_resize (klisp_State *K, int32_t newsize);
 
-/* 
-** Constructors for immutable strings
-*/
-
 /* General constructor for strings */
 TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf, 
 			uint32_t size);
+
+/* 
+** Constructors for immutable strings
+*/
 
 /* main immutable string constructor */
 /* with buffer & size */
@@ -66,6 +66,7 @@ TValue kstring_new_sf(klisp_State *K, uint32_t size, char fill);
 #define kstring_new_sf_imm(K_, size_, fill_)	\
     kstring_new_sf_g(K_, false, size_, fill_)
 #endif
+
 /* some macros to access the parts of the string */
 #define kstring_buf(tv_) (tv2str(tv_)->b)
 #define kstring_size(tv_) (tv2str(tv_)->size)
@@ -75,9 +76,8 @@ TValue kstring_new_sf(klisp_State *K, uint32_t size, char fill);
 #define kstring_immutablep(tv_) (kis_immutable(tv_))
 
 /* both obj1 and obj2 should be strings, this compares char by char
-  but differentiates immutable from mutable strings */
+  and doesn't differentiate immutable from mutable strings */
 bool kstring_equalp(TValue obj1, TValue obj2);
-
 bool kstringp(TValue obj);
 
 #endif

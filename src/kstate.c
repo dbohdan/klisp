@@ -34,6 +34,7 @@
 #include "kstring.h"
 #include "kport.h"
 #include "ktable.h"
+#include "kblob.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
 
@@ -90,6 +91,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* these are init later */
     K->kd_in_port_key = KINERT;
     K->kd_out_port_key = KINERT;
+    K->kd_error_port_key = KINERT;
 
     /* strict arithmetic dynamic key */
     /* this is init later */
@@ -149,6 +151,12 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* MAYBE: fix it so we can remove empty_string from roots */
     K->empty_string = kstring_new_b_imm(K, "");
 
+    /* Empty blob */
+    /* MAYBE: fix it so we can remove empty_blob from roots */
+    /* XXX: find a better way to do this */
+    K->empty_blob = KNIL; /* trick constructor to create empty blob */
+    K->empty_blob = kblob_new_imm(K, 0);
+
     /* initialize tokenizer */
 
     /* WORKAROUND: for stdin line buffering & reading of EOF */
@@ -189,8 +197,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 				    false, stdin);
     TValue out_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDOUT*"),
 				     true, stdout);
+    TValue error_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDERR*"),
+				     true, stderr);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
+    K->kd_error_port_key = kcons(K, KTRUE, error_port);
 
     /* strict arithmetic key, (starts as false) */
     K->kd_strict_arith_key = kcons(K, KTRUE, KFALSE);

@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/ports
 
-@node Ports, Index, Characters, Top
+@node Ports, Alphabetical Index, Characters, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Ports

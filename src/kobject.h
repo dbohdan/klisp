@@ -161,6 +161,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TPORT         39
 #define K_TTABLE        40
 #define K_TERROR        41
+#define K_TBLOB         42
 
 /* for tables */
 #define K_TDEADKEY        60
@@ -213,6 +214,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_PORT K_MAKE_VTAG(K_TPORT)
 #define K_TAG_TABLE K_MAKE_VTAG(K_TTABLE)
 #define K_TAG_ERROR K_MAKE_VTAG(K_TERROR)
+#define K_TAG_BLOB K_MAKE_VTAG(K_TBLOB)
 
 
 /*
@@ -294,6 +296,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisport(o) (tbasetype_(o) == K_TAG_PORT)
 #define ttistable(o) (tbasetype_(o) == K_TAG_TABLE)
 #define ttiserror(o) (tbasetype_(o) == K_TAG_ERROR)
+#define ttisblob(o) (tbasetype_(o) == K_TAG_BLOB)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -478,6 +481,15 @@ typedef struct __attribute__ ((__packed__)) {
     TValue irritants;  /* list of extra objs */
 } Error;
 
+/* Blobs (binary vectors) */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
+    uint32_t size;
+    int32_t __dummy; /* for alignment to 64 bits */
+    uint8_t b[]; /* buffer */
+} Blob;
+
 /*
 ** `module' operation for hashing (size is always a power of 2)
 */
@@ -505,7 +517,7 @@ typedef struct __attribute__ ((__packed__)) {
     TValue mark; /* for cycle/sharing aware algorithms */
     uint32_t size; 
     uint32_t hash; /* only used for immutable strings */
-    char b[]; // buffer
+    char b[]; /* buffer */
 } String;
 
 /* MAYBE: mark fields could be replaced by a hashtable or a bit + a hashtable */
@@ -536,6 +548,7 @@ union GCObject {
     Promise prom;
     Port port;
     Table table;
+    Blob blob;
 };
 
 
@@ -637,6 +650,7 @@ const TValue kfree;
 #define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
 #define gc2table(o_) (gc2tv(K_TAG_TABLE, o_))
 #define gc2error(o_) (gc2tv(K_TAG_ERROR, o_))
+#define gc2blob(o_) (gc2tv(K_TAG_BLOB, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -654,6 +668,7 @@ const TValue kfree;
 #define tv2port(v_) ((Port *) gcvalue(v_))
 #define tv2table(v_) ((Table *) gcvalue(v_))
 #define tv2error(v_) ((Error *) gcvalue(v_))
+#define tv2blob(v_) ((Blob *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))

@@ -35,6 +35,8 @@
 #include "kgstrings.h"
 #include "kgchars.h"
 #include "kgports.h"
+#include "kgblobs.h"
+#include "kgsystem.h"
 
 /* for initing cont names */
 #include "ktable.h"
@@ -130,6 +132,8 @@ void kinit_ground_env(klisp_State *K)
     kinit_strings_ground_env(K);
     kinit_chars_ground_env(K);
     kinit_ports_ground_env(K);
+    kinit_blobs_ground_env(K);
+    kinit_system_ground_env(K);
 
     /*
     ** Initialize the names of the continuation used in

@@ -20,6 +20,7 @@
 #include "imrat.h"
 #include "ktable.h"
 #include "kstring.h"
+#include "kblob.h"
 #include "kerror.h"
 
 #define GCSTEPSIZE	1024u
@@ -319,6 +320,11 @@ static int32_t propagatemark (klisp_State *K) {
 	markvalue(K, e->irritants);
 	return sizeof(Error);
     }
+    case K_TBLOB: {
+	Blob *b = cast(Blob *, o);
+	markvalue(K, b->mark); 
+	return sizeof(String) + b->size * sizeof(uint8_t);
+    }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
 		type);
@@ -449,6 +455,9 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TERROR:
 	klispE_free(K, (Error *)o);
 	break;
+    case K_TBLOB:
+	klispM_freemem(K, o, sizeof(Blob)+o->blob.size);
+	break;
     default:
 	/* shouldn't happen */
 	fprintf(stderr, "Unknown GCObject type (in GC free): %d\n", 
@@ -573,7 +582,9 @@ static void markroot (klisp_State *K) {
 
     markvalue(K, K->kd_in_port_key);
     markvalue(K, K->kd_out_port_key);
+    markvalue(K, K->kd_error_port_key);
     markvalue(K, K->empty_string);
+    markvalue(K, K->empty_blob);
 
     markvalue(K, K->ktok_lparen);
     markvalue(K, K->ktok_rparen);

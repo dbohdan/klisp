@@ -25,10 +25,12 @@
 /* use ftypep */
 
 /* 15.1.3 with-input-from-file, with-ouput-to-file */
+/* 15.1.? with-error-to-file */
 void with_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		    TValue denv);
 
 /* 15.1.4 get-current-input-port, get-current-output-port */
+/* 15.1.? get-current-error-port */
 void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
 		      TValue denv);
 
