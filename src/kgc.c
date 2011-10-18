@@ -109,6 +109,7 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TPORT:
     case K_TTABLE:
     case K_TERROR:
+    case K_TBLOB:
 	o->gch.gclist = K->gray;
 	K->gray = o;
 	break;
