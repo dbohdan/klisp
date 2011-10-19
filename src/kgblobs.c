@@ -43,7 +43,7 @@ void make_blob(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	fill = ivalue(maybe_byte);
     }
 
-    if (knegativep(K, tv_s)) {
+    if (knegativep(tv_s)) {
 	klispE_throw_simple(K, "negative size");    
 	return;
     } else if (!ttisfixint(tv_s)) {

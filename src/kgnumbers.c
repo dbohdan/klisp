@@ -804,9 +804,9 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 	    klispE_throw_simple(K, "x0 doesn't exists (n1 == n2 & "
 				"irrational)");
 	    return KINERT;
-	} else if (knegativep(K, n1) && kpositivep(K, n2)) {
+	} else if (knegativep(n1) && kpositivep(n2)) {
 	    return i2tv(0);
-	} else if (knegativep(K, n1)) {
+	} else if (knegativep(n1)) {
 	    /* n1 -inf, n2 finite negative */
 	    /* ASK John: is this behaviour for infinities ok? */
 	    /* Also in the report example both 1/3 & 1/2 are simpler than 
@@ -822,9 +822,9 @@ TValue knum_simplest_rational(klisp_State *K, TValue n1, TValue n2)
 	if (tv_equal(n1, n2)) {
 	    klispE_throw_simple(K, "result with no primary value");
 	    return KINERT;
-	} else if (knegativep(K, n1) && kpositivep(K, n2)) {
+	} else if (knegativep(n1) && kpositivep(n2)) {
 	    return d2tv(0.0);
-	} else if (knegativep(K, n1)) {
+	} else if (knegativep(n1)) {
 	    /* n1 -inf, n2 finite negative */
 	    /* ASK John: is this behaviour for infinities ok? */
 	    /* Also in the report example both 1/3 & 1/2 are simpler than 
@@ -950,9 +950,9 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    if (!all_zero)
 		cres = KRWNPV; /* check is made later */
 	} else if (all_exact)
-	    cres = knegativep(K, cres)? KEMINF : KEPINF;
+	    cres = knegativep(cres)? KEMINF : KEPINF;
 	else
-	    cres = knegativep(K, cres)? KIMINF : KIPINF;
+	    cres = knegativep(cres)? KIMINF : KIPINF;
 
 	/* here if any of the two has no primary an error is signaled */
 	res = knum_plus(K, ares, cres);
@@ -1011,7 +1011,7 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    ; /* do nothing */
 	if (kfast_zerop(cres)) 
 	    ; /* do nothing */
-	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1))) {
+	else if (kpositivep(cres) && knum_ltp(K, cres, i2tv(1))) {
 	    if (all_exact)
 		cres = i2tv(0);
 	    else 
@@ -1104,9 +1104,9 @@ void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    if (!all_zero)
 		cres = KRWNPV; /* check is made later */
 	} else if (all_exact)
-	    cres = knegativep(K, cres)? KEMINF : KEPINF;
+	    cres = knegativep(cres)? KEMINF : KEPINF;
 	else
-	    cres = knegativep(K, cres)? KIMINF : KIPINF;
+	    cres = knegativep(cres)? KIMINF : KIPINF;
 
 	/* here if any of the two has no primary an error is signaled */
 	res = knum_plus(K, ares, cres);
@@ -1356,7 +1356,7 @@ void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(klisp_State *K, TValue n) 
+bool kpositivep(TValue n) 
 { 
     switch (ttype(n)) {
     case K_TFIXINT:
@@ -1369,17 +1369,15 @@ bool kpositivep(klisp_State *K, TValue n)
 	return kbigrat_positivep(n);
     case K_TDOUBLE:
 	return dvalue(n) > 0.0;
-    case K_TRWNPV:
-	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
-	return false;
-	/* complex and undefined should be captured by type predicate */
+    /* real with no prim value, complex and undefined should be captured by 
+       type predicate */
     default:
-	klispE_throw_simple(K, "unsupported type");
+	klisp_assert(0);
 	return false;
     }
 }
 
-bool knegativep(klisp_State *K, TValue n) 
+bool knegativep(TValue n) 
 { 
     switch (ttype(n)) {
     case K_TFIXINT:
@@ -1392,12 +1390,10 @@ bool knegativep(klisp_State *K, TValue n)
 	return kbigrat_negativep(n);
     case K_TDOUBLE:
 	return dvalue(n) < 0.0;
-    case K_TRWNPV:
-	klispE_throw_simple_with_irritants(K, "no primary value", 1, n);
-	return false;
-	/* complex and undefined should be captured by type predicate */
+    /* real with no prim value, complex and undefined should be captured by 
+       type predicate */
     default:
-	klispE_throw_simple(K, "unsupported type");
+	klisp_assert(0);
 	return false;
     }
 }
@@ -1412,6 +1408,8 @@ bool koddp(TValue n)
 	return kbigint_oddp(n);
     case K_TDOUBLE:
 	return fmod(dvalue(n), 2.0) != 0.0;
+    /* real with no prim value, complex and undefined should be captured by 
+       type predicate */
     default:
 	assert(0);
 	return false;
@@ -1427,6 +1425,8 @@ bool kevenp(TValue n)
 	return kbigint_evenp(n);
     case K_TDOUBLE:
 	return fmod(dvalue(n), 2.0) == 0.0;
+    /* real with no prim value, complex and undefined should be captured by 
+       type predicate */
     default:
 	assert(0);
 	return false;
@@ -1745,7 +1745,7 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    ; /* do nothing */
 	if (kfast_zerop(cres)) 
 	    ; /* do nothing */
-	else if (kpositivep(K, cres) && knum_ltp(K, cres, i2tv(1))) {
+	else if (kpositivep(cres) && knum_ltp(K, cres, i2tv(1))) {
 	    if (all_exact)
 		cres = i2tv(0);
 	    else 
@@ -1870,7 +1870,7 @@ void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     case K_TEINF: /* in any case return inexact result (e is inexact) */
     case K_TIINF:
-	res = kpositivep(K, n)? KIPINF : d2tv(0.0);
+	res = kpositivep(n)? KIPINF : d2tv(0.0);
 	break;
     case K_TRWNPV:
     case K_TUNDEFINED:
@@ -1895,7 +1895,7 @@ void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (kfast_zerop(n)) {
 	klispE_throw_simple_with_irritants(K, "zero argument", 1, n);
 	return;
-    } else if (knegativep(K, n)) {
+    } else if (knegativep(n)) {
 	klispE_throw_simple_with_irritants(K, "negative argument", 1, n);
 	return;
     }
@@ -2083,7 +2083,7 @@ void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	    }
 	} else {
 	    /* XXX either pi/2 or -pi/2, but we don't have the constant */
-	    double d = kpositivep(K, n1)? atan(INFINITY) : atan(-INFINITY);
+	    double d = kpositivep(n1)? atan(INFINITY) : atan(-INFINITY);
 	    res = ktag_double(d);
 	}
 	break;
@@ -2131,7 +2131,7 @@ void ksqrt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     case K_TEINF: 
     case K_TIINF:
-	res = knegativep(K, n)? KUNDEF : KIPINF;
+	res = knegativep(n)? KUNDEF : KIPINF;
 	break;
     case K_TRWNPV:
     case K_TUNDEFINED:
@@ -2174,15 +2174,15 @@ void kexpt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     case K_TEINF: 
     case K_TIINF:
 	if (ttisinf(n1) && ttisinf(n2)) {
-	    if (knegativep(K, n1) && knegativep(K, n2))
+	    if (knegativep(n1) && knegativep(n2))
 		res = d2tv(0.0);
-	    else if (knegativep(K, n1) || knegativep(K, n2))
+	    else if (knegativep(n1) || knegativep(n2))
 		res = KUNDEF; /* ASK John: is this ok? */
 	    else 
 		res = KIPINF;
 	} else if (ttisinf(n1)) {
-	    if (knegativep(K, n1)) {
-		if (knegativep(K, n2))
+	    if (knegativep(n1)) {
+		if (knegativep(n2))
 		    res = d2tv(0.0);
 		else {
 		    TValue num = knum_numerator(K, n2);
@@ -2194,9 +2194,9 @@ void kexpt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 		res = KIPINF;
 	    }
 	} else { /* ttisinf(n2) */
-	    if (knegativep(K, n2))
+	    if (knegativep(n2))
 		res = d2tv(0.0);
-	    else if (knegativep(K, n1))
+	    else if (knegativep(n1))
 		res = KUNDEF; /* ASK John: is this ok? */
 	    else 
 		res = KIPINF;

@@ -84,8 +84,8 @@ bool kzerop(TValue n);
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(klisp_State *K, TValue n);
-bool knegativep(klisp_State *K, TValue n);
+bool kpositivep(TValue n);
+bool knegativep(TValue n);
 bool koddp(TValue n);
 bool kevenp(TValue n);
 
@@ -218,7 +218,7 @@ inline TValue kneg_inf(TValue i)
 
 inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2) 
 { 
-    return kpositivep(K, n1) == kpositivep(K, n2); 
+    return kpositivep(n1) == kpositivep(n2); 
 }
 
 /* init ground */

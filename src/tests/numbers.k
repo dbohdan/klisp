@@ -164,12 +164,12 @@
 ;; 12.5.10 positive? negative?
 
 ($check-predicate (positive? 1 1.0 1/1 999999999999 #e+infinity))
-($check-not-predicate (positive? 0))                          ; FAIL
-($check-not-predicate (positive? #e-infinity))                ; FAIL
+($check-not-predicate (positive? 0))
+($check-not-predicate (positive? #e-infinity))
 ($check-error (positive? #real))
 ($check-error (positive? #undefined))
 
-($check-predicate (negative? -1 -1.0 -1/1 -999999999999 #e-infinity)) ; FAIL
+($check-predicate (negative? -1 -1.0 -1/1 -999999999999 #e-infinity))
 ($check-not-predicate (negative? 0))
 ($check-not-predicate (negative? #e+infinity))
 ($check-error (negative? #real))
@@ -219,7 +219,16 @@
 ($check-not-predicate (inexact? #e+infinity))
 
 ($check-predicate (robust? 0 1 -1 1/3 999999999999 #e-infinity #e+infinity))
-($check-predicate (robust? 3.14))           ; FAIL
+;; For now klisp doesn't support precise bounds or robust tagging of inexact
+;; numbers. This is, however, allowed by the report (see section 12.2, 
+;; Inexactness):
+;;
+;; "(...) The implementation might simply take all inexact real numbers
+;; to be non-robust with upper bound positive infinity and lower bound
+;; negative infinity (...)"
+;;
+;; Andres Navarro
+;; ($check-predicate (robust? 3.14))           ; FAIL
 ($check-not-predicate (robust? #real))
 ($check-not-predicate (robust? #undefined))
 
@@ -249,7 +258,28 @@
 ;; 12.8.1 rational?
 
 ($check-predicate (rational? 0 1 1/2))
-($check-not-predicate (rational? (sqrt 2)))    ; FAIL
+;; For now (and probably forever) klisp doesn't support non-rational
+;; reals. While this is certainly doable it implies the use of a complex
+;; algebraic module that is well beyond the scope of this project.
+;; See following paragraph from the report: "It would seem a daunting task to
+;; implement module Real without module Inexact, but in case someone has a 
+;; reason to do so, the report doesn’t preclude it, i.e., module Real doesn’t
+;;  assume module Inexact."
+;;
+;; Then, in section 12.2, Inexactness, it says: " However, sometimes
+;; there may be no way for an internal number to capture a mathematical 
+;; number that the client wants to reason about, either because the intended
+;;  mathematical number cannot be represented by an internal number (as with
+;; exclusively rational internal number formats confronted with an irrational
+;;  mathematical number) ..."
+;; and then on the definition of rational? (12.8.1)
+;; "An inexact real is a rational iff its primary value is a ratio of 
+;;  integers." which is true of all finite reals supported by klisp
+;; as they are represented in floating point format and are therefore
+;; expressible by the formula (sign + or -) mantissa / 2 ^ (-expt)
+;;
+;; Andres Navarro
+; was ($check-not-predicate (rational? (sqrt 2)))    ; FAIL
 ($check-not-predicate (rational? #e+infinity))
 
 ;; 12.8.2 /
@@ -268,17 +298,32 @@
 
 ;; 12.8.4 floor ceiling truncate bound
 
+;; By my interpretation of the report, these applicatives return inexact
+;; integers (they could in principle return exact integers if the reals
+;; passed were correctly bounded, and this is the case in klisp for exact
+;; rationals for example, but not for inexact reals in general). The report
+;; only says that exact arguments means exact results (when possible).
+;; I could be wrong of course, I should consult this with John Shutt
+;;
+;; Andres Navarro
+
 ($check equal? (floor 0) 0)
-($check equal? (floor 1.23) 1)        ; FAIL
-($check equal? (floor -1.23) -2)      ; FAIL
+($check equal? (floor #e1.23) 1) 
+($check equal? (floor #e-1.23) -2)
+($check =? (floor 1.23) 1) 
+($check =? (floor -1.23) -2)
 
 ($check equal? (ceiling 0) 0)
-($check equal? (ceiling 1.23) 2)      ; FAIL
-($check equal? (ceiling -1.23) -1)    ; FAIL
+($check equal? (ceiling #e1.23) 2)
+($check equal? (ceiling #e-1.23) -1)
+($check =? (ceiling 1.23) 2)
+($check =? (ceiling -1.23) -1)
 
 ($check equal? (truncate 0) 0)
-($check equal? (truncate 1.99) 1)     ; FAIL
-($check equal? (truncate -1.99) -1)   ; FAIL
+($check equal? (truncate #e1.99) 1)    
+($check equal? (truncate #e-1.99) -1)  
+($check =? (truncate 1.99) 1)    
+($check =? (truncate -1.99) -1)  
 
 ($check equal? (round 0) 0)
 ($check equal? (round 1/2) 0)
@@ -293,10 +338,26 @@
 ;; 12.8.5 rationalize simplest-rational
 
 ($check equal? (rationalize 0 1) 0)
-($check equal? (rationalize 0.1 0.05) 1/6)       ; FAIL
+
+;; I would think the same as for floor, truncate, etc apply here
+;; Here the reports even says this explicitly, in 12.8.5:
+;; "If real1 and real2 are exact, the applicative (whichever it is) 
+;; returns exact x0. If one or both of real1 and real2 are inexact, 
+;; the applicative returns an inexact approximating x0 
+;; (as by real->inexact , §12.6.5).
+;;
+;; Andres Navarro
+
+;; (I think you meant 1/7 here, 1/6 is about 0.16, and so, outside the range)
+;;
+;; Andres Navarro
+;; was ($check equal? (rationalize 0.1 0.05) 1/6) ; FAIL
+($check =? (rationalize 0.1 0.05) 1/7)
+($check equal? (rationalize #e0.1 #e0.05) 1/7)
 
 ($check equal? (simplest-rational 2/7 3/5) 1/2)
-($check equal? (simplest-rational 0.1 0.3) 1/4)  ; FAIL
+($check =? (simplest-rational 0.1 0.3) 1/4)
+($check equal? (simplest-rational #e0.1 #e0.3) 1/4)
 
 ;; 12.9.1 real?
 
