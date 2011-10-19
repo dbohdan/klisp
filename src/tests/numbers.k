@@ -1,5 +1,26 @@
 ;; check.k & test-helpers.k should be loaded
 ;;
+;; I fixed a number of bugs and added some rationale to some of the tests
+;; marked as FAIL. In some cases, as you say, the specification is unclear.
+;; In these cases I tried to include my interpretation (which could be wrong),
+;; and changed the test to reflect this.
+;;
+;; I am inclined to wait for the next revision of the report before working
+;; too much with numeric features, but some of these could be asked to John 
+;; Shutt for clarification (but I warn you that while he is very cooperative
+;; with this kind of things he sometimes takes a while to answer).
+;;
+;; The operations that throw an error instead of returning #real do so because
+;; the strict-arithmetic flag is true which apparently is caused by a bug, as 
+;; it starts as false when the interpreter starts but is true after running the 
+;; test (Which is a thing that shouldn't be possible, the flag is a dynamic 
+;; variable). I'm on it.
+;; 
+;; The round thing is obviously a bug too, but (round 1.1) doesn't hang so 
+;; I'm inclined to think that it's related to the previous bug, I'm on it.
+;;
+;; Andres Navarro
+;;
 ;; Please look for the keyword FAIL in the source code.
 ;; The marked lines include
 ;;  - failing tests
@@ -8,7 +29,7 @@
 ;; Other bugs:
 ;;
 ;;  - evaluating
-;;      ($check equal? (round 1.1) 1)
+;;      
 ;;      ($check equal? (round -1.1) -1)
 ;;    freezes the interpreter
 ;;
