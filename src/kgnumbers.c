@@ -35,9 +35,9 @@
 
 /* Helpers for typed predicates */
 bool knumberp(TValue obj) { return ttisnumber(obj); }
-/* TEMP used in =? for type predicate (XXX it's not actually a type
-   error, but it's close enough and otherwise should define a 
-   new bpredp for numeric predicates...) */
+/* TEMP used (as a type predicate) in all predicates that need a primary value
+   (XXX it's not actually a type error, but it's close enough and otherwise 
+   should define new predp & bpredp for numeric predicates...) */
 bool knumber_wpvp(TValue obj) 
 { 
     return ttisnumber(obj) && !ttisrwnpv(obj) && !ttisundef(obj); 
@@ -52,9 +52,9 @@ bool kintegerp(TValue obj) { return ttisinteger(obj); }
 bool keintegerp(TValue obj) { return ttiseinteger(obj); }
 bool krationalp(TValue obj) { return ttisrational(obj); }
 bool krealp(TValue obj) { return ttisreal(obj); }
-/* TEMP used in <? & co for type predicate (XXX it's not actually a type
-   error, but it's close enough and otherwise should define a 
-   new bpredp for numeric predicates...) */
+/* TEMP used (as a type predicate) in all predicates that need a real with 
+   primary value (XXX it's not actually a type error, but it's close enough 
+   and otherwise should define new predp & bpredp for numeric predicates...) */
 bool kreal_wpvp(TValue obj) { return ttisreal(obj) && !ttisrwnpv(obj); }
 
 bool kexactp(TValue obj) { return ttisexact(obj); }
@@ -2226,7 +2226,7 @@ void kinit_numbers_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "number?", ftypep, 2, symbol, 
 		    p2tv(knumberp));
     add_applicative(K, ground_env, "finite?", ftyped_predp, 3, symbol, 
-		    p2tv(knumberp), p2tv(kfinitep));
+		    p2tv(knumber_wpvp), p2tv(kfinitep));
     add_applicative(K, ground_env, "integer?", ftypep, 2, symbol, 
 		    p2tv(kintegerp));
     /* 12.5.2 =? */
@@ -2249,7 +2249,7 @@ void kinit_numbers_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "-", kminus, 0);
     /* 12.5.7 zero? */
     add_applicative(K, ground_env, "zero?", ftyped_predp, 3, symbol, 
-		    p2tv(knumberp), p2tv(kzerop));
+		    p2tv(knumber_wpvp), p2tv(kzerop));
     /* 12.5.8 div, mod, div-and-mod */
     add_applicative(K, ground_env, "div", kdiv_mod, 2, symbol, 
 		    i2tv(FDIV_DIV));
@@ -2266,9 +2266,9 @@ void kinit_numbers_ground_env(klisp_State *K)
 		    i2tv(FDIV_ZERO | FDIV_DIV | FDIV_MOD));
     /* 12.5.10 positive?, negative? */
     add_applicative(K, ground_env, "positive?", ftyped_predp, 3, symbol, 
-		    p2tv(krealp), p2tv(kpositivep));
+		    p2tv(kreal_wpvp), p2tv(kpositivep));
     add_applicative(K, ground_env, "negative?", ftyped_predp, 3, symbol, 
-		    p2tv(krealp), p2tv(knegativep));
+		    p2tv(kreal_wpvp), p2tv(knegativep));
     /* 12.5.11 odd?, even? */
     add_applicative(K, ground_env, "odd?", ftyped_predp, 3, symbol, 
 		    p2tv(kintegerp), p2tv(koddp));

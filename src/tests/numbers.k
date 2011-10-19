@@ -52,8 +52,8 @@
 ($check-not-predicate (finite? #e+infinity))
 ($check-not-predicate (finite? #e-infinity))
 
-($check-error (finite? #real))                        ; FAIL
-($check-error (finite? #undefined))                   ; FAIL
+($check-error (finite? #real))
+($check-error (finite? #undefined))
 
 ($check-predicate (integer? 0 8/2 -12/6 1.0 -1.25e2))
 ($check-not-predicate (integer? #e+infinity))
@@ -123,7 +123,8 @@
 ($check-not-predicate (zero? -0.0001))
 ($check-not-predicate (zero? #e+infinity))
 ($check-not-predicate (zero? #e-infinity))
-($check-error (zero? #real))                           ; FAIL
+($check-error (zero? #real))
+($check-error (zero? #undefined))
 
 ;; 12.5.8 div, mod, div-and-mod
 
@@ -165,12 +166,14 @@
 ($check-predicate (positive? 1 1.0 1/1 999999999999 #e+infinity))
 ($check-not-predicate (positive? 0))                          ; FAIL
 ($check-not-predicate (positive? #e-infinity))                ; FAIL
-($check-error (positive? #real))                              ; FAIL
+($check-error (positive? #real))
+($check-error (positive? #undefined))
 
 ($check-predicate (negative? -1 -1.0 -1/1 -999999999999 #e-infinity)) ; FAIL
 ($check-not-predicate (negative? 0))
 ($check-not-predicate (negative? #e+infinity))
-($check-error (negative? #real))                            ; FAIL
+($check-error (negative? #real))
+($check-error (negative? #undefined))
 
 ;; 12.5.11 even? odd?
 
