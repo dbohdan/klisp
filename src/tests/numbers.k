@@ -10,9 +10,13 @@
 ;; Shutt for clarification (but I warn you that while he is very cooperative
 ;; with this kind of things he sometimes takes a while to answer).
 ;;
-;; The round thing is obviously a bug, (round 1.1) doesn't hang so, 
-;; I'm inclined to think that it's related to some memory issue like the strict
-;; arithmetic one.
+;; The round thing is actually a bug in dtoa (kreal.c) the function that 
+;; converts doubles to strings and has nothing to do with rounding. 
+;; When the error msg was being generated the interpreter entered an infinite
+;;  loop in dtoa.
+;; You can test this easily just entering 1.1 in the interpreter. 
+;; I'll have to work on this one. I'll have to reread the paper and work on it 
+;; with gdb.
 ;;
 ;; Andres Navarro
 ;;
@@ -348,13 +352,17 @@
 
 ($check equal? (round 0) 0)
 ($check equal? (round 1/2) 0)
-;($check equal? (round 1.1) 1)     ; FREEZES INTERPRETER 
+($check equal? (round #e1.1) 1)
+($check =? (round 1.1) 1)
 ($check equal? (round 3/2) 2)
-;--($check equal? (round 1.9) 2)
+($check equal? (round #e1.9) 2)
+($check =? (round 1.9) 2)
 ($check equal? (round -1/2) 0)
-;-- ($check equal? (round -1.1) -1)   ; FREEZES INTERPRETER
+($check =? (round #e-1.1) -1)
+($check equal? (round #e-1.1) -1)
 ($check equal? (round -3/2) -2)
-;--($check equal? (round -1.9) -2)
+($check equal? (round #e-1.9) -2)
+($check =? (round -1.9) -2)
 
 ;; 12.8.5 rationalize simplest-rational
 

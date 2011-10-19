@@ -731,6 +731,7 @@ TValue kdouble_to_integer(klisp_State *K, TValue tv_double, kround_mode mode)
 	int res = fesetround(FE_TONEAREST); /* REFACTOR: should be done once only... */
 	klisp_assert(res == 0);
 	d = nearbyint(d);
+	break;
     }
     }
     /* ASK John: we currently return inexact if given inexact is this ok?
