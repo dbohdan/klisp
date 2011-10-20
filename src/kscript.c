@@ -242,3 +242,25 @@ void kinit_script(klisp_State *K, int argc, char *argv[])
 #undef RSI
 #undef G
 }
+
+/* skips the unix script directive (#!), if present.
+   returns number of lines skipped */
+int kscript_eat_directive(FILE *fr)
+{
+  static const char pattern[] = "#! ";
+  int c, n = 0;
+
+  while (pattern[n] != '\0' && (c = getc(fr), c == pattern[n]))
+    n++;
+
+  if (pattern[n] == '\0') {
+    while (c = getc(fr), c != EOF && c != '\n')
+      ;
+    return 1;
+  } else {
+    ungetc(c, fr);
+    while (n > 0)
+      ungetc(pattern[--n], fr);
+    return 0;
+  }
+}

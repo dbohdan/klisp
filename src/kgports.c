@@ -25,6 +25,8 @@
 #include "kwrite.h"
 #include "kpair.h"
 
+#include "kscript.h"
+
 #include "kghelpers.h"
 #include "kgports.h"
 #include "kgcontinuations.h" /* for guards */
@@ -329,6 +331,10 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
 /* GC: assume port is rooted */
 TValue read_all_expr(klisp_State *K, TValue port)
 {
+    /* support unix script directive #! */
+    int line_count = kscript_eat_directive(kport_file(port));
+    kport_line(port) += line_count;
+
     /* GC: root dummy and obj */
     TValue tail = kget_dummy1(K);
     TValue obj = KINERT;
