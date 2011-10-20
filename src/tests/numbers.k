@@ -10,14 +10,13 @@
 ;; Shutt for clarification (but I warn you that while he is very cooperative
 ;; with this kind of things he sometimes takes a while to answer).
 ;;
-;; The operations that throw an error instead of returning #real do so because
-;; the strict-arithmetic flag is true which apparently is caused by a bug, as 
-;; it starts as false when the interpreter starts but is true after running the 
-;; test (Which is a thing that shouldn't be possible, the flag is a dynamic 
-;; variable). I'm on it.
-;; 
-;; The round thing is obviously a bug too, but (round 1.1) doesn't hang so 
-;; I'm inclined to think that it's related to the previous bug, I'm on it.
+;; The round thing is actually a bug in dtoa (kreal.c) the function that 
+;; converts doubles to strings and has nothing to do with rounding. 
+;; When the error msg was being generated the interpreter entered an infinite
+;;  loop in dtoa.
+;; You can test this easily just entering 1.1 in the interpreter. 
+;; I'll have to work on this one. I'll have to reread the paper and work on it 
+;; with gdb.
 ;;
 ;; Andres Navarro
 ;;
@@ -117,19 +116,19 @@
 ($check equal? (+ . #0=(0 . #0#)) 0)
 ($check equal? (+ . #0=(1 . #0#)) #e+infinity)
 ($check equal? (+ . #0=(-1 . #0#)) #e-infinity)
-;---- ($check equal? (+ . #0=(1 -1 . #0#)) #real)       ; FAIL
+($check equal? (+ . #0=(1 -1 . #0#)) #real)
 
 ;; 12.5.5 *
 
 ($check equal? (* 2 3) 6)
 ($check equal? (*) 1)
-;---- ($check equal? (* 0 #e+infinity) #real)           ; FAIL
-;---- ($check equal? (* 0 #e-infinity) #real)           ; FAIL
+($check equal? (* 0 #e+infinity) #real)
+($check equal? (* 0 #e-infinity) #real)
 ($check equal? (* . #0=(1 . #0#)) 1)
 ($check equal? (* . #0=(2 . #0#)) #e+infinity)
 ($check equal? (* . #0=(1/2 . #0#)) 0)
-;---- ($check equal? (* . #0=(1/2 2 . #0#)) #real)      ; FAIL
-;---- ($check equal? (* . #0=(-1 . #0#)) #real)         ; FAIL
+($check equal? (* . #0=(1/2 2 . #0#)) #real)
+($check equal? (* . #0=(-1 . #0#)) #real)
 
 ;; 12.5.5 -
 
@@ -163,6 +162,11 @@
 ;; If real2 is negative, then such integer n does not exist.
 ;; interpretation : result shall be #undefined
 ;;
+;; I followed Scheme r6rs and r7rs draft here. The definition in the 
+;; Kernel report didn't make much sense to me. I'm still waiting the
+;; next installement of the report to see if this is changed.
+;;
+;; Andres Navarro
 ;--- ($check equal? (div 10 -7) #undefined)           ; FAIL
 ;--- ($check equal? (div -10 -7) #undefined)          ; FAIL
 
@@ -249,7 +253,7 @@
 ;; negative infinity (...)"
 ;;
 ;; Andres Navarro
-;; ($check-predicate (robust? 3.14))           ; FAIL
+;; was ($check-predicate (robust? 3.14))           ; FAIL
 ($check-not-predicate (robust? #real))
 ($check-not-predicate (robust? #undefined))
 
@@ -348,13 +352,17 @@
 
 ($check equal? (round 0) 0)
 ($check equal? (round 1/2) 0)
-;-- ($check equal? (round 1.1) 1)     ; FREEZES INTERPRETER 
+($check equal? (round #e1.1) 1)
+($check =? (round 1.1) 1)
 ($check equal? (round 3/2) 2)
-;--($check equal? (round 1.9) 2)
+($check equal? (round #e1.9) 2)
+($check =? (round 1.9) 2)
 ($check equal? (round -1/2) 0)
-;-- ($check equal? (round -1.1) -1)   ; FREEZES INTERPRETER
+($check =? (round #e-1.1) -1)
+($check equal? (round #e-1.1) -1)
 ($check equal? (round -3/2) -2)
-;--($check equal? (round -1.9) -2)
+($check equal? (round #e-1.9) -2)
+($check =? (round -1.9) -2)
 
 ;; 12.8.5 rationalize simplest-rational
 
