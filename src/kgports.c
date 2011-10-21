@@ -620,6 +620,27 @@ void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 }
 
+/* 15.1.? rename-file */
+void rename_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_2tp(K, ptree, "string", ttisstring, old_filename, 
+	     "string", ttisstring, new_filename);
+
+    /* TEMP: this should probably be done in a operating system specific
+       manner, but this will do for now */
+    if (rename(kstring_buf(old_filename), kstring_buf(new_filename))) {
+	/* TODO: more meaningful error msg, include errno */
+	klispE_throw_simple(K, "the file couldn't be renamed");
+	return;
+    } else {
+	kapply_cc(K, KINERT);
+	return;
+    }
+}
+
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K)
 {
@@ -702,12 +723,6 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.2.? display */
     add_applicative(K, ground_env, "display", display, 0);
 
-    /* That's all there is in the report combined with r5rs scheme, 
-       but we will probably need: file-exists?, rename-file and remove-file.
-       It would also be good to be able to select between append, truncate and
-       error if a file exists, but that would need to be an option in all three 
-       methods of opening. Also some directory checking, traversing etc */
-    /* BUT SEE r7rs draft for some of the above */
     /* r7rs */
 
     /* 15.1.? flush-output-port */
@@ -718,4 +733,18 @@ void kinit_ports_ground_env(klisp_State *K)
 
     /* 15.1.? delete-file */
     add_applicative(K, ground_env, "delete-file", delete_file, 0);
+
+    /* this isn't in r7rs but it's in ansi c and quite easy to implement */
+
+    /* 15.1.? rename-file */
+    add_applicative(K, ground_env, "rename-file", rename_file, 0);
+
+    /*
+     * That's all there is in the report combined with r5rs and r7rs scheme.
+     * TODO
+     * It would be good to be able to select between append, truncate and
+     * error if a file exists, but that would need to be an option in all three 
+     * methods of opening. Also some directory checking, traversing, etc,
+     * would be nice
+     */
 }
