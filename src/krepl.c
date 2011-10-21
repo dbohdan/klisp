@@ -68,6 +68,8 @@ void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
     if (ttiseof(obj)) {
 	/* read [EOF], should terminate the repl */
 	/* this will in turn call main_cont */
+	/* print a newline to allow the shell a fresh line */
+	printf("\n");
 	kset_cc(K, K->root_cont);
 	kapply_cc(K, KINERT);
     } else {
