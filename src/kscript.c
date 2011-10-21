@@ -259,6 +259,8 @@ int kscript_eat_directive(FILE *fr)
     return 1;
   } else {
     ungetc(c, fr);
+    /* XXX/Temp notice that the standard doesn't guarantee that more than one
+       ungetc in a row will be honored. Andres Navarro */
     while (n > 0)
       ungetc(pattern[--n], fr);
     return 0;
