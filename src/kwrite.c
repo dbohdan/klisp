@@ -517,7 +517,8 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 	    }
 	    case K_TSTRING: {
 		if (kstring_emptyp(obj)) {
-		    kw_printf(K, "\"\"");
+                    if (!K->write_displayp)
+		        kw_printf(K, "\"\"");
 		} else {
 		    TValue mark = kget_mark(obj);
 		    if (K->write_displayp || ttisboolean(mark)) { 

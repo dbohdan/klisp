@@ -528,6 +528,10 @@ TValue kread_from_port(klisp_State *K, TValue port, bool mut)
 
 TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
 {
+    /* Reset the EOF flag in the tokenizer. The flag is shared,
+       by operations on all ports. */
+    K->ktok_seen_eof = false;
+
     K->curr_port = port;
     K->curr_in = kport_file(port);
     int ch;
