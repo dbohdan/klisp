@@ -556,7 +556,7 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? flush-output-port */
-void kflush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -579,6 +579,25 @@ void kflush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	UNUSED(fflush(file)); /* TEMP for now don't signal errors on flush */
     }
     kapply_cc(K, KINERT);
+}
+
+/* 15.1.? file-exists? */
+void file_existsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "string", ttisstring, filename);
+
+    /* TEMP: this should probably be done in a operating system specific
+       manner, but this will do for now */
+    TValue res = KFALSE;
+    FILE *file = fopen(kstring_buf(filename), "r");
+    if (file) {
+	res = KTRUE;
+	UNUSED(fclose(file));
+    }
+    kapply_cc(K, res);
 }
 
 /* init ground */
@@ -672,5 +691,8 @@ void kinit_ports_ground_env(klisp_State *K)
     /* r7rs */
 
     /* 15.1.? flush-output-port */
-    add_applicative(K, ground_env, "flush-output-port", kflush, 0);
+    add_applicative(K, ground_env, "flush-output-port", flush, 0);
+
+    /* 15.1.? file-exists? */
+    add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
 }
