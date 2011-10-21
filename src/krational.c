@@ -492,13 +492,15 @@ TValue kbigrat_to_integer(klisp_State *K, TValue tv_bigrat, kround_mode mode)
 	if (mp_rat_compare_zero(n) < 0 && mp_int_compare_zero(rest) != 0)
 	    UNUSED(mp_int_sub_value(K, quot, 1, quot));
 	break;
-    case K_ROUND_EVEN:
+    case K_ROUND_EVEN: {
 	UNUSED(mp_int_mul_pow2(K, rest, 1, rest));
-	if (mp_int_compare(rest, MP_DENOM_P(n)) == 0 &&
-	     mp_int_is_odd(quot))
+	int cmp = mp_int_compare(rest, MP_DENOM_P(n));
+	if (cmp > 0 || (cmp == 0 && mp_int_is_odd(quot))) {
 	    UNUSED(mp_int_add_value(K, quot, mp_rat_compare_zero(n) < 0? 
 				    -1 : 1, quot));
+	}
 	break;
+    }
     }
 
     krooted_tvs_pop(K);

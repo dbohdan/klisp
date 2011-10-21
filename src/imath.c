@@ -3228,7 +3228,8 @@ STATIC mp_result s_udiv(klisp_State *K, mp_int a, mp_int b)
       mp_word  pfx = r.digits[r.used - 1];
       mp_word  qdigit;
       
-      if(r.used > 1 && pfx <= btop) {
+      // Bugfix (was pfx <= btop in imath <= 1.17) Andres Navarro
+      if(r.used > 1 && pfx < btop) {
 	pfx <<= MP_DIGIT_BIT / 2;
 	pfx <<= MP_DIGIT_BIT / 2;
 	pfx |= r.digits[r.used - 2];

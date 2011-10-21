@@ -43,6 +43,7 @@
 #include "kstring.h"
 #include "keval.h"
 #include "krepl.h"
+#include "kscript.h"
 
 /* for init_cont_names */
 #define add_cont_name(K_, t_, c_, n_)					\
@@ -66,6 +67,10 @@ void kinit_cont_names(klisp_State *K)
     add_cont_name(K, t, do_repl_eval, "repl-eval");
     add_cont_name(K, t, do_repl_loop, "repl-loop");
     add_cont_name(K, t, do_repl_error, "repl-report-error");
+
+    /* SCRIPT, root-continuation & error-continuation */
+    add_cont_name(K, t, do_script_exit, "script-exit");
+    add_cont_name(K, t, do_script_error, "script-report-error");
 
     /* GROUND ENV */
     add_cont_name(K, t, do_eval_ls, "eval-list");

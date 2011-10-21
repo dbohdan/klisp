@@ -139,6 +139,9 @@ struct klisp_State {
     /* writer */
     bool write_displayp;
 
+    /* script */
+    int script_exit_code;
+
     /* auxiliary stack */
     int32_t ssize; /* total size of array */
     int32_t stop; /* top of the stack (all elements are below this index) */
