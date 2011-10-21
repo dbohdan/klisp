@@ -555,6 +555,32 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
+/* 15.1.? flush-output-port */
+void kflush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue port = ptree;
+
+    if (!get_opt_tpar(K, "flush-output-port", K_TPORT, &port)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } else if (!kport_is_output(port)) {
+	klispE_throw_simple(K, "the port should be an output port");
+	return;
+    } 
+    if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    FILE *file = kport_file(port);
+    if (file) { /* only do for file ports */
+	UNUSED(fflush(file)); /* TEMP for now don't signal errors on flush */
+    }
+    kapply_cc(K, KINERT);
+}
+
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K)
 {
@@ -637,10 +663,14 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.2.? display */
     add_applicative(K, ground_env, "display", display, 0);
 
-    /* MAYBE: That's all there is in the report combined with r5rs scheme, 
+    /* That's all there is in the report combined with r5rs scheme, 
        but we will probably need: file-exists?, rename-file and remove-file.
        It would also be good to be able to select between append, truncate and
        error if a file exists, but that would need to be an option in all three 
        methods of opening. Also some directory checking, traversing etc */
     /* BUT SEE r7rs draft for some of the above */
+    /* r7rs */
+
+    /* 15.1.? flush-output-port */
+    add_applicative(K, ground_env, "flush-output-port", kflush, 0);
 }

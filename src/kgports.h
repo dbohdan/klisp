@@ -87,6 +87,10 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj);
 
+/* 15.1.? flush-output-port */
+void kflush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K);
 
