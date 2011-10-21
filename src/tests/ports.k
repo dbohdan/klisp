@@ -170,9 +170,13 @@
 ;; Additional input functions: char-ready?
 ;; TODO
 
-;; Additional output functions: write-char newline display
+;; Additional output functions: write-char newline display flush-ouput-port
 
 ($check equal? ($output-test (write-char #\a)) "a")
 ($check equal? ($output-test (newline)) (list->string (list #\newline)))
 ($check equal? ($output-test (display "abc")) "abc")
 
+;; XXX flush-ouput-port is difficult to test...
+
+;; File manipulation functions: file-exists? delete-file rename-file
+;; TODO
