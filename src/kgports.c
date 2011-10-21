@@ -600,6 +600,26 @@ void file_existsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
+/* 15.1.? delete-file */
+void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "string", ttisstring, filename);
+
+    /* TEMP: this should probably be done in a operating system specific
+       manner, but this will do for now */
+    if (remove(kstring_buf(filename))) {
+	/* TODO: more meaningful error msg, include errno */
+	klispE_throw_simple(K, "the file couldn't be deleted");
+	return;
+    } else {
+	kapply_cc(K, KINERT);
+	return;
+    }
+}
+
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K)
 {
@@ -695,4 +715,7 @@ void kinit_ports_ground_env(klisp_State *K)
 
     /* 15.1.? file-exists? */
     add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
+
+    /* 15.1.? delete-file */
+    add_applicative(K, ground_env, "delete-file", delete_file, 0);
 }

@@ -93,6 +93,9 @@ void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 15.1.? file-exists? */
 void file_existsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
+/* 15.1.? delete-file */
+void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K);
 
