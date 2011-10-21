@@ -1,6 +1,6 @@
 ;; check.k & test-helpers.k should be loaded
 ;;
-;; I fixed a number of bugs and added some rationale to some of the tests
+;; I fixed all of the bugs and added some rationale to some of the tests
 ;; marked as FAIL. In some cases, as you say, the specification is unclear.
 ;; In these cases I tried to include my interpretation (which could be wrong),
 ;; and changed the test to reflect this.
@@ -10,13 +10,9 @@
 ;; Shutt for clarification (but I warn you that while he is very cooperative
 ;; with this kind of things he sometimes takes a while to answer).
 ;;
-;; The round thing is actually a bug in dtoa (kreal.c) the function that 
-;; converts doubles to strings and has nothing to do with rounding. 
-;; When the error msg was being generated the interpreter entered an infinite
-;;  loop in dtoa.
-;; You can test this easily just entering 1.1 in the interpreter. 
-;; I'll have to work on this one. I'll have to reread the paper and work on it 
-;; with gdb.
+;; The round thing was actually a bug in the IMath division routine
+;; I fixed it (I think!) and have sent an email to the maintainer to 
+;; report the bug and hopefully confirm the correctness of the fix
 ;;
 ;; Andres Navarro
 ;;
