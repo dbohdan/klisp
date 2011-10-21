@@ -3,8 +3,8 @@ klisp.texi.
 
 This file documents klisp.
 
-   This is edition 0.1 of the klisp Reference Manual, for klisp version
-0.1.
+   This is edition 0.2 of the klisp Reference Manual, for klisp version
+0.2.
 
    Copyright (C) 2011 Andres Navarro
 
@@ -21,8 +21,8 @@ the header "Permission to copy this report", that reads:
 
 File: klisp.info,  Node: Top,  Next: License,  Prev: (dir),  Up: (dir)
 
-   This Info file contains edition 0.1 of the klisp Reference Manual,
-corresponding to klisp version 0.1.
+   This Info file contains edition 0.2 of the klisp Reference Manual,
+corresponding to klisp version 0.2.
 
    Copyright (C) 2011 Andres Navarro
 
@@ -142,14 +142,14 @@ See LICENSE for details.  it can be downloaded at
 undergraduate at Buenos Aires University (UBA).  You can reach him at
 <canavarro82@gmail.com>.
 
-   This manual describes klisp version 0.1, presuming some familiarity
+   This manual describes klisp version 0.2, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel
 Programming Language in particular.  There are frequent references to
 the Kernel Programming Language Report.  Unlike in the report, no
 rationale is provided for any feature, only a description of the
 implemented functionality.
 
-   This is edition 0.1.
+   This is edition 0.2.
 
 * Menu:
 
@@ -2373,6 +2373,50 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
+ -- flush-output-port: (flush-output-port [port])
+     If the `port' optional argument is not specified, then the value
+     of the `output-port' keyed dynamic variable is used.  If the
+     `port' is closed or if it is not an output port, an error is
+     signaled.
+
+     Applicative `flush-ouput-port' flushes any buffered data in the
+     output port to the underlying file or device. The result returned
+     by `flush-output-port' is inert.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from r7rs
+     Scheme.
+
+ -- file-exists?: (file-exists? string)
+     `string' should be the name/path for a file.
+
+     Predicate `file-exists?' checks to see if a file named `string'
+     exists.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from r7rs
+     Scheme.
+
+ -- delete-file: (delete-file string)
+     `string' should be the name/path for an existing file.
+
+     Applicative `delete-file' deletes the file named `string'.  If it
+     doesn't exists or can't be deleted, an error is signaled. The
+     result returned by `delete-file' is inert.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from r7rs
+     Scheme.
+
+ -- rename-file: (rename-file string1 string2)
+     `string1' should be the name/path for an existing file, `string2'
+     should be the name/path for a non existing file.
+
+     Applicative `rename-file' renames the file named `string1' to
+     `string2'. If the file doesn't exists or can't be renamed for any
+     reason, an error is signaled. The result returned by `rename-file'
+     is inert.
+
+     SOURCE NOTE: this is missing from Kernel AND Scheme, it is taken
+     from C, being quite similar to `delete-file'.
+
 
 File: klisp.info,  Node: Alphabetical Index,  Next: (dir),  Prev: Ports,  Up: Top
 
@@ -2688,6 +2732,6 @@ Node: Numbers72131
 Node: Strings91630
 Node: Characters96977
 Node: Ports99687
-Node: Alphabetical Index110985
+Node: Alphabetical Index112662
 
 End Tag Table

@@ -84,14 +84,14 @@ See LICENSE for details.  it can be downloaded at
 undergraduate at Buenos Aires University (UBA).  You can reach him at
 @email{canavarro82@@gmail.com}.
 
-  This manual describes klisp version 0.1, presuming some familiarity
+  This manual describes klisp version 0.2, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel 
 Programming Language in particular.  There are frequent references to
 the Kernel Programming Language Report.  Unlike in the report, no
 rationale is provided for any feature, only a description of the
 implemented functionality. 
 
-  This is edition 0.1.
+  This is edition 0.2.
 
 @menu
 * Caveats::                Flaws and a request for help.
