@@ -34,7 +34,7 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
 	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
-	kgstrings.o kgblobs.o kgsystem.o
+	kgstrings.o kgblobs.o kgsystem.o kgffi.o
 # TEMP: in klisp there is no distinction between core & lib
 LIB_O= 
 
@@ -92,7 +92,7 @@ mingw:
 	"MYCFLAGS=-DKLISP_BUILD_AS_DLL" "MYLIBS=" "MYLDFLAGS=-s" klisp.exe
 #lisp_use_posix isn't used right now...
 posix:
-	$(MAKE) all MYCFLAGS=-DKLISP_USE_POSIX
+	$(MAKE) all MYCFLAGS=-DKLISP_USE_POSIX MYLIBS="-ldl -lffi"
 
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all default o clean
@@ -199,7 +199,8 @@ kground.o: kground.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kgequalp.h kgsymbols.h kgcontrol.h kgpairs_lists.h kgpair_mut.h \
  kgenvironments.h kgenv_mut.h kgcombiners.h kgcontinuations.h \
  kgencapsulations.h kgpromises.h kgkd_vars.h kgks_vars.h kgnumbers.h \
- kgstrings.h kgchars.h kgports.h kgblobs.h ktable.h keval.h krepl.h kscript.h kgsystem.h
+ kgstrings.h kgchars.h kgports.h kgblobs.h ktable.h keval.h krepl.h \
+ kscript.h kgsystem.h kgffi.h
 kgstrings.o: kgstrings.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  ksymbol.h kstring.h kghelpers.h kpair.h kgc.h kenvironment.h kgchars.h \
@@ -212,6 +213,10 @@ kgsystem.o: kgsystem.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kpair.h kgc.h kerror.h kghelpers.h kapplicative.h \
  koperative.h kcontinuation.h kenvironment.h ksymbol.h kstring.h \
  kgsystem.h
+kgffi.o: kgsystem.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
+ ktoken.h kmem.h kpair.h kgc.h kerror.h kghelpers.h kapplicative.h \
+ koperative.h kcontinuation.h kenvironment.h ksymbol.h kstring.h \
+ kblob.h kencapsulation.h kgencapsulations.h kgffi.h
 kinteger.o: kinteger.c kinteger.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h imath.h kgc.h
 klisp.o: klisp.c klimits.h klisp.h kobject.h klispconf.h kstate.h \

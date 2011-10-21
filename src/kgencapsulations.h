@@ -18,6 +18,9 @@
 #include "kstate.h"
 #include "kghelpers.h"
 
+/* needed by kgffi.c */
+void enc_typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
 /* 8.1.1 make-encapsulation-type */
 void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
 			     TValue denv);
