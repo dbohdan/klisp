@@ -2,12 +2,10 @@
 ;;
 ;; Tests of i/o features.
 ;;
-;; TODO: Make the test portable.
-;; TODO: Delete temporary files.
-
-;; Utilities for testing input and output features.
+;; Utilities for testing input and output features:
 ;;
 ;; temp-file .......... temporary file for input and output
+;; temp-file-2 ........ second temporary file for input and output
 ;; test-input-file .... pre-existing file for input
 ;; nonexistent-file ... valid file name denoting non-existent file
 ;; invalid-file ....... invalid file name
@@ -18,8 +16,14 @@
 ;; the contents of the file is the contents of the string.
 ;; Otherwise, empty file is prepared.
 ;;
+;; ($output-test PROGRAM) ... evaluates PROGRAM with current
+;; output port initialized for writing to a temporary file.
+;; Returns the contents of the temporary file as string.
+;;
 
-($define! temp-file "/tmp/klisp-ports-test.txt")
+;; Hope that the file names will work under both Unix and Windows.
+($define! temp-file "klisp-ports-test-1.txt")
+($define! temp-file-2 "klisp-ports-test-2.txt")
 ($define! test-input-file "tests/ports.k")
 ($define! nonexistent-file "nonexistent-file.txt")
 ($define! invalid-file "!@#$%^&*/invalid/file/name.txt")
@@ -179,4 +183,31 @@
 ;; XXX flush-ouput-port is difficult to test...
 
 ;; File manipulation functions: file-exists? delete-file rename-file
-;; TODO
+
+($check-predicate (file-exists? test-input-file))
+($check-not-predicate (file-exists? nonexistent-file))
+($check-not-predicate (file-exists? invalid-file))
+
+(prepare-input "test")
+($check-predicate (file-exists? temp-file))
+(delete-file temp-file)
+($check-not-predicate (file-exists? temp-file))
+($check-error (delete-file nonexistent-file))
+($check-error (delete-file invalid-file))
+
+(prepare-input "test")
+($check-predicate (file-exists? temp-file))
+($check-not-predicate (file-exists? temp-file-2))
+(rename-file temp-file temp-file-2)
+($check-predicate (file-exists? temp-file-2))
+($check-not-predicate (file-exists? temp-file))
+(delete-file temp-file-2)
+
+($check-error (rename-file nonexistent-file temp-file))
+($check-error (rename-file invalid-file temp-file))
+
+;; Cleanup.
+;; Check that temporary files were deleted.
+
+($check-not-predicate (file-exists? temp-file))
+($check-not-predicate (file-exists? temp-file-2))
