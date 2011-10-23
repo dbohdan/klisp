@@ -170,9 +170,32 @@
 ;; 15.1.8 write
 
 ($check equal? ($output-test #inert) "")
-($check equal? ($output-test (write 123)) "123")
-($check equal? ($output-test (write (list 1 2 #t #f #inert ()))) "(1 2 #t #f #inert ())")
-($check equal? ($output-test (write (list 1 2 (list 3 4 5) (list* 6 7)))) "(1 2 (3 4 5) (6 . 7))")
+
+($check equal?
+  ($output-test (write (list 123 12345678901234567890 1/2 -3.14)))
+  "(123 12345678901234567890 1/2 -3.14)")
+($check equal?
+  ($output-test (write (list #e+infinity #e-infinity #i+infinity #i-infinity #real #undefined)))
+  "(#e+infinity #e-infinity #i+infinity #i-infinity #real #undefined)")
+($check equal?
+  ($output-test (write (list #\x #\newline #\space)))
+  "(#\\x #\\newline #\\space)")
+($check equal?
+  ($output-test (write (list #t #f)))
+  "(#t #f)")
+($check equal?
+  ($output-test (write (list #inert #ignore)))
+  "(#inert #ignore)")
+
+($check equal? ($output-test (write "")) "\"\"")
+($check equal? ($output-test (write "a\\b\"")) "\"a\\\\b\\\"\"")
+
+($check equal?
+  ($output-test (write (list 1 2 (list 3 4 5) () (list* 6 7))))
+  "(1 2 (3 4 5) () (6 . 7))")
+($check equal?
+  ($output-test (write ($quote #0=(1 2 #1=(3 4 . #0#) #2="abc" #3=(5 6 #1# #2# #3# . #0#)))))
+  "#0=(1 2 #1=(3 4 . #0#) #2=\"abc\" #3=(5 6 #1# #2# #3# . #0#))")
 
 ($check-error (write 0 (get-current-input-port)))
 ($check-error (call-with-closed-output-port ($lambda (p) (write 0 p))))
@@ -221,7 +244,10 @@
 ($check-error (newline (get-current-input-port)))
 ($check-error (call-with-closed-output-port newline))
 
+($check equal? ($output-test (display "")) "")
 ($check equal? ($output-test (display "abc")) "abc")
+($check equal? ($output-test (display "a\\b\"")) "a\\b\"")
+($check equal? ($output-test (display #\x)) "x")
 ($check equal? ($output-test (display "abc" (get-current-output-port))) "abc")
 ($check-error ($output-test (display "abc" (get-current-input-port))))
 ($check-error (call-with-closed-output-port ($lambda (p) (display "abc" p))))
