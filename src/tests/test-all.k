@@ -15,6 +15,8 @@
 (load "tests/environment-mutation.k")
 (load "tests/combiners.k")
 (load "tests/numbers.k")
+(load "tests/strings.k")
+(load "tests/characters.k")
 (load "tests/ports.k")
 
 (check-report)
