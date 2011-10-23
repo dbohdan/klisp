@@ -193,4 +193,20 @@
 
 ($check-predicate (nonempty-mutable-string? (list->string (list #\a #\b))))
 
-($check-error (list->string (($vau (x) #ignore x) (#\a #0=(#\a . #0#)))))
+($check-error (list->string ($quote (#\a #0=(#\a . #0#)))))
+
+;; 13.1.1 string->symbol
+;; XXX symbol->string
+;;
+
+($check-predicate (symbol? (string->symbol "abcd")))
+($check-predicate (symbol? (string->symbol "")))
+($check-predicate (symbol? (string->symbol "0")))
+($check-predicate (symbol? (string->symbol "#inert")))
+
+($check equal? (string->symbol "abcd") ($quote abcd))
+($check equal? (symbol->string ($quote abcd)) "abcd")
+
+($check equal?
+  ($quote sym)
+  (string->symbol (symbol->string ($quote sym))))

@@ -77,3 +77,7 @@
     (apply and?
       (map ($lambda ((x y)) (not? (eval (list p x y) denv)))
         (cartesian-product xs ys)))))
+
+;; ($quote V) evaluates to V. The value V itself is not evaluated.
+;; See section 5.5.1, page 67 of the Kernel Report.
+($define! $quote ($vau (x) #ignore x))
