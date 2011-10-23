@@ -65,6 +65,18 @@
     (eval-with-output program denv)
     (with-input-from-file temp-file read-string-until-eof)))
 
+($define! call-with-closed-input-port
+  ($lambda (program)
+    ($let ((port (open-input-file test-input-file)))
+      (close-input-file port)
+      (program port))))
+
+($define! call-with-closed-output-port
+  ($lambda (program)
+    ($let ((port (open-output-file temp-file)))
+      (close-output-file port)
+      (program port))))
+
 ;; 15.1.1 port?
 
 ($check-predicate (port? (get-current-input-port) (get-current-output-port)))
@@ -124,14 +136,20 @@
   ($check-predicate (input-port? p))
   ($check-not-predicate (equal? p (get-current-input-port)))
   ($check-not-predicate (equal? p (get-current-output-port)))
+  (close-input-file p)
   (close-input-file p))
+
+($check-error (call-with-closed-output-port close-input-file))
 
 ($let ((p (open-output-file temp-file)))
   ($check-predicate (port? p))
   ($check-predicate (output-port? p))
   ($check-not-predicate (equal? p (get-current-input-port)))
   ($check-not-predicate (equal? p (get-current-output-port)))
+  (close-output-file p)
   (close-output-file p))
+
+($check-error (call-with-closed-input-port close-output-file))
 
 ;; 15.1.7 read
 
@@ -146,6 +164,9 @@
 ($check equal? ($input-test "1 2" ($sequence (read) (read))) 2)
 ($check-predicate (eof-object? ($input-test "1 2" ($sequence (read) (read) (read)))))
 
+($check-error ((read (get-current-output-port))))
+($check-error (call-with-closed-input-port read))
+
 ;; 15.1.8 write
 
 ($check equal? ($output-test #inert) "")
@@ -153,12 +174,18 @@
 ($check equal? ($output-test (write (list 1 2 #t #f #inert ()))) "(1 2 #t #f #inert ())")
 ($check equal? ($output-test (write (list 1 2 (list 3 4 5) (list* 6 7)))) "(1 2 (3 4 5) (6 . 7))")
 
+($check-error (write 0 (get-current-input-port)))
+($check-error (call-with-closed-output-port ($lambda (p) (write 0 p))))
+
 ;; 15.2.1 call-with-input-file call-with-output-file
 ;; 15.2.2 load
 ;; 15.2.3 get-module
 ;; TODO
 
-;; Additional input functions: read-char peek-char
+;; Additional input functions: eof-object? read-char peek-char
+
+($check-predicate ($false-for-all? eof-object?
+  0 -1 #t #f () "" (get-current-input-port)))
 
 ($check-predicate (eof-object? ($input-test "" (read-char))))
 ($check-predicate (eof-object? ($input-test "" (peek-char))))
@@ -171,16 +198,67 @@
 ($check equal? ($input-test "ab" ($sequence (read-char) (read-char))) #\b)
 ($check equal? ($input-test "ab" ($sequence (peek-char) (read-char))) #\a)
 
+($check equal? ($input-test "a" (read-char (get-current-input-port))) #\a)
+($check-error ((read-char (get-current-output-port))))
+($check-error (call-with-closed-input-port read-char))
+
+($check equal? ($input-test "a" (peek-char (get-current-input-port))) #\a)
+($check-error ((peek-char (get-current-output-port))))
+($check-error (call-with-closed-input-port peek-char))
+
 ;; Additional input functions: char-ready?
 ;; TODO
 
 ;; Additional output functions: write-char newline display flush-ouput-port
 
 ($check equal? ($output-test (write-char #\a)) "a")
-($check equal? ($output-test (newline)) (list->string (list #\newline)))
-($check equal? ($output-test (display "abc")) "abc")
+($check equal? ($output-test (write-char #\a (get-current-output-port))) "a")
+($check-error (write-char #\a (get-current-input-port)))
+($check-error (call-with-closed-output-port ($lambda (p) (write-char #\a p))))
 
-;; XXX flush-ouput-port is difficult to test...
+($check equal? ($output-test (newline)) (string #\newline))
+($check equal? ($output-test (newline (get-current-output-port))) (string #\newline))
+($check-error (newline (get-current-input-port)))
+($check-error (call-with-closed-output-port newline))
+
+($check equal? ($output-test (display "abc")) "abc")
+($check equal? ($output-test (display "abc" (get-current-output-port))) "abc")
+($check-error ($output-test (display "abc" (get-current-input-port))))
+($check-error (call-with-closed-output-port ($lambda (p) (display "abc" p))))
+
+($check equal? ($output-test (flush-output-port)) "")
+($check equal? ($output-test (flush-output-port (get-current-output-port))) "")
+($check-error (flush-output-port (get-current-input-port)))
+($check-error (call-with-closed-output-port flush-output-port))
+
+;; Currently, write and write-char flush automatically
+;; and flush-output-port causes no effect.
+;;
+;; ($define! colliding-output-test
+;;   ($lambda (combiner)
+;;     (call-with-output-file temp-file
+;;       ($lambda (p1)
+;;         (call-with-output-file temp-file
+;;           ($lambda (p2)
+;;             (combiner p1 p2)))))
+;;     (with-input-from-file temp-file read-string-until-eof)))
+;; 
+;; ($check equal?
+;;   (colliding-output-test ($lambda (p1 p2)
+;;     (display "1" p1)
+;;     (display "2" p2)
+;;     (flush-output-port p1)
+;;     (flush-output-port p2)))
+;;   "12")
+;; 
+;; ($check equal?
+;;   (colliding-output-test ($lambda (p1 p2)
+;;     (display "1" p1)
+;;     (display "2" p2)
+;;     (flush-output-port p2)
+;;     (flush-output-port p1)))
+;;   "21")
+
 
 ;; File manipulation functions: file-exists? delete-file rename-file
 
