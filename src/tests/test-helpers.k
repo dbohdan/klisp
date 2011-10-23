@@ -26,10 +26,11 @@
 ($define! immutable-pair?
   ($lambda (obj) ($and? (pair? obj) (not? (mutable-pair? obj)))))
 
-($define! mutable-string?
+($define! nonempty-mutable-string?
   ($lambda (obj)
     ($and?
       (string? obj)
+      (>? (string-length obj) 0)
       (guard-dynamic-extent
         ()
         ($lambda () (string-fill! obj #\x) #t)
@@ -38,7 +39,7 @@
             ($lambda (#ignore divert) (apply divert #f))))))))
 
 ($define! immutable-string?
-  ($lambda (obj) ($and? (string? obj) (not? (mutable-string? obj)))))
+  ($lambda (obj) ($and? (string? obj) (not? (nonempty-mutable-string? obj)))))
 
 ;; ($false-for-all? P XS) evaluates to #t iff (P X) evaluates
 ;; to #f for all members X of the list XS.

@@ -82,7 +82,6 @@
 ($check-predicate (string? (string #\a #\b #\c)))
 ($check equal? (string) "")
 ($check equal? (string #\a #\b #\c) "abc")
-($check-not-predicate ($let ((x (string)) (y (string))) (eq? x y)))
 ($check-not-predicate ($let ((x (string #\a)) (y (string #\a))) (eq? x y)))
 
 ;; XXX string-length
@@ -108,9 +107,13 @@
 
 ;; XXX string-fill!
 
-($check equal? ($let ((s (make-string 0))) (string-fill! s #\b) s) "")
 ($check equal? ($let ((s (make-string 3 #\a))) (string-fill! s #\b) s) "bbb")
-($check-error (string-fille "const" #\x))
+($check-error (string-fill! "const" #\x))
+
+;; Note: Empty string is always immutable. Therefore,
+;; it is an error to call string-fill! on empty string.
+
+($check-error (string-fill! (make-string 0) #\b))
 
 ;; XXX substring
 
@@ -130,8 +133,8 @@
   ($let* ((p "abc") (q (substring p 0 3)))
     (eq? p q)))
 
-($check-not-predicate (mutable-string? (substring "abc" 0 0)))
-($check-not-predicate (mutable-string? (substring "abc" 0 1)))
+($check-predicate (immutable-string? (substring "abc" 0 0)))
+($check-predicate (immutable-string? (substring "abc" 0 1)))
 
 ;; XXX string-append
 
@@ -145,8 +148,7 @@
   ($let* ((p "abc") (q (string-append p)))
     (eq? p q)))
 
-($check-predicate (mutable-string? (string-append)))
-($check-predicate (mutable-string? (string-append "a" "b")))
+($check-predicate (nonempty-mutable-string? (string-append "a" "b")))
 
 ;; XXX string-copy
 
@@ -157,8 +159,7 @@
   ($let* ((p "abc") (q (string-copy p)))
     (eq? p q)))
 
-($check-predicate (mutable-string? (string-copy "")))
-($check-predicate (mutable-string? (string-copy "abc")))
+($check-predicate (nonempty-mutable-string? (string-copy "abc")))
 
 ;; XXX string->immutable-string
 
@@ -182,7 +183,6 @@
 
 ($check equal? (list->string ()) "")
 ($check equal? (list->string (list #\a #\b #\c)) "abc")
-($check-not-predicate ($let ((x (list->string ())) (y (list->string ()))) (eq? x y)))
 
 ($check-not-predicate
   ($let*
@@ -191,7 +191,6 @@
       (y (list->string cs)))
   (eq? x y)))
 
-($check-predicate (mutable-string? (list->string ())))
-($check-predicate (mutable-string? (list->string (list #\a #\b))))
+($check-predicate (nonempty-mutable-string? (list->string (list #\a #\b))))
 
 ($check-error (list->string (($vau (x) #ignore x) (#\a #0=(#\a . #0#)))))
