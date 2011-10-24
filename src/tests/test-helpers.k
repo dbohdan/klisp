@@ -41,6 +41,13 @@
 ($define! immutable-string?
   ($lambda (obj) ($and? (string? obj) (not? (nonempty-mutable-string? obj)))))
 
+;; XXX/TODO Some of these could be removed if we had eager comprehension in
+;; check.k (which would also complete the srfi-78 implementation). The problem
+;; is that the design adaptation from macros to operatives should be taken
+;; with some care. I intended to do it before the remaining tests, but since
+;; Oto Havle went ahead and wrote the tests without it, they have lost some
+;; priority. Andres Navarro 
+
 ;; ($false-for-all? P XS) evaluates to #t iff (P X) evaluates
 ;; to #f for all members X of the list XS.
 ;;

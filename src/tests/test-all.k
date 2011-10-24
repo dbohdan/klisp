@@ -14,7 +14,8 @@
 (load "tests/environments.k")
 (load "tests/environment-mutation.k")
 (load "tests/combiners.k")
-(load "tests/encapsulations.k")
+;; XXX Oto, you forgot to add tests/encapsulations.k to the repo!
+;;(load "tests/encapsulations.k")
 (load "tests/numbers.k")
 (load "tests/strings.k")
 (load "tests/characters.k")
