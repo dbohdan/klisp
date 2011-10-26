@@ -7,6 +7,9 @@
 #ifndef kgffi_h
 #define kgffi_h
 
+#if (KUSE_LIBFFI != 1)
+#    error "Compiling FFI code, but KUSE_LIBFFI != 1."
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

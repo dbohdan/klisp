@@ -15,6 +15,10 @@ RANLIB= ranlib
 RM= rm -f
 LIBS= -lm $(MYLIBS)
 
+# Set USE_LIBFFI=1 (or other nonempty string) to enable libffi-dependent
+# code.
+USE_LIBFFI=
+
 MYCFLAGS=
 MYLDFLAGS=
 MYLIBS=
@@ -34,7 +38,9 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
 	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
-	kgstrings.o kgblobs.o kgsystem.o kgffi.o
+	kgstrings.o kgblobs.o kgsystem.o \
+	$(if $(USE_LIBFFI),kgffi.o)
+
 # TEMP: in klisp there is no distinction between core & lib
 LIB_O= 
 
@@ -91,8 +97,11 @@ mingw:
 	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
 	"MYCFLAGS=-DKLISP_BUILD_AS_DLL" "MYLIBS=" "MYLDFLAGS=-s" klisp.exe
 #lisp_use_posix isn't used right now...
+# TEMP: rename read() and write() here to avoid name conflicts with foreign code
 posix:
-	$(MAKE) all MYCFLAGS=-DKLISP_USE_POSIX MYLIBS="-ldl -lffi"
+	$(MAKE) all \
+		"MYCFLAGS=-DKLISP_USE_POSIX $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1 -Dread=klisp_read -Dwrite=klisp_write)" \
+		"MYLIBS=$(if $(USE_LIBFFI), -ldl -lffi)"
 
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all default o clean

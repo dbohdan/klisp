@@ -13,8 +13,10 @@
 #include <dlfcn.h>
 #include <ffi.h>
 
+#include "imath.h"
 #include "kstate.h"
 #include "kobject.h"
+#include "kinteger.h"
 #include "kpair.h"
 #include "kerror.h"
 #include "kblob.h"
@@ -23,6 +25,11 @@
 #include "kghelpers.h"
 #include "kgencapsulations.h"
 #include "kgffi.h"
+
+/* Set to 0 to ignore aligment errors during direct
+ * memory read/writes. */
+
+#define KGFFI_CHECK_ALIGNMENT 1
 
 typedef struct ffi_codec_s ffi_codec_t;
 struct ffi_codec_s {
@@ -66,6 +73,13 @@ static void ffi_encode_sint(ffi_codec_t *self, klisp_State *K, TValue v, void *b
     * (int *) buf = ivalue(v);
 }
 
+static TValue ffi_decode_pointer(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    void *p = *(void **)buf;
+    return (p) ? p2tv(p) : KNIL;
+}
+
 static void ffi_encode_pointer(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
 {
     if (ttisblob(v)) {
@@ -74,15 +88,19 @@ static void ffi_encode_pointer(ffi_codec_t *self, klisp_State *K, TValue v, void
         *(void **)buf = kstring_buf(v);
     } else if (ttisnil(v)) {
         *(void **)buf = NULL;
+    } else if (tbasetype_(v) == K_TAG_USER) {
+       /* TODO: do not use internal macro tbasetype_ */
+        *(void **)buf = pvalue(v);
     } else {
-        klispE_throw_simple_with_irritants(K, "neither blob, string or nil", 1, v);
+        klispE_throw_simple_with_irritants(K, "neither blob, string, pointer or nil", 1, v);
     }
 }
 
 static TValue ffi_decode_string(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
     UNUSED(self);
-    return kstring_new_b_imm(K, *(char **)buf);
+    char *s = *(char **) buf;
+    return (s) ? kstring_new_b_imm(K, s) : KNIL;
 }
 
 static void ffi_encode_string(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
@@ -94,12 +112,208 @@ static void ffi_encode_string(ffi_codec_t *self, klisp_State *K, TValue v, void 
     }
 }
 
+static TValue ffi_decode_uint8(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    UNUSED(K);
+    return i2tv(*(uint8_t *)buf);
+}
+
+static void ffi_encode_uint8(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisfixint(v) && 0 <= ivalue(v) && ivalue(v) <= UINT8_MAX) {
+        *(uint8_t *) buf = ivalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C uint8_t", 1, v);
+        return;
+    }
+}
+
+static TValue ffi_decode_sint8(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    UNUSED(K);
+    return i2tv(*(int8_t *)buf);
+}
+
+static void ffi_encode_sint8(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisfixint(v) && INT8_MIN <= ivalue(v) && ivalue(v) <= INT8_MAX) {
+        *(int8_t *) buf = ivalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C int8_t", 1, v);
+        return;
+    }
+}
+
+static TValue ffi_decode_uint16(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    return i2tv(*(uint16_t *)buf);
+}
+
+static void ffi_encode_uint16(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisfixint(v) && 0 <= ivalue(v) && ivalue(v) <= UINT16_MAX) {
+        *(uint16_t *) buf = ivalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C uint16_t", 1, v);
+        return;
+    }
+}
+
+static TValue ffi_decode_sint16(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    return i2tv(*(int16_t *)buf);
+}
+
+static void ffi_encode_sint16(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisfixint(v) && INT16_MIN <= ivalue(v) && ivalue(v) <= INT16_MAX) {
+        *(int16_t *) buf = ivalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C int16_t", 1, v);
+        return;
+    }
+}
+
+static TValue ffi_decode_uint32(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    uint32_t x = *(uint32_t *)buf;
+    if (x <= INT32_MAX) {
+        return i2tv((int32_t) x);
+    } else {
+        TValue res = kbigint_make_simple(K);
+        krooted_tvs_push(K, res);
+
+        uint8_t d[4];
+        for (int i = 3; i >= 0; i--) {
+          d[i] = (x & 0xFF);
+          x >>= 8;
+        }
+        mp_int_read_unsigned(K, tv2bigint(res), d, 4);
+
+        krooted_tvs_pop(K);
+        return res;
+    }
+}
+
+static void ffi_encode_uint32(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    uint32_t tmp;
+
+    if (ttisfixint(v) && 0 <= ivalue(v)) {
+        *(uint32_t *) buf = ivalue(v);
+    } else if (ttisbigint(v) && mp_int_to_uint(tv2bigint(v), &tmp) == MP_OK) {
+        *(uint32_t *) buf = tmp;
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C uint32_t", 1, v);
+        return;
+    }
+}
+
+static TValue ffi_decode_uint64(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    /* TODO */
+    UNUSED(self);
+    uint64_t x = *(uint64_t *)buf;
+    if (x <= INT32_MAX) {
+        return i2tv((int32_t) x);
+    } else {
+        TValue res = kbigint_make_simple(K);
+        krooted_tvs_push(K, res);
+
+        uint8_t d[8];
+        for (int i = 7; i >= 0; i--) {
+          d[i] = (x & 0xFF);
+          x >>= 8;
+        }
+
+        mp_int_read_unsigned(K, tv2bigint(res), d, 8);
+        krooted_tvs_pop(K);
+        return res;
+    }
+}
+
+static void ffi_encode_uint64(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    /* TODO */
+    UNUSED(self);
+
+    if (ttisfixint(v) && 0 <= ivalue(v)) {
+        *(uint64_t *) buf = ivalue(v);
+    } else if (ttisbigint(v)
+              && mp_int_compare_zero(tv2bigint(v)) >= 0
+              && mp_int_unsigned_len(tv2bigint(v)) <= 8) {
+        uint8_t d[8];
+
+        mp_int_to_unsigned(K, tv2bigint(v), d, 8);
+        uint64_t tmp = d[0];
+        for (int i = 1; i < 8; i++)
+          tmp = (tmp << 8) | d[i];
+        *(uint64_t *) buf = tmp;
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C uint64_t", 1, v);
+        return;
+    }
+}
+
+static TValue ffi_decode_double(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    return d2tv(*(double *)buf);
+}
+
+static void ffi_encode_double(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisdouble(v)) {
+        *(double *) buf = dvalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to cast to C double", 1, v);
+        return;
+    }
+}
+
+static TValue ffi_decode_float(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    return d2tv((double) *(float *)buf);
+}
+
+static void ffi_encode_float(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisdouble(v)) {
+        /* TODO: avoid double rounding for rationals/bigints ?*/
+        *(float *) buf = dvalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to cast to C float", 1, v);
+        return;
+    }
+}
+
 static ffi_codec_t ffi_codecs[] = {
     { "void", &ffi_type_void, ffi_decode_void, NULL },
-    { "pointer", &ffi_type_pointer, NULL, ffi_encode_pointer },
     { "string", &ffi_type_pointer, ffi_decode_string, ffi_encode_string },
 #define SIMPLE_TYPE(t) { #t, &ffi_type_ ## t, ffi_decode_ ## t, ffi_encode_ ## t }
-    SIMPLE_TYPE(sint)
+    SIMPLE_TYPE(sint),
+    SIMPLE_TYPE(pointer),
+    SIMPLE_TYPE(uint8),
+    SIMPLE_TYPE(sint8),
+    SIMPLE_TYPE(uint16),
+    SIMPLE_TYPE(sint16),
+    SIMPLE_TYPE(uint32),
+    SIMPLE_TYPE(uint64),
+    SIMPLE_TYPE(float),
+    SIMPLE_TYPE(double)
 #undef SIMPLE_TYPE
 };
 
@@ -350,6 +564,151 @@ void ffi_make_applicative(klisp_State *K, TValue *xparams,
     kapply_cc(K, app);
 }
 
+static uint8_t * ffi_memory_location(klisp_State *K, bool allow_nesting,
+                                     TValue v, bool mutable, size_t size)
+{
+    if (ttisblob(v)) {
+        if (mutable && kblob_immutablep(v)) {
+            klispE_throw_simple_with_irritants(K, "blob not mutable", 1, v);
+            return NULL;
+        } else if (size > kblob_size(v)) {
+            klispE_throw_simple_with_irritants(K, "blob too small", 1, v);
+            return NULL;
+        } else {
+            return kblob_buf(v);
+        }
+    } else if (ttisstring(v)) {
+        if (mutable && kstring_immutablep(v)) {
+            klispE_throw_simple_with_irritants(K, "string not mutable", 1, v);
+            return NULL;
+        } else if (size > kstring_size(v)) {
+            klispE_throw_simple_with_irritants(K, "string too small", 1, v);
+            return NULL;
+        } else {
+            return (uint8_t *) kstring_buf(v);
+        }
+    } else if (tbasetype_(v) == K_TAG_USER) {
+        /* TODO: do not use internal macro tbasetype_ */
+        return (pvalue(v));
+    } else if (ttispair(v) && ttispair(kcdr(v)) && ttisnil(kcddr(v))) {
+        if (!allow_nesting) {
+            klispE_throw_simple_with_irritants(K, "offset specifications cannot be nested", 1, v);
+            return NULL;
+        }
+        TValue base_tv = kcar(v);
+        TValue offset_tv = kcadr(v);
+        if (!ttisfixint(offset_tv) || ivalue(offset_tv) < 0) {
+            klispE_throw_simple_with_irritants(K, "offset should be nonnegative fixint", 1, v);
+            return NULL;
+        } else {
+            size_t offset = ivalue(offset_tv);
+            uint8_t * p = ffi_memory_location(K, false, base_tv, mutable, size + offset);
+            return (p + offset);
+        }
+    } else {
+        klispE_throw_simple_with_irritants(K, "not a memory location", 1, v);
+        return NULL;
+    }
+}
+
+void ffi_memmove(klisp_State *K, TValue *xparams,
+                TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_3tp(K, ptree,
+            "any", anytype, dst_tv,
+            "any", anytype, src_tv,
+            "integer", ttisfixint, sz_tv);
+
+    if (ivalue(sz_tv) < 0)
+      klispE_throw_simple(K, "size should be nonnegative fixint");
+
+    size_t sz = (size_t) ivalue(sz_tv);
+    uint8_t * dst = ffi_memory_location(K, true, dst_tv, true, sz);
+    const uint8_t * src = ffi_memory_location(K, true, src_tv, false, sz);
+    memmove(dst, src, sz);
+
+    kapply_cc(K, KINERT);
+}
+
+static void ffi_type_ref(klisp_State *K, TValue *xparams,
+                         TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    /*
+    ** xparams[0]: pointer to ffi_codec_t
+    */
+
+    bind_1tp(K, ptree, "any", anytype, location_tv);
+    ffi_codec_t *codec = pvalue(xparams[0]);
+    const uint8_t *ptr = ffi_memory_location(K, true, location_tv, false, codec->libffi_type->size);
+#if KGFFI_CHECK_ALIGNMENT
+    if ((size_t) ptr % codec->libffi_type->alignment != 0)
+      klispE_throw_simple(K, "unaligned memory read through FFI");
+#endif
+
+    TValue result = codec->decode(codec, K, ptr);
+    kapply_cc(K, result);
+}
+
+static void ffi_type_set(klisp_State *K, TValue *xparams,
+                         TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    /*
+    ** xparams[0]: pointer to ffi_codec_t
+    */
+
+    bind_2tp(K, ptree,
+             "any", anytype, location_tv,
+             "any", anytype, value_tv);
+    ffi_codec_t *codec = pvalue(xparams[0]);
+    uint8_t *ptr = ffi_memory_location(K, true, location_tv, false, codec->libffi_type->size);
+#if KGFFI_CHECK_ALIGNMENT
+    if ((size_t) ptr % codec->libffi_type->alignment != 0)
+      klispE_throw_simple(K, "unaligned memory write through FFI");
+#endif
+
+    codec->encode(codec, K, value_tv, ptr);
+    kapply_cc(K, KINERT);
+}
+
+void ffi_type_suite(klisp_State *K, TValue *xparams,
+                    TValue ptree, TValue denv)
+{
+    bind_1tp(K, ptree, "string", ttisstring, type_tv);
+    ffi_codec_t *codec = tv2ffi_codec(K, type_tv);
+
+    TValue size_tv = i2tv(codec->libffi_type->size);
+    krooted_tvs_push(K, size_tv);
+
+    TValue alignment_tv = i2tv(codec->libffi_type->alignment);
+    krooted_tvs_push(K, alignment_tv);
+
+    TValue getter_tv =
+        (codec->decode)
+        ? kmake_applicative(K, ffi_type_ref, 1, p2tv(codec))
+        : KINERT;
+    krooted_tvs_push(K, getter_tv);
+
+    TValue setter_tv =
+        (codec->encode)
+        ? kmake_applicative(K, ffi_type_set, 1, p2tv(codec))
+        : KINERT;
+    krooted_tvs_push(K, setter_tv);
+
+    TValue suite_tv = kimm_list(K, 4, size_tv, alignment_tv, getter_tv, setter_tv);
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    kapply_cc(K, suite_tv);
+}
+
 /* init ground */
 void kinit_ffi_ground_env(klisp_State *K)
 {
@@ -364,6 +723,8 @@ void kinit_ffi_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "ffi-load-library", ffi_load_library, 1, dll_key);
     add_applicative(K, ground_env, "ffi-make-call-interface", ffi_make_call_interface, 1, cif_key);
     add_applicative(K, ground_env, "ffi-make-applicative", ffi_make_applicative, 2, dll_key, cif_key);
+    add_applicative(K, ground_env, "ffi-memmove", ffi_memmove, 0);
+    add_applicative(K, ground_env, "ffi-type-suite", ffi_type_suite, 0);
     add_applicative(K, ground_env, "ffi-library?", enc_typep, 1, dll_key);
     add_applicative(K, ground_env, "ffi-call-interface?", enc_typep, 1, cif_key);
 }
