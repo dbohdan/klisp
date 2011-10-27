@@ -21,9 +21,12 @@
 #include "kerror.h"
 #include "kblob.h"
 #include "kencapsulation.h"
+#include "ktable.h"
 
 #include "kghelpers.h"
 #include "kgencapsulations.h"
+#include "kgcombiners.h"
+#include "kgcontinuations.h"
 #include "kgffi.h"
 
 /* Set to 0 to ignore aligment errors during direct
@@ -48,12 +51,33 @@ typedef struct {
     ffi_codec_t **acodecs;
 } ffi_call_interface_t;
 
+typedef struct {
+    ffi_closure libffi_closure;
+    klisp_State *K;
+    Table *table;
+    size_t index;
+} ffi_callback_t;
+
+#define CB_INDEX_N      0
+#define CB_INDEX_STACK  1
+#define CB_INDEX_FIRST_CALLBACK  2
+
 static TValue ffi_decode_void(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
     UNUSED(self);
     UNUSED(K);
     UNUSED(buf);
     return KINERT;
+}
+
+static void ffi_encode_void(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    /* useful only with callbacks */
+    UNUSED(self);
+    UNUSED(K);
+    UNUSED(buf);
+    if (!ttisinert(v))
+        klispE_throw_simple_with_irritants(K, "only inert can be cast to C void", 1, v);
 }
 
 static TValue ffi_decode_sint(ffi_codec_t *self, klisp_State *K, const void *buf)
@@ -301,9 +325,9 @@ static void ffi_encode_float(ffi_codec_t *self, klisp_State *K, TValue v, void *
 }
 
 static ffi_codec_t ffi_codecs[] = {
-    { "void", &ffi_type_void, ffi_decode_void, NULL },
     { "string", &ffi_type_pointer, ffi_decode_string, ffi_encode_string },
 #define SIMPLE_TYPE(t) { #t, &ffi_type_ ## t, ffi_decode_ ## t, ffi_encode_ ## t }
+    SIMPLE_TYPE(void),
     SIMPLE_TYPE(sint),
     SIMPLE_TYPE(pointer),
     SIMPLE_TYPE(uint8),
@@ -376,7 +400,7 @@ static ffi_codec_t *tv2ffi_codec(klisp_State *K, TValue v)
   return NULL;
 }
 
-static inline size_t align(size_t offset, size_t alignment)
+inline size_t align(size_t offset, size_t alignment)
 {
     assert(alignment > 0);
     return offset + (alignment - offset % alignment) % alignment;
@@ -564,6 +588,285 @@ void ffi_make_applicative(klisp_State *K, TValue *xparams,
     kapply_cc(K, app);
 }
 
+static void ffi_callback_push(ffi_callback_t *cb, TValue v)
+{
+    /* assume v is rooted */
+    TValue *s = klispH_setfixint(cb->K, cb->table, CB_INDEX_STACK);
+    *s = kimm_cons(cb->K, v, *s);
+}
+
+static TValue ffi_callback_pop(ffi_callback_t *cb)
+{
+    TValue *s = klispH_setfixint(cb->K, cb->table, CB_INDEX_STACK);
+    TValue v = kcar(*s);
+    krooted_tvs_push(cb->K, v);
+    *s = kcdr(*s);
+    krooted_tvs_pop(cb->K);
+    return v;
+}
+
+static TValue ffi_callback_guard(ffi_callback_t *cb, klisp_Ofunc fn)
+{
+    TValue app = kmake_applicative(cb->K, fn, 1, p2tv(cb));
+    krooted_tvs_push(cb->K, app);
+    TValue ls1 = kimm_list(cb->K, 2, cb->K->root_cont, app);
+    krooted_tvs_push(cb->K, ls1);
+    TValue ls2 = kimm_list(cb->K, 1, ls1);
+    krooted_tvs_pop(cb->K);
+    krooted_tvs_pop(cb->K);
+    return ls2;
+}
+
+void do_ffi_callback_encode_result(klisp_State *K, TValue *xparams,
+                                   TValue obj)
+{
+    /*
+    ** xparams[0]: cif
+    ** xparams[1]: p2tv(libffi return buffer)
+    */
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(xparams[0]));
+    void *ret = pvalue(xparams[1]);
+    p->rcodec->encode(p->rcodec, K, obj, ret);
+    kapply_cc(K, KINERT);
+}
+
+void do_ffi_callback_decode_arguments(klisp_State *K, TValue *xparams,
+                                      TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: p2tv(ffi_callback_t)
+    ** xparams[1]: p2tv(libffi return buffer)
+    ** xparams[2]: p2tv(libffi argument array)
+    */
+
+    ffi_callback_t *cb = pvalue(xparams[0]);
+    void *ret = pvalue(xparams[1]);
+    void **args = pvalue(xparams[2]);
+
+    /* get the lisp applicative and the call interface
+     * from the auxilliary table. */
+
+    const TValue *slot = klispH_setfixint(K, cb->table, cb->index);
+    TValue app_tv = kcar(*slot);
+    TValue cif_tv = kcdr(*slot);
+    assert(ttisapplicative(app_tv));
+    assert(ttisencapsulation(cif_tv));
+    krooted_tvs_push(K, app_tv);
+    krooted_tvs_push(K, cif_tv);
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(cif_tv));
+
+    /* Decode arguments. */
+
+    TValue tail = KNIL;
+    for (int i = p->nargs - 1; i >= 0; i--) {
+        krooted_tvs_push(K, ptree);
+        TValue arg = p->acodecs[i]->decode(p->acodecs[i], K, args[i]);
+        krooted_tvs_pop(K);
+        tail = kimm_cons(K, arg, tail);
+    }
+    krooted_tvs_push(K, tail);
+
+    /* Setup continuation for encoding return value. */
+
+    TValue encoding_cont = kmake_continuation(K, kget_cc(K), do_ffi_callback_encode_result, 2, cif_tv, p2tv(ret));
+    kset_cc(K, encoding_cont);
+
+    /* apply the callback applicative */
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    while(ttisapplicative(app_tv))
+        app_tv = tv2app(app_tv)->underlying;
+    ktail_call(K, app_tv, tail, denv);
+}
+
+void do_ffi_callback_return(klisp_State *K, TValue *xparams, TValue obj)
+{
+    UNUSED(obj);
+    /*
+    ** xparams[0]: p2tv(ffi_callback_t)
+    **
+    ** Signal normal return and force the "inner" trampoline
+    ** loop to exit.
+    */
+    ffi_callback_t *cb = pvalue(xparams[0]);
+    ffi_callback_push(cb, i2tv(1));
+    K->next_func = NULL;
+}
+
+void do_ffi_callback_entry_guard(klisp_State *K, TValue *xparams,
+                                 TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    UNUSED(xparams);
+    /* The entry guard is invoked only if the user captured
+     * the continuation under foreign callback and applied
+     * it later after the foreign callback terminated.
+     *
+     * The auxilliary stack (stored in the callback hash table)
+     * now does not correspond to the actual state of callback
+     * nesting.
+     */
+    klispE_throw_simple(K, "tried to re-enter continuation under FFI callback");
+}
+
+void do_ffi_callback_exit_guard(klisp_State *K, TValue *xparams,
+                                TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    /*
+    ** xparams[0]: p2tv(ffi_callback_t)
+    **
+    ** Signal abnormal return and force the "inner" trampoline
+    ** loop to exit to ffi_callback_entry(). The parameter tree
+    ** will be processed there.
+    */
+    ffi_callback_t *cb = pvalue(xparams[0]);
+    ffi_callback_push(cb, i2tv(0));
+    K->next_func = NULL;
+}
+
+static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_data)
+{
+    ffi_callback_t *cb = (ffi_callback_t *) user_data;
+    klisp_State *K = cb->K;
+
+    /* save state of the interpreter */
+
+    volatile jmp_buf saved_error_jb;
+    memcpy(&saved_error_jb, &K->error_jb, sizeof(K->error_jb));
+    ffi_callback_push(cb, K->curr_cont);
+
+    /* Set up continuation for normal return path. */
+
+    TValue return_cont = kmake_continuation(K, K->curr_cont, do_ffi_callback_return, 1, p2tv(cb));
+    krooted_tvs_push(K, return_cont);
+    kset_cc(K, return_cont);
+
+    /* Do not decode arguments yet. The decoding may fail
+     * and raise errors. Let klisp core handle all errors
+     * inside guarded continuation. */
+
+    TValue app = kmake_applicative(K, do_ffi_callback_decode_arguments, 3, p2tv(cb), p2tv(ret), p2tv(args));
+    krooted_tvs_push(K, app);
+
+    TValue entry_guard = ffi_callback_guard(cb, do_ffi_callback_entry_guard);
+    krooted_tvs_push(K, entry_guard);
+    TValue exit_guard = ffi_callback_guard(cb, do_ffi_callback_exit_guard);
+    krooted_tvs_push(K, exit_guard);
+
+    TValue ptree = kimm_list(K, 3, entry_guard, app, exit_guard);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    guard_dynamic_extent(K, NULL, ptree, K->next_env);
+
+    /* Enter new "inner" trampoline loop. */
+
+    klispS_run(K);
+
+    /* restore longjump buffer of the outer trampoline loop */
+
+    memcpy(&K->error_jb, &saved_error_jb, sizeof(K->error_jb));
+
+    /* Now, the "inner" trampoline loop exited. The exit
+       was forced by return_cont or exit_guard. */
+
+    if (ivalue(ffi_callback_pop(cb))) {
+        /* Normal return - reinstall old continuation. It will be
+         * used after the foreign call which originally called
+         * this callback eventually returns. */
+        kset_cc(K, ffi_callback_pop(cb));
+    } else {
+        /* Abnormal return - throw away the old continuation
+        ** and longjump back in the "outer" trampoline loop.
+        ** Longjump unwinds the stack space used by the foreign
+        ** call which originally called this callback. After
+        ** that the interpreter state will look like normal
+        ** normal return from the exit guard.
+        */
+        (void) ffi_callback_pop(cb);
+        klispS_apply_cc(K, kcar(K->next_value));
+        longjmp(K->error_jb, 1);
+    }
+}
+
+
+void ffi_make_callback(klisp_State *K, TValue *xparams,
+                       TValue ptree, TValue denv)
+{
+    UNUSED(denv);
+    /*
+    ** xparams[0]: encapsulation key denoting call interface
+    ** xparams[1]: callback data table
+    */
+
+    bind_2tp(K, ptree,
+            "applicative", ttisapplicative, app_tv,
+            "call interface", ttisencapsulation, cif_tv);
+    if (!kis_encapsulation_type(cif_tv, xparams[0])) {
+        klispE_throw_simple(K, "second argument shall be call interface");
+        return;
+    }
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(cif_tv));
+    TValue cb_tab = xparams[1];
+
+    /* Allocate memory for libffi closure. */
+
+    void *code;
+    ffi_callback_t *cb = ffi_closure_alloc(sizeof(ffi_callback_t), &code);
+
+    /* Get the index of this callback in the callback table. */
+
+    TValue *n_tv = klispH_setfixint(K, tv2table(cb_tab), 0);
+    assert(n_tv != &kfree);
+    int32_t new_index = ivalue(*n_tv);
+    *n_tv = i2tv(new_index + 1);
+
+    /* Prepare the C part of callback data */
+
+    cb->K = K;
+    cb->table = tv2table(xparams[1]);
+    cb->index = new_index;
+
+    /* TODO: The closure leaks. Should be finalized. */
+
+    /* Prepare the lisp part of callback data */
+
+    krooted_tvs_push(K, cb_tab);
+    krooted_tvs_push(K, app_tv);
+    krooted_tvs_push(K, cif_tv);
+
+    TValue item_tv = kimm_cons(K, app_tv, cif_tv);
+    krooted_tvs_push(K, item_tv);
+
+    TValue *slot = klispH_setfixint(K, tv2table(cb_tab), new_index);
+    *slot = item_tv;
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+
+    /* Initialize callback. */
+
+    ffi_status status = ffi_prep_closure_loc(&cb->libffi_closure, &p->cif, ffi_callback_entry, cb, code);
+    if (status != FFI_OK) {
+        ffi_closure_free(cb);
+        klispE_throw_simple(K, "unknown error in ffi_prep_closure_loc");
+        return;
+    }
+
+    /* return the libffi closure entry point */
+
+    TValue funptr_tv = p2tv(code);
+    kapply_cc(K, funptr_tv);
+}
+
 static uint8_t * ffi_memory_location(klisp_State *K, bool allow_nesting,
                                      TValue v, bool mutable, size_t size)
 {
@@ -720,9 +1023,21 @@ void kinit_ffi_ground_env(klisp_State *K)
     TValue dll_key = kmake_encapsulation_key(K);
     TValue cif_key = kmake_encapsulation_key(K);
 
+    /* TODO: should be rooted */
+
+    /* create table for callback data */
+    TValue cb_tab = klispH_new(K, 0, 64, K_FLAG_WEAK_NOTHING);
+
+    TValue *v;
+    v = klispH_setfixint(K, tv2table(cb_tab), CB_INDEX_N);
+    *v = i2tv(CB_INDEX_FIRST_CALLBACK);
+    v = klispH_setfixint(K, tv2table(cb_tab), CB_INDEX_STACK);
+    *v = KNIL;
+
     add_applicative(K, ground_env, "ffi-load-library", ffi_load_library, 1, dll_key);
     add_applicative(K, ground_env, "ffi-make-call-interface", ffi_make_call_interface, 1, cif_key);
     add_applicative(K, ground_env, "ffi-make-applicative", ffi_make_applicative, 2, dll_key, cif_key);
+    add_applicative(K, ground_env, "ffi-make-callback", ffi_make_callback, 2, cif_key, cb_tab);
     add_applicative(K, ground_env, "ffi-memmove", ffi_memmove, 0);
     add_applicative(K, ground_env, "ffi-type-suite", ffi_type_suite, 0);
     add_applicative(K, ground_env, "ffi-library?", enc_typep, 1, dll_key);
