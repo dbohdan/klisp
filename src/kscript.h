@@ -18,9 +18,6 @@ void kinit_script(klisp_State *K, int argc, char *argv[]);
 void do_script_exit(klisp_State *K, TValue *xparams, TValue obj);
 void do_script_error(klisp_State *K, TValue *xparams, TValue obj);
 
-/* unix script directive handling */
-int kscript_eat_directive(FILE *fr);
-
 /* default exit code in case of error according to SRFI-22 */
 
 #define KSCRIPT_DEFAULT_ERROR_EXIT_CODE   70

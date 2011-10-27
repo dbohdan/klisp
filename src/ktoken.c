@@ -290,8 +290,18 @@ TValue ktok_read_token(klisp_State *K)
 	case '"':
 	    return ktok_read_string(K);
 /* TODO use read_until_delimiter in all these cases */
-	case '#':
-	    return ktok_read_special(K);
+	case '#': {
+	    ktok_getc(K);
+	    chi = ktok_peekc(K);
+	    if ((chi != EOF) && (char) chi == '!') {
+		/* this handles the #! style script header too! */
+		ktok_ignore_single_line_comment(K);
+		continue;
+	    } else {
+		/* also handles EOF case */
+		return ktok_read_special(K);
+	    }
+	}
 	case '0': case '1': case '2': case '3': case '4': 
 	case '5': case '6': case '7': case '8': case '9': {
 	    /* positive number, no exactness or radix indicator */
@@ -562,8 +572,9 @@ struct kspecial_token {
 
 TValue ktok_read_special(klisp_State *K)
 {
-    /* the # is still pending (was only peeked) */
-    int32_t buf_len = ktok_read_until_delimiter(K);
+    /* the # is already consumed, add it manually */
+    ks_tbadd(K, '#');
+    int32_t buf_len = ktok_read_until_delimiter(K) + 1;
     char *buf = ks_tbget_buffer(K);
 
     if (buf_len < 2) {
