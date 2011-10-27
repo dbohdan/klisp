@@ -239,7 +239,7 @@ bool kstring_ci_gep(TValue str1, TValue str2)
 }
 
 /* 13.2.5? substring */
-/* TEMP: at least for now this always returns mutable strings */
+/* Note: This will return an mutable string iff the source string is mutable */
 void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
@@ -276,8 +276,10 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* the if isn't strictly necessary but it's clearer this way */
     if (size == 0) {
 	new_str = K->empty_string;
-    } else {
+    } else if (kstring_mutablep(str)) {
 	new_str = kstring_new_bs(K, kstring_buf(str)+start, size);
+    } else {
+	new_str = kstring_new_bs_imm(K, kstring_buf(str)+start, size);
     }
     kapply_cc(K, new_str);
 }
