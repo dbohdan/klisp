@@ -129,9 +129,18 @@
 ($check-error (substring "abcdef" 3 10))
 ($check-error (substring "abcdef" 4 2))
 
-($check-not-predicate
+
+;; immutable strings are eq? iff string=?
+;; Andres Navarro
+($check-predicate
   ($let* ((p "abc") (q (substring p 0 3)))
     (eq? p q)))
+
+;; string-copy always generate mutable strings
+;; Andres Navarro
+($check-not-predicate
+ ($let* ((p (string-copy "abc")) (q (substring p 0 3)))
+   (eq? p q)))
 
 ($check-predicate (immutable-string? (substring "abc" 0 0)))
 ($check-predicate (immutable-string? (substring "abc" 0 1)))
