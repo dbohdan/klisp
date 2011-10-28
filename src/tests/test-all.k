@@ -15,6 +15,7 @@
 (load "tests/environment-mutation.k")
 (load "tests/combiners.k")
 (load "tests/encapsulations.k")
+(load "tests/promises.k")
 (load "tests/keyed-variables.k")
 (load "tests/numbers.k")
 (load "tests/strings.k")
