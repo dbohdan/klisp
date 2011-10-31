@@ -21,5 +21,6 @@
 (load "tests/strings.k")
 (load "tests/characters.k")
 (load "tests/ports.k")
+(load "tests/error.k")
 
 (check-report)
