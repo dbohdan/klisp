@@ -96,7 +96,7 @@ void do_set_pass(klisp_State *K, TValue *xparams, TValue ptree,
    abnormal passes */
 /* TODO: reuse the code for guards in kgcontinuations.c */
 
-/* GC: this assumes that key is rooted */
+/* GC: this assumes that key, old_value and new_value are rooted */
 inline TValue make_bind_continuation(klisp_State *K, TValue key,
 				     TValue old_flag, TValue old_value, 
 				     TValue new_flag, TValue new_value)
@@ -167,10 +167,16 @@ void do_bind(klisp_State *K, TValue *xparams, TValue ptree,
     /* set the var to the new object */
     kset_car(key, new_flag);
     kset_cdr(key, new_value);
+    /* Old value must be protected from GC. It is no longer
+     reachable through key and not yet reachable through
+     continuation xparams. Boolean flag needn't be rooted,
+     because is not heap-allocated. */
+    krooted_tvs_push(K, old_value);
     /* create a continuation to set the var to the correct value/flag on both
      normal return and abnormal passes */
     TValue new_cont = make_bind_continuation(K, key, old_flag, old_value,
 					     new_flag, new_value);
+    krooted_tvs_pop(K);
     kset_cc(K, new_cont); /* implicit rooting */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
