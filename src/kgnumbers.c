@@ -2338,12 +2338,12 @@ void kinit_numbers_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "exp", kexp, 0);
     add_applicative(K, ground_env, "log", klog, 0);
     /* 12.9.3 sin, cos, tan */
-    add_applicative(K, ground_env, "sin", ktrig, 1, sin);
-    add_applicative(K, ground_env, "cos", ktrig, 1, cos);
-    add_applicative(K, ground_env, "tan", ktrig, 1, tan);
+    add_applicative(K, ground_env, "sin", ktrig, 1, p2tv(sin));
+    add_applicative(K, ground_env, "cos", ktrig, 1, p2tv(cos));
+    add_applicative(K, ground_env, "tan", ktrig, 1, p2tv(tan));
     /* 12.9.4 asin, acos, atan */
-    add_applicative(K, ground_env, "asin", katrig, 1, asin);
-    add_applicative(K, ground_env, "acos", katrig, 1, acos);
+    add_applicative(K, ground_env, "asin", katrig, 1, p2tv(asin));
+    add_applicative(K, ground_env, "acos", katrig, 1, p2tv(acos));
     add_applicative(K, ground_env, "atan", katan, 0);
     /* 12.9.5 sqrt */
     add_applicative(K, ground_env, "sqrt", ksqrt, 0);
