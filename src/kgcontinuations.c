@@ -253,6 +253,7 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 	/* the list of instructions is copied to avoid mutation */
 	/* MAYBE: copy the evaluation structure, ASK John */
 	TValue ls = check_copy_list(K, "$let/cc", objs, false);
+        krooted_tvs_push(K, ls);
 
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
@@ -264,6 +265,7 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 	} 
 
 	krooted_tvs_pop(K); 
+        krooted_tvs_pop(K);
 
 	ktail_eval(K, kcar(ls), new_env);
     }
