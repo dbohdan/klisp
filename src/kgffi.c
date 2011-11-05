@@ -4,13 +4,30 @@
 ** See Copyright Notice in klisp.h
 */
 
+/*
+ * Detect dynamic linking facilities.
+ *
+ */
+#if !defined(KLISP_USE_POSIX) && defined(_WIN32)
+#    define KGFFI_WIN32 true
+#else
+#    define KGFFI_DLFCN true
+#endif
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <dlfcn.h>
+#if KGFFI_DLFCN
+#    include <dlfcn.h>
+#elif KGFFI_WIN32
+#    include <windows.h>
+#else
+#    error
+#endif
+
 #include <ffi.h>
 
 #include "imath.h"
@@ -341,6 +358,24 @@ static ffi_codec_t ffi_codecs[] = {
 #undef SIMPLE_TYPE
 };
 
+#ifdef KGFFI_WIN32
+static TValue ffi_win32_error_message(klisp_State *K, DWORD dwMessageId)
+{
+    LPTSTR s;
+    if (0 == FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                           NULL,
+                           dwMessageId,
+                           MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                           &s, 0, NULL)) {
+        return kstring_new_b_imm(K, "Unknown error");
+    } else {
+        TValue v = kstring_new_b_imm(K, s);
+        LocalFree(s);
+        return v;
+    }
+}
+#endif
+
 void ffi_load_library(klisp_State *K, TValue *xparams,
                       TValue ptree, TValue denv)
 {
@@ -354,6 +389,7 @@ void ffi_load_library(klisp_State *K, TValue *xparams,
        get_opt_tpar(K, "ffi-load-library", K_TSTRING, &filename)
            ? kstring_buf(filename) : NULL;
 
+#if KGFFI_DLFCN
     void *handle = dlopen(filename_c, RTLD_LAZY | RTLD_GLOBAL);
     if (handle == NULL) {
         krooted_tvs_push(K, filename);
@@ -363,7 +399,19 @@ void ffi_load_library(klisp_State *K, TValue *xparams,
                                            2, filename, err);
         return;
     }
-
+#elif KGFFI_WIN32
+    /* TODO: unicode and wide character issues ??? */
+    HMODULE handle = LoadLibrary(filename_c);
+    if (handle == NULL) {
+         krooted_tvs_push(K, filename);
+         TValue err = ffi_win32_error_message(K, GetLastError());
+         klispE_throw_simple_with_irritants(K, "couldn't load dynamic library",
+                                            2, filename, err);
+         return;
+    }
+#else
+#   error
+#endif
     TValue key = xparams[0];
     krooted_tvs_push(K, key);
 
@@ -384,6 +432,12 @@ static ffi_abi tv2ffi_abi(klisp_State *K, TValue v)
 {
     if (!strcmp("FFI_DEFAULT_ABI", kstring_buf(v))) {
         return FFI_DEFAULT_ABI;
+    } else if (!strcmp("FFI_SYSV", kstring_buf(v))) {
+        return FFI_SYSV;
+#if KGFFI_WIN32
+    } else if (!strcmp("FFI_STDCALL", kstring_buf(v))) {
+        return FFI_STDCALL;
+#endif
     } else {
         klispE_throw_simple_with_irritants(K, "unsupported FFI ABI", 1, v);
         return 0;
@@ -516,7 +570,7 @@ void do_ffi_call(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     assert(offset == p->buffer_size);
     if (!ttisnil(tail)) {
-        klispE_throw_simple(K, "too much arguments");
+        klispE_throw_simple(K, "too many arguments");
         return;
     }
 
@@ -548,14 +602,14 @@ void ffi_make_applicative(klisp_State *K, TValue *xparams,
         return;
     }
 
-    void *handle = pvalue(kcar(kget_enc_val(lib_tv)));
     TValue lib_name = kcdr(kget_enc_val(lib_tv));
     assert(ttisstring(lib_name));
 
+#if KGFFI_DLFCN
+    void *handle = pvalue(kcar(kget_enc_val(lib_tv)));
     (void) dlerror();
     void *funptr = dlsym(handle, kstring_buf(name_tv));
     const char *err_c = dlerror();
-
     if (err_c) {
         krooted_tvs_push(K, name_tv);
         krooted_tvs_push(K, lib_name);
@@ -568,6 +622,18 @@ void ffi_make_applicative(klisp_State *K, TValue *xparams,
         klispE_throw_simple_with_irritants(K, "symbol is NULL", 2,
                                            lib_name, name_tv);
     }
+#elif KGFFI_WIN32
+    HMODULE handle = pvalue(kcar(kget_enc_val(lib_tv)));
+    void *funptr = GetProcAddress(handle, kstring_buf(name_tv));
+    if (NULL == funptr) {
+         TValue err = ffi_win32_error_message(K, GetLastError());
+         klispE_throw_simple_with_irritants(K, "couldn't find symbol",
+                                            3, lib_name, name_tv, err);
+         return;
+    }
+#else
+#   error
+#endif
 
     TValue app = kmake_applicative(K, do_ffi_call, 2, p2tv(funptr), cif_tv);
 

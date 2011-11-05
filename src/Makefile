@@ -18,6 +18,8 @@ LIBS= -lm $(MYLIBS)
 # Set USE_LIBFFI=1 (or other nonempty string) to enable libffi-dependent
 # code.
 USE_LIBFFI=
+MINGW_LIBFFI_CFLAGS = -I/usr/local/lib/libffi-3.0.10/include
+MINGW_LIBFFI_LDFLAGS = -L/usr/local/lib/
 
 MYCFLAGS=
 MYLDFLAGS=
@@ -60,7 +62,7 @@ o:	$(ALL_O)
 a:	$(ALL_A)
 
 $(KRN_A): $(CORE_O) $(LIB_O)
-	$(AR) $@ $?
+	$(AR) $@ $? $(MINGW_LDFLAGS)
 	$(RANLIB) $@
 
 $(KRN_T): $(KRN_O) $(KRN_A)
@@ -94,8 +96,12 @@ generic:
 
 mingw:
 	$(MAKE) "KRN_A=klisp01.dll" "KRN_T=klisp.exe" \
-	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
-	"MYCFLAGS=-DKLISP_BUILD_AS_DLL" "MYLIBS=" "MYLDFLAGS=-s" klisp.exe
+	"AR=$(CC) -shared -o" \
+	"RANLIB=strip --strip-unneeded" \
+	"MYCFLAGS=-DKLISP_BUILD_AS_DLL $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1 $(MINGW_LIBFFI_CFLAGS))" \
+	"MYLIBS=$(if $(USE_LIBFFI), $(MINGW_LIBFFI_LDFLAGS) -lffi.dll)" \
+	"MINGW_LDFLAGS=$(if $(USE_LIBFFI), $(MINGW_LIBFFI_LDFLAGS) -lffi.dll)" \
+	"MYLDFLAGS=-s" klisp.exe
 #lisp_use_posix isn't used right now...
 # TEMP: rename read() and write() here to avoid name conflicts with foreign code
 posix:
