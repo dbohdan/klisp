@@ -79,6 +79,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->module_params_sym = KINERT;
     K->root_cont = KINERT;
     K->error_cont = KINERT;
+    K->system_error_cont = KINERT;
 
     K->frealloc = f;
     K->ud = ud;

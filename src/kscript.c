@@ -21,6 +21,7 @@
 #include "kport.h"
 #include "kpair.h"
 #include "kgcontrol.h"
+#include "kgerror.h"
 /* for names */
 #include "ktable.h"
 
@@ -224,6 +225,9 @@ void kinit_script(klisp_State *K, int argc, char *argv[])
     K->error_cont = error_cont;
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
+
+    /* Create error continuation hierarchy. */
+    kinit_error_hierarchy(K);
 
     TValue argv_value = RSI(argv2value(K, argc, argv));
     TValue loader = RSI(loader_body(K, argv_value, std_env));

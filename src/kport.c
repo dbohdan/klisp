@@ -14,6 +14,7 @@
 #include "kerror.h"
 #include "kstring.h"
 #include "kgc.h"
+#include "kpair.h"
 
 /* XXX: per the c spec, this truncates the file if it exists! */
 /* Ask John: what would be best? Probably should also include delete,
@@ -27,7 +28,8 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep)
     /* for now always use text mode */
     FILE *f = fopen(kstring_buf(filename), writep? "w": "r");
     if (f == NULL) {
-	klispE_throw_simple(K, "could't open file");
+        klispE_throw_errno_with_irritants(K, "fopen", 2, filename,
+                                          kstring_new_b_imm(K, writep? "w": "r"));
 	return KINERT;
     } else {
 	return kmake_std_port(K, filename, writep, f);

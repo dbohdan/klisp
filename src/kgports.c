@@ -607,9 +607,8 @@ void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* TEMP: this should probably be done in a operating system specific
        manner, but this will do for now */
     if (remove(kstring_buf(filename))) {
-	/* TODO: more meaningful error msg, include errno */
-	klispE_throw_simple(K, "the file couldn't be deleted");
-	return;
+        klispE_throw_errno_with_irritants(K, "remove", 1, filename);
+        return;
     } else {
 	kapply_cc(K, KINERT);
 	return;
@@ -628,9 +627,8 @@ void rename_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* TEMP: this should probably be done in a operating system specific
        manner, but this will do for now */
     if (rename(kstring_buf(old_filename), kstring_buf(new_filename))) {
-	/* TODO: more meaningful error msg, include errno */
-	klispE_throw_simple(K, "the file couldn't be renamed");
-	return;
+        klispE_throw_errno_with_irritants(K, "rename", 2, old_filename, new_filename);
+        return;
     } else {
 	kapply_cc(K, KINERT);
 	return;

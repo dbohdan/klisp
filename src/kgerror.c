@@ -50,6 +50,26 @@ void error_object_irritants(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, err_obj->irritants);
 }
 
+void do_exception_cont(klisp_State *K, TValue *xparams, TValue obj)
+{
+    UNUSED(xparams);
+    /* Just pass error object to general error continuation. */
+    kapply_cc(K, obj);
+}
+
+/* Create system-error-continuation. */
+void kinit_error_hierarchy(klisp_State *K)
+{
+    assert(ttiscontinuation(K->error_cont));
+    assert(ttisinert(K->system_error_cont));
+
+    K->system_error_cont = kmake_continuation(K, K->error_cont, do_exception_cont, 0);
+    TValue symbol = ksymbol_new(K, "system-error-continuation", KNIL);
+    krooted_tvs_push(K, symbol);
+    kadd_binding(K, K->ground_env, symbol, K->system_error_cont);
+    krooted_tvs_pop(K);
+}
+
 /* init ground */
 void kinit_error_ground_env(klisp_State *K)
 {

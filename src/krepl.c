@@ -19,6 +19,7 @@
 #include "ksymbol.h"
 #include "kport.h"
 #include "kpair.h"
+#include "kgerror.h"
 /* for names */
 #include "ktable.h"
 
@@ -263,6 +264,9 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
+
+    /* Create error continuation hierarchy. */
+    kinit_error_hierarchy(K);
 
     #if KTRACK_SI
     /* save the root cont in next_si to let the loop continuations have 

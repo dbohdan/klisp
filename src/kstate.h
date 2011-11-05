@@ -73,6 +73,7 @@ struct klisp_State {
     /* it is used in get-module */
     TValue root_cont; 
     TValue error_cont;
+    TValue system_error_cont;  /* initialized by kinit_error_hierarchy() */
 
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;         /* auxiliary data to `frealloc' */

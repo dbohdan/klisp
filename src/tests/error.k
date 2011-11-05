@@ -44,3 +44,26 @@
   ($check-error (error-object-irritants))
   ($check-error (error-object-irritants e1 e2))
   ($check-error (error-object-irritants "not an error object")))
+
+;; XXX system-error-continuation
+
+($check-predicate (continuation? system-error-continuation))
+
+($let*
+  ( (catch-system-error
+      ($lambda (proc)
+        (guard-dynamic-extent
+        ()
+        proc
+        (list (list system-error-continuation
+          ($lambda (obj divert)
+            ($let
+              ( ( ((service code message errno) . tail)
+                  (error-object-irritants obj)))
+              (apply divert (list* service code tail))))))))))
+
+    ($check equal?
+      (catch-system-error
+        ($lambda ()
+          (rename-file "nonexistent-file-name" "other-file-name")))
+        (list "rename" "ENOENT" "nonexistent-file-name" "other-file-name")))
