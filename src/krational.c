@@ -102,7 +102,11 @@ bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out
 
     /* check to see if there was a decimal point, will only
      be written to out_decimalp if no error ocurr */
-    bool decimalp = memchr(buf, '.', *end - buf) != NULL;
+    /* TEMP: mp_rat_read_ustring does not set *end if an error occurs.
+     * Do not let memchr() read past the end of the buffer. */
+    bool decimalp = (ret_val == MP_OK || ret_val == MP_TRUNC)
+      ? (memchr(buf, '.', *end - buf) != NULL)
+      : false;
 
     /* handle exponents, avoid the case where the number finishes
      in a decimal point (this isn't allowed by kernel */
