@@ -67,7 +67,7 @@ academic and commercial purposes at absolutely no cost.  The two
 projects whose code klisp uses, Lua & IMath, are also distributed under
 the MIT license.
 
-   * klisp Parts: Copyright (C) 2011 Andres Navarro.
+   * klisp Parts: Copyright (C) 2011 Andres Navarro, Oto Havle.
 
    * Lua Parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
 
@@ -136,11 +136,12 @@ applicatives themselves are mere facilitators to computation.
 
    klisp is freely available for both academic and commercial purposes.
 See LICENSE for details.  it can be downloaded at
-`http://www.bitbucket.org/AndresNavarro/klisp'
+`https://bitbucket.org/AndresNavarro/klisp'
 
    klisp is developed by Andres Navarro, a Computer Science
 undergraduate at Buenos Aires University (UBA).  You can reach him at
-<canavarro82@gmail.com>.
+<canavarro82@gmail.com>. Significant contributions are being done by
+Oto Havle, his fork is at `https://bitbucket.org/havleoto/klisp'.
 
    This manual describes klisp version 0.2, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel
@@ -2706,32 +2707,32 @@ Index
 Tag Table:
 Node: Top703
 Node: License2601
-Node: Introduction4272
-Node: Caveats7095
-Node: Kernel History7881
-Node: Conventions9326
-Node: Some Terms9997
-Node: Evaluation Notation10668
-Node: Printing Notation11689
-Node: Error Messages12165
-Node: Format of Descriptions12813
-Node: A Sample Applicative Description13377
-Node: Acknowledgements15140
-Node: Booleans15526
-Node: Equivalence18068
-Node: Symbols18861
-Node: Control20227
-Node: Pairs and lists22544
-Node: Environments39567
-Node: Combiners49774
-Node: Continuations55810
-Node: Encapsulations63984
-Node: Promises65437
-Node: Keyed Variables69360
-Node: Numbers72131
-Node: Strings91630
-Node: Characters96977
-Node: Ports99687
-Node: Alphabetical Index112662
+Node: Introduction4283
+Node: Caveats7213
+Node: Kernel History7999
+Node: Conventions9444
+Node: Some Terms10115
+Node: Evaluation Notation10786
+Node: Printing Notation11807
+Node: Error Messages12283
+Node: Format of Descriptions12931
+Node: A Sample Applicative Description13495
+Node: Acknowledgements15258
+Node: Booleans15644
+Node: Equivalence18186
+Node: Symbols18979
+Node: Control20345
+Node: Pairs and lists22662
+Node: Environments39685
+Node: Combiners49892
+Node: Continuations55928
+Node: Encapsulations64102
+Node: Promises65555
+Node: Keyed Variables69478
+Node: Numbers72249
+Node: Strings91748
+Node: Characters97095
+Node: Ports99805
+Node: Alphabetical Index112780
 
 End Tag Table

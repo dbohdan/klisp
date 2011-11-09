@@ -606,6 +606,8 @@ void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* TEMP: this should probably be done in a operating system specific
        manner, but this will do for now */
+    /* XXX: this could fail if there's a dead (in the gc sense) port still 
+       open, should probably retry once after doing a complete GC */
     if (remove(kstring_buf(filename))) {
         klispE_throw_errno_with_irritants(K, "remove", 1, filename);
         return;
@@ -626,6 +628,8 @@ void rename_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     /* TEMP: this should probably be done in a operating system specific
        manner, but this will do for now */
+    /* XXX: this could fail if there's a dead (in the gc sense) port still 
+       open, should probably retry once after doing a complete GC */
     if (rename(kstring_buf(old_filename), kstring_buf(new_filename))) {
         klispE_throw_errno_with_irritants(K, "rename", 2, old_filename, new_filename);
         return;

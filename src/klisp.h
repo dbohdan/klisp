@@ -38,8 +38,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud);
 void klisp_close (klisp_State *K);
 
 /******************************************************************************
-* Copyright (C) 2011 Andres Navarro.  All rights reserved.
-* Lua parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio. All rights reserved.
+* Copyright (C) 2011 Andres Navarro, Oto Havle.
+* Lua parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
 * IMath Parts: Copyright (C) 2002-2007 Michael J. Fromberger.
 * srfi-78: Copyright (C) 2005-2006 Sebastian Egner.
 *

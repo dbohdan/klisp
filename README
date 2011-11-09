@@ -22,7 +22,7 @@ README for klisp 0.2
   klisp is freely available for both academic and commercial purposes.
   See COPYRIGHT for details.
   klisp can be downloaded at
-  http://www.bitbucket.org/AndresNavarro/klisp
+  https://bitbucket.org/AndresNavarro/klisp
 
 
 * Installation
@@ -41,5 +41,7 @@ README for klisp 0.2
   klisp is developed by Andres Navarro, a Computer Science
   undergraduate at Buenos Aires University (UBA). You can reach him at
   <canavarro82@gmail.com>.
+  Significant contributions are being made by Oto Havle in his fork
+  over at https://bitbucket.org/havleoto/klisp
 
 (end of README)
