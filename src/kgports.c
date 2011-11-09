@@ -331,10 +331,6 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
 /* GC: assume port is rooted */
 TValue read_all_expr(klisp_State *K, TValue port)
 {
-    /* support unix script directive #! */
-    int line_count = kscript_eat_directive(kport_file(port));
-    kport_line(port) += line_count;
-
     /* GC: root dummy and obj */
     TValue tail = kget_dummy1(K);
     TValue obj = KINERT;
@@ -555,6 +551,94 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
+/* 15.1.? flush-output-port */
+void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue port = ptree;
+
+    if (!get_opt_tpar(K, "flush-output-port", K_TPORT, &port)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } else if (!kport_is_output(port)) {
+	klispE_throw_simple(K, "the port should be an output port");
+	return;
+    } 
+    if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    FILE *file = kport_file(port);
+    if (file) { /* only do for file ports */
+	UNUSED(fflush(file)); /* TEMP for now don't signal errors on flush */
+    }
+    kapply_cc(K, KINERT);
+}
+
+/* 15.1.? file-exists? */
+void file_existsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "string", ttisstring, filename);
+
+    /* TEMP: this should probably be done in a operating system specific
+       manner, but this will do for now */
+    TValue res = KFALSE;
+    FILE *file = fopen(kstring_buf(filename), "r");
+    if (file) {
+	res = KTRUE;
+	UNUSED(fclose(file));
+    }
+    kapply_cc(K, res);
+}
+
+/* 15.1.? delete-file */
+void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "string", ttisstring, filename);
+
+    /* TEMP: this should probably be done in a operating system specific
+       manner, but this will do for now */
+    /* XXX: this could fail if there's a dead (in the gc sense) port still 
+       open, should probably retry once after doing a complete GC */
+    if (remove(kstring_buf(filename))) {
+        klispE_throw_errno_with_irritants(K, "remove", 1, filename);
+        return;
+    } else {
+	kapply_cc(K, KINERT);
+	return;
+    }
+}
+
+/* 15.1.? rename-file */
+void rename_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_2tp(K, ptree, "string", ttisstring, old_filename, 
+	     "string", ttisstring, new_filename);
+
+    /* TEMP: this should probably be done in a operating system specific
+       manner, but this will do for now */
+    /* XXX: this could fail if there's a dead (in the gc sense) port still 
+       open, should probably retry once after doing a complete GC */
+    if (rename(kstring_buf(old_filename), kstring_buf(new_filename))) {
+        klispE_throw_errno_with_irritants(K, "rename", 2, old_filename, new_filename);
+        return;
+    } else {
+	kapply_cc(K, KINERT);
+	return;
+    }
+}
+
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K)
 {
@@ -637,10 +721,28 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.2.? display */
     add_applicative(K, ground_env, "display", display, 0);
 
-    /* MAYBE: That's all there is in the report combined with r5rs scheme, 
-       but we will probably need: file-exists?, rename-file and remove-file.
-       It would also be good to be able to select between append, truncate and
-       error if a file exists, but that would need to be an option in all three 
-       methods of opening. Also some directory checking, traversing etc */
-    /* BUT SEE r7rs draft for some of the above */
+    /* r7rs */
+
+    /* 15.1.? flush-output-port */
+    add_applicative(K, ground_env, "flush-output-port", flush, 0);
+
+    /* 15.1.? file-exists? */
+    add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
+
+    /* 15.1.? delete-file */
+    add_applicative(K, ground_env, "delete-file", delete_file, 0);
+
+    /* this isn't in r7rs but it's in ansi c and quite easy to implement */
+
+    /* 15.1.? rename-file */
+    add_applicative(K, ground_env, "rename-file", rename_file, 0);
+
+    /*
+     * That's all there is in the report combined with r5rs and r7rs scheme.
+     * TODO
+     * It would be good to be able to select between append, truncate and
+     * error if a file exists, but that would need to be an option in all three 
+     * methods of opening. Also some directory checking, traversing, etc,
+     * would be nice
+     */
 }

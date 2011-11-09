@@ -19,6 +19,7 @@
 #include "ksymbol.h"
 #include "kport.h"
 #include "kpair.h"
+#include "kgerror.h"
 /* for names */
 #include "ktable.h"
 
@@ -68,6 +69,8 @@ void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
     if (ttiseof(obj)) {
 	/* read [EOF], should terminate the repl */
 	/* this will in turn call main_cont */
+	/* print a newline to allow the shell a fresh line */
+	printf("\n");
 	kset_cc(K, K->root_cont);
 	kapply_cc(K, KINERT);
     } else {
@@ -261,6 +264,9 @@ void kinit_repl(klisp_State *K)
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
+
+    /* Create error continuation hierarchy. */
+    kinit_error_hierarchy(K);
 
     #if KTRACK_SI
     /* save the root cont in next_si to let the loop continuations have 

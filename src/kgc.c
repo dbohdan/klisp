@@ -580,6 +580,7 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->module_params_sym);
     markvalue(K, K->root_cont);
     markvalue(K, K->error_cont);
+    markvalue(K, K->system_error_cont);
 
     markvalue(K, K->kd_in_port_key);
     markvalue(K, K->kd_out_port_key);

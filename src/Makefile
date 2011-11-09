@@ -15,6 +15,12 @@ RANLIB= ranlib
 RM= rm -f
 LIBS= -lm $(MYLIBS)
 
+# Set USE_LIBFFI=1 (or other nonempty string) to enable libffi-dependent
+# code.
+USE_LIBFFI=
+MINGW_LIBFFI_CFLAGS = -I/usr/local/lib/libffi-3.0.10/include
+MINGW_LIBFFI_LDFLAGS = -L/usr/local/lib/
+
 MYCFLAGS=
 MYLDFLAGS=
 MYLIBS=
@@ -34,7 +40,9 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
 	kgenv_mut.o kgcombiners.o kgcontinuations.o kgencapsulations.o \
 	kgpromises.o kgkd_vars.o kgks_vars.o kgports.o kgchars.o kgnumbers.o \
-	kgstrings.o kgblobs.o kgsystem.o
+	kgstrings.o kgblobs.o kgsystem.o kgerror.o \
+	$(if $(USE_LIBFFI),kgffi.o)
+
 # TEMP: in klisp there is no distinction between core & lib
 LIB_O= 
 
@@ -54,7 +62,7 @@ o:	$(ALL_O)
 a:	$(ALL_A)
 
 $(KRN_A): $(CORE_O) $(LIB_O)
-	$(AR) $@ $?
+	$(AR) $@ $? $(MINGW_LDFLAGS)
 	$(RANLIB) $@
 
 $(KRN_T): $(KRN_O) $(KRN_A)
@@ -88,11 +96,18 @@ generic:
 
 mingw:
 	$(MAKE) "KRN_A=klisp01.dll" "KRN_T=klisp.exe" \
-	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
-	"MYCFLAGS=-DKLISP_BUILD_AS_DLL" "MYLIBS=" "MYLDFLAGS=-s" klisp.exe
+	"AR=$(CC) -shared -o" \
+	"RANLIB=strip --strip-unneeded" \
+	"MYCFLAGS=-DKLISP_BUILD_AS_DLL $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1 $(MINGW_LIBFFI_CFLAGS))" \
+	"MYLIBS=$(if $(USE_LIBFFI), $(MINGW_LIBFFI_LDFLAGS) -lffi.dll)" \
+	"MINGW_LDFLAGS=$(if $(USE_LIBFFI), $(MINGW_LIBFFI_LDFLAGS) -lffi.dll)" \
+	"MYLDFLAGS=-s" klisp.exe
 #lisp_use_posix isn't used right now...
+# TEMP: rename read() and write() here to avoid name conflicts with foreign code
 posix:
-	$(MAKE) all MYCFLAGS=-DKLISP_USE_POSIX
+	$(MAKE) all \
+		"MYCFLAGS=-DKLISP_USE_POSIX $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1 -Dread=klisp_read -Dwrite=klisp_write)" \
+		"MYLIBS=$(if $(USE_LIBFFI), -ldl -lffi)"
 
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all default o clean
@@ -160,6 +175,10 @@ kgequalp.o: kgequalp.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kpair.h kgc.h kstring.h kblob.h kcontinuation.h kerror.h \
  kghelpers.h kapplicative.h koperative.h kenvironment.h ksymbol.h kgeqp.h \
  kinteger.h imath.h krational.h imrat.h kgequalp.h
+kgerror.o: kgerror.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
+ ktoken.h kmem.h kstring.h kpair.h kgc.h kerror.h kghelpers.h \
+ kapplicative.h koperative.h kcontinuation.h kenvironment.h ksymbol.h \
+ kgerror.h 
 kghelpers.o: kghelpers.c kghelpers.h kstate.h klimits.h klisp.h kobject.h \
  klispconf.h ktoken.h kmem.h kerror.h kpair.h kgc.h kapplicative.h \
  koperative.h kcontinuation.h kenvironment.h ksymbol.h kstring.h
@@ -199,7 +218,8 @@ kground.o: kground.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kgequalp.h kgsymbols.h kgcontrol.h kgpairs_lists.h kgpair_mut.h \
  kgenvironments.h kgenv_mut.h kgcombiners.h kgcontinuations.h \
  kgencapsulations.h kgpromises.h kgkd_vars.h kgks_vars.h kgnumbers.h \
- kgstrings.h kgchars.h kgports.h kgblobs.h ktable.h keval.h krepl.h kscript.h kgsystem.h
+ kgstrings.h kgchars.h kgports.h kgblobs.h ktable.h keval.h krepl.h \
+ kscript.h kgsystem.h kgerror.h kgffi.h
 kgstrings.o: kgstrings.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  ksymbol.h kstring.h kghelpers.h kpair.h kgc.h kenvironment.h kgchars.h \
@@ -212,6 +232,10 @@ kgsystem.o: kgsystem.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kpair.h kgc.h kerror.h kghelpers.h kapplicative.h \
  koperative.h kcontinuation.h kenvironment.h ksymbol.h kstring.h \
  kgsystem.h
+kgffi.o: kgsystem.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
+ ktoken.h kmem.h kpair.h kgc.h kerror.h kghelpers.h kapplicative.h \
+ koperative.h kcontinuation.h kenvironment.h ksymbol.h kstring.h \
+ kblob.h kencapsulation.h kgencapsulations.h kgffi.h
 kinteger.o: kinteger.c kinteger.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h imath.h kgc.h
 klisp.o: klisp.c klimits.h klisp.h kobject.h klispconf.h kstate.h \

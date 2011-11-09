@@ -9,7 +9,7 @@ under the MIT license.
 
 ===============================================================================
 
-klisp Parts: Copyright (C) 2011 Andres Navarro.
+klisp Parts: Copyright (C) 2011 Andres Navarro, Oto Havle.
 Lua Parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
 IMath Parts: Copyright (C) 2002-2007 Michael J. Fromberger.
 srfi-78: Copyright (C) 2005-2006 Sebastian Egner.

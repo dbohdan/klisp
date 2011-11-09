@@ -12,7 +12,7 @@ under the MIT license.
 
 @itemize @bullet
 @item 
-klisp Parts: Copyright @copyright{} 2011 Andres Navarro.
+klisp Parts: Copyright @copyright{} 2011 Andres Navarro, Oto Havle.
 @item 
 Lua Parts: Copyright @copyright{} 1994-2010 Lua.org, PUC-Rio.
 @item 
@@ -78,20 +78,22 @@ done); applicatives themselves are mere facilitators to computation.
 
   klisp is freely available for both academic and commercial purposes.
 See LICENSE for details.  it can be downloaded at 
-@url{http://www.bitbucket.org/AndresNavarro/klisp}
+@url{https://bitbucket.org/AndresNavarro/klisp}
 
   klisp is developed by Andres Navarro, a Computer Science
 undergraduate at Buenos Aires University (UBA).  You can reach him at
-@email{canavarro82@@gmail.com}.
+@email{canavarro82@@gmail.com}. Significant contributions are being
+done by Oto Havle, his fork is at 
+@url{https://bitbucket.org/havleoto/klisp}.
 
-  This manual describes klisp version 0.1, presuming some familiarity
+  This manual describes klisp version 0.2, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel 
 Programming Language in particular.  There are frequent references to
 the Kernel Programming Language Report.  Unlike in the report, no
 rationale is provided for any feature, only a description of the
 implemented functionality. 
 
-  This is edition 0.1.
+  This is edition 0.2.
 
 @menu
 * Caveats::                Flaws and a request for help.

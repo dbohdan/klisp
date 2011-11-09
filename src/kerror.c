@@ -2,12 +2,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
 #include "klisp.h"
 #include "kpair.h"
 #include "kstate.h"
 #include "kmem.h"
 #include "kstring.h"
+#include "kerror.h"
 
 /* TODO: check that all objects passed to throw are rooted */
 
@@ -97,4 +100,112 @@ void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
     clear_buffers(K); /* this pops both error_msg & error_obj */
     /* call_cont protects error from gc */
     kcall_cont(K, K->error_cont, error_obj);
+}
+
+void klispE_throw_system_error_with_irritants(klisp_State *K, const char *service, int errnum, TValue irritants)
+{
+    TValue error_description = klispE_describe_errno(K, service, errnum);
+    krooted_tvs_push(K, error_description);
+    TValue all_irritants = kimm_cons(K, error_description, irritants);
+    krooted_tvs_push(K, all_irritants);
+    TValue error_obj = klispE_new(K, K->next_obj, K->curr_cont,
+                                  kcaddr(error_description),
+                                  all_irritants);
+    krooted_tvs_push(K, error_obj);
+    clear_buffers(K);
+    kcall_cont(K, K->system_error_cont, error_obj);
+}
+
+/* The array symbolic_error_codes[] assigns locale and target
+ * platform configuration independent strings to errno values.
+ *
+ * Generated from Linux header files:
+ *
+ * awk '{printf("    c(%s),\n", $2)}' /usr/include/asm-generic/errno-base.h
+ * awk '{printf("    c(%s),\n", $2)}' /usr/include/asm-generic/errno.h
+ *
+ * and removed errnos not present in mingw.
+ *
+ */
+#define c(N) [N] = # N
+static const char * const symbolic_error_codes[] = {
+    c(EPERM),
+    c(ENOENT),
+    c(ESRCH),
+    c(EINTR),
+    c(EIO),
+    c(ENXIO),
+    c(E2BIG),
+    c(ENOEXEC),
+    c(EBADF),
+    c(ECHILD),
+    c(EAGAIN),
+    c(ENOMEM),
+    c(EACCES),
+    c(EFAULT),
+    c(EBUSY),
+    c(EEXIST),
+    c(EXDEV),
+    c(ENODEV),
+    c(ENOTDIR),
+    c(EISDIR),
+    c(EINVAL),
+    c(ENFILE),
+    c(EMFILE),
+    c(ENOTTY),
+    c(EFBIG),
+    c(ENOSPC),
+    c(ESPIPE),
+    c(EROFS),
+    c(EMLINK),
+    c(EPIPE),
+    c(EDOM),
+    c(ERANGE),
+    /**/
+    c(EDEADLK),
+    c(ENAMETOOLONG),
+    c(ENOLCK),
+    c(ENOSYS),
+    c(ENOTEMPTY),
+};
+#undef c
+
+/* klispE_describe_errno(K, ERRNUM, SERVICE) returns a list
+ *
+ *    (SERVICE CODE MESSAGE ERRNUM)
+ *
+ *  SERVICE (string) identifies the failed system call or service,
+ *  e.g. "rename" or "fopen".
+ *
+ *  CODE (string) is a platform-independent symbolic representation
+ *  of the error. It corresponds to symbolic constants of <errno.h>,
+ *  e.g. "ENOENT" or "ENOMEM".
+ *
+ *  MESSAGE (string) platform-dependent human-readable description.
+ *  The MESSAGE may depend on locale or operating system configuration.
+ *
+ *  ERRNUM (fixint) is the value of errno for debugging puroposes.
+ *
+ */
+TValue klispE_describe_errno(klisp_State *K, const char *service, int errnum)
+{
+    const char *code = NULL;
+    int tabsize = sizeof(symbolic_error_codes) / sizeof(symbolic_error_codes[0]);
+    if (0 <= errnum && errnum < tabsize)
+        code = symbolic_error_codes[errnum];
+    if (code == NULL)
+        code = "UNKNOWN";
+
+    TValue service_tv = kstring_new_b_imm(K, service);
+    krooted_tvs_push(K, service_tv);
+    TValue code_tv = kstring_new_b_imm(K, code);
+    krooted_tvs_push(K, code_tv);
+    TValue message_tv = kstring_new_b_imm(K, strerror(errnum));
+    krooted_tvs_push(K, message_tv);
+
+    TValue v = kimm_list(K, 4, service_tv, code_tv, message_tv, i2tv(errnum));
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    return v;
 }

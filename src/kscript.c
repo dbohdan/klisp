@@ -21,6 +21,7 @@
 #include "kport.h"
 #include "kpair.h"
 #include "kgcontrol.h"
+#include "kgerror.h"
 /* for names */
 #include "ktable.h"
 
@@ -225,6 +226,9 @@ void kinit_script(klisp_State *K, int argc, char *argv[])
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
 
+    /* Create error continuation hierarchy. */
+    kinit_error_hierarchy(K);
+
     TValue argv_value = RSI(argv2value(K, argc, argv));
     TValue loader = RSI(loader_body(K, argv_value, std_env));
     TValue loader_cont = RSI(kmake_continuation(K, root_cont, do_seq, 2, loader, std_env));
@@ -241,28 +245,4 @@ void kinit_script(klisp_State *K, int argc, char *argv[])
 #undef R
 #undef RSI
 #undef G
-}
-
-/* skips the unix script directive (#!), if present.
-   returns number of lines skipped */
-int kscript_eat_directive(FILE *fr)
-{
-  static const char pattern[] = "#! ";
-  int c, n = 0;
-
-  while (pattern[n] != '\0' && (c = getc(fr), c == pattern[n]))
-    n++;
-
-  if (pattern[n] == '\0') {
-    while (c = getc(fr), c != EOF && c != '\n')
-      ;
-    return 1;
-  } else {
-    ungetc(c, fr);
-    /* XXX/Temp notice that the standard doesn't guarantee that more than one
-       ungetc in a row will be honored. Andres Navarro */
-    while (n > 0)
-      ungetc(pattern[--n], fr);
-    return 0;
-  }
 }

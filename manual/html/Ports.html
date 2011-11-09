@@ -317,6 +317,55 @@ within those strings and character objects are output as if by
         <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
 </p></blockquote></div>
 
+<div class="defun">
+&mdash; flush-output-port: <b>(</b><var>flush-output-port </var>[<var>port</var>])<var><a name="index-g_t_0028-282"></a></var><br>
+<blockquote><p>  If the <code>port</code> optional argument is not specified, then the
+value of the <code>output-port</code> keyed dynamic variable is used.  If
+the <code>port</code> is closed or if it is not an output port, an error is
+signaled.
+
+        <p>Applicative <code>flush-ouput-port</code> flushes any buffered data in the
+output port to the underlying file or device. The result returned by
+<code>flush-output-port</code> is inert.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from r7rs Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; file-exists?: <b>(</b><var>file-exists? string</var>)<var><a name="index-g_t_0028-283"></a></var><br>
+<blockquote><p>  <code>string</code> should be the name/path for a file.
+
+        <p>Predicate <code>file-exists?</code> checks to see if a file named
+<code>string</code> exists.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from r7rs Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; delete-file: <b>(</b><var>delete-file string</var>)<var><a name="index-g_t_0028-284"></a></var><br>
+<blockquote><p>  <code>string</code> should be the name/path for an existing file.
+
+        <p>Applicative <code>delete-file</code> deletes the file named <code>string</code>. 
+If it doesn't exists or can't be deleted, an error is signaled. The
+result returned by <code>delete-file</code> is inert.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from r7rs Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; rename-file: <b>(</b><var>rename-file string1 string2</var>)<var><a name="index-g_t_0028-285"></a></var><br>
+<blockquote><p>  <code>string1</code> should be the name/path for an existing file,
+<code>string2</code> should be the name/path for a non existing file.
+
+        <p>Applicative <code>rename-file</code> renames the file named <code>string1</code>
+to <code>string2</code>. If the file doesn't exists or can't be renamed for
+any reason, an error is signaled. The result returned by
+<code>rename-file</code> is inert.
+
+        <p>SOURCE NOTE: this is missing from Kernel AND Scheme, it is taken
+from C, being quite similar to <code>delete-file</code>. 
+</p></blockquote></div>
+
 <!-- appendices -->
 <!-- TODO -->
 <!-- *-texinfo-*- -->

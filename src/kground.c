@@ -37,6 +37,11 @@
 #include "kgports.h"
 #include "kgblobs.h"
 #include "kgsystem.h"
+#include "kgerror.h"
+
+#if KUSE_LIBFFI
+#  include "kgffi.h"
+#endif
 
 /* for initing cont names */
 #include "ktable.h"
@@ -139,6 +144,10 @@ void kinit_ground_env(klisp_State *K)
     kinit_ports_ground_env(K);
     kinit_blobs_ground_env(K);
     kinit_system_ground_env(K);
+    kinit_error_ground_env(K);
+#if KUSE_LIBFFI
+    kinit_ffi_ground_env(K);
+#endif
 
     /*
     ** Initialize the names of the continuation used in

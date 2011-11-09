@@ -238,7 +238,8 @@ void ktok_set_source_info(klisp_State *K, TValue filename, int32_t line,
 /*
 ** ktok_read_token() helpers
 */
-void ktok_ignore_whitespace_and_comments(klisp_State *K);
+void ktok_ignore_whitespace(klisp_State *K);
+void ktok_ignore_single_line_comment(klisp_State *K);
 bool ktok_check_delimiter(klisp_State *K);
 TValue ktok_read_string(klisp_State *K);
 TValue ktok_read_special(klisp_State *K);
@@ -256,82 +257,92 @@ TValue ktok_read_token(klisp_State *K)
 {
     assert(ks_tbisempty(K));
 
-    ktok_ignore_whitespace_and_comments(K);
-    /*
-    ** NOTE: We jumped over all whitespace
-    ** so either the next token starts here or eof was reached, 
-    ** in any case we save the location of the port
-    */
+    while(true) {
+	ktok_ignore_whitespace(K);
 
-    /* save the source info of the start of the next token */
-    ktok_save_source_info(K);
+	/* save the source info in case a token starts here */
+	ktok_save_source_info(K);
 
-    int chi = ktok_peekc(K);
+	int chi = ktok_peekc(K);
 
-    switch(chi) {
-    case EOF:
-	ktok_getc(K);
-	return KEOF;
-    case '(':
-	ktok_getc(K);
-	return K->ktok_lparen;
-    case ')':
-	ktok_getc(K);
-	return K->ktok_rparen;
-    case '.':
-	ktok_getc(K);
-	if (ktok_check_delimiter(K))
-	    return K->ktok_dot;
-	else {
-	    ktok_error(K, "no delimiter found after dot");
+	switch(chi) {
+	case EOF:
+	    ktok_getc(K);
+	    return KEOF;
+	case ';':
+	    ktok_ignore_single_line_comment(K);
+	    continue;
+	case '(':
+	    ktok_getc(K);
+	    return K->ktok_lparen;
+	case ')':
+	    ktok_getc(K);
+	    return K->ktok_rparen;
+	case '.':
+	    ktok_getc(K);
+	    if (ktok_check_delimiter(K))
+		return K->ktok_dot;
+	    else {
+		ktok_error(K, "no delimiter found after dot");
+		/* avoid warning */
+		return KINERT;
+	    }
+	case '"':
+	    return ktok_read_string(K);
+/* TODO use read_until_delimiter in all these cases */
+	case '#': {
+	    ktok_getc(K);
+	    chi = ktok_peekc(K);
+	    if ((chi != EOF) && (char) chi == '!') {
+		/* this handles the #! style script header too! */
+		ktok_ignore_single_line_comment(K);
+		continue;
+	    } else {
+		/* also handles EOF case */
+		return ktok_read_special(K);
+	    }
+	}
+	case '0': case '1': case '2': case '3': case '4': 
+	case '5': case '6': case '7': case '8': case '9': {
+	    /* positive number, no exactness or radix indicator */
+	    int32_t buf_len = ktok_read_until_delimiter(K);
+	    char *buf = ks_tbget_buffer(K);
+	    /* read number should free the tbbuffer */
+	    return ktok_read_number(K, buf, buf_len, false, false, false, 10);
+	}
+	case '+': case '-':
+	    /* signed number, no exactness or radix indicator */
+	    return ktok_read_maybe_signed_numeric(K);
+	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': 
+	case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': 
+	case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': 
+	case 'V': case 'W': case 'X': case 'Y': case 'Z': 
+	case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
+	case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
+	case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': 
+	case 'v': case 'w': case 'x': case 'y': case 'z': 
+	case '!': case '$': case '%': case '&': case '*': case '/': case ':': 
+	case '<': case '=': case '>': case '?': case '@': case '^': case '_': 
+	case '~': 
+	    /*
+	    ** NOTE: the cases for '+', '-', '.' and numbers were already 
+	    ** considered so identifier-subsequent is used instead of 
+	    ** identifier-first-char (in the cases above)
+	    */
+	    return ktok_read_identifier(K);
+	default:
+	    ktok_getc(K);
+	    ktok_error(K, "unrecognized token starting char");
 	    /* avoid warning */
 	    return KINERT;
 	}
-    case '"':
-	return ktok_read_string(K);
-/* TODO use read_until_delimiter in all these cases */
-    case '#':
-	return ktok_read_special(K);
-    case '0': case '1': case '2': case '3': case '4': 
-    case '5': case '6': case '7': case '8': case '9': {
-        /* positive number, no exactness or radix indicator */
-	int32_t buf_len = ktok_read_until_delimiter(K);
-	char *buf = ks_tbget_buffer(K);
-	/* read number should free the tbbuffer */
-	return ktok_read_number(K, buf, buf_len, false, false, false, 10);
-	}
-    case '+': case '-':
-        /* signed number, no exactness or radix indicator */
-	return ktok_read_maybe_signed_numeric(K);
-    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': 
-    case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': 
-    case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': 
-    case 'V': case 'W': case 'X': case 'Y': case 'Z': 
-    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
-    case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
-    case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': 
-    case 'v': case 'w': case 'x': case 'y': case 'z': 
-    case '!': case '$': case '%': case '&': case '*': case '/': case ':': 
-    case '<': case '=': case '>': case '?': case '@': case '^': case '_': 
-    case '~': 
-	/*
-	** NOTE: the cases for '+', '-', '.' and numbers were already 
-	** considered so identifier-subsequent is used instead of 
-	** identifier-first-char (in the cases above)
-	*/
-	return ktok_read_identifier(K);
-    default:
-	ktok_getc(K);
-	ktok_error(K, "unrecognized token starting char");
-	/* avoid warning */
-	return KINERT;
     }
 }
 
 /*
 ** Comments and Whitespace
 */
-void ktok_ignore_comment(klisp_State *K)
+void ktok_ignore_single_line_comment(klisp_State *K)
 {
     int chi;
     do {
@@ -339,27 +350,47 @@ void ktok_ignore_comment(klisp_State *K)
     } while (chi != EOF && chi != '\n');
 }
 
-void ktok_ignore_whitespace_and_comments(klisp_State *K)
+void ktok_ignore_whitespace(klisp_State *K)
 {
-    /* NOTE: if it's not a whitespace or comment do nothing (even on eof) */
-    bool end = false;
-    while(!end) {
+    /* NOTE: if it's not whitespace do nothing (even on eof) */
+    while(true) {
 	int chi = ktok_peekc(K);
 
 	if (chi == EOF) {
-	    end = true; 
+	    return;
+	} else {
+	    char ch = (char) chi;
+	    if (ktok_is_whitespace(ch)) {
+		ktok_getc(K);
+	    } else {
+		return;
+	    }
+	}
+    }
+}
+
+/* XXX temp for repl */
+void ktok_ignore_whitespace_and_comments(klisp_State *K)
+{
+    /* NOTE: if it's not whitespace do nothing (even on eof) */
+    while(true) {
+	int chi = ktok_peekc(K);
+
+	if (chi == EOF) {
+	    return;
 	} else {
 	    char ch = (char) chi;
 	    if (ktok_is_whitespace(ch)) {
 		ktok_getc(K);
 	    } else if (ch == ';') {
-		ktok_ignore_comment(K); /* NOTE: this also reads again the ';' */
+		ktok_ignore_single_line_comment(K);
 	    } else {
-		end = true;
+		return;
 	    }
 	}
     }
 }
+
 
 /*
 ** Delimiter checking
@@ -541,8 +572,9 @@ struct kspecial_token {
 
 TValue ktok_read_special(klisp_State *K)
 {
-    /* the # is still pending (was only peeked) */
-    int32_t buf_len = ktok_read_until_delimiter(K);
+    /* the # is already consumed, add it manually */
+    ks_tbadd(K, '#');
+    int32_t buf_len = ktok_read_until_delimiter(K) + 1;
     char *buf = ks_tbget_buffer(K);
 
     if (buf_len < 2) {
