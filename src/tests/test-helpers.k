@@ -7,6 +7,12 @@
 ($define! not-equal? ($lambda (x y) (not? (equal? x y))))
 ($define! $check-predicate ($vau (x) denv (eval (list $check eq? x #t) denv)))
 ($define! $check-not-predicate ($vau (x) denv (eval (list $check eq? x #f) denv)))
+($define! $check-no-error ($vau (x) denv 
+			    (eval (list $check 
+					($lambda (#ignore #ignore) #t)
+					x 
+					#inert) 
+				  denv)))
 
 ($define! mutable-pair?
   ($lambda (obj)

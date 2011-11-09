@@ -31,7 +31,9 @@
 ($define! prepare-input
   ($lambda (text)
     (with-output-to-file temp-file
-      ($lambda () ($if (string? text) (display text) #inert)))))
+			 ($lambda () ($if (string? text) 
+					  (display text) 
+					  #inert)))))
 
 ($define! read-string-until-eof
   ($lambda ()
@@ -131,23 +133,25 @@
 ;; 15.1.5 open-input-file open-output-file
 ;; 15.1.6 close-input-file close-output-file
 
-($let ((p (open-input-file test-input-file)))
-  ($check-predicate (port? p))
-  ($check-predicate (input-port? p))
-  ($check-not-predicate (equal? p (get-current-input-port)))
-  ($check-not-predicate (equal? p (get-current-output-port)))
-  (close-input-file p)
-  (close-input-file p))
+($check-no-error
+ ($let ((p (open-input-file test-input-file)))
+   ($check-predicate (port? p))
+   ($check-predicate (input-port? p))
+   ($check-not-predicate (equal? p (get-current-input-port)))
+   ($check-not-predicate (equal? p (get-current-output-port)))
+   (close-input-file p)
+   (close-input-file p)))
 
 ($check-error (call-with-closed-output-port close-input-file))
 
-($let ((p (open-output-file temp-file)))
-  ($check-predicate (port? p))
-  ($check-predicate (output-port? p))
-  ($check-not-predicate (equal? p (get-current-input-port)))
-  ($check-not-predicate (equal? p (get-current-output-port)))
-  (close-output-file p)
-  (close-output-file p))
+($check-no-error  
+ ($let ((p (open-output-file temp-file)))
+   ($check-predicate (port? p))
+   ($check-predicate (output-port? p))
+   ($check-not-predicate (equal? p (get-current-input-port)))
+   ($check-not-predicate (equal? p (get-current-output-port)))
+   (close-output-file p)
+   (close-output-file p)))
 
 ($check-error (call-with-closed-input-port close-output-file))
 
@@ -292,20 +296,20 @@
 ($check-not-predicate (file-exists? nonexistent-file))
 ($check-not-predicate (file-exists? invalid-file))
 
-(prepare-input "test")
+($check-no-error (prepare-input "test"))
 ($check-predicate (file-exists? temp-file))
-(delete-file temp-file)
+($check-no-error (delete-file temp-file))
 ($check-not-predicate (file-exists? temp-file))
 ($check-error (delete-file nonexistent-file))
 ($check-error (delete-file invalid-file))
 
-(prepare-input "test")
+($check-no-error (prepare-input "test"))
 ($check-predicate (file-exists? temp-file))
 ($check-not-predicate (file-exists? temp-file-2))
-(rename-file temp-file temp-file-2)
+($check-no-error (rename-file temp-file temp-file-2))
 ($check-predicate (file-exists? temp-file-2))
 ($check-not-predicate (file-exists? temp-file))
-(delete-file temp-file-2)
+($check-no-error (delete-file temp-file-2))
 
 ($check-error (rename-file nonexistent-file temp-file))
 ($check-error (rename-file invalid-file temp-file))
