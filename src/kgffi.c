@@ -1078,6 +1078,15 @@ void ffi_type_suite(klisp_State *K, TValue *xparams,
     kapply_cc(K, suite_tv);
 }
 
+void ffi_klisp_state(klisp_State *K, TValue *xparams,
+                     TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    check_0p(K, ptree);
+    kapply_cc(K, p2tv(K));
+}
+
 /* init ground */
 void kinit_ffi_ground_env(klisp_State *K)
 {
@@ -1106,6 +1115,7 @@ void kinit_ffi_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "ffi-make-callback", ffi_make_callback, 2, cif_key, cb_tab);
     add_applicative(K, ground_env, "ffi-memmove", ffi_memmove, 0);
     add_applicative(K, ground_env, "ffi-type-suite", ffi_type_suite, 0);
+    add_applicative(K, ground_env, "ffi-klisp-state", ffi_klisp_state, 0);
     add_applicative(K, ground_env, "ffi-library?", enc_typep, 1, dll_key);
     add_applicative(K, ground_env, "ffi-call-interface?", enc_typep, 1, cif_key);
 }
