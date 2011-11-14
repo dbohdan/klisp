@@ -26,7 +26,6 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -153,7 +152,6 @@ void ktok_error(klisp_State *K, char *str)
 ** Underlying stream interface & source code location tracking
 */
 
-/* TODO check for error if getc returns EOF */
 int ktok_getc(klisp_State *K) {
     /* WORKAROUND: for stdin line buffering & reading of EOF */
     /* Is this really necessary?? double check */
@@ -166,6 +164,7 @@ int ktok_getc(klisp_State *K) {
 	    if (ferror(K->curr_in) != 0) {
 		/* clear error marker to allow retries later */
 		clearerr(K->curr_in);
+/* TODO put error info on the error obj */
 		ktok_error(K, "reading error");
 		return 0;
 	    } else { /* if (feof(K->curr_in) != 0) */
@@ -240,6 +239,7 @@ void ktok_set_source_info(klisp_State *K, TValue filename, int32_t line,
 */
 void ktok_ignore_whitespace(klisp_State *K);
 void ktok_ignore_single_line_comment(klisp_State *K);
+void ktok_ignore_multi_line_comment(klisp_State *K);
 bool ktok_check_delimiter(klisp_State *K);
 TValue ktok_read_string(klisp_State *K);
 TValue ktok_read_special(klisp_State *K);
@@ -255,7 +255,7 @@ int ktok_read_until_delimiter(klisp_State *K);
 */
 TValue ktok_read_token(klisp_State *K)
 {
-    assert(ks_tbisempty(K));
+    klisp_assert(ks_tbisempty(K));
 
     while(true) {
 	ktok_ignore_whitespace(K);
@@ -293,12 +293,25 @@ TValue ktok_read_token(klisp_State *K)
 	case '#': {
 	    ktok_getc(K);
 	    chi = ktok_peekc(K);
-	    if ((chi != EOF) && (char) chi == '!') {
+	    
+	    if (chi == EOF) {
+		ktok_error(K, "# constant is too short");
+		/* avoid warning */
+		return KINERT;
+	    }
+
+	    switch((char) chi) {
+	    case '!': /* single line comment (alternative syntax) */
 		/* this handles the #! style script header too! */
 		ktok_ignore_single_line_comment(K);
 		continue;
-	    } else {
-		/* also handles EOF case */
+	    case '|': /* nested/multiline comment */
+		ktok_getc(K); /* discard the '|' */
+		klisp_assert(K->ktok_nested_comments == 0);
+		K->ktok_nested_comments = 1;
+		ktok_ignore_multi_line_comment(K);
+		continue;
+	    default:
 		return ktok_read_special(K);
 	    }
 	}
@@ -330,8 +343,12 @@ TValue ktok_read_token(klisp_State *K)
 	    ** identifier-first-char (in the cases above)
 	    */
 	    return ktok_read_identifier(K);
+	case '|':
+	    /* TODO put special error msg if it was an unpaired '|#'
+	       comment close */
 	default:
 	    ktok_getc(K);
+	    /* TODO add char to error */
 	    ktok_error(K, "unrecognized token starting char");
 	    /* avoid warning */
 	    return KINERT;
@@ -348,6 +365,43 @@ void ktok_ignore_single_line_comment(klisp_State *K)
     do {
 	chi = ktok_getc(K);
     } while (chi != EOF && chi != '\n');
+}
+
+void ktok_ignore_multi_line_comment(klisp_State *K)
+{
+    /* the first "#|' was already read */
+    klisp_assert(K->ktok_nested_comments > 0);
+    int chi;
+    while(K->ktok_nested_comments > 0) {
+	do {
+	    chi = ktok_getc(K);
+	    if (chi == EOF)
+		goto eof_error;
+	} while (chi != '|' && chi != '#');
+
+	char first_char = (char) chi;
+
+	do {
+	    chi = ktok_getc(K);
+	    if (chi == EOF)
+		goto eof_error;
+	} while (chi == first_char);
+
+	if (chi == '#') {
+	    /* close comment (first char was '|', so the seq is "|#") */
+	    --K->ktok_nested_comments;
+	} else if (chi == '|') {
+	    /* open comment (first char was '#', so the seq is "#|") */
+	    klisp_assert(K->ktok_nested_comments < 1000);
+	    ++K->ktok_nested_comments;
+	} 
+        /* else lone '#' or '|', just continue */
+    }
+    return;
+eof_error:
+    /* TODO show number of open multi comments and source file info
+       of the last */
+    ktok_error(K, "unterminated multi line comment");
 }
 
 void ktok_ignore_whitespace(klisp_State *K)

@@ -180,6 +180,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ktok_source_info.line = 1; 
     K->ktok_source_info.col = 0;
 
+    K->ktok_nested_comments = 0;
+
     ktok_init(K);
 
     /* initialize reader */

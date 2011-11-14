@@ -132,6 +132,8 @@ struct klisp_State {
     int32_t ktok_buffer_idx;
     char *ktok_buffer;
 
+    int32_t ktok_nested_comments;
+
     /* reader */
     /* TODO: replace the list with a hashtable */
     TValue shared_dict;
