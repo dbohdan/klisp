@@ -346,9 +346,18 @@ TValue ktok_read_token(klisp_State *K)
 	case '|':
 	    /* TODO put special error msg if it was an unpaired '|#'
 	       comment close */
+	    ktok_getc(K);
+	    chi = ktok_peekc(K);
+	    if (chi == EOF || chi != '#')
+		goto unrecognized_error;
+	    ktok_getc(K);
+ 	    ktok_error(K, "unmatched |# found");
+	    /* avoid warning */
+	    return KINERT;
 	default:
 	    ktok_getc(K);
 	    /* TODO add char to error */
+	unrecognized_error:
 	    ktok_error(K, "unrecognized token starting char");
 	    /* avoid warning */
 	    return KINERT;
