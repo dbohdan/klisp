@@ -592,6 +592,7 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->ktok_lparen);
     markvalue(K, K->ktok_rparen);
     markvalue(K, K->ktok_dot);
+    markvalue(K, K->ktok_sexp_comment);
     markvalue(K, K->shared_dict);
 
     /* Mark all objects in the auxiliary stack,
