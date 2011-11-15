@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "kread.h"
 #include "kobject.h"
@@ -142,8 +141,9 @@ void change_shared_def(klisp_State *K, TValue def_token, TValue value)
 /* TEMP: For now we'll use just one big function */
 TValue kread_fsm(klisp_State *K)
 {
-    assert(ks_sisempty(K));
-    assert(ttisnil(K->shared_dict));
+    /* TODO replace some read errors with asserts where appropriate */
+    klisp_assert(ks_sisempty(K));
+    klisp_assert(ttisnil(K->shared_dict));
     push_state(K, ST_READ);
 
     /* read next token or process obj */
@@ -152,11 +152,12 @@ TValue kread_fsm(klisp_State *K)
     TValue obj = KINERT; /* put some value for gc */ 
     /* the source code information of that obj */
     TValue obj_si = KNIL; /* put some value for gc */ 
+    int32_t sexp_comments = 0;
 
     krooted_vars_push(K, &obj);
     krooted_vars_push(K, &obj_si);
 
-    while (!(get_state(K) == ST_READ && !read_next_token)) {
+    while (!(get_state(K) == ST_READ && sexp_comments == 0 && !read_next_token)) {
 	if (read_next_token) {
 	    TValue tok = ktok_read_token(K); /* only root it when necessary */
 
@@ -344,6 +345,14 @@ TValue kread_fsm(klisp_State *K)
 		    }
 		    break;
 		}
+		case ';': { /* sexp comment */
+		    /* TODO save sexp comment source info */
+		    klisp_assert(sexp_comments < 1000);
+		    ++sexp_comments;
+		    push_state(K, ST_READ);
+		    read_next_token = true;
+		    break;
+		}
 		default:
 		    /* shouldn't happen */
 		    kread_error(K, "unknown special token");
@@ -353,10 +362,17 @@ TValue kread_fsm(klisp_State *K)
 	    } else if (ttiseof(tok)) {
 		switch (get_state(K)) {
 		case ST_READ:
+		    if (sexp_comments == 0) {
 		    /* will exit in next loop */
-		    obj = tok;
-		    obj_si = ktok_get_source_info(K);
-		    read_next_token = false;
+			obj = tok;
+			obj_si = ktok_get_source_info(K);
+			read_next_token = false;
+		    } else {
+			/* TODO show source info (and number of sexp comments) */
+			kread_error(K, "EOF found while reading sexp comment");
+			/* avoid warning */
+			return KINERT;		    
+		    }
 		    break;
 		case ST_FIRST_LIST:
 		case ST_MIDDLE_LIST:
@@ -469,10 +485,20 @@ TValue kread_fsm(klisp_State *K)
 		break;
 	    }
 	    case ST_READ:
-		/* this shouldn't happen, should've exited the while */
-		kread_error(K, "invalid read state (read in while)");
-		/* avoid warning */
-		return KINERT;
+		if (sexp_comments == 0) {
+		    /* this shouldn't happen, should've exited the while */
+		    kread_error(K, "invalid read state (read in while)");
+		    /* avoid warning */
+		    return KINERT;
+		} else {
+		    /* was a sexp comment
+		       and read proceeds like from before the comment marker */
+		    klisp_assert(sexp_comments > 0);
+		    --sexp_comments;
+		    pop_state(K);
+		    read_next_token = true;
+		    break;
+		}
 	    default:
 		/* shouldn't happen */
 		kread_error(K, "unknown read state in process obj");
@@ -486,7 +512,7 @@ TValue kread_fsm(klisp_State *K)
     krooted_vars_pop(K);
 
     pop_state(K);
-    assert(ks_sisempty(K));
+    klisp_assert(ks_sisempty(K));
     return obj;
 }
 
@@ -497,7 +523,7 @@ TValue kread(klisp_State *K)
 {
     TValue obj;
 
-    assert(ttisnil(K->shared_dict));
+    klisp_assert(ttisnil(K->shared_dict));
     /* TEMP: workaround repl problem with eofs */
     K->ktok_seen_eof = false;
 

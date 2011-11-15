@@ -172,6 +172,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ktok_lparen = kcons(K, ch2tv('('), KNIL);
     K->ktok_rparen = kcons(K, ch2tv(')'), KNIL);
     K->ktok_dot = kcons(K, ch2tv('.'), KNIL);
+    K->ktok_sexp_comment = kcons(K, ch2tv(';'), KNIL);
 
     /* TEMP: For now just hardcode it to 8 spaces tab-stop */
     K->ktok_source_info.tab_width = 8;

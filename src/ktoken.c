@@ -311,6 +311,9 @@ TValue ktok_read_token(klisp_State *K)
 		K->ktok_nested_comments = 1;
 		ktok_ignore_multi_line_comment(K);
 		continue;
+	    case ';': /* sexp comment */
+		ktok_getc(K); /* discard the ';' */
+		return K->ktok_sexp_comment;
 	    default:
 		return ktok_read_special(K);
 	    }
@@ -351,7 +354,7 @@ TValue ktok_read_token(klisp_State *K)
 	    if (chi == EOF || chi != '#')
 		goto unrecognized_error;
 	    ktok_getc(K);
- 	    ktok_error(K, "unmatched |# found");
+ 	    ktok_error(K, "unmatched multiline comment close (\"|#\")");
 	    /* avoid warning */
 	    return KINERT;
 	default:

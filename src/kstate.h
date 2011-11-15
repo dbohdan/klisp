@@ -123,6 +123,7 @@ struct klisp_State {
     TValue ktok_lparen;
     TValue ktok_rparen;
     TValue ktok_dot;
+    TValue ktok_sexp_comment;
 
     /* WORKAROUND for repl */
     bool ktok_seen_eof;
