@@ -133,7 +133,10 @@ void clear_shared_dict(klisp_State *K)
     K->shared_dict = KNIL;
 }
 
-void ktok_error(klisp_State *K, char *str)
+#define ktok_error(K, str) ktok_error_g(K, str, false, KINERT)
+#define ktok_error_extra(K, str, extra) ktok_error_g(K, str, true, extra)
+
+void ktok_error_g(klisp_State *K, char *str, bool extra, TValue extra_value)
 {
     /* all cleaning is done in throw 
        (stacks, shared_dict, rooted objs) */
@@ -142,10 +145,18 @@ void ktok_error(klisp_State *K, char *str)
     kport_update_source_info(K->curr_port, K->ktok_source_info.line,
 			     K->ktok_source_info.col);
 
-    /* include the source info in the error */
-    TValue si = ktok_get_source_info(K);
-    krooted_tvs_push(K, si); /* will be popped by throw */
-    klispE_throw_with_irritants(K, str, si);
+    /* include the source info (and extra value if present) in the error */
+    TValue irritants;
+    if (extra) {
+	krooted_tvs_push(K, extra_value); /* will be popped by throw */
+	TValue si = ktok_get_source_info(K);
+	krooted_tvs_push(K, si); /* will be popped by throw */
+	irritants = klist_g(K, false, 2, si, extra_value);
+    } else {
+	irritants = ktok_get_source_info(K);
+    }
+    krooted_tvs_push(K, irritants); /* will be popped by throw */
+    klispE_throw_with_irritants(K, str, irritants);
 }
 
 /*
@@ -293,14 +304,12 @@ TValue ktok_read_token(klisp_State *K)
 	case '#': {
 	    ktok_getc(K);
 	    chi = ktok_peekc(K);
-	    
-	    if (chi == EOF) {
+
+	    switch(chi) {
+	    case EOF:
 		ktok_error(K, "# constant is too short");
 		/* avoid warning */
 		return KINERT;
-	    }
-
-	    switch((char) chi) {
 	    case '!': /* single line comment (alternative syntax) */
 		/* this handles the #! style script header too! */
 		ktok_ignore_single_line_comment(K);
@@ -347,21 +356,21 @@ TValue ktok_read_token(klisp_State *K)
 	    */
 	    return ktok_read_identifier(K);
 	case '|':
-	    /* TODO put special error msg if it was an unpaired '|#'
-	       comment close */
 	    ktok_getc(K);
 	    chi = ktok_peekc(K);
-	    if (chi == EOF || chi != '#')
+	    if (chi == EOF || chi != '#') {
+		chi = '|';
 		goto unrecognized_error;
+	    }
 	    ktok_getc(K);
  	    ktok_error(K, "unmatched multiline comment close (\"|#\")");
 	    /* avoid warning */
 	    return KINERT;
 	default:
-	    ktok_getc(K);
+	    chi = ktok_getc(K);
 	    /* TODO add char to error */
 	unrecognized_error:
-	    ktok_error(K, "unrecognized token starting char");
+	    ktok_error_extra(K, "unrecognized token starting char", ch2tv((char) chi));
 	    /* avoid warning */
 	    return KINERT;
 	}
@@ -382,38 +391,58 @@ void ktok_ignore_single_line_comment(klisp_State *K)
 void ktok_ignore_multi_line_comment(klisp_State *K)
 {
     /* the first "#|' was already read */
-    klisp_assert(K->ktok_nested_comments > 0);
+    klisp_assert(K->ktok_nested_comments == 1);
     int chi;
+    TValue last_nested_comment_si = ktok_get_source_info(K);
+    krooted_vars_push(K, &last_nested_comment_si);
+    ks_spush(K, KNIL);
+
     while(K->ktok_nested_comments > 0) {
-	do {
-	    chi = ktok_getc(K);
-	    if (chi == EOF)
-		goto eof_error;
-	} while (chi != '|' && chi != '#');
+	chi = ktok_peekc(K);
+	while (chi != EOF && chi != '|' && chi != '#') {
+	    UNUSED(ktok_getc(K));
+	    chi = ktok_peekc(K);
+	}
+	if (chi == EOF)
+	    goto eof_error;
 
 	char first_char = (char) chi;
 
-	do {
-	    chi = ktok_getc(K);
-	    if (chi == EOF)
-		goto eof_error;
-	} while (chi == first_char);
+	/* this first char will actually be the same just peeked, that's no
+	   problem, it will save the source info the first time around the 
+	   loop */
+	chi = ktok_peekc(K);
+	while (chi != EOF && chi == first_char) {
+	    ktok_save_source_info(K);
+	    UNUSED(ktok_getc(K));
+	    chi = ktok_peekc(K);
+	}
+	if (chi == EOF)
+	    goto eof_error;
+
+	UNUSED(ktok_getc(K));
 
 	if (chi == '#') {
 	    /* close comment (first char was '|', so the seq is "|#") */
 	    --K->ktok_nested_comments;
+	    last_nested_comment_si = ks_spop(K);
 	} else if (chi == '|') {
 	    /* open comment (first char was '#', so the seq is "#|") */
 	    klisp_assert(K->ktok_nested_comments < 1000);
 	    ++K->ktok_nested_comments;
+	    ks_spush(K, last_nested_comment_si);
+	    last_nested_comment_si = ktok_get_source_info(K);
 	} 
         /* else lone '#' or '|', just continue */
     }
+    krooted_vars_pop(K);
     return;
 eof_error:
-    /* TODO show number of open multi comments and source file info
-       of the last */
-    ktok_error(K, "unterminated multi line comment");
+    K->ktok_nested_comments = 0;
+    ktok_save_source_info(K);
+    UNUSED(ktok_getc(K));
+    krooted_vars_pop(K);
+    ktok_error_extra(K, "unterminated multi line comment", last_nested_comment_si);
 }
 
 void ktok_ignore_whitespace(klisp_State *K)
