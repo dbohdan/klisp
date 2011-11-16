@@ -20,7 +20,7 @@
 #include "imrat.h"
 #include "ktable.h"
 #include "kstring.h"
-#include "kblob.h"
+#include "kbytevector.h"
 #include "kerror.h"
 
 #define GCSTEPSIZE	1024u
@@ -109,7 +109,7 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TPORT:
     case K_TTABLE:
     case K_TERROR:
-    case K_TBLOB:
+    case K_TBYTEVECTOR:
 	o->gch.gclist = K->gray;
 	K->gray = o;
 	break;
@@ -321,8 +321,8 @@ static int32_t propagatemark (klisp_State *K) {
 	markvalue(K, e->irritants);
 	return sizeof(Error);
     }
-    case K_TBLOB: {
-	Blob *b = cast(Blob *, o);
+    case K_TBYTEVECTOR: {
+	Bytevector *b = cast(Bytevector *, o);
 	markvalue(K, b->mark); 
 	return sizeof(String) + b->size * sizeof(uint8_t);
     }
@@ -456,8 +456,8 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TERROR:
 	klispE_free(K, (Error *)o);
 	break;
-    case K_TBLOB:
-	klispM_freemem(K, o, sizeof(Blob)+o->blob.size);
+    case K_TBYTEVECTOR:
+	klispM_freemem(K, o, sizeof(Bytevector)+o->bytevector.size);
 	break;
     default:
 	/* shouldn't happen */
@@ -587,7 +587,7 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->kd_error_port_key);
     markvalue(K, K->kd_strict_arith_key);
     markvalue(K, K->empty_string);
-    markvalue(K, K->empty_blob);
+    markvalue(K, K->empty_bytevector);
 
     markvalue(K, K->ktok_lparen);
     markvalue(K, K->ktok_rparen);

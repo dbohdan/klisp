@@ -14,7 +14,7 @@
 #include "kobject.h"
 #include "kpair.h"
 #include "kstring.h" /* for kstring_equalp */
-#include "kblob.h" /* for kblob_equalp */
+#include "kbytevector.h" /* for kbytevector_equalp */
 #include "kcontinuation.h"
 #include "kerror.h"
 
@@ -197,8 +197,8 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 		    result = false;
 		    break;
 		}
-	    } else if (ttisblob(obj1) && ttisblob(obj2)) {
-		if (!kblob_equalp(obj1, obj2)) {
+	    } else if (ttisbytevector(obj1) && ttisbytevector(obj2)) {
+		if (!kbytevector_equalp(obj1, obj2)) {
 		    result = false;
 		    break;
 		}

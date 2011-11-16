@@ -28,7 +28,7 @@ void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* Helper (also used in equal?) */
 inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 {
-    /* TODO/FIXME: immutable blobs aren't interned and so will compare
+    /* TODO/FIXME: immutable bytevectors aren't interned and so will compare
        as un-eq? even if the contents are the same */
     bool res = (tv_equal(obj1, obj2));
     if (!res && (ttype(obj1) == ttype(obj2))) {

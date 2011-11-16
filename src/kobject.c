@@ -30,6 +30,7 @@ const TValue kfree = KFREE_;
 
 /*
 ** The name strings for all TValue types
+** This should be updated if types are modified in kobject.h
 */
 char *ktv_names[] = {
     [K_TFIXINT] = "fixint",
@@ -39,11 +40,12 @@ char *ktv_names[] = {
     [K_TEINF] = "einf", 
     [K_TDOUBLE] = "double", 
     [K_TBDOUBLE] = "bdouble", 
+    [K_TIINF] = "einf", 
     [K_TIINF] = "iinf", 
     
     [K_TRWNPV] = "rwnpv", 
-    [K_TUNDEFINED] = "undefined", 
     [K_TCOMPLEX] = "complex", 
+    [K_TUNDEFINED] = "undefined", 
 
     [K_TNIL] = "nil",       
     [K_TIGNORE] = "ignore",
@@ -51,7 +53,7 @@ char *ktv_names[] = {
     [K_TEOF] = "eof", 
     [K_TBOOLEAN] = "boolean", 
     [K_TCHAR] = "char", 
-    [K_TCHAR] = "free entry", 
+    [K_TFREE] = "free entry", 
     [K_TDEADKEY] = "dead key", 
 
     [K_TUSER] = "user pointer", 
@@ -65,7 +67,10 @@ char *ktv_names[] = {
     [K_TAPPLICATIVE] = "applicative",
     [K_TENCAPSULATION] = "encapsulation",
     [K_TPROMISE] = "promise",
-    [K_TPORT] = "port"
+    [K_TPORT] = "port",
+    [K_TTABLE] = "table", 
+    [K_TERROR] = "error", 
+    [K_TBYTEVECTOR] = "bytevector" 
 };
 
 bool kis_input_port(TValue o)

@@ -1,6 +1,6 @@
 /*
-** kgblobs.c
-** Blobs features for the ground environment
+** kgbytevectors.c
+** Bytevectors features for the ground environment
 ** See Copyright Notice in klisp.h
 */
 
@@ -17,17 +17,18 @@
 #include "koperative.h"
 #include "kcontinuation.h"
 #include "kerror.h"
-#include "kblob.h"
+#include "kbytevector.h"
 
 #include "kghelpers.h"
-#include "kgblobs.h"
+#include "kgbytevectors.h"
 #include "kgnumbers.h" /* for keintegerp & knegativep */
 
-/* 13.1.1? blob? */
+/* 13.1.1? bytevector? */
 /* uses typep */
 
-/* 13.1.2? make-blob */
-void make_blob(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+/* 13.1.2? make-bytevector */
+void make_bytevector(klisp_State *K, TValue *xparams, TValue ptree, 
+		     TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -35,7 +36,7 @@ void make_blob(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	       maybe_byte);
 
     uint8_t fill = 0;
-    if (get_opt_tpar(K, "make-blob", K_TFIXINT, &maybe_byte)) {
+    if (get_opt_tpar(K, "make-bytevector", K_TFIXINT, &maybe_byte)) {
 	if (ivalue(maybe_byte) < 0 || ivalue(maybe_byte) > 255) {
 	    klispE_throw_simple(K, "bad fill byte");    
 	    return;
@@ -51,36 +52,37 @@ void make_blob(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
 /* XXX/TODO */
-/*    TValue new_blob = kblob_new_sf(K, ivalue(tv_s), fill); */
-    TValue new_blob = kblob_new(K, ivalue(tv_s));
+/*    TValue new_bytevector = kbytevector_new_sf(K, ivalue(tv_s), fill); */
+    TValue new_bytevector = kbytevector_new(K, ivalue(tv_s));
     if (fill != 0) {
 	int32_t s = ivalue(tv_s);
-	uint8_t *ptr = kblob_buf(new_blob);
+	uint8_t *ptr = kbytevector_buf(new_bytevector);
 	while(s--)
 	    *ptr++ = fill;
     }
 
-    kapply_cc(K, new_blob);
+    kapply_cc(K, new_bytevector);
 }
 
-/* 13.1.3? blob-length */
-void blob_length(klisp_State *K, TValue *xparams, TValue ptree, 
+/* 13.1.3? bytevector-length */
+void bytevector_length(klisp_State *K, TValue *xparams, TValue ptree, 
 		     TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, ptree, "blob", ttisblob, blob);
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, bytevector);
 
-    TValue res = i2tv(kblob_size(blob));
+    TValue res = i2tv(kbytevector_size(bytevector));
     kapply_cc(K, res);
 }
 
-/* 13.1.4? blob-u8-ref */
-void blob_u8_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+/* 13.1.4? bytevector-u8-ref */
+void bytevector_u8_ref(klisp_State *K, TValue *xparams, TValue ptree, 
+		       TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_2tp(K, ptree, "blob", ttisblob, blob,
+    bind_2tp(K, ptree, "bytevector", ttisbytevector, bytevector,
 	     "exact integer", keintegerp, tv_i);
 
     if (!ttisfixint(tv_i)) {
@@ -90,86 +92,93 @@ void blob_u8_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
     int32_t i = ivalue(tv_i);
     
-    if (i < 0 || i >= kblob_size(blob)) {
+    if (i < 0 || i >= kbytevector_size(bytevector)) {
 	/* TODO show index */
 	klispE_throw_simple(K, "index out of bounds");
 	return;
     }
 
-    TValue res = i2tv(kblob_buf(blob)[i]);
+    TValue res = i2tv(kbytevector_buf(bytevector)[i]);
     kapply_cc(K, res);
 }
 
-/* 13.1.5? blob-u8-set! */
-void blob_u8_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+/* 13.1.5? bytevector-u8-set! */
+void bytevector_u8_setS(klisp_State *K, TValue *xparams, TValue ptree, 
+			TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_3tp(K, ptree, "blob", ttisblob, blob,
+    bind_3tp(K, ptree, "bytevector", ttisbytevector, bytevector,
 	     "exact integer", keintegerp, tv_i, "u8", ttisu8, tv_byte);
 
     if (!ttisfixint(tv_i)) {
 	/* TODO show index */
 	klispE_throw_simple(K, "index out of bounds");
 	return;
-    } else if (kblob_immutablep(blob)) {
-	klispE_throw_simple(K, "immutable blob");
+    } else if (kbytevector_immutablep(bytevector)) {
+	klispE_throw_simple(K, "immutable bytevector");
 	return;
     } 
 
     int32_t i = ivalue(tv_i);
     
-    if (i < 0 || i >= kblob_size(blob)) {
+    if (i < 0 || i >= kbytevector_size(bytevector)) {
 	/* TODO show index */
 	klispE_throw_simple(K, "index out of bounds");
 	return;
     }
 
-    kblob_buf(blob)[i] = (uint8_t) ivalue(tv_byte);
+    kbytevector_buf(bytevector)[i] = (uint8_t) ivalue(tv_byte);
     kapply_cc(K, KINERT);
 }
 
-/* TODO change blob constructors to string like constructors */
+/* TODO change bytevector constructors to string like constructors */
 
-/* 13.2.8? blob-copy */
-/* TEMP: at least for now this always returns mutable blobs */
-void blob_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+/* 13.2.8? bytevector-copy */
+/* TEMP: at least for now this always returns mutable bytevectors */
+void bytevector_copy(klisp_State *K, TValue *xparams, TValue ptree, 
+		     TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, ptree, "blob", ttisblob, blob);
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, bytevector);
 
-    TValue new_blob;
+    TValue new_bytevector;
     /* the if isn't strictly necessary but it's clearer this way */
-    if (tv_equal(blob, K->empty_blob)) {
-	new_blob = blob; 
+    if (tv_equal(bytevector, K->empty_bytevector)) {
+	new_bytevector = bytevector; 
     } else {
-	new_blob = kblob_new(K, kblob_size(blob));
-	memcpy(kblob_buf(new_blob), kblob_buf(blob), kblob_size(blob));
+	new_bytevector = kbytevector_new(K, kbytevector_size(bytevector));
+	memcpy(kbytevector_buf(new_bytevector), 
+	       kbytevector_buf(bytevector), 
+	       kbytevector_size(bytevector));
     }
-    kapply_cc(K, new_blob);
+    kapply_cc(K, new_bytevector);
 }
 
-/* 13.2.9? blob->immutable-blob */
-void blob_to_immutable_blob(klisp_State *K, TValue *xparams, 
-				TValue ptree, TValue denv)
+/* 13.2.9? bytevector->immutable-bytevector */
+void bytevector_to_immutable_bytevector(klisp_State *K, TValue *xparams, 
+					TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
-    bind_1tp(K, ptree, "blob", ttisblob, blob);
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, bytevector);
 
-    TValue res_blob;
-    if (kblob_immutablep(blob)) {/* this includes the empty blob */
-	res_blob = blob;
+    TValue res_bytevector;
+    if (kbytevector_immutablep(bytevector)) {
+/* this includes the empty bytevector */
+	res_bytevector = bytevector;
     } else {
-	res_blob = kblob_new_imm(K, kblob_size(blob));
-	memcpy(kblob_buf(res_blob), kblob_buf(blob), kblob_size(blob));
+	res_bytevector = kbytevector_new_imm(K, kbytevector_size(bytevector));
+	memcpy(kbytevector_buf(res_bytevector), 
+	       kbytevector_buf(bytevector), 
+	       kbytevector_size(bytevector));
     }
-    kapply_cc(K, res_blob);
+    kapply_cc(K, res_bytevector);
 }
 
 /* init ground */
-void kinit_blobs_ground_env(klisp_State *K)
+void kinit_bytevectors_ground_env(klisp_State *K)
 {
     TValue ground_env = K->ground_env;
     TValue symbol, value;
@@ -180,25 +189,27 @@ void kinit_blobs_ground_env(klisp_State *K)
     ** They are provided in the meantime to allow programs to use byte vectors.
     */
 
-    /* ??.1.1? blob? */
-    add_applicative(K, ground_env, "blob?", typep, 2, symbol, 
-		    i2tv(K_TBLOB));
-    /* ??.1.2? make-blob */
-    add_applicative(K, ground_env, "make-blob", make_blob, 0);
-    /* ??.1.3? blob-length */
-    add_applicative(K, ground_env, "blob-length", blob_length, 0);
+    /* ??.1.1? bytevector? */
+    add_applicative(K, ground_env, "bytevector?", typep, 2, symbol, 
+		    i2tv(K_TBYTEVECTOR));
+    /* ??.1.2? make-bytevector */
+    add_applicative(K, ground_env, "make-bytevector", make_bytevector, 0);
+    /* ??.1.3? bytevector-length */
+    add_applicative(K, ground_env, "bytevector-length", bytevector_length, 0);
 
-    /* ??.1.4? blob-u8-ref */
-    add_applicative(K, ground_env, "blob-u8-ref", blob_u8_ref, 0);
-    /* ??.1.5? blob-u8-set! */
-    add_applicative(K, ground_env, "blob-u8-set!", blob_u8_setS, 0);
+    /* ??.1.4? bytevector-u8-ref */
+    add_applicative(K, ground_env, "bytevector-u8-ref", bytevector_u8_ref, 0);
+    /* ??.1.5? bytevector-u8-set! */
+    add_applicative(K, ground_env, "bytevector-u8-set!", bytevector_u8_setS, 
+		    0);
 
-    /* ??.1.?? blob-copy */
-    add_applicative(K, ground_env, "blob-copy", blob_copy, 0);
-    /* ??.1.?? blob->immutable-blob */
-    add_applicative(K, ground_env, "blob->immutable-blob", blob_to_immutable_blob, 0);
+    /* ??.1.?? bytevector-copy */
+    add_applicative(K, ground_env, "bytevector-copy", bytevector_copy, 0);
+    /* ??.1.?? bytevector->immutable-bytevector */
+    add_applicative(K, ground_env, "bytevector->immutable-bytevector", 
+		    bytevector_to_immutable_bytevector, 0);
 
-/* TODO put the blob equivalents here */
+/* TODO put the bytevector equivalents here */
 #if 0
     /* 13.2.1? string */
     add_applicative(K, ground_env, "string", string, 0);

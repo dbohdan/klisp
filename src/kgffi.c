@@ -36,7 +36,7 @@
 #include "kinteger.h"
 #include "kpair.h"
 #include "kerror.h"
-#include "kblob.h"
+#include "kbytevector.h"
 #include "kencapsulation.h"
 #include "ktable.h"
 
@@ -123,8 +123,8 @@ static TValue ffi_decode_pointer(ffi_codec_t *self, klisp_State *K, const void *
 
 static void ffi_encode_pointer(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
 {
-    if (ttisblob(v)) {
-        *(void **)buf = tv2blob(v)->b;
+    if (ttisbytevector(v)) {
+        *(void **)buf = tv2bytevector(v)->b;
     } else if (ttisstring(v)) {
         *(void **)buf = kstring_buf(v);
     } else if (ttisnil(v)) {
@@ -133,7 +133,7 @@ static void ffi_encode_pointer(ffi_codec_t *self, klisp_State *K, TValue v, void
        /* TODO: do not use internal macro tbasetype_ */
         *(void **)buf = pvalue(v);
     } else {
-        klispE_throw_simple_with_irritants(K, "neither blob, string, pointer or nil", 1, v);
+        klispE_throw_simple_with_irritants(K, "neither bytevector, string, pointer or nil", 1, v);
     }
 }
 
@@ -483,17 +483,17 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
     krooted_tvs_push(K, argtypes_tv);
     TValue key = xparams[0];
     krooted_tvs_push(K, key);
-    size_t blob_size = sizeof(ffi_call_interface_t) + (sizeof(ffi_codec_t *) + sizeof(ffi_type)) * nargs;
-    TValue blob = kblob_new_imm(K, blob_size);
-    krooted_tvs_push(K, blob);
-    TValue enc = kmake_encapsulation(K, key, blob);
+    size_t bytevector_size = sizeof(ffi_call_interface_t) + (sizeof(ffi_codec_t *) + sizeof(ffi_type)) * nargs;
+    TValue bytevector = kbytevector_new_imm(K, bytevector_size);
+    krooted_tvs_push(K, bytevector);
+    TValue enc = kmake_encapsulation(K, key, bytevector);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
 
-    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2blob(blob)->b;
+    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2bytevector(bytevector)->b;
     p->acodecs = (ffi_codec_t **) ((char *) p + sizeof(ffi_call_interface_t));
     p->argtypes = (ffi_type **) ((char *) p + sizeof(ffi_call_interface_t) + nargs * sizeof(ffi_codec_t *));
 
@@ -541,11 +541,11 @@ void do_ffi_call(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     /*
     ** xparams[0]: function pointer
-    ** xparams[1]: call interface (encapsulated blob)
+    ** xparams[1]: call interface (encapsulated bytevector)
     */
 
     void *funptr = pvalue(xparams[0]);
-    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2blob(kget_enc_val(xparams[1]))->b;
+    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2bytevector(kget_enc_val(xparams[1]))->b;
 
 
     int64_t buffer[(p->buffer_size + sizeof(int64_t) - 1) / sizeof(int64_t)];
@@ -690,7 +690,7 @@ void do_ffi_callback_encode_result(klisp_State *K, TValue *xparams,
     ** xparams[0]: cif
     ** xparams[1]: p2tv(libffi return buffer)
     */
-    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(xparams[0]));
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kbytevector_buf(kget_enc_val(xparams[0]));
     void *ret = pvalue(xparams[1]);
     p->rcodec->encode(p->rcodec, K, obj, ret);
     kapply_cc(K, KINERT);
@@ -719,7 +719,7 @@ void do_ffi_callback_decode_arguments(klisp_State *K, TValue *xparams,
     assert(ttisencapsulation(cif_tv));
     krooted_tvs_push(K, app_tv);
     krooted_tvs_push(K, cif_tv);
-    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(cif_tv));
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kbytevector_buf(kget_enc_val(cif_tv));
 
     /* Decode arguments. */
 
@@ -878,7 +878,7 @@ void ffi_make_callback(klisp_State *K, TValue *xparams,
         klispE_throw_simple(K, "second argument shall be call interface");
         return;
     }
-    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(cif_tv));
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kbytevector_buf(kget_enc_val(cif_tv));
     TValue cb_tab = xparams[1];
 
     /* Allocate memory for libffi closure. */
@@ -936,15 +936,15 @@ void ffi_make_callback(klisp_State *K, TValue *xparams,
 static uint8_t * ffi_memory_location(klisp_State *K, bool allow_nesting,
                                      TValue v, bool mutable, size_t size)
 {
-    if (ttisblob(v)) {
-        if (mutable && kblob_immutablep(v)) {
-            klispE_throw_simple_with_irritants(K, "blob not mutable", 1, v);
+    if (ttisbytevector(v)) {
+        if (mutable && kbytevector_immutablep(v)) {
+            klispE_throw_simple_with_irritants(K, "bytevector not mutable", 1, v);
             return NULL;
-        } else if (size > kblob_size(v)) {
-            klispE_throw_simple_with_irritants(K, "blob too small", 1, v);
+        } else if (size > kbytevector_size(v)) {
+            klispE_throw_simple_with_irritants(K, "bytevector too small", 1, v);
             return NULL;
         } else {
-            return kblob_buf(v);
+            return kbytevector_buf(v);
         }
     } else if (ttisstring(v)) {
         if (mutable && kstring_immutablep(v)) {

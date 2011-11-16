@@ -115,8 +115,8 @@ struct klisp_State {
     /* Strings */
     TValue empty_string;
 
-    /* Blobs */
-    TValue empty_blob;
+    /* Bytevectors */
+    TValue empty_bytevector;
     
     /* tokenizer */
     /* special tokens, see ktoken.c for rationale */
