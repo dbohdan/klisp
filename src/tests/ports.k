@@ -2,6 +2,8 @@
 ;;
 ;; Tests of i/o features.
 ;;
+;; TODO binary ports
+;;
 ;; Utilities for testing input and output features:
 ;;
 ;; temp-file .......... temporary file for input and output

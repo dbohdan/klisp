@@ -23,16 +23,22 @@
    Should use open, but it is non standard (fcntl.h, POSIX only) */
 
 /* GC: Assumes filename is rooted */
-TValue kmake_port(klisp_State *K, TValue filename, bool writep)
+TValue kmake_port(klisp_State *K, TValue filename, bool writep, bool binaryp)
 {
     /* for now always use text mode */
-    FILE *f = fopen(kstring_buf(filename), writep? "w": "r");
+    char *mode;
+    if (binaryp)
+	mode = writep? "wb": "rb";
+    else
+	mode = writep? "w": "r";
+	    
+    FILE *f = fopen(kstring_buf(filename), mode);
     if (f == NULL) {
         klispE_throw_errno_with_irritants(K, "fopen", 2, filename,
-                                          kstring_new_b_imm(K, writep? "w": "r"));
+                                          kstring_new_b_imm(K, mode));
 	return KINERT;
     } else {
-	return kmake_std_port(K, filename, writep, f);
+	return kmake_std_port(K, filename, writep, binaryp, f);
     }
 }
 
@@ -41,14 +47,15 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep)
 
 /* GC: Assumes filename, name & si are rooted */
 TValue kmake_std_port(klisp_State *K, TValue filename, bool writep, 
-		      FILE *file)
+		      bool binaryp, FILE *file)
 {
     Port *new_port = klispM_new(K, Port);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_port, K_TPORT, 
 		K_FLAG_CAN_HAVE_NAME | 
-		(writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT));
+		(writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT) |
+		(binaryp? K_FLAG_BINARY_PORT : 0));
 
     /* port specific fields */
     new_port->filename = filename;

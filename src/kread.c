@@ -597,8 +597,31 @@ TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
     return ch == EOF? KEOF : ch2tv((char)ch);
 }
 
+TValue kread_peek_u8_from_port(klisp_State *K, TValue port, bool peek)
+{
+    /* Reset the EOF flag in the tokenizer. The flag is shared,
+       by operations on all ports. */
+    K->ktok_seen_eof = false;
+
+    K->curr_port = port;
+    K->curr_in = kport_file(port);
+    int32_t u8;
+    if (peek) {
+	u8 = ktok_peekc(K);
+    } else {
+	ktok_set_source_info(K, kport_filename(port), 
+			     kport_line(port), kport_col(port));
+	u8 = ktok_getc(K);
+	kport_update_source_info(port, K->ktok_source_info.line, 
+				 K->ktok_source_info.col);    
+    }
+    return u8 == EOF? KEOF : i2tv(u8 & 0xff);
+}
+
 /* This is needed by the repl to ignore trailing spaces (especially newlines)
    that could affect the source info */
+/* XXX This should be replaced somehow, as it doesn't work for sexp and
+   multi line comments */
 void kread_ignore_whitespace_and_comments_from_port(klisp_State *K, 
 						    TValue port)
 {

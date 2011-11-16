@@ -66,7 +66,7 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    TValue new_port = kmake_port(K, filename, writep);
+    TValue new_port = kmake_port(K, filename, writep, false);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
@@ -109,11 +109,12 @@ void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
 void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     bool writep = bvalue(xparams[1]);
+    bool binaryp = bvalue(xparams[2]);
     UNUSED(denv);
 
     bind_1tp(K, ptree, "string", ttisstring, filename);
 
-    TValue new_port = kmake_port(K, filename, writep);
+    TValue new_port = kmake_port(K, filename, writep, binaryp);
     kapply_cc(K, new_port);
 }
 
@@ -136,6 +137,27 @@ void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 }
 
+/* 15.1.? close-input-port, close-output-port, close-port */
+void close_port(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    bool readp = bvalue(xparams[1]);
+    bool writep = bvalue(xparams[2]);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "port", ttisport, port);
+
+    bool dir_ok = !((writep && !kport_is_output(port)) ||
+		    (readp && !kport_is_input(port)));
+
+    if (dir_ok) {
+	kclose_port(K, port);
+	kapply_cc(K, KINERT);
+    } else {
+	klispE_throw_simple(K, "wrong input/output direction");
+	return;
+    }
+}
+
 /* 15.1.7 read */
 void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -145,11 +167,15 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue port = ptree;
     if (!get_opt_tpar(K, "read", K_TPORT, &port)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
-    } else if (!kport_is_input(port)) {
+    } 
+
+    if (!kport_is_input(port)) {
 	klispE_throw_simple(K, "the port should be an input port");
 	return;
-    } 
-    if (kport_is_closed(port)) {
+    } else if (!kport_is_character(port)) {
+	klispE_throw_simple(K, "the port should be a character port");
+	return;
+    } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
@@ -170,11 +196,15 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     if (!get_opt_tpar(K, "write", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
-    } else if (!kport_is_output(port)) {
+    } 
+
+    if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    } 
-    if (kport_is_closed(port)) {
+    } else if (!kport_is_character(port)) {
+	klispE_throw_simple(K, "the port should be a character port");
+	return;
+    } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
@@ -196,11 +226,15 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue port = ptree;
     if (!get_opt_tpar(K, "newline", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
-    } else if (!kport_is_output(port)) {
+    }
+
+    if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    }
-    if (kport_is_closed(port)) {
+    } else if (!kport_is_character(port)) {
+	klispE_throw_simple(K, "the port should be a character port");
+	return;
+    } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
@@ -220,11 +254,15 @@ void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     if (!get_opt_tpar(K, "write-char", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
-    } else if (!kport_is_output(port)) {
+    } 
+
+    if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    } 
-    if (kport_is_closed(port)) {
+    } else if (!kport_is_character(port)) {
+	klispE_throw_simple(K, "the port should be a character port");
+	return;
+    } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
@@ -249,11 +287,15 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
     TValue port = ptree;
     if (!get_opt_tpar(K, name, K_TPORT, &port)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
-    } else if (!kport_is_input(port)) {
+    } 
+    
+    if (!kport_is_input(port)) {
 	klispE_throw_simple(K, "the port should be an input port");
 	return;
-    } 
-    if (kport_is_closed(port)) {
+    } else if (!kport_is_character(port)) {
+	klispE_throw_simple(K, "the port should be a character port");
+	return;
+    } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
@@ -282,11 +324,15 @@ void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue port = ptree;
     if (!get_opt_tpar(K, "char-ready?", K_TPORT, &port)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
-    } else if (!kport_is_input(port)) {
+    } 
+
+    if (!kport_is_input(port)) {
 	klispE_throw_simple(K, "the port should be an input port");
 	return;
-    } 
-    if (kport_is_closed(port)) {
+    } else if (!kport_is_character(port)) {
+	klispE_throw_simple(K, "the port should be a character port");
+	return;
+    } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
@@ -295,6 +341,102 @@ void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KTRUE);
 }
 
+/* 15.1.? write-u8 */
+void write_u8(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, ptree, "u8", ttisu8, u8, port);
+
+    if (!get_opt_tpar(K, "write-u8", K_TPORT, &port)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } 
+
+    if (!kport_is_output(port)) {
+	klispE_throw_simple(K, "the port should be an output port");
+	return;
+    } else if (!kport_is_binary(port)) {
+	klispE_throw_simple(K, "the port should be a binary port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+    
+    kwrite_char_to_port(K, port, u8);
+    kapply_cc(K, KINERT);
+}
+
+/* Helper for read-u8 and peek-u8 */
+void read_peek_u8(klisp_State *K, TValue *xparams, TValue ptree, 
+		    TValue denv)
+{
+    /* 
+    ** xparams[0]: symbol name
+    ** xparams[1]: ret-u8-after-readp
+    */
+    UNUSED(denv);
+    
+    char *name = ksymbol_buf(xparams[0]);
+    bool ret_u8p = bvalue(xparams[1]);
+
+    TValue port = ptree;
+    if (!get_opt_tpar(K, name, K_TPORT, &port)) {
+	port = kcdr(K->kd_in_port_key); /* access directly */
+    }
+
+    if (!kport_is_input(port)) {
+	klispE_throw_simple(K, "the port should be an input port");
+	return;
+    } else if (!kport_is_binary(port)) {
+	klispE_throw_simple(K, "the port should be a binary port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    TValue obj = kread_peek_u8_from_port(K, port, ret_u8p);
+    kapply_cc(K, obj);
+}
+
+
+/* 15.1.? read-u8 */
+/* uses read_peek_u8 */
+
+/* 15.1.? peek-u8 */
+/* uses read_peek_u8 */
+
+/* 15.1.? u8-ready? */
+/* XXX: this always return #t, proper behaviour requires platform 
+   specific code (probably select for posix & a thread for windows
+   (at least for files & consoles, I think pipes and sockets may
+   have something) */
+void u8_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue port = ptree;
+    if (!get_opt_tpar(K, "u8-ready?", K_TPORT, &port)) {
+	port = kcdr(K->kd_in_port_key); /* access directly */
+    }
+    
+    if (!kport_is_input(port)) {
+	klispE_throw_simple(K, "the port should be an input port");
+	return;
+    } else if (!kport_is_binary(port)) {
+	klispE_throw_simple(K, "the port should be a binary port");
+	return;
+    }  else if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    /* TODO: check if there are pending chars */
+    kapply_cc(K, KTRUE);
+}
 
 /* 15.2.1 call-with-input-file, call-with-output-file */
 /* XXX: The report is incomplete here... for now use an empty environment, 
@@ -310,7 +452,7 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    TValue new_port = kmake_port(K, filename, writep);
+    TValue new_port = kmake_port(K, filename, writep, false);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
@@ -428,7 +570,7 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the
      last expression is done */
-    TValue port = kmake_port(K, filename, false);
+    TValue port = kmake_port(K, filename, false, false);
     krooted_tvs_push(K, port);
 
     TValue inert_cont = make_return_value_cont(K, kget_cc(K), KINERT);
@@ -477,7 +619,7 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1tp(K, ptree, "string", ttisstring, filename, 
 	maybe_env);
 
-    TValue port = kmake_port(K, filename, false);
+    TValue port = kmake_port(K, filename, false, false);
     krooted_tvs_push(K, port);
 
     TValue env = kmake_environment(K, K->ground_env);
@@ -537,11 +679,15 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     if (!get_opt_tpar(K, "display", K_TPORT, &port)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
-    } else if (!kport_is_output(port)) {
+    }
+
+    if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    } 
-    if (kport_is_closed(port)) {
+    } else if (!kport_is_character(port)) {
+	klispE_throw_simple(K, "the port should be a character port");
+	return;
+    } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
@@ -653,6 +799,12 @@ void kinit_ports_ground_env(klisp_State *K)
 		    p2tv(kis_input_port));
     add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
 		    p2tv(kis_output_port));
+    /* 15.1.? binary-port?, character-port? */
+    add_applicative(K, ground_env, "binary-port?", ftypep, 2, symbol, 
+		    p2tv(kis_binary_port));
+    add_applicative(K, ground_env, "character-port?", ftypep, 2, symbol, 
+		    p2tv(kis_character_port));
+
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
     /* 15.1.? with-error-to-file */
     add_applicative(K, ground_env, "with-input-from-file", with_file, 
@@ -670,10 +822,16 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "get-current-error-port", get_current_port, 
 		    2, symbol, K->kd_error_port_key);
     /* 15.1.5 open-input-file, open-output-file */
-    add_applicative(K, ground_env, "open-input-file", open_file, 2, symbol, 
-		    b2tv(false));
-    add_applicative(K, ground_env, "open-output-file", open_file, 2, symbol, 
-		    b2tv(true));
+    add_applicative(K, ground_env, "open-input-file", open_file, 3, symbol, 
+		    b2tv(false), b2tv(false));
+    add_applicative(K, ground_env, "open-output-file", open_file, 3, symbol, 
+		    b2tv(true), b2tv(false));
+    /* 15.1.? open-binary-input-file, open-binary-output-file */
+    add_applicative(K, ground_env, "open-binary-input-file", open_file, 3, symbol, 
+		    b2tv(false), b2tv(true));
+    add_applicative(K, ground_env, "open-binary-output-file", open_file, 3, symbol, 
+		    b2tv(true), b2tv(true));
+
     /* 15.1.6 close-input-file, close-output-file */
     /* ASK John: should this be called close-input-port & close-ouput-port 
        like in r5rs? that doesn't seem consistent with open thou */
@@ -681,6 +839,14 @@ void kinit_ports_ground_env(klisp_State *K)
 		    b2tv(false));
     add_applicative(K, ground_env, "close-output-file", close_file, 2, symbol, 
 		    b2tv(true));
+    /* 15.1.? Use the r7rs names, in preparation for other kind of ports */
+    add_applicative(K, ground_env, "close-input-port", close_port, 3, symbol, 
+		    b2tv(true), b2tv(false));
+    add_applicative(K, ground_env, "close-output-port", close_port, 3, symbol, 
+		    b2tv(false), b2tv(true));
+    add_applicative(K, ground_env, "close-port", close_port, 3, symbol, 
+		    b2tv(false), b2tv(false));
+
     /* 15.1.7 read */
     add_applicative(K, ground_env, "read", read, 0);
     /* 15.1.8 write */
@@ -709,6 +875,20 @@ void kinit_ports_ground_env(klisp_State *K)
        (at least for files & consoles), I think pipes and sockets may
        have something */
     add_applicative(K, ground_env, "char-ready?", char_readyp, 0);
+    /* 15.1.? write-u8 */
+    add_applicative(K, ground_env, "write-u8", write_u8, 0);
+    /* 15.1.? read-u8 */
+    add_applicative(K, ground_env, "read-u8", read_peek_u8, 2, symbol, 
+		    b2tv(false));
+    /* 15.1.? peek-u8 */
+    add_applicative(K, ground_env, "peek-u8", read_peek_u8, 2, symbol, 
+		    b2tv(true));
+    /* 15.1.? u8-ready? */
+    /* XXX: this always return #t, proper behaviour requires platform 
+       specific code (probably select for posix, a thread for windows
+       (at least for files & consoles), I think pipes and sockets may
+       have something */
+    add_applicative(K, ground_env, "u8-ready?", u8_readyp, 0);
     /* 15.2.1 call-with-input-file, call-with-output-file */
     add_applicative(K, ground_env, "call-with-input-file", call_with_file, 
 		    2, symbol, b2tv(false));

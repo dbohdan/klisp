@@ -422,8 +422,10 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "#[promise]");
 	break;
     case K_TPORT:
-	/* TODO try to get the name/ I/O direction / filename */
-	kw_printf(K, "#[%s port", kport_is_input(obj)? "input" : "output");
+	/* TODO try to get the filename */
+	kw_printf(K, "#[%s %s port", 
+		  kport_is_binary? "binary" : "character",
+		  kport_is_input(obj)? "input" : "output");
 	#if KTRACK_NAMES
 	if (khas_name(obj)) {
 	    kw_print_name(K, obj);
@@ -600,5 +602,20 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
     if (res == EOF) {
 	clearerr(K->curr_out); /* clear error for next time */
 	kwrite_error(K, "error writing char");
+    }
+}
+
+void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
+{
+    K->curr_port = port;
+    K->curr_out = kport_file(port);
+    int res = fputc(ivalue(u8), K->curr_out);
+    /* implicit flush, MAYBE add flush call */
+    if (res != EOF)
+	res = fflush(K->curr_out);
+
+    if (res == EOF) {
+	clearerr(K->curr_out); /* clear error for next time */
+	kwrite_error(K, "error writing u8");
     }
 }

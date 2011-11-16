@@ -106,7 +106,7 @@ void blob_u8_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "blob", ttisblob, blob,
-	     "exact integer", keintegerp, tv_i, "exact integer", keintegerp, tv_byte);
+	     "exact integer", keintegerp, tv_i, "u8", ttisu8, tv_byte);
 
     if (!ttisfixint(tv_i)) {
 	/* TODO show index */
@@ -115,10 +115,7 @@ void blob_u8_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     } else if (kblob_immutablep(blob)) {
 	klispE_throw_simple(K, "immutable blob");
 	return;
-    } else if (ivalue(tv_byte) < 0 || ivalue(tv_byte) > 255) {
-	klispE_throw_simple(K, "bad byte");
-	return;
-    }
+    } 
 
     int32_t i = ivalue(tv_i);
     

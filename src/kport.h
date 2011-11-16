@@ -13,13 +13,13 @@
 #include "kstate.h"
 
 /* GC: Assumes filename is rooted */
-TValue kmake_port(klisp_State *K, TValue filename, bool writep);
+TValue kmake_port(klisp_State *K, TValue filename, bool writep, bool binaryp);
 
 /* this is for creating ports for stdin/stdout/stderr &
  helper for the one above */
 /* GC: Assumes filename, name & si are rooted */
 TValue kmake_std_port(klisp_State *K, TValue filename, bool writep, 
-		      FILE *file);
+		      bool binaryp, FILE *file);
 
 /* This closes the underlying FILE * (unless it is a std port) and also
    set the closed flag to true, this shouldn't throw errors because it

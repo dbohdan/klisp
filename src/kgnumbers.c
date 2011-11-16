@@ -50,6 +50,8 @@ bool kfinitep(TValue obj) { return !ttisinf(obj); }
 bool kintegerp(TValue obj) { return ttisinteger(obj); }
 /* only exact integers (like for indices), bigints & fixints */
 bool keintegerp(TValue obj) { return ttiseinteger(obj); }
+/* exact integers between 0 and 255 inclusive */
+bool ku8p(TValue obj) { return ttisu8(obj); }
 bool krationalp(TValue obj) { return ttisrational(obj); }
 bool krealp(TValue obj) { return ttisreal(obj); }
 /* TEMP used (as a type predicate) in all predicates that need a real with 

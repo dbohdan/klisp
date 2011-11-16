@@ -237,6 +237,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
 #define ttiseinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+#define ttisu8(o) ({							\
+	TValue o__ = (o);						\
+	(ttisfixint(o__) && ivalue(o__) > 0 && ivalue(o__) < 256); })		
 #define ttisinteger(o) ({ TValue o__ = (o);				\
 	    (ttiseinteger(o__) ||					\
 	     (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})
@@ -789,14 +792,19 @@ int32_t kmark_count;
 #define K_FLAG_OUTPUT_PORT 0x01
 #define K_FLAG_INPUT_PORT 0x02
 #define K_FLAG_CLOSED_PORT 0x04
+/* At least for now ports are either binary or character */
+#define K_FLAG_BINARY_PORT 0x08
 
 #define kport_set_input(o_) (tv_get_kflags(o_) |= K_FLAG_INPUT_PORT)
 #define kport_set_output(o_) (tv_get_kflags(o_) |= K_FLAG_INPUT_PORT)
 #define kport_set_closed(o_) (tv_get_kflags(o_) |= K_FLAG_CLOSED_PORT)
+#define kport_set_binary(o_) (tv_get_kflags(o_) |= K_FLAG_BINARY_PORT)
 
 #define kport_is_input(o_) ((tv_get_kflags(o_) & K_FLAG_INPUT_PORT) != 0)
 #define kport_is_output(o_) ((tv_get_kflags(o_) & K_FLAG_OUTPUT_PORT) != 0)
 #define kport_is_closed(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) != 0)
+#define kport_is_binary(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) != 0)
+#define kport_is_character(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) == 0)
 
 #define K_FLAG_WEAK_KEYS 0x01
 #define K_FLAG_WEAK_VALUES 0x02
@@ -811,6 +819,8 @@ int32_t kmark_count;
  (at least gcc doesn't bother to create them and the linker fails) */
 bool kis_input_port(TValue o);
 bool kis_output_port(TValue o);
+bool kis_binary_port(TValue o);
+bool kis_character_port(TValue o);
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)

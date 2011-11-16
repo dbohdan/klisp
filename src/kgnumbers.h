@@ -36,6 +36,7 @@ bool kexactp(TValue obj);
 bool kinexactp(TValue obj);
 bool kundefinedp(TValue obj);
 bool krobustp(TValue obj);
+bool ku8p(TValue obj);
 
 
 /* 12.5.2 =? */
