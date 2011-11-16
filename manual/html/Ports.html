@@ -35,9 +35,14 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <h2 class="chapter">16 Ports</h2>
 
 <p><a name="index-ports-257"></a>
-  A port is an object that mediates character-based input from a
-source or character-based output to a destination. In the former case,
-the port is an input port, in the latter case, an output port.
+  A port is an object that mediates data from an input or to a
+destination.  In the former case, the port is an input port, in the
+latter case, an output port.  The data itself can consist of either
+characters or bytes.  In the former case the port is a textual port
+and in the latter case, a binary port.
+
+   <p>There are three textual ports open, binded by dynamic variables, one
+for standard input, output, and error.
 
 <!-- TODO add xref to equal? & eq? -->
    <p>Although ports are not considered immutable, none of the operations
@@ -45,7 +50,7 @@ on ports described in this section constitute mutation.  Ports are
 <code>equal?</code> iff <code>eq?</code>.  The port type is encapsulated.
 
    <p>An auxiliary data type used to signal the end of file was reached is
-eof. The eof type consists of a single immutable value, having
+<code>eof</code>. The eof type consists of a single immutable value, having
 an output only external representation (so that it can never be the
 normal result of a call to read).  The eof type is encapsulated.
 
@@ -63,77 +68,96 @@ returns true iff all the objects in <code>objects</code> are of type port.
 &mdash; Applicative: <b>output-port?</b> (<var>output-port? . objects</var>)<var><a name="index-output_002dport_003f-260"></a></var><br>
 <blockquote><p>  Applicative <code>input-port?</code> is a predicate that returns true
 unless one or more of its arguments is not an input port.  Applicative
-output-port? is a predicate that returns true unless one or more of
-its arguments is not an output port.
+<code>output-port?</code> is a predicate that returns true unless one or
+more of its arguments is not an output port.
 
         <p>Every port must be admitted by at least one of these two predicates. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; with-input-from-file: <b>(</b><var>with-input-from-file string combiner</var>)<var><a name="index-g_t_0028-261"></a></var><br>
-&mdash; with-output-to-file: <b>(</b><var>with-output-to-file string combiner</var>)<var><a name="index-g_t_0028-262"></a></var><br>
-<blockquote><!-- add xref get-current-input-port/get-current-output-port -->
-        <p>These two applicatives open the file named in <code>string</code> for
-input or output, an invoke the binder of the input-port &amp; output-port
-keyed dynamic variables respectively with the opened port &amp; the passed
-<code>combiner</code> (this means that the combiner is called in a fresh, empty
-dynamic environment).  When/if the binder normally returns, the port is closed. 
-The result of the applicatives <code>with-input-from-file</code> and
-<code>with-output-from-file</code> is inert.
+&mdash; Applicative: <b>textual-port?</b> (<var>textual-port? . objects</var>)<var><a name="index-textual_002dport_003f-261"></a></var><br>
+&mdash; Applicative: <b>binary-port?</b> (<var>binary-port? . objects</var>)<var><a name="index-binary_002dport_003f-262"></a></var><br>
+<blockquote><p>  Applicative <code>textual-port?</code> is a predicate that returns true
+unless one or more of its arguments is not a textual port.  Applicative
+<code>binary-port?</code> is a predicate that returns true unless one or more of
+its arguments is not a binary port.
 
-        <p>SOURCE NOTE: this is enumerated in the Kernel report but the text is
-still missing.  In the new scheme report there's also a third
-error-port variable.  It is very likely that that will be added to the
-klisp implementation in the near future. 
+        <p>Every port must be admitted by at least one of these two predicates.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; get-current-input-port: <b>(</b><var>get-current-input-port</var>)<var><a name="index-g_t_0028-263"></a></var><br>
-&mdash; get-current-output-port: <b>(</b><var>get-current-output-port</var>)<var><a name="index-g_t_0028-264"></a></var><br>
-<blockquote><p>  These are the accessors for the input-port and output-port keyed
-dynamic variables repectively. 
+&mdash; with-input-from-file: <b>(</b><var>with-input-from-file string combiner</var>)<var><a name="index-g_t_0028-263"></a></var><br>
+&mdash; with-output-to-file: <b>(</b><var>with-output-to-file string combiner</var>)<var><a name="index-g_t_0028-264"></a></var><br>
+&mdash; with-error-to-file: <b>(</b><var>with-error-to-file string combiner</var>)<var><a name="index-g_t_0028-265"></a></var><br>
+<blockquote><!-- add xref get-current-input-port/get-current-output-port -->
+        <p>These three applicatives open the file named in <code>string</code> for
+textual input or output, an invoke the binder of either the
+input-port, the output-port or the error-port keyed dynamic variables
+respectively with the opened port &amp; the passed <code>combiner</code> (this
+means that the combiner is called in a fresh, empty dynamic
+environment).  When/if the binder normally returns, the port is
+closed.  The result of the applicatives <code>with-input-from-file</code>
+and <code>with-output-from-file</code> is inert.
+
+        <p>SOURCE NOTE: The first two are enumerated in the Kernel report but
+the text is still missing.  The third applicative is from Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; get-current-input-port: <b>(</b><var>get-current-input-port</var>)<var><a name="index-g_t_0028-266"></a></var><br>
+&mdash; get-current-output-port: <b>(</b><var>get-current-output-port</var>)<var><a name="index-g_t_0028-267"></a></var><br>
+&mdash; get-current-error-port: <b>(</b><var>get-current-error-port</var>)<var><a name="index-g_t_0028-268"></a></var><br>
+<blockquote><p>  These are the accessors for the input-port, output-port, and
+error-port keyed dynamic variables repectively. 
 <!-- add xref to with-input-from-file, etc -->
 <!-- add xref and text for these dynamic vars -->
 
-        <p>SOURCE NOTE: this is enumerated in the Kernel report but the text is
-still missing.  In the new scheme report there's also a third
-error-port variable.  It is very likely that that will be added to the
-klisp implementation in the near future. 
+        <p>SOURCE NOTE: The first two are enumerated in the Kernel report but
+the text is still missing.  The third applicative is from Scheme. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>open-input-file</b> (<var>open-input-file string</var>)<var><a name="index-open_002dinput_002dfile-265"></a></var><br>
+&mdash; Applicative: <b>open-input-file</b> (<var>open-input-file string</var>)<var><a name="index-open_002dinput_002dfile-269"></a></var><br>
+&mdash; Applicative: <b>open-binary-input-file</b> (<var>open-binary-input-file string</var>)<var><a name="index-open_002dbinary_002dinput_002dfile-270"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for an existing file.
 
-        <p>Applicative <code>open-input-file</code> creates and returns an input port
-associated with the file represented with <code>string</code>.  If the file
-can't be opened (e.g. because it doesn't exists, or there's a
-permissions problem), an error is signaled.
+        <p>Applicative <code>open-input-file</code> creates and returns a textual
+input port associated with the file represented with <code>string</code>. 
+Applicative <code>open-binary-input-file</code> creates and returns a binary
+input port associated with the file represented with <code>string</code>. 
+In either case, if the file can't be opened (e.g. because it doesn't
+exists, or there's a permissions problem), an error is signaled.
 
-        <p>SOURCE NOTE: this is enumerated in the Kernel report but the text is
-still missing. 
+        <p>SOURCE NOTE: open-input-file is enumerated in the Kernel report but
+the text is still missing. open-binary-input-file is from Scheme. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>open-output-file</b> (<var>open-output-file string</var>)<var><a name="index-open_002doutput_002dfile-266"></a></var><br>
+&mdash; Applicative: <b>open-output-file</b> (<var>open-output-file string</var>)<var><a name="index-open_002doutput_002dfile-271"></a></var><br>
+&mdash; Applicative: <b>open-binary-output-file</b> (<var>open-binary-output-file string</var>)<var><a name="index-open_002dbinary_002doutput_002dfile-272"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for an existing file.
 
-        <p>Applicative <code>open-output-file</code> creates and returns an output
-port associated with the file represented with <code>string</code>.  If the
-file can't be opened (e.g. if there's a permissions problem), an error
-is signaled.
+        <p>Applicative <code>open-output-file</code> creates and returns a textual
+output port associated with the file represented with <code>string</code>. 
+Applicative <code>open-binary-output-file</code> creates and returns a
+binary output port associated with the file represented with
+<code>string</code>.  In either case, if the file can't be opened (e.g. if
+there's a permissions problem), an error is signaled.
 
-        <p>In klisp, for now, applicative <code>open-output-file</code> truncates the
-file if it already exists, but that could change later (i.e. like in
-scheme the behaviour should be considered unspecified).
+        <p>In klisp, for now, applicative <code>open-output-file</code> and
+<code>open-binary-output-file</code> truncate the file if it already exists,
+but that could change later (i.e. like in Scheme the behaviour should
+be considered unspecified).
 
-        <p>SOURCE NOTE: this is enumerated in the Kernel report but the text is
-still missing. 
+        <p>SOURCE NOTE: open-output-file is enumerated in the Kernel report but
+the text is still missing. open-binary-output-file is from Scheme. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; close-input-file: <b>(</b><var>close-input-file input-port</var>)<var><a name="index-g_t_0028-267"></a></var><br>
-&mdash; close-output-file: <b>(</b><var>close-output-file output-port</var>)<var><a name="index-g_t_0028-268"></a></var><br>
+&mdash; close-input-file: <b>(</b><var>close-input-file input-port</var>)<var><a name="index-g_t_0028-273"></a></var><br>
+&mdash; close-output-file: <b>(</b><var>close-output-file output-port</var>)<var><a name="index-g_t_0028-274"></a></var><br>
 <blockquote><p>  These applicatives close the port argument, so that no more
 input/output may be performed on them, and the resources can be
 freed.  If the port was already closed these applicatives have no
@@ -148,13 +172,31 @@ probably be called close-input-port &amp; close-output-port.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>read</b> (<var>read </var>[<var>input-port</var>])<var><a name="index-read-269"></a></var><br>
+&mdash; close-input-port: <b>(</b><var>close-input-port input-port</var>)<var><a name="index-g_t_0028-275"></a></var><br>
+&mdash; close-output-port: <b>(</b><var>close-output-port output-port</var>)<var><a name="index-g_t_0028-276"></a></var><br>
+&mdash; close-port: <b>(</b><var>close-port port</var>)<var><a name="index-g_t_0028-277"></a></var><br>
+<blockquote><p>  These applicatives close the port argument, so that no more
+input/output may be performed on them, and the resources can be
+freed.  If the port was already closed these applicatives have no
+effect.  If at some time klisp provided input/ouput ports these could
+be used to selectively close only one direction of the port.
+
+        <p>The result returned by applicatives <code>close-input-port</code>,
+<code>close-output-port</code>, and <code>close-port</code> is inert.
+
+        <p>SOURCE NOTE: this is from Scheme. The equivalent
+<code>close-input-file</code> and <code>close-output-file</code> are probably name
+errors and only retained here till the draft standard rectifies them
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>read</b> (<var>read </var>[<var>textual-input-port</var>])<var><a name="index-read-278"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
 
         <p>Applicative <code>read</code> reads &amp; returns the next parseable object
-from the given port, or the eof object if no objects remain.  If
+from the given port, or the <code>eof</code> if no objects remain.  If
 <code>read</code> finds and unparseable object in the port, an error is
 signaled.  In that case, the remaining position in the port is
 unspecified.
@@ -164,7 +206,7 @@ still missing.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; write: <b>(</b><var>write object </var>[<var>port</var>])<var><a name="index-g_t_0028-270"></a></var><br>
+&mdash; write: <b>(</b><var>write object </var>[<var>textual-output-port</var>])<var><a name="index-g_t_0028-279"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -182,25 +224,25 @@ still missing.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>call-with-input-file</b> (<var>call-with-input-file string combiner</var>)<var><a name="index-call_002dwith_002dinput_002dfile-271"></a></var><br>
-&mdash; Applicative: <b>call-with-output-file</b> (<var>call-with-output-file string combiner</var>)<var><a name="index-call_002dwith_002doutput_002dfile-272"></a></var><br>
-<blockquote><p>  These applicatives open file named in <code>string</code> and call their
-<code>combiner</code> argument in a fresh empty environment passing it as a
-sole operand the opened port.  When/if the combiner normally returns a
-value the port is closed and that value is returned as the result of
-the applicative.
+&mdash; Applicative: <b>call-with-input-file</b> (<var>call-with-input-file string combiner</var>)<var><a name="index-call_002dwith_002dinput_002dfile-280"></a></var><br>
+&mdash; Applicative: <b>call-with-output-file</b> (<var>call-with-output-file string combiner</var>)<var><a name="index-call_002dwith_002doutput_002dfile-281"></a></var><br>
+<blockquote><p>  These applicatives open file named in <code>string</code> for textual
+input/output respectively and call their <code>combiner</code> argument in a
+fresh empty environment passing it as a sole operand the opened port. 
+When/if the combiner normally returns a value the port is closed and
+that value is returned as the result of the applicative.
 
         <p>SOURCE NOTE: this is enumerated in the Kernel report but the text is
 still missing. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>load</b> (<var>load string</var>)<var><a name="index-load-273"></a></var><br>
+&mdash; Applicative: <b>load</b> (<var>load string</var>)<var><a name="index-load-282"></a></var><br>
 <blockquote><!-- TODO add xref, open/input, read -->
-        <p>Applicative <code>load</code> opens for input a file named <code>string</code>;
-reads objects from the file until the end of the file is reached;
-evaluates those objects consecutively in the created environment.  The
-result from applicative <code>load</code> is inert.
+        <p>Applicative <code>load</code> opens the file named <code>string</code> for
+textual input; reads objects from the file until the end of the file
+is reached; evaluates those objects consecutively in the created
+environment.  The result from applicative <code>load</code> is inert.
 
         <p>SOURCE NOTE: load is enumerated in the Kernel report, but the
 description is not there yet.  This seems like a sane way to define
@@ -211,51 +253,51 @@ return the value of the last evaluation.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-module</b> (<var>get-module string </var>[<var>environment</var>])<var><a name="index-get_002dmodule-274"></a></var><br>
+&mdash; Applicative: <b>get-module</b> (<var>get-module string </var>[<var>environment</var>])<var><a name="index-get_002dmodule-283"></a></var><br>
 <blockquote><!-- TODO add xref standard-environment, open/input, read -->
         <p>Applicative <code>get-module</code> creates a fresh standard environment;
-opens for input a file named <code>string</code>; reads objects from the
-file until the end of the file is reached; evaluates those objects
-consecutively in the created environment; and, lastly, returns the
-created environment.  If the optional argument <code>environment</code> is
-specified, the freshly created standard environment is augmented,
+opens the file named <code>string</code> for textual input; reads objects
+from the file until the end of the file is reached; evaluates those
+objects consecutively in the created environment; and, lastly, returns
+the created environment.  If the optional argument <code>environment</code>
+is specified, the freshly created standard environment is augmented,
 prior to evaluating read expressions, by binding symbol
 <code>module-parameters</code> to the <code>environment</code> argument. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>eof-object?</b> (<var>eof-object? . objects</var>)<var><a name="index-eof_002dobject_003f-275"></a></var><br>
+&mdash; Applicative: <b>eof-object?</b> (<var>eof-object? . objects</var>)<var><a name="index-eof_002dobject_003f-284"></a></var><br>
 <blockquote><p>  The primitive type predicate for type eof.  <code>eof-object?</code>
 returns true iff all the objects in <code>objects</code> are of type eof.
 
         <p>SOURCE NOTE: This is not in the report, the idea is from Scheme. 
-The <code>eof-object?</code> name is also from scheme, but this will
+The <code>eof-object?</code> name is also from Scheme, but this will
 probably be changed to just <code>eof?</code>, for consistency with the other
 primitive type predicates. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; read-char: <b>(</b><var>read-char </var>[<var>port</var>])<var><a name="index-g_t_0028-276"></a></var><br>
+&mdash; read-char: <b>(</b><var>read-char </var>[<var>textual-input-port</var>])<var><a name="index-g_t_0028-285"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
 
         <p>Applicative <code>read-char</code> reads and returns a character (not
 an external representation of a character) from the specified port, or
-an eof if the end of file was reached.
+an <code>eof</code> if the end of file was reached.
 
         <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; peek-char: <b>(</b><var>peek-char </var>[<var>port</var>])<var><a name="index-g_t_0028-277"></a></var><br>
+&mdash; peek-char: <b>(</b><var>peek-char </var>[<var>textual-input-port</var>])<var><a name="index-g_t_0028-286"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
 
         <p>Applicative <code>peek-char</code> reads and returns a character (not
 an external representation of a character) from the specified port, or
-an eof if the end of file was reached.  The position of the port
+an <code>eof</code> if the end of file was reached.  The position of the port
 remains unchanged so that new call to <code>peek-char</code> or
 <code>read-char</code> on the same port return the same character.
 
@@ -263,7 +305,7 @@ remains unchanged so that new call to <code>peek-char</code> or
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; char-ready?: <b>(</b><var>char-ready? </var>[<var>port</var>])<var><a name="index-g_t_0028-278"></a></var><br>
+&mdash; char-ready?: <b>(</b><var>char-ready? </var>[<var>textual-input-port</var>])<var><a name="index-g_t_0028-287"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -278,7 +320,7 @@ the code to do this is non-portable.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; write-char: <b>(</b><var>write-char char </var>[<var>port</var>])<var><a name="index-g_t_0028-279"></a></var><br>
+&mdash; write-char: <b>(</b><var>write-char char </var>[<var>textual-output-port</var>])<var><a name="index-g_t_0028-288"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -291,7 +333,7 @@ The result returned by <code>write-char</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; newline: <b>(</b><var>newline </var>[<var>port</var>])<var><a name="index-g_t_0028-280"></a></var><br>
+&mdash; newline: <b>(</b><var>newline </var>[<var>textal-ouput-port</var>])<var><a name="index-g_t_0028-289"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -303,7 +345,7 @@ The result returned by <code>newline</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; display: <b>(</b><var>display object </var>[<var>port</var>])<var><a name="index-g_t_0028-281"></a></var><br>
+&mdash; display: <b>(</b><var>display object </var>[<var>textual-output-port</var>])<var><a name="index-g_t_0028-290"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -318,7 +360,66 @@ within those strings and character objects are output as if by
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; flush-output-port: <b>(</b><var>flush-output-port </var>[<var>port</var>])<var><a name="index-g_t_0028-282"></a></var><br>
+&mdash; read-u8: <b>(</b><var>read-u8 </var>[<var>textual-input-port</var>])<var><a name="index-g_t_0028-291"></a></var><br>
+<blockquote><p>  If the <code>port</code> optional argument is not specified, then the
+value of the <code>input-port</code> keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+        <p>Applicative <code>read-u8</code> reads and returns a byte as an exact
+unsigned integer between 0 and 255 inclusive (not an external
+representation of a byte) from the specified port, or an <code>eof</code> if
+the end of file was reached.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; peek-u8: <b>(</b><var>peek-u8 </var>[<var>textual-input-port</var>])<var><a name="index-g_t_0028-292"></a></var><br>
+<blockquote><p>  If the <code>port</code> optional argument is not specified, then the
+value of the <code>input-port</code> keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+        <p>Applicative <code>peek-u8</code> reads and returns a byte as an exact
+unsigned integer between 0 and 255 inclusive (not an external
+representation of a byte) from the specified port, or an <code>eof</code> if
+the end of file was reached.  The position of the port remains
+unchanged so that new call to <code>peek-u8</code> or <code>read-u8</code> on the
+same port return the same byte.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; u8-ready?: <b>(</b><var>u8-ready? </var>[<var>textual-input-port</var>])<var><a name="index-g_t_0028-293"></a></var><br>
+<blockquote><p>  If the <code>port</code> optional argument is not specified, then the
+value of the <code>input-port</code> keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+        <p>Predicate <code>u8-ready?</code> checks to see if a byte is
+available in the specified port.  If it returns true, then a
+<code>read-u8</code> or <code>peek-u8</code> on that port is guaranteed not to
+block/hang.  For now in klisp this is hardcoded to <code>#t</code> because
+the code to do this is non-portable.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; write-u8: <b>(</b><var>write-u8 u8 </var>[<var>textual-output-port</var>])<var><a name="index-g_t_0028-294"></a></var><br>
+<blockquote><p>  If the <code>port</code> optional argument is not specified, then the
+value of the <code>output-port</code> keyed dynamic variable is used.  If the
+port is closed, an error is signaled.
+
+        <p>Applicative <code>write-u8</code> writes the byte represented by the
+unsigned integer <code>u8</code>, that should be between 0 and 255 inclusive,
+(not an external representation of byte) to the specified port.  The
+result returned by <code>write-u8</code> is inert.
+
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; flush-output-port: <b>(</b><var>flush-output-port </var>[<var>output-port</var>])<var><a name="index-g_t_0028-295"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If
 the <code>port</code> is closed or if it is not an output port, an error is
@@ -332,7 +433,7 @@ output port to the underlying file or device. The result returned by
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; file-exists?: <b>(</b><var>file-exists? string</var>)<var><a name="index-g_t_0028-283"></a></var><br>
+&mdash; file-exists?: <b>(</b><var>file-exists? string</var>)<var><a name="index-g_t_0028-296"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for a file.
 
         <p>Predicate <code>file-exists?</code> checks to see if a file named
@@ -342,7 +443,7 @@ output port to the underlying file or device. The result returned by
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; delete-file: <b>(</b><var>delete-file string</var>)<var><a name="index-g_t_0028-284"></a></var><br>
+&mdash; delete-file: <b>(</b><var>delete-file string</var>)<var><a name="index-g_t_0028-297"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for an existing file.
 
         <p>Applicative <code>delete-file</code> deletes the file named <code>string</code>. 
@@ -353,7 +454,7 @@ result returned by <code>delete-file</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; rename-file: <b>(</b><var>rename-file string1 string2</var>)<var><a name="index-g_t_0028-285"></a></var><br>
+&mdash; rename-file: <b>(</b><var>rename-file string1 string2</var>)<var><a name="index-g_t_0028-298"></a></var><br>
 <blockquote><p>  <code>string1</code> should be the name/path for an existing file,
 <code>string2</code> should be the name/path for a non existing file.
 

@@ -792,7 +792,7 @@ int32_t kmark_count;
 #define K_FLAG_OUTPUT_PORT 0x01
 #define K_FLAG_INPUT_PORT 0x02
 #define K_FLAG_CLOSED_PORT 0x04
-/* At least for now ports are either binary or character */
+/* At least for now ports are either binary or textual */
 #define K_FLAG_BINARY_PORT 0x08
 
 #define kport_set_input(o_) (tv_get_kflags(o_) |= K_FLAG_INPUT_PORT)
@@ -804,7 +804,7 @@ int32_t kmark_count;
 #define kport_is_output(o_) ((tv_get_kflags(o_) & K_FLAG_OUTPUT_PORT) != 0)
 #define kport_is_closed(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) != 0)
 #define kport_is_binary(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) != 0)
-#define kport_is_character(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) == 0)
+#define kport_is_textual(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) == 0)
 
 #define K_FLAG_WEAK_KEYS 0x01
 #define K_FLAG_WEAK_VALUES 0x02
@@ -820,7 +820,7 @@ int32_t kmark_count;
 bool kis_input_port(TValue o);
 bool kis_output_port(TValue o);
 bool kis_binary_port(TValue o);
-bool kis_character_port(TValue o);
+bool kis_textual_port(TValue o);
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)

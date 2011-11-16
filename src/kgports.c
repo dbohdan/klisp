@@ -172,8 +172,8 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!kport_is_input(port)) {
 	klispE_throw_simple(K, "the port should be an input port");
 	return;
-    } else if (!kport_is_character(port)) {
-	klispE_throw_simple(K, "the port should be a character port");
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
 	return;
     } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
@@ -201,8 +201,8 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    } else if (!kport_is_character(port)) {
-	klispE_throw_simple(K, "the port should be a character port");
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
 	return;
     } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
@@ -231,8 +231,8 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    } else if (!kport_is_character(port)) {
-	klispE_throw_simple(K, "the port should be a character port");
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
 	return;
     } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
@@ -259,8 +259,8 @@ void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    } else if (!kport_is_character(port)) {
-	klispE_throw_simple(K, "the port should be a character port");
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
 	return;
     } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
@@ -292,8 +292,8 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
     if (!kport_is_input(port)) {
 	klispE_throw_simple(K, "the port should be an input port");
 	return;
-    } else if (!kport_is_character(port)) {
-	klispE_throw_simple(K, "the port should be a character port");
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
 	return;
     } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
@@ -329,8 +329,8 @@ void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!kport_is_input(port)) {
 	klispE_throw_simple(K, "the port should be an input port");
 	return;
-    } else if (!kport_is_character(port)) {
-	klispE_throw_simple(K, "the port should be a character port");
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
 	return;
     } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
@@ -684,8 +684,8 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
-    } else if (!kport_is_character(port)) {
-	klispE_throw_simple(K, "the port should be a character port");
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
 	return;
     } else if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
@@ -799,11 +799,11 @@ void kinit_ports_ground_env(klisp_State *K)
 		    p2tv(kis_input_port));
     add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
 		    p2tv(kis_output_port));
-    /* 15.1.? binary-port?, character-port? */
+    /* 15.1.? binary-port?, textual-port? */
     add_applicative(K, ground_env, "binary-port?", ftypep, 2, symbol, 
 		    p2tv(kis_binary_port));
-    add_applicative(K, ground_env, "character-port?", ftypep, 2, symbol, 
-		    p2tv(kis_character_port));
+    add_applicative(K, ground_env, "textual-port?", ftypep, 2, symbol, 
+		    p2tv(kis_textual_port));
 
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
     /* 15.1.? with-error-to-file */

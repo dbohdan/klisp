@@ -2135,16 +2135,21 @@ File: klisp.info,  Node: Ports,  Next: Alphabetical Index,  Prev: Characters,  U
 16 Ports
 ********
 
-A port is an object that mediates character-based input from a source
-or character-based output to a destination. In the former case, the
-port is an input port, in the latter case, an output port.
+A port is an object that mediates data from an input or to a
+destination.  In the former case, the port is an input port, in the
+latter case, an output port.  The data itself can consist of either
+characters or bytes.  In the former case the port is a textual port and
+in the latter case, a binary port.
+
+   There are three textual ports open, binded by dynamic variables, one
+for standard input, output, and error.
 
    Although ports are not considered immutable, none of the operations
 on ports described in this section constitute mutation.  Ports are
 `equal?' iff `eq?'.  The port type is encapsulated.
 
    An auxiliary data type used to signal the end of file was reached is
-eof. The eof type consists of a single immutable value, having an
+`eof'. The eof type consists of a single immutable value, having an
 output only external representation (so that it can never be the normal
 result of a call to read).  The eof type is encapsulated.
 
@@ -2159,62 +2164,82 @@ klisp and was taken from Scheme.
  -- Applicative: output-port? (output-port? . objects)
      Applicative `input-port?' is a predicate that returns true unless
      one or more of its arguments is not an input port.  Applicative
-     output-port? is a predicate that returns true unless one or more of
-     its arguments is not an output port.
+     `output-port?' is a predicate that returns true unless one or more
+     of its arguments is not an output port.
 
      Every port must be admitted by at least one of these two
      predicates.
 
+ -- Applicative: textual-port? (textual-port? . objects)
+ -- Applicative: binary-port? (binary-port? . objects)
+     Applicative `textual-port?' is a predicate that returns true
+     unless one or more of its arguments is not a textual port.
+     Applicative `binary-port?' is a predicate that returns true unless
+     one or more of its arguments is not a binary port.
+
+     Every port must be admitted by at least one of these two
+     predicates.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
  -- with-input-from-file: (with-input-from-file string combiner)
  -- with-output-to-file: (with-output-to-file string combiner)
-     These two applicatives open the file named in `string' for input
-     or output, an invoke the binder of the input-port & output-port
-     keyed dynamic variables respectively with the opened port & the
-     passed `combiner' (this means that the combiner is called in a
-     fresh, empty dynamic environment).  When/if the binder normally
-     returns, the port is closed.  The result of the applicatives
+ -- with-error-to-file: (with-error-to-file string combiner)
+     These three applicatives open the file named in `string' for
+     textual input or output, an invoke the binder of either the
+     input-port, the output-port or the error-port keyed dynamic
+     variables respectively with the opened port & the passed
+     `combiner' (this means that the combiner is called in a fresh,
+     empty dynamic environment).  When/if the binder normally returns,
+     the port is closed.  The result of the applicatives
      `with-input-from-file' and `with-output-from-file' is inert.
 
-     SOURCE NOTE: this is enumerated in the Kernel report but the text
-     is still missing.  In the new scheme report there's also a third
-     error-port variable.  It is very likely that that will be added to
-     the klisp implementation in the near future.
+     SOURCE NOTE: The first two are enumerated in the Kernel report but
+     the text is still missing.  The third applicative is from Scheme.
 
  -- get-current-input-port: (get-current-input-port)
  -- get-current-output-port: (get-current-output-port)
-     These are the accessors for the input-port and output-port keyed
-     dynamic variables repectively.
+ -- get-current-error-port: (get-current-error-port)
+     These are the accessors for the input-port, output-port, and
+     error-port keyed dynamic variables repectively.
 
-     SOURCE NOTE: this is enumerated in the Kernel report but the text
-     is still missing.  In the new scheme report there's also a third
-     error-port variable.  It is very likely that that will be added to
-     the klisp implementation in the near future.
+     SOURCE NOTE: The first two are enumerated in the Kernel report but
+     the text is still missing.  The third applicative is from Scheme.
 
  -- Applicative: open-input-file (open-input-file string)
+ -- Applicative: open-binary-input-file (open-binary-input-file string)
      `string' should be the name/path for an existing file.
 
-     Applicative `open-input-file' creates and returns an input port
-     associated with the file represented with `string'.  If the file
-     can't be opened (e.g. because it doesn't exists, or there's a
-     permissions problem), an error is signaled.
+     Applicative `open-input-file' creates and returns a textual input
+     port associated with the file represented with `string'.
+     Applicative `open-binary-input-file' creates and returns a binary
+     input port associated with the file represented with `string'.  In
+     either case, if the file can't be opened (e.g. because it doesn't
+     exists, or there's a permissions problem), an error is signaled.
 
-     SOURCE NOTE: this is enumerated in the Kernel report but the text
-     is still missing.
+     SOURCE NOTE: open-input-file is enumerated in the Kernel report but
+     the text is still missing. open-binary-input-file is from Scheme.
 
  -- Applicative: open-output-file (open-output-file string)
+ -- Applicative: open-binary-output-file (open-binary-output-file
+          string)
      `string' should be the name/path for an existing file.
 
-     Applicative `open-output-file' creates and returns an output port
-     associated with the file represented with `string'.  If the file
-     can't be opened (e.g. if there's a permissions problem), an error
-     is signaled.
+     Applicative `open-output-file' creates and returns a textual
+     output port associated with the file represented with `string'.
+     Applicative `open-binary-output-file' creates and returns a binary
+     output port associated with the file represented with `string'.
+     In either case, if the file can't be opened (e.g. if there's a
+     permissions problem), an error is signaled.
 
-     In klisp, for now, applicative `open-output-file' truncates the
-     file if it already exists, but that could change later (i.e. like
-     in scheme the behaviour should be considered unspecified).
+     In klisp, for now, applicative `open-output-file' and
+     `open-binary-output-file' truncate the file if it already exists,
+     but that could change later (i.e. like in Scheme the behaviour
+     should be considered unspecified).
 
-     SOURCE NOTE: this is enumerated in the Kernel report but the text
-     is still missing.
+     SOURCE NOTE: open-output-file is enumerated in the Kernel report
+     but the text is still missing. open-binary-output-file is from
+     Scheme.
 
  -- close-input-file: (close-input-file input-port)
  -- close-output-file: (close-output-file output-port)
@@ -2230,20 +2255,37 @@ klisp and was taken from Scheme.
      is still missing.  There's probably a name error here.  These
      should probably be called close-input-port & close-output-port.
 
- -- Applicative: read (read [input-port])
+ -- close-input-port: (close-input-port input-port)
+ -- close-output-port: (close-output-port output-port)
+ -- close-port: (close-port port)
+     These applicatives close the port argument, so that no more
+     input/output may be performed on them, and the resources can be
+     freed.  If the port was already closed these applicatives have no
+     effect.  If at some time klisp provided input/ouput ports these
+     could be used to selectively close only one direction of the port.
+
+     The result returned by applicatives `close-input-port',
+     `close-output-port', and `close-port' is inert.
+
+     SOURCE NOTE: this is from Scheme. The equivalent
+     `close-input-file' and `close-output-file' are probably name
+     errors and only retained here till the draft standard rectifies
+     them
+
+ -- Applicative: read (read [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
 
      Applicative `read' reads & returns the next parseable object from
-     the given port, or the eof object if no objects remain.  If `read'
+     the given port, or the `eof' if no objects remain.  If `read'
      finds and unparseable object in the port, an error is signaled.
      In that case, the remaining position in the port is unspecified.
 
      SOURCE NOTE: this is enumerated in the Kernel report but the text
      is still missing.
 
- -- write: (write object [port])
+ -- write: (write object [textual-output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2262,20 +2304,20 @@ klisp and was taken from Scheme.
           combiner)
  -- Applicative: call-with-output-file (call-with-output-file string
           combiner)
-     These applicatives open file named in `string' and call their
-     `combiner' argument in a fresh empty environment passing it as a
-     sole operand the opened port.  When/if the combiner normally
-     returns a value the port is closed and that value is returned as
-     the result of the applicative.
+     These applicatives open file named in `string' for textual
+     input/output respectively and call their `combiner' argument in a
+     fresh empty environment passing it as a sole operand the opened
+     port.  When/if the combiner normally returns a value the port is
+     closed and that value is returned as the result of the applicative.
 
      SOURCE NOTE: this is enumerated in the Kernel report but the text
      is still missing.
 
  -- Applicative: load (load string)
-     Applicative `load' opens for input a file named `string'; reads
-     objects from the file until the end of the file is reached;
-     evaluates those objects consecutively in the created environment.
-     The result from applicative `load' is inert.
+     Applicative `load' opens the file named `string' for textual
+     input; reads objects from the file until the end of the file is
+     reached; evaluates those objects consecutively in the created
+     environment.  The result from applicative `load' is inert.
 
      SOURCE NOTE: load is enumerated in the Kernel report, but the
      description is not there yet.  This seems like a sane way to define
@@ -2286,48 +2328,48 @@ klisp and was taken from Scheme.
 
  -- Applicative: get-module (get-module string [environment])
      Applicative `get-module' creates a fresh standard environment;
-     opens for input a file named `string'; reads objects from the file
-     until the end of the file is reached; evaluates those objects
-     consecutively in the created environment; and, lastly, returns the
-     created environment.  If the optional argument `environment' is
-     specified, the freshly created standard environment is augmented,
-     prior to evaluating read expressions, by binding symbol
-     `module-parameters' to the `environment' argument.
+     opens the file named `string' for textual input; reads objects
+     from the file until the end of the file is reached; evaluates those
+     objects consecutively in the created environment; and, lastly,
+     returns the created environment.  If the optional argument
+     `environment' is specified, the freshly created standard
+     environment is augmented, prior to evaluating read expressions, by
+     binding symbol `module-parameters' to the `environment' argument.
 
  -- Applicative: eof-object? (eof-object? . objects)
      The primitive type predicate for type eof.  `eof-object?' returns
      true iff all the objects in `objects' are of type eof.
 
      SOURCE NOTE: This is not in the report, the idea is from Scheme.
-     The `eof-object?' name is also from scheme, but this will probably
+     The `eof-object?' name is also from Scheme, but this will probably
      be changed to just `eof?', for consistency with the other
      primitive type predicates.
 
- -- read-char: (read-char [port])
+ -- read-char: (read-char [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
 
      Applicative `read-char' reads and returns a character (not an
      external representation of a character) from the specified port, or
-     an eof if the end of file was reached.
+     an `eof' if the end of file was reached.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- peek-char: (peek-char [port])
+ -- peek-char: (peek-char [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
 
      Applicative `peek-char' reads and returns a character (not an
      external representation of a character) from the specified port, or
-     an eof if the end of file was reached.  The position of the port
+     an `eof' if the end of file was reached.  The position of the port
      remains unchanged so that new call to `peek-char' or `read-char'
      on the same port return the same character.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- char-ready?: (char-ready? [port])
+ -- char-ready?: (char-ready? [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2340,7 +2382,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- write-char: (write-char char [port])
+ -- write-char: (write-char char [textual-output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2351,7 +2393,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- newline: (newline [port])
+ -- newline: (newline [textal-ouput-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2361,7 +2403,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- display: (display object [port])
+ -- display: (display object [textual-output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2374,7 +2416,58 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- flush-output-port: (flush-output-port [port])
+ -- read-u8: (read-u8 [textual-input-port])
+     If the `port' optional argument is not specified, then the value
+     of the `input-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `read-u8' reads and returns a byte as an exact
+     unsigned integer between 0 and 255 inclusive (not an external
+     representation of a byte) from the specified port, or an `eof' if
+     the end of file was reached.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- peek-u8: (peek-u8 [textual-input-port])
+     If the `port' optional argument is not specified, then the value
+     of the `input-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `peek-u8' reads and returns a byte as an exact
+     unsigned integer between 0 and 255 inclusive (not an external
+     representation of a byte) from the specified port, or an `eof' if
+     the end of file was reached.  The position of the port remains
+     unchanged so that new call to `peek-u8' or `read-u8' on the same
+     port return the same byte.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- u8-ready?: (u8-ready? [textual-input-port])
+     If the `port' optional argument is not specified, then the value
+     of the `input-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Predicate `u8-ready?' checks to see if a byte is available in the
+     specified port.  If it returns true, then a `read-u8' or `peek-u8'
+     on that port is guaranteed not to block/hang.  For now in klisp
+     this is hardcoded to `#t' because the code to do this is
+     non-portable.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- write-u8: (write-u8 u8 [textual-output-port])
+     If the `port' optional argument is not specified, then the value
+     of the `output-port' keyed dynamic variable is used.  If the port
+     is closed, an error is signaled.
+
+     Applicative `write-u8' writes the byte represented by the unsigned
+     integer `u8', that should be between 0 and 255 inclusive, (not an
+     external representation of byte) to the specified port.  The
+     result returned by `write-u8' is inert.
+
+     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+
+ -- flush-output-port: (flush-output-port [output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the
      `port' is closed or if it is not an output port, an error is
@@ -2447,7 +2540,7 @@ Index
 * $sequence:                             Control.             (line  23)
 * $set!:                                 Environments.        (line 182)
 * $vau:                                  Combiners.           (line  26)
-* ( <1>:                                 Ports.               (line  37)
+* ( <1>:                                 Ports.               (line  54)
 * ( <2>:                                 Numbers.             (line 193)
 * ( <3>:                                 Continuations.       (line 143)
 * (:                                     Environments.        (line 174)
@@ -2474,6 +2567,7 @@ Index
 * assoc:                                 Pairs and lists.     (line 252)
 * assq:                                  Pairs and lists.     (line 333)
 * atan:                                  Numbers.             (line 386)
+* binary-port?:                          Ports.               (line  43)
 * boolean?:                              Booleans.            (line  12)
 * booleans:                              Booleans.            (line   6)
 * caaaar:                                Pairs and lists.     (line 101)
@@ -2490,8 +2584,8 @@ Index
 * cadddr:                                Pairs and lists.     (line 108)
 * caddr:                                 Pairs and lists.     (line  96)
 * cadr:                                  Pairs and lists.     (line  90)
-* call-with-input-file:                  Ports.               (line 131)
-* call-with-output-file:                 Ports.               (line 133)
+* call-with-input-file:                  Ports.               (line 173)
+* call-with-output-file:                 Ports.               (line 175)
 * call/cc:                               Continuations.       (line  43)
 * car:                                   Pairs and lists.     (line  85)
 * cdaaar:                                Pairs and lists.     (line 109)
@@ -2554,7 +2648,7 @@ Index
 * encycle!:                              Pairs and lists.     (line 158)
 * environment?:                          Environments.        (line  23)
 * environments:                          Environments.        (line   6)
-* eof-object?:                           Ports.               (line 166)
+* eof-object?:                           Ports.               (line 208)
 * eq?:                                   Equivalence.         (line  12)
 * equal?:                                Equivalence.         (line  16)
 * equivalence:                           Equivalence.         (line   6)
@@ -2580,7 +2674,7 @@ Index
 * gcd:                                   Numbers.             (line 207)
 * get-current-environment:               Environments.        (line 114)
 * get-list-metrics:                      Pairs and lists.     (line 123)
-* get-module:                            Ports.               (line 156)
+* get-module:                            Ports.               (line 198)
 * get-real-exact-bounds:                 Numbers.             (line 233)
 * get-real-exact-primary:                Numbers.             (line 252)
 * get-real-internal-bounds:              Numbers.             (line 232)
@@ -2593,7 +2687,7 @@ Index
 * inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
 * inexact?:                              Numbers.             (line  83)
-* input-port?:                           Ports.               (line  27)
+* input-port?:                           Ports.               (line  32)
 * integer->char:                         Characters.          (line  59)
 * integer?:                              Numbers.             (line  61)
 * Kernel history:                        Kernel History.      (line   6)
@@ -2609,7 +2703,7 @@ Index
 * list-ref:                              Pairs and lists.     (line 198)
 * list-tail:                             Pairs and lists.     (line 147)
 * lists:                                 Pairs and lists.     (line   6)
-* load:                                  Ports.               (line 143)
+* load:                                  Ports.               (line 185)
 * log:                                   Numbers.             (line 376)
 * make-encapsulation-type:               Encapsulations.      (line  12)
 * make-environment:                      Environments.        (line  36)
@@ -2637,17 +2731,19 @@ Index
 * object descriptions:                   A Sample Applicative Description.
                                                               (line   6)
 * odd?:                                  Numbers.             (line 185)
-* open-input-file:                       Ports.               (line  62)
-* open-output-file:                      Ports.               (line  73)
+* open-binary-input-file:                Ports.               (line  79)
+* open-binary-output-file:               Ports.               (line  94)
+* open-input-file:                       Ports.               (line  78)
+* open-output-file:                      Ports.               (line  92)
 * operative descriptions:                A Sample Applicative Description.
                                                               (line   6)
 * operative?:                            Combiners.           (line  16)
 * operatives:                            Combiners.           (line   6)
 * or?:                                   Booleans.            (line  24)
-* output-port?:                          Ports.               (line  28)
+* output-port?:                          Ports.               (line  33)
 * pair?:                                 Pairs and lists.     (line  27)
 * pairs:                                 Pairs and lists.     (line   6)
-* port?:                                 Ports.               (line  23)
+* port?:                                 Ports.               (line  28)
 * ports:                                 Ports.               (line   6)
 * positive?:                             Numbers.             (line 177)
 * printing notation:                     Printing Notation.   (line   6)
@@ -2655,7 +2751,7 @@ Index
 * promises:                              Promises.            (line   6)
 * rational?:                             Numbers.             (line  66)
 * rationalize:                           Numbers.             (line 340)
-* read:                                  Ports.               (line 102)
+* read:                                  Ports.               (line 144)
 * real->exact:                           Numbers.             (line 286)
 * real->inexact:                         Numbers.             (line 285)
 * real?:                                 Numbers.             (line  71)
@@ -2695,6 +2791,7 @@ Index
 * symbol?:                               Symbols.             (line  12)
 * symbols:                               Symbols.             (line   6)
 * tan:                                   Numbers.             (line 381)
+* textual-port?:                         Ports.               (line  42)
 * truncate:                              Numbers.             (line 326)
 * undefined?:                            Numbers.             (line  91)
 * unwrap:                                Combiners.           (line  72)
@@ -2733,6 +2830,6 @@ Node: Numbers72249
 Node: Strings91748
 Node: Characters97095
 Node: Ports99805
-Node: Alphabetical Index112780
+Node: Alphabetical Index117409
 
 End Tag Table

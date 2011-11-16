@@ -83,9 +83,9 @@ bool kis_binary_port(TValue o)
     return ttisport(o) && kport_is_binary(o);
 }
 
-bool kis_character_port(TValue o)
+bool kis_textual_port(TValue o)
 {
-    return ttisport(o) && kport_is_character(o);
+    return ttisport(o) && kport_is_textual(o);
 }
 
 int32_t klispO_log2 (uint32_t x) {

@@ -424,7 +424,7 @@ void kwrite_simple(klisp_State *K, TValue obj)
     case K_TPORT:
 	/* TODO try to get the filename */
 	kw_printf(K, "#[%s %s port", 
-		  kport_is_binary? "binary" : "character",
+		  kport_is_binary(obj)? "binary" : "textual",
 		  kport_is_input(obj)? "input" : "output");
 	#if KTRACK_NAMES
 	if (khas_name(obj)) {
