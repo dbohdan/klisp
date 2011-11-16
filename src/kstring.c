@@ -156,6 +156,7 @@ TValue kstring_new_s(klisp_State *K, uint32_t size)
     String *new_str;
 
     if (size == 0) {
+	klisp_assert(ttisstring(K->empty_string));
 	return K->empty_string;
     }
 

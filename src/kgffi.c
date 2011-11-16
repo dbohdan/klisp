@@ -484,10 +484,10 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
     TValue key = xparams[0];
     krooted_tvs_push(K, key);
     size_t bytevector_size = sizeof(ffi_call_interface_t) + (sizeof(ffi_codec_t *) + sizeof(ffi_type)) * nargs;
-    TValue bytevector = kbytevector_new_imm(K, bytevector_size);
-    krooted_tvs_push(K, bytevector);
-    TValue enc = kmake_encapsulation(K, key, bytevector);
-    krooted_tvs_pop(K);
+    /* XXX was immutable, but there is no immutable bytevector constructor
+       without buffer now, is it really immutable?? see end of function
+    Andres Navarro */
+    TValue bytevector = kbytevector_new_sf(K, bytevector_size, 0);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -533,6 +533,16 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
             klispE_throw_simple(K, "unknown error in ffi_prep_cif");
             return;
     }
+    /* XXX if it should really be immutable this is the only sane way I can
+       think of. If not, just remove.
+    Andres Navarro */
+    krooted_tvs_push(K, bytevector);
+    bytevector = kbytevector_new_bs_imm(K, kbytevector_buf(bytevector),
+					kbytevector_size(bytevector));
+    krooted_tvs_push(K, bytevector);
+    TValue enc = kmake_encapsulation(K, key, bytevector);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
     kapply_cc(K, enc);
 }
 

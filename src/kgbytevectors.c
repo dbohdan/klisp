@@ -51,16 +51,7 @@ void make_bytevector(klisp_State *K, TValue *xparams, TValue ptree,
 	klispE_throw_simple(K, "size is too big");    
 	return;
     }
-/* XXX/TODO */
-/*    TValue new_bytevector = kbytevector_new_sf(K, ivalue(tv_s), fill); */
-    TValue new_bytevector = kbytevector_new(K, ivalue(tv_s));
-    if (fill != 0) {
-	int32_t s = ivalue(tv_s);
-	uint8_t *ptr = kbytevector_buf(new_bytevector);
-	while(s--)
-	    *ptr++ = fill;
-    }
-
+    TValue new_bytevector = kbytevector_new_sf(K, ivalue(tv_s), fill);
     kapply_cc(K, new_bytevector);
 }
 
@@ -148,13 +139,12 @@ void bytevector_copy(klisp_State *K, TValue *xparams, TValue ptree,
     if (tv_equal(bytevector, K->empty_bytevector)) {
 	new_bytevector = bytevector; 
     } else {
-	new_bytevector = kbytevector_new(K, kbytevector_size(bytevector));
-	memcpy(kbytevector_buf(new_bytevector), 
-	       kbytevector_buf(bytevector), 
-	       kbytevector_size(bytevector));
+	new_bytevector = kbytevector_new_bs(K, kbytevector_buf(bytevector),
+					    kbytevector_size(bytevector));
     }
     kapply_cc(K, new_bytevector);
 }
+
 
 /* 13.2.9? bytevector->immutable-bytevector */
 void bytevector_to_immutable_bytevector(klisp_State *K, TValue *xparams, 
@@ -169,10 +159,8 @@ void bytevector_to_immutable_bytevector(klisp_State *K, TValue *xparams,
 /* this includes the empty bytevector */
 	res_bytevector = bytevector;
     } else {
-	res_bytevector = kbytevector_new_imm(K, kbytevector_size(bytevector));
-	memcpy(kbytevector_buf(res_bytevector), 
-	       kbytevector_buf(bytevector), 
-	       kbytevector_size(bytevector));
+	res_bytevector = kbytevector_new_bs_imm(K, kbytevector_buf(bytevector), 
+						kbytevector_size(bytevector));
     }
     kapply_cc(K, res_bytevector);
 }

@@ -157,7 +157,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* MAYBE: fix it so we can remove empty_bytevector from roots */
     /* XXX: find a better way to do this */
     K->empty_bytevector = KNIL; /* trick constructor to create empty bytevector */
-    K->empty_bytevector = kbytevector_new_imm(K, 0);
+    K->empty_bytevector = kbytevector_new_bs_imm(K, NULL, 0);
 
     /* initialize tokenizer */
 

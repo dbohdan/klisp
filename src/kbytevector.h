@@ -10,13 +10,31 @@
 #include "kobject.h"
 #include "kstate.h"
 
-/* TODO change bytevector constructors to string like constructors */
-/* TODO change names to lua-like (e.g. klispB_new, etc) */
+/* TODO change names to be lua-like (e.g. klispBB_new, etc) */
 
-/* Constructors for bytevectors */
-TValue kbytevector_new_g(klisp_State *K, bool m, uint32_t size);
-TValue kbytevector_new_imm(klisp_State *K, uint32_t size);
-TValue kbytevector_new(klisp_State *K, uint32_t size);
+/* General constructor for bytevectors */
+TValue kbytevector_new_bs_g(klisp_State *K, bool m, const uint8_t *buf, 
+			    uint32_t size);
+
+/* 
+** Constructors for immutable bytevectors
+*/
+
+/* main immutable bytevector constructor */
+/* with buffer & size */
+TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size);
+
+/* 
+** Constructors for mutable bytevectors
+*/
+
+/* main mutable bytevector constructor */
+/* with just size */
+TValue kbytevector_new_s(klisp_State *K, uint32_t size);
+/* with buffer & size */
+TValue kbytevector_new_bs(klisp_State *K, const uint8_t *buf, uint32_t size);
+/* with size & fill byte */
+TValue kbytevector_new_sf(klisp_State *K, uint32_t size, uint8_t fill);
 
 /* both obj1 and obj2 should be bytevectors, this compares byte by byte
   and doesn't differentiate immutable from mutable bytevectors */
