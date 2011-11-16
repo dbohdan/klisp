@@ -123,8 +123,6 @@ void bytevector_u8_setS(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, KINERT);
 }
 
-/* TODO change bytevector constructors to string like constructors */
-
 /* 13.2.8? bytevector-copy */
 /* TEMP: at least for now this always returns mutable bytevectors */
 void bytevector_copy(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -145,6 +143,28 @@ void bytevector_copy(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, new_bytevector);
 }
 
+/* 13.2.9? bytevector-copy! */
+void bytevector_copyS(klisp_State *K, TValue *xparams, TValue ptree, 
+		     TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "bytevector", ttisbytevector, bytevector1, 
+	"bytevector", ttisbytevector, bytevector2);
+
+    if (kbytevector_immutablep(bytevector2)) {
+	klispE_throw_simple(K, "immutable destination bytevector");
+	return;
+    } else if (kbytevector_size(bytevector1) > kbytevector_size(bytevector2)) {
+	klispE_throw_simple(K, "destination bytevector is too small");
+	return;
+    }
+
+    memcpy(kbytevector_buf(bytevector2),
+	   kbytevector_buf(bytevector1),
+	   kbytevector_size(bytevector1));
+    kapply_cc(K, KINERT);
+}
 
 /* 13.2.9? bytevector->immutable-bytevector */
 void bytevector_to_immutable_bytevector(klisp_State *K, TValue *xparams, 
@@ -193,54 +213,11 @@ void kinit_bytevectors_ground_env(klisp_State *K)
 
     /* ??.1.?? bytevector-copy */
     add_applicative(K, ground_env, "bytevector-copy", bytevector_copy, 0);
+    /* ??.1.?? bytevector-copy! */
+    add_applicative(K, ground_env, "bytevector-copy!", bytevector_copyS, 0);
+
     /* ??.1.?? bytevector->immutable-bytevector */
     add_applicative(K, ground_env, "bytevector->immutable-bytevector", 
 		    bytevector_to_immutable_bytevector, 0);
 
-/* TODO put the bytevector equivalents here */
-#if 0
-    /* 13.2.1? string */
-    add_applicative(K, ground_env, "string", string, 0);
-    /* 13.2.2? string=?, string-ci=? */
-    add_applicative(K, ground_env, "string=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_eqp));
-    add_applicative(K, ground_env, "string-ci=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_eqp));
-    /* 13.2.3? string<?, string<=?, string>?, string>=? */
-    add_applicative(K, ground_env, "string<?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ltp));
-    add_applicative(K, ground_env, "string<=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_lep));
-    add_applicative(K, ground_env, "string>?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_gtp));
-    add_applicative(K, ground_env, "string>=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_gep));
-    /* 13.2.4? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
-    add_applicative(K, ground_env, "string-ci<?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_ltp));
-    add_applicative(K, ground_env, "string-ci<=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_lep));
-    add_applicative(K, ground_env, "string-ci>?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_gtp));
-    add_applicative(K, ground_env, "string-ci>=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_gep));
-    /* 13.2.5? substring */
-    add_applicative(K, ground_env, "substring", substring, 0);
-    /* 13.2.6? string-append */
-    add_applicative(K, ground_env, "string-append", string_append, 0);
-    /* 13.2.7? string->list, list->string */
-    add_applicative(K, ground_env, "string->list", string_to_list, 0);
-    add_applicative(K, ground_env, "list->string", list_to_string, 0);
-    /* 13.2.8? string-copy */
-    add_applicative(K, ground_env, "string-copy", string_copy, 0);
-    /* 13.2.9? string->immutable-string */
-    add_applicative(K, ground_env, "string->immutable-string", 
-		    string_to_immutable_string, 0);
-
-    /* TODO: add string-immutable? or general immutable? */
-    /* TODO: add string-upcase and string-downcase like in r7rs-draft */
-
-    /* 13.2.10? string-fill! */
-    add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
-#endif
 }
