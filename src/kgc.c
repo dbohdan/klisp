@@ -261,7 +261,7 @@ static int32_t propagatemark (klisp_State *K) {
     case K_TSTRING: {
 	String *s = cast(String *, o);
 	markvalue(K, s->mark); 
-	return sizeof(String) + s->size * sizeof(char);
+	return sizeof(String) + (s->size + 1 * sizeof(char));
     }
     case K_TENVIRONMENT: {
 	Environment *e = cast(Environment *, o);
@@ -324,7 +324,7 @@ static int32_t propagatemark (klisp_State *K) {
     case K_TBYTEVECTOR: {
 	Bytevector *b = cast(Bytevector *, o);
 	markvalue(K, b->mark); 
-	return sizeof(String) + b->size * sizeof(uint8_t);
+	return sizeof(Bytevector) + b->size * sizeof(uint8_t);
     }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
@@ -347,6 +347,8 @@ static size_t propagateall (klisp_State *K) {
 ** other objects: if really collected, cannot keep them; for userdata
 ** being finalized, keep them in keys, but not in values
 */
+/* XXX what the hell is this, I should reread this part of the lua
+   source Andres Navarro */
 static int32_t iscleared (TValue o, int iskey) {
     if (!iscollectable(o)) return 0;
 #if 0 /* klisp: strings may be mutable... */
@@ -457,6 +459,9 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	klispE_free(K, (Error *)o);
 	break;
     case K_TBYTEVECTOR:
+	/* immutable bytevectors are in the string/symbol table */
+	if (kbytevector_immutablep(gc2str(o)))
+	    K->strt.nuse--;
 	klispM_freemem(K, o, sizeof(Bytevector)+o->bytevector.size);
 	break;
     default:
@@ -552,7 +557,7 @@ void klispC_freeall (klisp_State *K) {
     K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT); /* in klisp this may not be
 							 necessary */
     sweepwholelist(K, &K->rootgc);
-    /* free all symbol/string lists */
+    /* free all symbol/string/bytevectors lists */
     for (int32_t i = 0; i < K->strt.size; i++)  
 	sweepwholelist(K, &K->strt.hash[i]);
 }
@@ -779,7 +784,8 @@ void klispC_barrierback (klisp_State *K, Table *t) {
 }
 
 /* NOTE: kflags is added for klisp */
-/* NOTE: both symbols & strings do this "by hand", they don't call this */
+/* NOTE: symbols, immutable strings and immutable bytevectors do this 
+  "by hand", they don't call this */
 void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
     o->gch.next = K->rootgc;
     K->rootgc = o;

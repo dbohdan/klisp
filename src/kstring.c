@@ -15,7 +15,7 @@
 #include "kmem.h"
 #include "kgc.h"
 
-/* for immutable string/symbols table */
+/* for immutable string/symbols/bytevector table */
 void klispS_resize (klisp_State *K, int32_t newsize)
 {
     GCObject **newhash;
@@ -30,8 +30,8 @@ void klispS_resize (klisp_State *K, int32_t newsize)
     for (i = 0; i < tb->size; i++) {
 	GCObject *p = tb->hash[i];
 	while (p) {  /* for each node in the list */
-	    /* imm string & symbols aren't chained with all other
-	       objs, but with each other in strt */
+	    /* imm string, imm bytevectors & symbols aren't chained with 
+	       all other objs, but with each other in strt */
 	    GCObject *next = p->gch.next;  /* save next */
 	    
 	    uint32_t h = 0;
@@ -40,6 +40,8 @@ void klispS_resize (klisp_State *K, int32_t newsize)
 		h = ((Symbol *) p)->hash;
 	    } else if (p->gch.tt == K_TSTRING) {
 		h = ((String *) p)->hash;
+	    } else if (p->gch.tt == K_TBYTEVECTOR) {
+		h = ((Bytevector *) p)->hash;
 	    } else {
 		klisp_assert(0);
 	    }
@@ -85,10 +87,11 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
 	String *ts = NULL;
 	if (o->gch.tt == K_TSTRING) {
 	    ts = (String *) o;
-	} else if (o->gch.tt == K_TSYMBOL) {
+	} else if (o->gch.tt == K_TSYMBOL || o->gch.tt == K_TBYTEVECTOR) {
 	    continue; 
 	} else {
-	    klisp_assert(0); /* only symbols and immutable strings */
+	    /* only symbols, immutable bytevectors and immutable strings */
+	    klisp_assert(0);
 	}
 	if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
 	    /* string may be dead */
@@ -101,7 +104,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     /* REFACTOR: move all of these to a new function */
     String *new_str;
 
-    if (size+1 > (SIZE_MAX - sizeof(String)))
+    if (size > (SIZE_MAX - sizeof(String) - 1))
 	klispM_toobig(K);
 
     new_str = (String *) klispM_malloc(K, sizeof(String) + size + 1);

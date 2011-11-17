@@ -11,6 +11,8 @@
 #include "kstate.h"
 #include "kmem.h"
 #include "kgc.h"
+/* for immutable table */
+#include "kstring.h" 
 
 /* Constructors */
 
@@ -29,14 +31,35 @@ TValue kbytevector_new_bs_g(klisp_State *K, bool m, const uint8_t *buf,
 /* main constructor for immutable bytevectors */
 TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
 {
-    /* Does it make sense to put them in the string table 
-       (i.e. interning them)?, we have two different constructors just in case */
+    /* first check to see if it's in the stringtable */
+    GCObject *o;
+    uint32_t h = size; /* seed */
+    size_t step = (size>>5)+1; /* if bytevector is too long, don't hash all 
+			       its bytes */
+    size_t size1;
+    for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
+	h = h ^ ((h<<5)+(h>>2)+ buf[size1-1]);
 
-    /* XXX: find a better way to do this! */
-    if (size == 0 && ttisbytevector(K->empty_bytevector)) {
-	return K->empty_bytevector;
-    }
+    for (o = K->strt.hash[lmod(h, K->strt.size)];
+	            o != NULL; o = o->gch.next) {
+	Bytevector *tb = NULL;
+	if (o->gch.tt == K_TBYTEVECTOR) {
+	    tb = (Bytevector *) o;
+	} else if (o->gch.tt == K_TSYMBOL || o->gch.tt == K_TSTRING) {
+	    continue; 
+	} else {
+	    /* only symbols, immutable bytevectors and immutable strings */
+	    klisp_assert(0);
+	}
+	if (tb->size == size && (memcmp(buf, tb->b, size) == 0)) {
+	    /* bytevector may be dead */
+	    if (isdead(K, o)) changewhite(o);
+	    return gc2bytevector(o);
+	}
+    } 
 
+    /* If it exits the loop, it means it wasn't found, hash is still in h */
+    /* REFACTOR: move all of these to a new function */
     Bytevector *new_bb;
 
     if (size > (SIZE_MAX - sizeof(Bytevector)))
@@ -45,9 +68,15 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     new_bb = (Bytevector *) klispM_malloc(K, sizeof(Bytevector) + size);
 
     /* header + gc_fields */
-    klispC_link(K, (GCObject *) new_bb, K_TBYTEVECTOR, K_FLAG_IMMUTABLE);
+    /* can't use klispC_link, because strings use the next pointer
+       differently */
+    new_bb->gct = klispC_white(K);
+    new_bb->tt = K_TBYTEVECTOR;
+    new_bb->kflags = K_FLAG_IMMUTABLE;
+    new_bb->si = NULL;
 
     /* bytevector specific fields */
+    new_bb->hash = h;
     new_bb->mark = KFALSE;
     new_bb->size = size;
 
@@ -55,7 +84,21 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
 	memcpy(new_bb->b, buf, size);
     }
     
-    return gc2bytevector(new_bb);
+    /* add to the string/symbol table (and link it) */
+    stringtable *tb;
+    tb = &K->strt;
+    h = lmod(h, tb->size);
+    new_bb->next = tb->hash[h];  /* chain new entry */
+    tb->hash[h] = (GCObject *)(new_bb);
+    tb->nuse++;
+    TValue ret_tv = gc2bytevector(new_bb);
+    if (tb->nuse > ((uint32_t) tb->size) && tb->size <= INT32_MAX / 2) {
+	krooted_tvs_push(K, ret_tv); /* save in case of gc */
+	klispS_resize(K, tb->size*2);  /* too crowded */
+	krooted_tvs_pop(K);
+    }
+    
+    return ret_tv;
 }
 
 /* 
