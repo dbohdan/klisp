@@ -34,6 +34,10 @@
 */
 
 /* XXX: add parens around macro vars!! */
+/* TODO try to rewrite all of these with just check_0p and check_al1p,
+   (the same with check_0tp and check_al1tp)
+   add a number param and use an array of strings for msgs */
+
 #define check_0p(K_, ptree_) \
     if (!ttisnil(ptree_)) { \
 	klispE_throw_simple((K_), \

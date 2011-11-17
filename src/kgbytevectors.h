@@ -45,6 +45,14 @@ void bytevector_copy(klisp_State *K, TValue *xparams, TValue ptree,
 void bytevector_copyS(klisp_State *K, TValue *xparams, TValue ptree, 
 		      TValue denv);
 
+/* ??.2.?? bytevector-copy-partial */
+void bytevector_copy_partial(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
+
+/* ??.2.?? bytevector-copy-partial! */
+void bytevector_copy_partialS(klisp_State *K, TValue *xparams, TValue ptree, 
+		      TValue denv);
+
 /* ??.2.?? bytevector->immutable-bytevector */
 void bytevector_to_immutable_bytevector(klisp_State *K, TValue *xparams, 
 					TValue ptree, TValue denv);
