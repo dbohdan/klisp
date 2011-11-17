@@ -130,3 +130,11 @@ bool kbytevector_equalp(TValue obj1, TValue obj2)
 }
 
 bool kbytevectorp(TValue obj) { return ttisbytevector(obj); }
+bool kimmutable_bytevectorp(TValue obj)
+{ 
+    return ttisbytevector(obj) && kis_immutable(obj); 
+}
+bool kmutable_bytevectorp(TValue obj)
+{ 
+    return ttisbytevector(obj) && kis_mutable(obj); 
+}

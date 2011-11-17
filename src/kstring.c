@@ -218,3 +218,11 @@ bool kstring_equalp(TValue obj1, TValue obj2)
 }
 
 bool kstringp(TValue obj) { return ttisstring(obj); }
+bool kimmutable_stringp(TValue obj)
+{ 
+    return ttisstring(obj) && kis_immutable(obj); 
+}
+bool kmutable_stringp(TValue obj)
+{ 
+    return ttisstring(obj) && kis_mutable(obj); 
+}

@@ -21,6 +21,9 @@
 /* 13.1.1? string? */
 /* uses typep */
 
+/* 13.1.? immutable-string?, mutable-string? */
+/* use ftypep */
+
 /* 13.1.2? make-string */
 void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 

@@ -58,5 +58,7 @@ TValue kstring_new_sf(klisp_State *K, uint32_t size, char fill);
   and doesn't differentiate immutable from mutable strings */
 bool kstring_equalp(TValue obj1, TValue obj2);
 bool kstringp(TValue obj);
+bool kimmutable_stringp(TValue obj);
+bool kmutable_stringp(TValue obj);
 
 #endif

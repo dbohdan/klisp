@@ -14,11 +14,8 @@
 
 /* can't be inlined... */
 bool kpairp(TValue obj);
-
-inline bool kmutable_pairp(TValue obj)
-{ 
-    return ttispair(obj) && kis_mutable(obj); 
-}
+bool kimmutable_pairp(TValue obj);
+bool kmutable_pairp(TValue obj);
 
 inline TValue kcar(TValue p)
 {

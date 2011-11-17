@@ -14,6 +14,9 @@
 					#inert) 
 				  denv)))
 
+;; mutable-pair?, immutable-pair?, mutable-string? & immutable-string?
+;; were added to the ground environment
+#|
 ($define! mutable-pair?
   ($lambda (obj)
     ($and? (pair? obj)
@@ -46,6 +49,9 @@
 
 ($define! immutable-string?
   ($lambda (obj) ($and? (string? obj) (not? (nonempty-mutable-string? obj)))))
+|#
+
+($define! nonempty-mutable-string? mutable-string?)
 
 ;; XXX/TODO Some of these could be removed if we had eager comprehension in
 ;; check.k (which would also complete the srfi-78 implementation). The problem

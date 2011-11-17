@@ -29,6 +29,9 @@
 /* 13.1.1? string? */
 /* uses typep */
 
+/* 13.1.? immutable-string?, mutable-string? */
+/* use ftypep */
+
 /* 13.1.2? make-string */
 void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
@@ -439,6 +442,11 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.1.1? string? */
     add_applicative(K, ground_env, "string?", typep, 2, symbol, 
 		    i2tv(K_TSTRING));
+    /* 13.? immutable-string?, mutable-string? */
+    add_applicative(K, ground_env, "immutable-string?", ftypep, 2, symbol, 
+		    p2tv(kimmutable_stringp));
+    add_applicative(K, ground_env, "mutable-string?", ftypep, 2, symbol, 
+		    p2tv(kmutable_stringp));
     /* 13.1.2? make-string */
     add_applicative(K, ground_env, "make-string", make_string, 0);
     /* 13.1.3? string-length */
@@ -485,7 +493,6 @@ void kinit_strings_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "string->immutable-string", 
 		    string_to_immutable_string, 0);
 
-    /* TODO: add string-immutable? or general immutable? */
     /* TODO: add string-upcase and string-downcase like in r7rs-draft */
 
     /* 13.2.10? string-fill! */

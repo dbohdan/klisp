@@ -20,6 +20,7 @@
 #include "krational.h" /* for kbigrat_eqp */
 #include "klisp.h"
 #include "kghelpers.h"
+#include "kbytevector.h" /* temp until interned, for kbytevector_equalp */
 
 /* 4.2.1 eq? */
 /* 6.5.1 eq? */
@@ -28,8 +29,8 @@ void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* Helper (also used in equal?) */
 inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 {
-    /* TODO/FIXME: immutable bytevectors aren't interned and so will compare
-       as un-eq? even if the contents are the same */
+    /* MAYBE: immutable bytevectors aren't interned and so we have to compare 
+       them everytime, maybe we should intern them */
     bool res = (tv_equal(obj1, obj2));
     if (!res && (ttype(obj1) == ttype(obj2))) {
 	switch (ttype(obj1)) {
@@ -56,7 +57,14 @@ inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 	       (eq? obj1 obj2) */
 	    res = kbigrat_eqp(K, obj1, obj2);
 	    break;
+	case K_TBYTEVECTOR:
+	    if (kbytevector_immutablep(obj1) && kbytevector_immutablep(obj2))
+		res = kbytevector_equalp(obj1, obj2); 
+	    else 
+		res = false;
+	    break;
 	} /* immutable strings are interned so are covered already */
+
     }
     return res;
 }

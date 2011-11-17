@@ -26,6 +26,9 @@
 /* 13.1.1? bytevector? */
 /* uses typep */
 
+/* 13.? immutable-bytevector?, mutable-bytevector? */
+/* use ftypep */
+
 /* 13.1.2? make-bytevector */
 void make_bytevector(klisp_State *K, TValue *xparams, TValue ptree, 
 		     TValue denv)
@@ -318,6 +321,11 @@ void kinit_bytevectors_ground_env(klisp_State *K)
     /* ??.1.1? bytevector? */
     add_applicative(K, ground_env, "bytevector?", typep, 2, symbol, 
 		    i2tv(K_TBYTEVECTOR));
+    /* ??.? immutable-bytevector?, mutable-bytevector? */
+    add_applicative(K, ground_env, "immutable-bytevector?", ftypep, 2, symbol, 
+		    p2tv(kimmutable_bytevectorp));
+    add_applicative(K, ground_env, "mutable-bytevector?", ftypep, 2, symbol, 
+		    p2tv(kmutable_bytevectorp));
     /* ??.1.2? make-bytevector */
     add_applicative(K, ground_env, "make-bytevector", make_bytevector, 0);
     /* ??.1.3? bytevector-length */
