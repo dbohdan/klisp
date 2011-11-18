@@ -613,6 +613,7 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 {
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
+
     if (ttisfport(port)) {
 	FILE *file = kfport_file(port);
 	int res = fputc(chvalue(ch), file);
@@ -621,8 +622,24 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 	    clearerr(file); /* clear error for next time */
 	    kwrite_error(K, "error writing char");
 	}
+    } else if (ttismport(port)) {
+	if (kport_is_binary(port)) {
+	    /* bytebuffer port */
+	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kbytevector_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
+	    ++kmport_off(port);
+	} else {
+	    /* string port */
+	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kstring_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
+	    ++kmport_off(port);
+	}
     } else {
-	kwrite_error(K, "mem ports not yet supported");
+	kwrite_error(K, "unknown port type");
 	return;
     }
 }
@@ -639,8 +656,26 @@ void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
 	    clearerr(file); /* clear error for next time */
 	    kwrite_error(K, "error writing u8");
 	}
+    } else if (ttismport(port)) {
+	if (kport_is_binary(port)) {
+	    /* bytebuffer port */
+	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kbytevector_buf(kmport_buf(port))[kmport_off(port)] = 
+		(uint8_t) ivalue(u8);
+	    ++kmport_off(port);
+	} else {
+	    /* string port */
+	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kstring_buf(kmport_buf(port))[kmport_off(port)] = 
+		(char) ivalue(u8);
+	    ++kmport_off(port);
+	}
     } else {
-	kwrite_error(K, "mem ports not yet supported");
+	kwrite_error(K, "unknown port type");
 	return;
     }
 }
