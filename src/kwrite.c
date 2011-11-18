@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
@@ -34,26 +35,38 @@
 #define get_data(ks_) (ks_sget(ks_))
 #define data_is_empty(ks_) (ks_sisempty(ks_))
 
-/* macro for printing */
-#define kw_printf(ks_, ...)						\
-    if (fprintf((ks_)->curr_out, __VA_ARGS__) < 0) {			\
-	clearerr((ks_)->curr_out); /* clear error for next time */	\
-	kwrite_error(ks_, "error writing");				\
-    }
-    
-#define kw_flush(ks_)							\
-    if (fflush((ks_)->curr_out) == EOF) {				\
-	clearerr((ks_)->curr_out); /* clear error for next time */	\
-	kwrite_error(ks_, "error writing");				\
-    }
-
 void kwrite_error(klisp_State *K, char *msg)
 {
     /* all cleaning is done in throw 
        (stacks, shared_dict, rooted objs) */
-
     klispE_throw_simple(K, msg);
 }
+
+void kw_printf(klisp_State *K, const char *format, ...)
+{
+    va_list argp;
+    TValue port = K->curr_port;
+
+    if (ttisfport(port)) {
+	FILE *file = kfport_file(port);
+	va_start(argp, format);
+	int ret = vfprintf(file, format, argp);
+	va_end(argp);
+
+	if (ret < 0) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing");
+	    return;
+	}
+    } else {
+	/* vsnprintf(buf, size, format, argp); */
+	kwrite_error(K, "mem ports not yet supported");
+	return;
+    }
+}
+
+void kw_flush(klisp_State *K) { kwrite_flush_port(K, K->curr_port); }
+    
 
 /* TODO: check for return codes and throw error if necessary */
 #define KDEFAULT_NUMBER_RADIX 10
@@ -578,12 +591,6 @@ void kwrite(klisp_State *K, TValue obj)
     krooted_tvs_pop(K);
 }
 
-void kwrite_newline(klisp_State *K)
-{
-    kw_printf(K, "\n");
-    kw_flush(K);
-}
-
 /*
 ** Interface
 */
@@ -591,42 +598,63 @@ void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj,
 			    bool displayp)
 {
     K->curr_port = port;
-    K->curr_out = kfport_file(port);
     K->write_displayp = displayp;
     kwrite(K, obj);
 }
 
 void kwrite_newline_to_port(klisp_State *K, TValue port)
 {
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
     kwrite_char_to_port(K, port, ch2tv('\n'));
 }
 
 void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 {
-    K->curr_port = port;
-    K->curr_out = kfport_file(port);
-    int res = fputc(chvalue(ch), K->curr_out);
-    /* implicit flush, MAYBE add flush call */
-    if (res != EOF)
-	res = fflush(K->curr_out);
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
+    if (ttisfport(port)) {
+	FILE *file = kfport_file(port);
+	int res = fputc(chvalue(ch), file);
 
-    if (res == EOF) {
-	clearerr(K->curr_out); /* clear error for next time */
-	kwrite_error(K, "error writing char");
+	if (res == EOF) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing char");
+	}
+    } else {
+	kwrite_error(K, "mem ports not yet supported");
+	return;
     }
 }
 
 void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
 {
-    K->curr_port = port;
-    K->curr_out = kfport_file(port);
-    int res = fputc(ivalue(u8), K->curr_out);
-    /* implicit flush, MAYBE add flush call */
-    if (res != EOF)
-	res = fflush(K->curr_out);
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
+    if (ttisfport(port)) {
+	FILE *file = kfport_file(port);
+	int res = fputc(ivalue(u8), file);
 
-    if (res == EOF) {
-	clearerr(K->curr_out); /* clear error for next time */
-	kwrite_error(K, "error writing u8");
+	if (res == EOF) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing u8");
+	}
+    } else {
+	kwrite_error(K, "mem ports not yet supported");
+	return;
+    }
+}
+
+void kwrite_flush_port(klisp_State *K, TValue port) 
+{
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
+    if (ttisfport(port)) { /* only necessary for file ports */
+	FILE *file = kfport_file(port);
+	klisp_assert(file);
+	if ((fflush(file)) == EOF) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing");
+	}
     }
 }

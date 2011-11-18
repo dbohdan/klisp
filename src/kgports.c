@@ -801,11 +801,7 @@ void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
 
-    if (ttisfport(port)) { /* only necessary for file ports */
-	FILE *file = kfport_file(port);
-	klisp_assert(file);
-	UNUSED(fflush(file)); /* TEMP for now don't signal errors on flush */
-    }
+    kwrite_flush_port(K, port);
     kapply_cc(K, KINERT);
 }
 

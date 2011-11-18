@@ -85,8 +85,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ud = ud;
 
     /* current input and output */
-    K->curr_in = NULL; /* set on each call to read */
-    K->curr_out = NULL; /* set on each call to write */
     K->curr_port = KINERT; /* set on each call to read/write */
 
     /* input / output for dynamic keys */

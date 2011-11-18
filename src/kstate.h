@@ -99,10 +99,8 @@ struct klisp_State {
     /* TEMP: error handling */
     jmp_buf error_jb;
 
-     /* input and output files in use (for read & write) */
+     /* input/output port in use (for read & write) */
     TValue curr_port; /* save the port to update source info on errors */
-    FILE *curr_in;
-    FILE *curr_out;
 
     /* for current-input-port, current-output-port, current-error-port */
     TValue kd_in_port_key;
