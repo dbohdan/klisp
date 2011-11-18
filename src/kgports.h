@@ -24,6 +24,12 @@
 /* 15.1.2 input-port?, output-port? */
 /* use ftypep */
 
+/* 15.1.? binary-port?, textual-port? */
+/* use ftypep */
+
+/* 15.1.? file-port?, string-port?, bytevector-port? */
+/* use ftypep */
+
 /* 15.1.? port-open? */
 /* uses ftyped_predp */
 
@@ -46,6 +52,13 @@ void open_mport(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.1.6 close-input-file, close-output-file */
 void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 15.1.? close-port, close-input-port, close-output-port */
+void close_port(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 15.1.? get-output-string, get-output-bytevector */
+void get_output_buffer(klisp_State *K, TValue *xparams, TValue ptree, 
+		       TValue denv);
 
 /* 15.1.7 read */
 void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

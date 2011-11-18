@@ -19,6 +19,9 @@ bool kinput_portp(TValue o);
 bool koutput_portp(TValue o);
 bool kbinary_portp(TValue o);
 bool ktextual_portp(TValue o);
+bool kfile_portp(TValue o);
+bool kstring_portp(TValue o);
+bool kbytevector_portp(TValue o);
 bool kport_openp(TValue o);
 bool kport_closedp(TValue o);
 

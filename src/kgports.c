@@ -13,6 +13,8 @@
 #include "kstate.h"
 #include "kobject.h"
 #include "kport.h"
+#include "kstring.h"
+#include "kbytevector.h"
 #include "kenvironment.h"
 #include "kapplicative.h"
 #include "koperative.h"
@@ -37,6 +39,12 @@
 /* uses typep */
 
 /* 15.1.2 input-port?, output-port? */
+/* use ftypep */
+
+/* 15.1.? binary-port?, textual-port? */
+/* use ftypep */
+
+/* 15.1.? file-port?, string-port?, bytevector-port? */
 /* use ftypep */
 
 /* 15.1.? port-open? */
@@ -162,7 +170,10 @@ void open_mport(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 15.1.6 close-input-file, close-output-file */
 void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    bool writep = bvalue(xparams[1]);
+    /*
+    ** xparams[0]: write?
+    */
+    bool writep = bvalue(xparams[0]);
     UNUSED(denv);
 
     bind_1tp(K, ptree, "file port", ttisfport, port);
@@ -181,8 +192,12 @@ void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 15.1.? close-input-port, close-output-port, close-port */
 void close_port(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    bool readp = bvalue(xparams[1]);
-    bool writep = bvalue(xparams[2]);
+    /*
+    ** xparams[0]: read?
+    ** xparams[1]: write?
+    */
+    bool readp = bvalue(xparams[0]);
+    bool writep = bvalue(xparams[1]);
     UNUSED(denv);
 
     bind_1tp(K, ptree, "port", ttisport, port);
@@ -197,6 +212,36 @@ void close_port(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	klispE_throw_simple(K, "wrong input/output direction");
 	return;
     }
+}
+
+/* 15.1.? get-output-string, get-output-bytevector */
+void get_output_buffer(klisp_State *K, TValue *xparams, TValue ptree, 
+		       TValue denv)
+{
+    /*
+    ** xparams[0]: binary?
+    */
+    bool binaryp = bvalue(xparams[0]);
+    UNUSED(denv);
+    bind_1tp(K, ptree, "port", ttisport, port);
+
+    if (binaryp && !kport_is_binary(port)) {
+	klispE_throw_simple(K, "the port should be a bytevector port");
+	return;
+    } else if (!binaryp && !kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a string port");
+	return;
+    } else if (!kport_is_output(port)) {
+	klispE_throw_simple(K, "the port should be an output port");
+	return;
+    }
+    
+    TValue ret = binaryp? 
+	kbytevector_new_bs(K, 
+			   kbytevector_buf(kmport_buf(port)), 
+			   kmport_off(port)) :
+	kstring_new_bs(K, kstring_buf(kmport_buf(port)), kmport_off(port));
+    kapply_cc(K, ret);
 }
 
 /* 15.1.7 read */
@@ -829,6 +874,10 @@ void rename_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K)
 {
+    /*
+    ** Some of these are from r7rs scheme
+    */
+
     TValue ground_env = K->ground_env;
     TValue symbol, value;
 
@@ -845,6 +894,13 @@ void kinit_ports_ground_env(klisp_State *K)
 		    p2tv(kbinary_portp));
     add_applicative(K, ground_env, "textual-port?", ftypep, 2, symbol, 
 		    p2tv(ktextual_portp));
+    /* 15.1.2 file-port?, string-port?, bytevector-port? */
+    add_applicative(K, ground_env, "file-port?", ftypep, 2, symbol, 
+		    p2tv(kfile_portp));
+    add_applicative(K, ground_env, "string-port?", ftypep, 2, symbol, 
+		    p2tv(kstring_portp));
+    add_applicative(K, ground_env, "bytevector-port?", ftypep, 2, symbol, 
+		    p2tv(kbytevector_portp));
     /* 15.1.? port-open? */
     add_applicative(K, ground_env, "port-open?", ftyped_predp, 3, symbol, 
 		    p2tv(kportp), p2tv(kport_openp));
@@ -889,26 +945,28 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.1.6 close-input-file, close-output-file */
     /* ASK John: should this be called close-input-port & close-ouput-port 
        like in r5rs? that doesn't seem consistent with open thou */
-    add_applicative(K, ground_env, "close-input-file", close_file, 2, symbol, 
+    add_applicative(K, ground_env, "close-input-file", close_file, 1,
 		    b2tv(false));
-    add_applicative(K, ground_env, "close-output-file", close_file, 2, symbol, 
+    add_applicative(K, ground_env, "close-output-file", close_file, 1,
 		    b2tv(true));
     /* 15.1.? Use the r7rs names, in preparation for other kind of ports */
-    add_applicative(K, ground_env, "close-input-port", close_port, 3, symbol, 
+    add_applicative(K, ground_env, "close-input-port", close_port, 2, 
 		    b2tv(true), b2tv(false));
-    add_applicative(K, ground_env, "close-output-port", close_port, 3, symbol, 
+    add_applicative(K, ground_env, "close-output-port", close_port, 2, 
 		    b2tv(false), b2tv(true));
-    add_applicative(K, ground_env, "close-port", close_port, 3, symbol, 
+    add_applicative(K, ground_env, "close-port", close_port, 2, 
 		    b2tv(false), b2tv(false));
+
+    /* 15.1.? get-output-string, get-output-bytevector */
+    add_applicative(K, ground_env, "get-output-string", get_output_buffer, 1, 
+		    b2tv(false));
+    add_applicative(K, ground_env, "get-output-bytevector", get_output_buffer, 
+		    1, b2tv(true));
 
     /* 15.1.7 read */
     add_applicative(K, ground_env, "read", read, 0);
     /* 15.1.8 write */
     add_applicative(K, ground_env, "write", write, 0);
-
-    /*
-    ** These are from scheme (r5rs)
-    */
 
     /* 15.1.? eof-object? */
     add_applicative(K, ground_env, "eof-object?", typep, 2, symbol, 
@@ -955,10 +1013,10 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.2.? display */
     add_applicative(K, ground_env, "display", display, 0);
 
-    /* r7rs */
-
     /* 15.1.? flush-output-port */
     add_applicative(K, ground_env, "flush-output-port", flush, 0);
+
+    /* REFACTOR move to system module */
 
     /* 15.1.? file-exists? */
     add_applicative(K, ground_env, "file-exists?", file_existsp, 0);

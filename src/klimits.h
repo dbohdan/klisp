@@ -72,7 +72,7 @@
 #define MINSTRINGPORTBUFFER	256
 #endif
 
-/* starting size for bytebuffer port buffers */
+/* starting size for bytevector port buffers */
 #ifndef MINBYTEVECTORPORTBUFFER
 #define MINBYTEVECTORPORTBUFFER	256
 #endif

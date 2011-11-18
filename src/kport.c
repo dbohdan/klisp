@@ -42,6 +42,21 @@ bool ktextual_portp(TValue o)
     return ttisport(o) && kport_is_textual(o);
 }
 
+bool kfile_portp(TValue o)
+{
+    return ttisfport(o);
+}
+
+bool kstring_portp(TValue o)
+{
+    return ttismport(o) && kport_is_textual(o);
+}
+
+bool kbytevector_portp(TValue o)
+{
+    return ttismport(o) && kport_is_binary(o);
+}
+
 bool kport_openp(TValue o) 
 { 
     klisp_assert(ttisport(o));
