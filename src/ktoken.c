@@ -162,60 +162,49 @@ void ktok_error_g(klisp_State *K, char *str, bool extra, TValue extra_value)
 /*
 ** Underlying stream interface & source code location tracking
 */
-
-int ktok_getc(klisp_State *K) {
-    /* WORKAROUND: for stdin line buffering & reading of EOF */
-    /* Is this really necessary?? double check */
-    if (K->ktok_seen_eof) {
+int ktok_peekc_getc(klisp_State *K, bool peekp)
+{
+    /* WORKAROUND: for stdin line buffering & reading of EOF, this flag
+     is reset on every read */
+    /* Otherwise, at least in linux, after reading or peeking an EOF from the 
+       console, the next char isn't eof anymore */
+    if (K->ktok_seen_eof)
 	return EOF;
-    } else {
-	int chi = getc(K->curr_in);
-	if (chi == EOF) {
-	    /* NOTE: eof doesn't change source code location info */
-	    if (ferror(K->curr_in) != 0) {
-		/* clear error marker to allow retries later */
-		clearerr(K->curr_in);
+
+    int chi = getc(K->curr_in);
+    if (chi == EOF) {
+	/* NOTE: eof doesn't change source code location info */
+	if (ferror(K->curr_in) != 0) {
+	    /* clear error marker to allow retries later */
+	    clearerr(K->curr_in);
 /* TODO put error info on the error obj */
-		ktok_error(K, "reading error");
-		return 0;
-	    } else { /* if (feof(K->curr_in) != 0) */
-		/* let the eof marker set */
-		K->ktok_seen_eof = true;
-		return EOF;
-	    }
-	}
-	
-	/* track source code location before returning the char */
-	if (chi == '\t') {
-	    /* align column to next tab stop */
-	    K->ktok_source_info.col = 
-		(K->ktok_source_info.col + K->ktok_source_info.tab_width) -
-		(K->ktok_source_info.col % K->ktok_source_info.tab_width);
-	    return '\t';
-	} else if (chi == '\n') {
-	    K->ktok_source_info.line++;
-	    K->ktok_source_info.col = 0;
-	    return '\n';
-	} else {
-	    K->ktok_source_info.col++;
-	    return chi;
+	    ktok_error(K, "reading error");
+	    return 0;
+	} else { /* if (feof(K->curr_in) != 0) */
+	    /* let the eof marker set */
+	    K->ktok_seen_eof = true;
+	    return EOF;
 	}
     }
-}
 
-int ktok_peekc(klisp_State *K) {
-    /* WORKAROUND: for stdin line buffering & reading of EOF */
-    /* Is this really necessary?? double check */
-    if (K->ktok_seen_eof) {
-	return EOF;
-    } else {
-	int chi = getc(K->curr_in);
-	if (chi == EOF)
-	    K->ktok_seen_eof = true;
-	else
-	    ungetc(chi, K->curr_in);
+    if (peekp) {
+	ungetc(chi, K->curr_in);
 	return chi;
     }
+
+    /* track source code location before returning the char */
+    if (chi == '\t') {
+	/* align column to next tab stop */
+	K->ktok_source_info.col = 
+	    (K->ktok_source_info.col + K->ktok_source_info.tab_width) -
+	    (K->ktok_source_info.col % K->ktok_source_info.tab_width);
+    } else if (chi == '\n') {
+	K->ktok_source_info.line++;
+	K->ktok_source_info.col = 0;
+    } else {
+	K->ktok_source_info.col++;
+    }
+    return chi;
 }
 
 void ktok_save_source_info(klisp_State *K)

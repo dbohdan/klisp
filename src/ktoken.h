@@ -26,9 +26,11 @@ void ktok_set_source_info(klisp_State *K, TValue filename, int32_t line,
 /* This is needed here to allow cleanup of shared dict from tokenizer */
 void clear_shared_dict(klisp_State *K);
 
-/* This is used in for peek-char & read-char */
-int ktok_getc(klisp_State *K);
-int ktok_peekc(klisp_State *K);
+/* These are used in peek-char, peek-u8, read-char & read-u8 */
+int ktok_peekc_getc(klisp_State *K, bool peekp);
+inline int ktok_getc(klisp_State *K) { return ktok_peekc_getc(K, false); }
+inline int ktok_peekc(klisp_State *K) { return ktok_peekc_getc(K, true); }
+
 /* needed by the repl */
 void ktok_ignore_whitespace_and_comments(klisp_State *K);
 
