@@ -67,11 +67,17 @@ char *ktv_names[] = {
     [K_TAPPLICATIVE] = "applicative",
     [K_TENCAPSULATION] = "encapsulation",
     [K_TPROMISE] = "promise",
-    [K_TPORT] = "port",
     [K_TTABLE] = "table", 
     [K_TERROR] = "error", 
-    [K_TBYTEVECTOR] = "bytevector" 
+    [K_TBYTEVECTOR] = "bytevector",
+    [K_TFPORT] = "file port",
+    [K_TMPORT] = "mem port"
 };
+
+bool kis_port(TValue o)
+{
+    return ttisport(o);
+}
 
 bool kis_input_port(TValue o)
 {

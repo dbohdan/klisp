@@ -41,7 +41,7 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	       maybe_char);
 
     char fill = ' ';
-    if (get_opt_tpar(K, "make-string", K_TCHAR, &maybe_char))
+    if (get_opt_tpar(K, maybe_char, "char", ttischar))
 	fill = chvalue(maybe_char);
 
     if (knegativep(tv_s)) {

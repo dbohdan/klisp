@@ -201,11 +201,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->sbuf = (TValue *)s;
 
     /* the dynamic ports and the keys for the dynamic ports */
-    TValue in_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDIN*"),
+    TValue in_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDIN*"),
 				    false, false,  stdin);
-    TValue out_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDOUT*"),
+    TValue out_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDOUT*"),
 				     true, false, stdout);
-    TValue error_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDERR*"),
+    TValue error_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDERR*"),
 				       true, false, stderr);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);

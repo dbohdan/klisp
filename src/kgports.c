@@ -66,7 +66,7 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    TValue new_port = kmake_port(K, filename, writep, false);
+    TValue new_port = kmake_fport(K, filename, writep, false);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
@@ -114,7 +114,7 @@ void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     bind_1tp(K, ptree, "string", ttisstring, filename);
 
-    TValue new_port = kmake_port(K, filename, writep, binaryp);
+    TValue new_port = kmake_fport(K, filename, writep, binaryp);
     kapply_cc(K, new_port);
 }
 
@@ -165,7 +165,7 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     
     TValue port = ptree;
-    if (!get_opt_tpar(K, "read", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     } 
 
@@ -194,7 +194,7 @@ void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1tp(K, ptree, "any", anytype, obj,
 	       port);
 
-    if (!get_opt_tpar(K, "write", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     } 
 
@@ -224,7 +224,7 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     
     TValue port = ptree;
-    if (!get_opt_tpar(K, "newline", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     }
 
@@ -252,7 +252,7 @@ void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1tp(K, ptree, "char", ttischar, ch,
 	       port);
 
-    if (!get_opt_tpar(K, "write-char", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     } 
 
@@ -276,16 +276,14 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
 		    TValue denv)
 {
     /* 
-    ** xparams[0]: symbol name
-    ** xparams[1]: ret-char-after-readp
+    ** xparams[0]: ret-char-after-readp
     */
     UNUSED(denv);
     
-    char *name = ksymbol_buf(xparams[0]);
-    bool ret_charp = bvalue(xparams[1]);
+    bool ret_charp = bvalue(xparams[0]);
 
     TValue port = ptree;
-    if (!get_opt_tpar(K, name, K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     } 
     
@@ -322,7 +320,7 @@ void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     
     TValue port = ptree;
-    if (!get_opt_tpar(K, "char-ready?", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     } 
 
@@ -349,7 +347,7 @@ void write_u8(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     bind_al1tp(K, ptree, "u8", ttisu8, u8, port);
 
-    if (!get_opt_tpar(K, "write-u8", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     } 
 
@@ -373,16 +371,14 @@ void read_peek_u8(klisp_State *K, TValue *xparams, TValue ptree,
 		    TValue denv)
 {
     /* 
-    ** xparams[0]: symbol name
-    ** xparams[1]: ret-u8-after-readp
+    ** xparams[0]: ret-u8-after-readp
     */
     UNUSED(denv);
     
-    char *name = ksymbol_buf(xparams[0]);
-    bool ret_u8p = bvalue(xparams[1]);
+    bool ret_u8p = bvalue(xparams[0]);
 
     TValue port = ptree;
-    if (!get_opt_tpar(K, name, K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     }
 
@@ -419,7 +415,7 @@ void u8_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     UNUSED(denv);
     
     TValue port = ptree;
-    if (!get_opt_tpar(K, "u8-ready?", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_in_port_key); /* access directly */
     }
     
@@ -452,7 +448,7 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
     bind_2tp(K, ptree, "string", ttisstring, filename,
 	     "combiner", ttiscombiner, comb);
 
-    TValue new_port = kmake_port(K, filename, writep, false);
+    TValue new_port = kmake_fport(K, filename, writep, false);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
@@ -570,7 +566,7 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the
      last expression is done */
-    TValue port = kmake_port(K, filename, false, false);
+    TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
 
     TValue inert_cont = make_return_value_cont(K, kget_cc(K), KINERT);
@@ -619,13 +615,13 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1tp(K, ptree, "string", ttisstring, filename, 
 	maybe_env);
 
-    TValue port = kmake_port(K, filename, false, false);
+    TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
 
     TValue env = kmake_environment(K, K->ground_env);
     krooted_tvs_push(K, env);
 
-    if (get_opt_tpar(K, "", K_TENVIRONMENT, &maybe_env)) {
+    if (get_opt_tpar(K, maybe_env, "environment", ttisenvironment)) {
 	kadd_binding(K, env, K->module_params_sym, maybe_env);
     }
 
@@ -677,7 +673,7 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bind_al1tp(K, ptree, "any", anytype, obj,
 	       port);
 
-    if (!get_opt_tpar(K, "display", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
     }
 
@@ -705,19 +701,23 @@ void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     
     TValue port = ptree;
 
-    if (!get_opt_tpar(K, "flush-output-port", K_TPORT, &port)) {
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
 	port = kcdr(K->kd_out_port_key); /* access directly */
-    } else if (!kport_is_output(port)) {
+    }
+
+    if (!kport_is_output(port)) {
 	klispE_throw_simple(K, "the port should be an output port");
 	return;
     } 
+
     if (kport_is_closed(port)) {
 	klispE_throw_simple(K, "the port is already closed");
 	return;
     }
 
-    FILE *file = kport_file(port);
-    if (file) { /* only do for file ports */
+    if (ttisfport(port)) { /* only necessary for file ports */
+	FILE *file = kport_file(port);
+	klisp_assert(file);
 	UNUSED(fflush(file)); /* TEMP for now don't signal errors on flush */
     }
     kapply_cc(K, KINERT);
@@ -792,8 +792,8 @@ void kinit_ports_ground_env(klisp_State *K)
     TValue symbol, value;
 
     /* 15.1.1 port? */
-    add_applicative(K, ground_env, "port?", typep, 2, symbol, 
-		    i2tv(K_TPORT));
+    add_applicative(K, ground_env, "port?", ftypep, 2, symbol, 
+		    p2tv(kis_port));
     /* 15.1.2 input-port?, output-port? */
     add_applicative(K, ground_env, "input-port?", ftypep, 2, symbol, 
 		    p2tv(kis_input_port));
@@ -864,10 +864,10 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.1.? write-char */
     add_applicative(K, ground_env, "write-char", write_char, 0);
     /* 15.1.? read-char */
-    add_applicative(K, ground_env, "read-char", read_peek_char, 2, symbol, 
+    add_applicative(K, ground_env, "read-char", read_peek_char, 1, 
 		    b2tv(false));
     /* 15.1.? peek-char */
-    add_applicative(K, ground_env, "peek-char", read_peek_char, 2, symbol, 
+    add_applicative(K, ground_env, "peek-char", read_peek_char, 1,
 		    b2tv(true));
     /* 15.1.? char-ready? */
     /* XXX: this always return #t, proper behaviour requires platform 
@@ -878,10 +878,10 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.1.? write-u8 */
     add_applicative(K, ground_env, "write-u8", write_u8, 0);
     /* 15.1.? read-u8 */
-    add_applicative(K, ground_env, "read-u8", read_peek_u8, 2, symbol, 
+    add_applicative(K, ground_env, "read-u8", read_peek_u8, 1, 
 		    b2tv(false));
     /* 15.1.? peek-u8 */
-    add_applicative(K, ground_env, "peek-u8", read_peek_u8, 2, symbol, 
+    add_applicative(K, ground_env, "peek-u8", read_peek_u8, 1, 
 		    b2tv(true));
     /* 15.1.? u8-ready? */
     /* XXX: this always return #t, proper behaviour requires platform 

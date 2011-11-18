@@ -106,10 +106,11 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TAPPLICATIVE:
     case K_TENCAPSULATION:
     case K_TPROMISE:
-    case K_TPORT:
     case K_TTABLE:
     case K_TERROR:
     case K_TBYTEVECTOR:
+    case K_TFPORT:
+    case K_TMPORT:
 	o->gch.gclist = K->gray;
 	K->gray = o;
 	break;
@@ -301,11 +302,6 @@ static int32_t propagatemark (klisp_State *K) {
 	markvalue(K, p->node);
 	return sizeof(Promise);
     }
-    case K_TPORT: {
-	Port *p = cast(Port *, o);
-	markvalue(K, p->filename);
-	return sizeof(Port);
-    }
     case K_TTABLE: {
 	Table *h = cast(Table *, o);
 	if (traversetable(K, h))  /* table is weak? */
@@ -325,6 +321,17 @@ static int32_t propagatemark (klisp_State *K) {
 	Bytevector *b = cast(Bytevector *, o);
 	markvalue(K, b->mark); 
 	return sizeof(Bytevector) + b->size * sizeof(uint8_t);
+    }
+    case K_TFPORT: {
+	FPort *p = cast(FPort *, o);
+	markvalue(K, p->filename);
+	return sizeof(FPort);
+    }
+    case K_TMPORT: {
+	MPort *p = cast(MPort *, o);
+	markvalue(K, p->filename);
+	markvalue(K, p->buf);
+	return sizeof(MPort);
     }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
@@ -443,15 +450,6 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TPROMISE:
 	klispM_free(K, (Promise *)o);
 	break;
-    case K_TPORT:
-	/* first close the port to free the FILE structure.
-	   This works even if the port was already closed,
-	   it is important that this don't throw errors, because
-	   the mechanism used in error handling would crash at this
-	   point */
-	kclose_port(K, gc2port(o));
-	klispM_free(K, (Port *)o);
-	break;
     case K_TTABLE:
 	klispH_free(K, (Table *)o);
 	break;
@@ -463,6 +461,20 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	if (kbytevector_immutablep(gc2str(o)))
 	    K->strt.nuse--;
 	klispM_freemem(K, o, sizeof(Bytevector)+o->bytevector.size);
+	break;
+    case K_TFPORT:
+	/* first close the port to free the FILE structure.
+	   This works even if the port was already closed,
+	   it is important that this don't throw errors, because
+	   the mechanism used in error handling would crash at this
+	   point */
+	kclose_port(K, gc2fport(o));
+	klispM_free(K, (FPort *)o);
+	break;
+    case K_TMPORT:
+	/* memory ports (string & bytevector) don't need to be closed
+	   explicitly */
+	klispM_free(K, (MPort *)o);
 	break;
     default:
 	/* shouldn't happen */

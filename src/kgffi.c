@@ -386,8 +386,8 @@ void ffi_load_library(klisp_State *K, TValue *xparams,
 
     TValue filename = ptree;
     const char *filename_c =
-       get_opt_tpar(K, "ffi-load-library", K_TSTRING, &filename)
-           ? kstring_buf(filename) : NULL;
+	get_opt_tpar(K, filename, "string", ttisstring)
+	? kstring_buf(filename) : NULL;
 
 #if KGFFI_DLFCN
     void *handle = dlopen(filename_c, RTLD_LAZY | RTLD_GLOBAL);

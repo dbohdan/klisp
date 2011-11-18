@@ -199,7 +199,7 @@ void apply(klisp_State *K, TValue *xparams, TValue ptree,
 	       "any", anytype, obj, 
 	       maybe_env);
 
-    TValue env = (get_opt_tpar(K, "apply", K_TENVIRONMENT, &maybe_env))?
+    TValue env = (get_opt_tpar(K, maybe_env, "environment", ttisenvironment))?
 	maybe_env : kmake_empty_environment(K);
 
     krooted_tvs_push(K, env); 

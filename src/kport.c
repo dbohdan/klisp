@@ -23,7 +23,7 @@
    Should use open, but it is non standard (fcntl.h, POSIX only) */
 
 /* GC: Assumes filename is rooted */
-TValue kmake_port(klisp_State *K, TValue filename, bool writep, bool binaryp)
+TValue kmake_fport(klisp_State *K, TValue filename, bool writep, bool binaryp)
 {
     /* for now always use text mode */
     char *mode;
@@ -38,7 +38,7 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep, bool binaryp)
                                           kstring_new_b_imm(K, mode));
 	return KINERT;
     } else {
-	return kmake_std_port(K, filename, writep, binaryp, f);
+	return kmake_std_fport(K, filename, writep, binaryp, f);
     }
 }
 
@@ -46,13 +46,13 @@ TValue kmake_port(klisp_State *K, TValue filename, bool writep, bool binaryp)
  also a helper for the above */
 
 /* GC: Assumes filename, name & si are rooted */
-TValue kmake_std_port(klisp_State *K, TValue filename, bool writep, 
+TValue kmake_std_fport(klisp_State *K, TValue filename, bool writep, 
 		      bool binaryp, FILE *file)
 {
-    Port *new_port = klispM_new(K, Port);
+    FPort *new_port = klispM_new(K, FPort);
 
     /* header + gc_fields */
-    klispC_link(K, (GCObject *) new_port, K_TPORT, 
+    klispC_link(K, (GCObject *) new_port, K_TFPORT, 
 		K_FLAG_CAN_HAVE_NAME | 
 		(writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT) |
 		(binaryp? K_FLAG_BINARY_PORT : 0));
@@ -60,7 +60,7 @@ TValue kmake_std_port(klisp_State *K, TValue filename, bool writep,
     /* port specific fields */
     new_port->filename = filename;
     new_port->file = file;
-    TValue tv_port = gc2port(new_port);
+    TValue tv_port = gc2fport(new_port);
     /* line is 1-based and col is 0-based */
     kport_line(tv_port) = 1;
     kport_col(tv_port) = 0;
@@ -69,15 +69,17 @@ TValue kmake_std_port(klisp_State *K, TValue filename, bool writep,
 }
 
 /* if the port is already closed do nothing */
+/* This is also called from GC, so it shouldn't throw any error */
 void kclose_port(klisp_State *K, TValue port)
 {
     assert(ttisport(port));
 
     if (!kport_is_closed(port)) {
-	FILE *f = tv2port(port)->file;
-	if (f != stdin && f != stderr && f != stdout)
-	    fclose(f); /* it isn't necessary to check the close ret val */
-
+	if (ttisfport(port)) {
+	    FILE *f = tv2fport(port)->file;
+	    if (f != stdin && f != stderr && f != stdout)
+		fclose(f); /* it isn't necessary to check the close ret val */
+	}
 	kport_set_closed(port);
     }
 

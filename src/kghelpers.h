@@ -199,31 +199,26 @@
 
 /* returns true if the obj pointed by par is a list of one element of 
    type type, and puts that element in par
-   returns false if *par is nil
+   returns false if par is nil
    In any other case it throws an error */
-inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
-{
-    if (ttisnil(*par)) {
-	return false;
-    } else if (ttispair(*par) && ttisnil(kcdr(*par))) {
-	*par = kcar(*par);
-	if (ttype(*par) != type) {
-	    /* TODO show expected type */
-	    klispE_throw_simple(K, "Bad type on optional argument "
-			 "(expected ?)");    
-	    /* avoid warning */
-	    return false;
-	} else {
-	    return true;
-	}
-    } else {
-	klispE_throw_simple(K, "Bad ptree structure (in optional "
-			   "argument)");
-	/* avoid warning */
-	return false;
-    }
-}
-
+#define get_opt_tpar(K_, par_, tstr_, t_)  ({				\
+    bool res_;								\
+    if (ttisnil(par_)) {						\
+	res_ = false;							\
+    } else if (!ttispair(par_) || !ttisnil(kcdr(par_))) {		\
+	klispE_throw_simple((K_),					\
+			    "Bad ptree structure "			\
+			    "(in optional argument)");			\
+	return;								\
+    } else if (!t_(kcar(par_))) {					\
+	klispE_throw_simple(K_, "Bad type on optional argument "	\
+			    "(expected "	tstr_ ")");		\
+	return;								\
+    } else {								\
+        par_ = kcar(par_);						\
+        res_ = true;							\
+    }									\
+    res_; })								
 
 /*
 ** This states are useful for traversing trees, saving the state in the

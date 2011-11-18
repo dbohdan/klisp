@@ -46,7 +46,7 @@ typedef union GCObject GCObject;
 ** included in other objects)
 */
 #define CommonHeader GCObject *next; uint8_t tt; uint8_t kflags; \
-    uint16_t gct; GCObject *si; GCObject *gclist;
+    uint16_t gct; GCObject *si; GCObject *gclist
     
 /* NOTE: the gc flags are called marked in lua, but we reserve that them
    for marks used in cycle traversal. The field kflags is also missing
@@ -162,10 +162,11 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAPPLICATIVE  36
 #define K_TENCAPSULATION 37
 #define K_TPROMISE      38
-#define K_TPORT         39
-#define K_TTABLE        40
-#define K_TERROR        41
-#define K_TBYTEVECTOR   42
+#define K_TTABLE        39
+#define K_TERROR        40
+#define K_TBYTEVECTOR   41
+#define K_TFPORT        42
+#define K_TMPORT        43
 
 /* for tables */
 #define K_TDEADKEY        60
@@ -215,10 +216,11 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_APPLICATIVE K_MAKE_VTAG(K_TAPPLICATIVE)
 #define K_TAG_ENCAPSULATION K_MAKE_VTAG(K_TENCAPSULATION)
 #define K_TAG_PROMISE K_MAKE_VTAG(K_TPROMISE)
-#define K_TAG_PORT K_MAKE_VTAG(K_TPORT)
 #define K_TAG_TABLE K_MAKE_VTAG(K_TTABLE)
 #define K_TAG_ERROR K_MAKE_VTAG(K_TERROR)
 #define K_TAG_BYTEVECTOR K_MAKE_VTAG(K_TBYTEVECTOR)
+#define K_TAG_FPORT K_MAKE_VTAG(K_TFPORT)
+#define K_TAG_MPORT K_MAKE_VTAG(K_TMPORT)
 
 
 /*
@@ -300,10 +302,13 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
 #define ttisencapsulation(o) (tbasetype_(o) == K_TAG_ENCAPSULATION)
 #define ttispromise(o) (tbasetype_(o) == K_TAG_PROMISE)
-#define ttisport(o) (tbasetype_(o) == K_TAG_PORT)
 #define ttistable(o) (tbasetype_(o) == K_TAG_TABLE)
 #define ttiserror(o) (tbasetype_(o) == K_TAG_ERROR)
 #define ttisbytevector(o) (tbasetype_(o) == K_TAG_BYTEVECTOR)
+#define ttisfport(o) (tbasetype_(o) == K_TAG_FPORT)
+#define ttismport(o) (tbasetype_(o) == K_TAG_MPORT)
+#define ttisport(o_) ({ int32_t t_ = tbasetype_(o_); \
+	    t_ == K_TAG_FPORT || t_ == K_TAG_MPORT;})
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -437,17 +442,30 @@ typedef struct __attribute__ ((__packed__)) {
        sharing the pair */
 } Promise;
 
-/* input/output direction and open/close status are in kflags */
+/* common fields for all types of ports */
+/* TEMP: for now source code info is in fixints */
+#define PortCommonFields TValue filename; int32_t row; int32_t col
+
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue filename;
-    /* TEMP: for now source code info is in fixints */
-    int32_t row;
-    int32_t col;
-    FILE *file;
+    PortCommonFields;
 } Port;
 
 /* input/output direction and open/close status are in kflags */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    PortCommonFields;
+    FILE *file;
+} FPort;
+
+/* input/output direction and open/close status are in kflags */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    PortCommonFields;
+    TValue buf;
+    int32_t off;
+} MPort;
+
 
 /*
 ** Hashtables
@@ -553,9 +571,11 @@ union GCObject {
     Applicative app;
     Encapsulation enc;
     Promise prom;
-    Port port;
     Table table;
     Bytevector bytevector;
+    Port port; /* common fields for all types of ports */
+    FPort fport;
+    MPort mport;
 };
 
 
@@ -654,7 +674,8 @@ const TValue kfree;
 #define gc2app(o_) (gc2tv(K_TAG_APPLICATIVE, o_))
 #define gc2enc(o_) (gc2tv(K_TAG_ENCAPSULATION, o_))
 #define gc2prom(o_) (gc2tv(K_TAG_PROMISE, o_))
-#define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
+#define gc2fport(o_) (gc2tv(K_TAG_FPORT, o_))
+#define gc2mport(o_) (gc2tv(K_TAG_MPORT, o_))
 #define gc2table(o_) (gc2tv(K_TAG_TABLE, o_))
 #define gc2error(o_) (gc2tv(K_TAG_ERROR, o_))
 #define gc2bytevector(o_) (gc2tv(K_TAG_BYTEVECTOR, o_))
@@ -672,10 +693,12 @@ const TValue kfree;
 #define tv2app(v_) ((Applicative *) gcvalue(v_))
 #define tv2enc(v_) ((Encapsulation *) gcvalue(v_))
 #define tv2prom(v_) ((Promise *) gcvalue(v_))
-#define tv2port(v_) ((Port *) gcvalue(v_))
 #define tv2table(v_) ((Table *) gcvalue(v_))
 #define tv2error(v_) ((Error *) gcvalue(v_))
 #define tv2bytevector(v_) ((Bytevector *) gcvalue(v_))
+#define tv2fport(v_) ((FPort *) gcvalue(v_))
+#define tv2mport(v_) ((MPort *) gcvalue(v_))
+#define tv2port(v_) ((Port *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
@@ -821,6 +844,8 @@ int32_t kmark_count;
 
 /* can't be inline because we also use pointers to them,
  (at least gcc doesn't bother to create them and the linker fails) */
+/* REFACTOR shouldn't these be in kport.h?? */
+bool kis_port(TValue o);
 bool kis_input_port(TValue o);
 bool kis_output_port(TValue o);
 bool kis_binary_port(TValue o);

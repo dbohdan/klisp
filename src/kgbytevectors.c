@@ -39,11 +39,7 @@ void make_bytevector(klisp_State *K, TValue *xparams, TValue ptree,
 	       maybe_byte);
 
     uint8_t fill = 0;
-    if (get_opt_tpar(K, "make-bytevector", K_TFIXINT, &maybe_byte)) {
-	if (ivalue(maybe_byte) < 0 || ivalue(maybe_byte) > 255) {
-	    klispE_throw_simple(K, "bad fill byte");    
-	    return;
-	}
+    if (get_opt_tpar(K, maybe_byte, "u8", ttisu8)) {
 	fill = ivalue(maybe_byte);
     }
 

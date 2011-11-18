@@ -421,10 +421,21 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	/* TODO try to get the name */
 	kw_printf(K, "#[promise]");
 	break;
-    case K_TPORT:
+    case K_TFPORT:
 	/* TODO try to get the filename */
-	kw_printf(K, "#[%s %s port", 
+	kw_printf(K, "#[%s %s file port", 
 		  kport_is_binary(obj)? "binary" : "textual",
+		  kport_is_input(obj)? "input" : "output");
+	#if KTRACK_NAMES
+	if (khas_name(obj)) {
+	    kw_print_name(K, obj);
+	}
+	#endif
+	kw_printf(K, "]");
+	break;
+    case K_TMPORT:
+	kw_printf(K, "#[%s %s port", 
+		  kport_is_binary(obj)? "bytevector" : "string",
 		  kport_is_input(obj)? "input" : "output");
 	#if KTRACK_NAMES
 	if (khas_name(obj)) {
