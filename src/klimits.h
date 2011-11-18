@@ -67,4 +67,14 @@
 /* at last count, there were about 200 bindings in ground env */
 #define ENVTABSIZE	512
 
+/* starting size for string port buffers */
+#ifndef MINSTRINGPORTBUFFER
+#define MINSTRINGPORTBUFFER	256
+#endif
+
+/* starting size for bytebuffer port buffers */
+#ifndef MINBYTEVECTORPORTBUFFER
+#define MINBYTEVECTORPORTBUFFER	256
+#endif
+
 #endif

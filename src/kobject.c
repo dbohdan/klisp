@@ -74,31 +74,6 @@ char *ktv_names[] = {
     [K_TMPORT] = "mem port"
 };
 
-bool kis_port(TValue o)
-{
-    return ttisport(o);
-}
-
-bool kis_input_port(TValue o)
-{
-    return ttisport(o) && kport_is_input(o);
-}
-
-bool kis_output_port(TValue o)
-{
-    return ttisport(o) && kport_is_output(o);
-}
-
-bool kis_binary_port(TValue o)
-{
-    return ttisport(o) && kport_is_binary(o);
-}
-
-bool kis_textual_port(TValue o)
-{
-    return ttisport(o) && kport_is_textual(o);
-}
-
 int32_t klispO_log2 (uint32_t x) {
   static const uint8_t log_2[256] = {
     0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,

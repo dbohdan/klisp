@@ -39,6 +39,11 @@
 /* 15.1.2 input-port?, output-port? */
 /* use ftypep */
 
+/* 15.1.? port-open? */
+/* uses ftyped_predp */
+
+/* uses ftyped_predp */
+
 /* 15.1.3 with-input-from-file, with-ouput-to-file */
 /* helper for with-i/o-from/to-file & call-with-i/o-file */
 void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj)
@@ -106,17 +111,53 @@ void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
 
 
 /* 15.1.5 open-input-file, open-output-file */
+/* 15.1.? open-binary-input-file, open-binary-output-file */
 void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
-    bool writep = bvalue(xparams[1]);
-    bool binaryp = bvalue(xparams[2]);
-    UNUSED(denv);
+    /*
+    ** xparams[0]: write?
+    ** xparams[1]: binary?
+    */
+    bool writep = bvalue(xparams[0]);
+    bool binaryp = bvalue(xparams[1]);
 
     bind_1tp(K, ptree, "string", ttisstring, filename);
 
     TValue new_port = kmake_fport(K, filename, writep, binaryp);
     kapply_cc(K, new_port);
 }
+
+/* 15.1.? open-input-string, open-output-string */
+/* 15.1.? open-input-bytevector, open-output-bytevector */
+void open_mport(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+{
+    /*
+    ** xparams[0]: write?
+    ** xparams[1]: binary?
+    */
+    bool writep = bvalue(xparams[0]);
+    bool binaryp = bvalue(xparams[1]);
+    UNUSED(denv);
+
+    TValue buffer;
+    
+    /* This is kinda ugly but... */
+    if (writep) {
+	check_0p(K, ptree);
+	buffer = KINERT;
+    } else if (binaryp) {
+	bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
+	buffer = bb;
+    } else {
+	bind_1tp(K, ptree, "string", ttisstring, str);
+	buffer = str;
+    }
+
+    TValue new_port = kmake_mport(K, buffer, writep, binaryp);
+    kapply_cc(K, new_port);
+}
+
+/* 15.1.? open-output-string, open-output-bytevector */
 
 /* 15.1.6 close-input-file, close-output-file */
 void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -716,7 +757,7 @@ void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 
     if (ttisfport(port)) { /* only necessary for file ports */
-	FILE *file = kport_file(port);
+	FILE *file = kfport_file(port);
 	klisp_assert(file);
 	UNUSED(fflush(file)); /* TEMP for now don't signal errors on flush */
     }
@@ -793,17 +834,20 @@ void kinit_ports_ground_env(klisp_State *K)
 
     /* 15.1.1 port? */
     add_applicative(K, ground_env, "port?", ftypep, 2, symbol, 
-		    p2tv(kis_port));
+		    p2tv(kportp));
     /* 15.1.2 input-port?, output-port? */
     add_applicative(K, ground_env, "input-port?", ftypep, 2, symbol, 
-		    p2tv(kis_input_port));
+		    p2tv(kinput_portp));
     add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
-		    p2tv(kis_output_port));
+		    p2tv(koutput_portp));
     /* 15.1.? binary-port?, textual-port? */
     add_applicative(K, ground_env, "binary-port?", ftypep, 2, symbol, 
-		    p2tv(kis_binary_port));
+		    p2tv(kbinary_portp));
     add_applicative(K, ground_env, "textual-port?", ftypep, 2, symbol, 
-		    p2tv(kis_textual_port));
+		    p2tv(ktextual_portp));
+    /* 15.1.? port-open? */
+    add_applicative(K, ground_env, "port-open?", ftyped_predp, 3, symbol, 
+		    p2tv(kportp), p2tv(kport_openp));
 
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
     /* 15.1.? with-error-to-file */
@@ -822,14 +866,24 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "get-current-error-port", get_current_port, 
 		    2, symbol, K->kd_error_port_key);
     /* 15.1.5 open-input-file, open-output-file */
-    add_applicative(K, ground_env, "open-input-file", open_file, 3, symbol, 
+    add_applicative(K, ground_env, "open-input-file", open_file, 2, 
 		    b2tv(false), b2tv(false));
-    add_applicative(K, ground_env, "open-output-file", open_file, 3, symbol, 
+    add_applicative(K, ground_env, "open-output-file", open_file, 2, 
 		    b2tv(true), b2tv(false));
     /* 15.1.? open-binary-input-file, open-binary-output-file */
-    add_applicative(K, ground_env, "open-binary-input-file", open_file, 3, symbol, 
+    add_applicative(K, ground_env, "open-binary-input-file", open_file, 2, 
 		    b2tv(false), b2tv(true));
-    add_applicative(K, ground_env, "open-binary-output-file", open_file, 3, symbol, 
+    add_applicative(K, ground_env, "open-binary-output-file", open_file, 2, 
+		    b2tv(true), b2tv(true));
+    /* 15.1.? open-input-string, open-output-string */
+    /* 15.1.? open-input-bytevector, open-output-bytevector */
+    add_applicative(K, ground_env, "open-input-string", open_mport, 2, 
+		    b2tv(false), b2tv(false));
+    add_applicative(K, ground_env, "open-output-string", open_mport, 2, 
+		    b2tv(true), b2tv(false));
+    add_applicative(K, ground_env, "open-input-bytevector", open_mport, 2, 
+		    b2tv(false), b2tv(true));
+    add_applicative(K, ground_env, "open-output-bytevector", open_mport, 2, 
 		    b2tv(true), b2tv(true));
 
     /* 15.1.6 close-input-file, close-output-file */

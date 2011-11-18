@@ -591,7 +591,7 @@ void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj,
 			    bool displayp)
 {
     K->curr_port = port;
-    K->curr_out = kport_file(port);
+    K->curr_out = kfport_file(port);
     K->write_displayp = displayp;
     kwrite(K, obj);
 }
@@ -604,7 +604,7 @@ void kwrite_newline_to_port(klisp_State *K, TValue port)
 void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 {
     K->curr_port = port;
-    K->curr_out = kport_file(port);
+    K->curr_out = kfport_file(port);
     int res = fputc(chvalue(ch), K->curr_out);
     /* implicit flush, MAYBE add flush call */
     if (res != EOF)
@@ -619,7 +619,7 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
 {
     K->curr_port = port;
-    K->curr_out = kport_file(port);
+    K->curr_out = kfport_file(port);
     int res = fputc(ivalue(u8), K->curr_out);
     /* implicit flush, MAYBE add flush call */
     if (res != EOF)

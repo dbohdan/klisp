@@ -563,7 +563,7 @@ TValue kread(klisp_State *K)
 TValue kread_from_port(klisp_State *K, TValue port, bool mut)
 {
     K->curr_port = port;
-    K->curr_in = kport_file(port);
+    K->curr_in = kfport_file(port);
     K->read_mconsp = mut;
 
     ktok_set_source_info(K, kport_filename(port), 
@@ -583,7 +583,7 @@ TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
     K->ktok_seen_eof = false;
 
     K->curr_port = port;
-    K->curr_in = kport_file(port);
+    K->curr_in = kfport_file(port);
     int ch;
     if (peek) {
 	ch = ktok_peekc(K);
@@ -604,7 +604,7 @@ TValue kread_peek_u8_from_port(klisp_State *K, TValue port, bool peek)
     K->ktok_seen_eof = false;
 
     K->curr_port = port;
-    K->curr_in = kport_file(port);
+    K->curr_in = kfport_file(port);
     int32_t u8;
     if (peek) {
 	u8 = ktok_peekc(K);
@@ -626,7 +626,7 @@ void kread_ignore_whitespace_and_comments_from_port(klisp_State *K,
 						    TValue port)
 {
     K->curr_port = port;
-    K->curr_in = kport_file(port);
+    K->curr_in = kfport_file(port);
     /* source code info isn't important because it will be reset later */
     ktok_ignore_whitespace_and_comments(K);
 }

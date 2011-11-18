@@ -829,6 +829,7 @@ int32_t kmark_count;
 
 #define kport_is_input(o_) ((tv_get_kflags(o_) & K_FLAG_INPUT_PORT) != 0)
 #define kport_is_output(o_) ((tv_get_kflags(o_) & K_FLAG_OUTPUT_PORT) != 0)
+#define kport_is_open(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) == 0)
 #define kport_is_closed(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) != 0)
 #define kport_is_binary(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) != 0)
 #define kport_is_textual(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) == 0)
@@ -841,15 +842,6 @@ int32_t kmark_count;
     ((tv_get_kflags(o_) & K_FLAG_WEAK_KEYS) != 0)
 #define ktable_has_weak_values(o_) \
     ((tv_get_kflags(o_) & K_FLAG_WEAK_VALUES) != 0)
-
-/* can't be inline because we also use pointers to them,
- (at least gcc doesn't bother to create them and the linker fails) */
-/* REFACTOR shouldn't these be in kport.h?? */
-bool kis_port(TValue o);
-bool kis_input_port(TValue o);
-bool kis_output_port(TValue o);
-bool kis_binary_port(TValue o);
-bool kis_textual_port(TValue o);
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)

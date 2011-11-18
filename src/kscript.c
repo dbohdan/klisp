@@ -76,7 +76,7 @@ void do_script_error(klisp_State *K, TValue *xparams, TValue obj)
 
     /* FOR NOW used only for irritant list */
     TValue port = kcdr(K->kd_error_port_key);
-    klisp_assert(kport_file(port) == stderr);
+    klisp_assert(kfport_file(port) == stderr);
 
     /* TEMP: obj should be an error obj */
     if (ttiserror(obj)) {

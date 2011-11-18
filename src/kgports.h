@@ -24,6 +24,9 @@
 /* 15.1.2 input-port?, output-port? */
 /* use ftypep */
 
+/* 15.1.? port-open? */
+/* uses ftyped_predp */
+
 /* 15.1.3 with-input-from-file, with-ouput-to-file */
 /* 15.1.? with-error-to-file */
 void with_file(klisp_State *K, TValue *xparams, TValue ptree, 
@@ -36,6 +39,10 @@ void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* 15.1.5 open-input-file, open-output-file */
 void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+
+/* 15.1.? open-input-string, open-output-string */
+/* 15.1.? open-input-bytevector, open-output-bytevector */
+void open_mport(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.1.6 close-input-file, close-output-file */
 void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

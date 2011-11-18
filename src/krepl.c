@@ -46,7 +46,7 @@ void do_repl_read(klisp_State *K, TValue *xparams, TValue obj)
     fprintf(stdout, "klisp> ");
 
     TValue port = kcdr(K->kd_in_port_key);
-    klisp_assert(kport_file(port) == stdin);
+    klisp_assert(kfport_file(port) == stdin);
 #if 0 /* Let's disable this for now */
     /* workaround to the problem of the dangling '\n' in repl 
        (from previous line) */
@@ -112,7 +112,7 @@ void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj)
     */
 
     TValue port = kcdr(K->kd_out_port_key);
-    klisp_assert(kport_file(port) == stdout);
+    klisp_assert(kfport_file(port) == stdout);
 
     /* false: quote strings, escape chars */
     kwrite_display_to_port(K, port, obj, false);
@@ -131,7 +131,7 @@ void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
 
     /* FOR NOW used only for irritant list */
     TValue port = kcdr(K->kd_error_port_key);
-    klisp_assert(kport_file(port) == stderr);
+    klisp_assert(kfport_file(port) == stderr);
 
     /* TEMP: obj should be an error obj */
     if (ttiserror(obj)) {
