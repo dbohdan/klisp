@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 #include "kport.h"
 #include "kobject.h"
@@ -183,4 +184,46 @@ void kport_update_source_info(TValue port, int32_t line, int32_t col)
 {
     kport_line(port) = line;
     kport_col(port) = col;
+}
+
+/* Always grow by doubling the size (until min_size is reached) */
+/* GC: port should be rooted */
+void kmport_resize_buffer(klisp_State *K, TValue port, size_t min_size)
+{
+    klisp_assert(ttismport(port));
+    klisp_assert(kport_is_output(port));
+
+    uint32_t old_size = (kport_is_binary(port))?
+	kbytevector_size(kmport_buf(port)) :
+	kstring_size(kmport_buf(port));
+    uint64_t new_size = old_size;
+    
+    while (new_size < min_size) {
+	new_size *= 2;
+	if (new_size > SIZE_MAX)
+	    klispM_toobig(K);
+    }
+    
+    if (new_size == old_size)
+	return;
+
+    if (kport_is_binary(port)) {
+	TValue new_bb = kbytevector_new_s(K, new_size);
+	uint32_t off = kmport_off(port);
+	if (off != 0) {
+	    memcpy(kbytevector_buf(new_bb), 
+		   kbytevector_buf(kmport_buf(port)), 
+		   off);
+	}
+	kmport_buf(port) = new_bb; 	
+    } else {
+	TValue new_str = kstring_new_s(K, new_size);
+	uint32_t off = kmport_off(port);
+	if (off != 0) {
+	    memcpy(kstring_buf(new_str), 
+		   kstring_buf(kmport_buf(port)), 
+		   off);
+	}
+	kmport_buf(port) = new_str; 	
+    }
 }

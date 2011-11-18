@@ -54,5 +54,7 @@ void kclose_port(klisp_State *K, TValue port);
 
 void kport_reset_source_info(TValue port);
 void kport_update_source_info(TValue port, int32_t line, int32_t col);
+/* GC: port should be rooted */
+void kmport_resize_buffer(klisp_State *K, TValue port, uint32_t min_size);
 
 #endif

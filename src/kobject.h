@@ -463,7 +463,7 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     PortCommonFields;
     TValue buf;
-    int32_t off;
+    uint32_t off;
 } MPort;
 
 
