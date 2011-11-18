@@ -243,7 +243,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
 #define ttisu8(o) ({							\
 	TValue o__ = (o);						\
-	(ttisfixint(o__) && ivalue(o__) > 0 && ivalue(o__) < 256); })		
+	(ttisfixint(o__) && ivalue(o__) >= 0 && ivalue(o__) < 256); })		
 #define ttisinteger(o) ({ TValue o__ = (o);				\
 	    (ttiseinteger(o__) ||					\
 	     (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})
