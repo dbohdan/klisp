@@ -165,7 +165,7 @@ void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     bool writep = bvalue(xparams[1]);
     UNUSED(denv);
 
-    bind_1tp(K, ptree, "port", ttisport, port);
+    bind_1tp(K, ptree, "file port", ttisfport, port);
 
     bool dir_ok = writep? kport_is_output(port) : kport_is_input(port);
 
@@ -536,7 +536,7 @@ TValue read_all_expr(klisp_State *K, TValue port)
     }
 }
 
-/* interceptor for errors during reading, also for the continuat */
+/* interceptor for errors during reading */
 void do_int_close_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		   TValue denv)
 {
