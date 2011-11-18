@@ -39,6 +39,7 @@
 #include "kreal.h"
 #include "kpair.h"
 #include "kstring.h"
+#include "kbytevector.h"
 #include "ksymbol.h"
 #include "kerror.h"
 #include "kport.h"
@@ -162,6 +163,91 @@ void ktok_error_g(klisp_State *K, char *str, bool extra, TValue extra_value)
 /*
 ** Underlying stream interface & source code location tracking
 */
+
+/* TODO/OPTIMIZE We should use buffering to shorten the 
+   average code path to read each char */
+/* this reads one character from curr_port */
+int ktok_ggetc(klisp_State *K)
+{
+    /* XXX when full unicode is used (uint32_t) a different way should
+       be use to signal EOF */
+	       
+    TValue port = K->curr_port;
+    if (ttisfport(port)) {
+	/* fport */
+	FILE *file = kfport_file(port);
+	int chi = getc(file);
+	if (chi == EOF) {
+	    /* NOTE: eof doesn't change source code location info */
+	    if (ferror(file) != 0) {
+		/* clear error marker to allow retries later */
+		clearerr(file);
+                /* TODO put error info on the error obj */
+		ktok_error(K, "reading error");
+		return 0;
+	    } else { /* if (feof(file) != 0) */
+		/* let the eof marker set */
+		K->ktok_seen_eof = true;
+		return EOF;
+	    }
+	} else 
+	    return chi;
+    } else {
+	/* mport */
+	if (kport_is_binary(port)) {
+	    /* bytevector port */
+	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+		K->ktok_seen_eof = true;
+		return EOF;
+	    }
+	    int chi = kbytevector_buf(kmport_buf(port))[kmport_off(port)];
+	    ++kmport_off(port);
+	    return chi;
+	} else {
+	    /* string port */
+	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+		K->ktok_seen_eof = true;
+		return EOF;
+	    }
+	    int chi = kstring_buf(kmport_buf(port))[kmport_off(port)];
+	    ++kmport_off(port);
+	    return chi;
+	}
+    }
+}
+
+/* this returns one character to curr_port */
+void ktok_gungetc(klisp_State *K, int chi)
+{
+    if (chi == EOF)
+	return;
+
+    TValue port = K->curr_port;
+    if (ttisfport(port)) {
+	/* fport */
+	FILE *file = kfport_file(port);
+
+	if (ungetc(chi, file) == EOF) {
+	    if (ferror(file) != 0) {
+		/* clear error marker to allow retries later */
+		clearerr(file);
+	    }
+	    /* TODO put error info on the error obj */
+	    ktok_error(K, "reading error");
+	    return;
+	}
+    } else {
+	/* mport */
+	if (kport_is_binary(port)) {
+	    /* bytevector port */
+	    --kmport_off(port);
+	} else {
+	    /* string port */
+	    --kmport_off(port);
+	}
+    }
+}
+
 int ktok_peekc_getc(klisp_State *K, bool peekp)
 {
     /* WORKAROUND: for stdin line buffering & reading of EOF, this flag
@@ -171,24 +257,10 @@ int ktok_peekc_getc(klisp_State *K, bool peekp)
     if (K->ktok_seen_eof)
 	return EOF;
 
-    int chi = getc(K->curr_in);
-    if (chi == EOF) {
-	/* NOTE: eof doesn't change source code location info */
-	if (ferror(K->curr_in) != 0) {
-	    /* clear error marker to allow retries later */
-	    clearerr(K->curr_in);
-/* TODO put error info on the error obj */
-	    ktok_error(K, "reading error");
-	    return 0;
-	} else { /* if (feof(K->curr_in) != 0) */
-	    /* let the eof marker set */
-	    K->ktok_seen_eof = true;
-	    return EOF;
-	}
-    }
+    int chi = ktok_ggetc(K);
 
     if (peekp) {
-	ungetc(chi, K->curr_in);
+	ktok_gungetc(K, chi);
 	return chi;
     }
 
