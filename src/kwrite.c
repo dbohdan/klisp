@@ -58,9 +58,40 @@ void kw_printf(klisp_State *K, const char *format, ...)
 	    kwrite_error(K, "error writing");
 	    return;
 	}
+    } else if (ttismport(port)) {
+	/* bytevector ports shouldn't write chars */
+	klisp_assert(kport_is_textual(port));
+	/* string port */
+	uint32_t size;
+	int written;
+	uint32_t off = kmport_off(port);
+
+	size = kstring_size(kmport_buf(port)) -
+	    kmport_off(port) + 1;
+
+	/* size is always at least 1 (for the '\0') */
+	va_start(argp, format);
+	written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
+			    size, format, argp);
+	va_end(argp);
+
+	if (written >= size) { /* space wasn't enough */
+	    kmport_resize_buffer(K, port, off + written);
+	    /* size may be greater than off + written, so get again */
+	    size = kstring_size(kmport_buf(port)) - off + 1;
+	    va_start(argp, format);
+	    written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
+				size, format, argp);
+	    va_end(argp);
+	    if (written < 0 || written >= size) {
+		/* shouldn't happen */
+		kwrite_error(K, "error writing");
+		return;
+	    }
+	}
+	kmport_off(port) = off + written;
     } else {
-	/* vsnprintf(buf, size, format, argp); */
-	kwrite_error(K, "mem ports not yet supported");
+	kwrite_error(K, "unknown port type");
 	return;
     }
 }

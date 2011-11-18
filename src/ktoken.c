@@ -884,7 +884,8 @@ TValue ktok_read_special(klisp_State *K)
 	    has_radixp = true;
 	    break;
 	default:
-	    ktok_error(K, "unexpected char in number after #");
+	    ktok_error(K, "unknown # constant or "
+		       "unexpected char in number after #");
 	    /* avoid warning */
 	    return KINERT;
 	}
