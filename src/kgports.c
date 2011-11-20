@@ -223,7 +223,7 @@ void get_output_buffer(klisp_State *K, TValue *xparams, TValue ptree,
     */
     bool binaryp = bvalue(xparams[0]);
     UNUSED(denv);
-    bind_1tp(K, ptree, "port", ttisport, port);
+    bind_1tp(K, ptree, "port", ttismport, port);
 
     if (binaryp && !kport_is_binary(port)) {
 	klispE_throw_simple(K, "the port should be a bytevector port");
@@ -448,7 +448,7 @@ void write_u8(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	return;
     }
     
-    kwrite_char_to_port(K, port, u8);
+    kwrite_u8_to_port(K, port, u8);
     kapply_cc(K, KINERT);
 }
 

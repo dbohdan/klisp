@@ -45,10 +45,10 @@
     ((SDL_WaitEvent (sdl-import "sint" "SDL_WaitEvent" "pointer")))
     ($lambda ()
       ($let*
-        ( (buffer (make-blob 512))
+        ( (buffer (make-bytevector 512))
           (ok (SDL_WaitEvent buffer)))
         ($if (zero? ok)
-          (apply-continuation error-continuation "SDL_WaitEvent signalled error")
+          (error "SDL_WaitEvent signalled error")
           buffer)))))
 
 ($define! align
@@ -113,14 +113,14 @@
       (write status)
       (newline)
       ($if (<? status 0)
-        (apply error-continuation "error initializing SDL")
+        (error "error initializing SDL")
         ($sequence
           (guard-dynamic-extent
             ()
             ($lambda ()
               ($let* ((screen (sdl-set-video-mode 640 480 32 SDL_HWSURFACE)))
                 ($if (null? screen)
-                  (apply-continuation error-contination "unable to set video mode")
+                  (error "unable to set video mode")
                   ($sequence
                     (sdl-wm-set-caption window-title ())
                     (worker screen)))))
@@ -156,7 +156,7 @@
       (SDL_Flip (sdl-import "sint" "SDL_Flip" "pointer")))
     ($lambda (screen (x y) (r g b))
       ($if (<? (SDL_LockSurface screen) 0)
-        (apply error-continuation "SDL_LockSurface failed")
+        (error "SDL_LockSurface failed")
         ())
       ($let
         ( (pixels (SDL_Surface.pixels screen))
