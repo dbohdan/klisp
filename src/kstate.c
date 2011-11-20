@@ -38,6 +38,7 @@
 #include "kbytevector.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
+#include "kerror.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */
 
@@ -238,12 +239,44 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* TODO si */
     K->module_params_sym = ksymbol_new(K, "module-parameters", KNIL);
 
+    /* Create the root and error continuation (will be added to the 
+     environment in kinit_ground_env) */
+    K->root_cont = kmake_continuation(K, KNIL, do_root_exit, 0);
+    K->error_cont = kmake_continuation(K, K->root_cont, do_error_exit, 0);
+    /* this must be done before calling kinit_ground_env */
+    kinit_error_hierarchy(K); 
+
     kinit_ground_env(K);
 
     /* set the threshold for gc start now that we have allocated all mem */ 
     K->GCthreshold = 4*K->totalbytes;
 
     return K;
+}
+
+/*
+** Root and Error continuations
+*/
+void do_root_exit(klisp_State *K, TValue *xparams, TValue obj)
+{
+    UNUSED(xparams);
+
+    /* Just save the value and end the loop */
+    K->next_value = obj;
+    /* TEMP the return code is SUCCESS iff obj is inert */
+    K->script_exit_code = ttisinert(obj)? EXIT_SUCCESS : EXIT_FAILURE;
+    K->next_func = NULL;     /* force the loop to terminate */
+    return;
+}
+
+void do_error_exit(klisp_State *K, TValue *xparams, TValue obj)
+{
+    UNUSED(xparams);
+    UNUSED(obj);
+
+    /* TEMP Just pass a value to the root continuation that
+     would result in an EXIT_FAILURE */
+    kapply_cc(K, KFALSE);
 }
 
 /*

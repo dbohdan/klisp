@@ -142,6 +142,7 @@ struct klisp_State {
     bool write_displayp;
 
     /* script */
+    /* REFACTOR rename to exit_code */
     int script_exit_code;
 
     /* auxiliary stack */
@@ -496,6 +497,10 @@ void klispS_run(klisp_State *K);
 void klisp_close (klisp_State *K);
 
 void do_interception(klisp_State *K, TValue *xparams, TValue obj);
+
+/* for root and error continuations */
+void do_root_exit(klisp_State *K, TValue *xparams, TValue obj);
+void do_error_exit(klisp_State *K, TValue *xparams, TValue obj);
 
 /* simple accessors for dynamic keys */
 

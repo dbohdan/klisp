@@ -43,6 +43,7 @@ void do_repl_read(klisp_State *K, TValue *xparams, TValue obj)
     UNUSED(obj);
 
     /* show prompt */
+    /* TODO put this in a variable like in lua */
     fprintf(stdout, "klisp> ");
 
     TValue port = kcdr(K->kd_in_port_key);
@@ -131,7 +132,7 @@ void do_repl_error(klisp_State *K, TValue *xparams, TValue obj)
 
     /* FOR NOW used only for irritant list */
     TValue port = kcdr(K->kd_error_port_key);
-    klisp_assert(kfport_file(port) == stderr);
+    klisp_assert(ttisfport(port) && kfport_file(port) == stderr);
 
     /* TEMP: obj should be an error obj */
     if (ttiserror(obj)) {

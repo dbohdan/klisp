@@ -102,7 +102,8 @@ void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
     kcall_cont(K, K->error_cont, error_obj);
 }
 
-void klispE_throw_system_error_with_irritants(klisp_State *K, const char *service, int errnum, TValue irritants)
+void klispE_throw_system_error_with_irritants(
+    klisp_State *K, const char *service, int errnum, TValue irritants)
 {
     TValue error_description = klispE_describe_errno(K, service, errnum);
     krooted_tvs_push(K, error_description);
@@ -190,7 +191,8 @@ static const char * const symbolic_error_codes[] = {
 TValue klispE_describe_errno(klisp_State *K, const char *service, int errnum)
 {
     const char *code = NULL;
-    int tabsize = sizeof(symbolic_error_codes) / sizeof(symbolic_error_codes[0]);
+    int tabsize = sizeof(symbolic_error_codes) / 
+	sizeof(symbolic_error_codes[0]);
     if (0 <= errnum && errnum < tabsize)
         code = symbolic_error_codes[errnum];
     if (code == NULL)

@@ -2351,4 +2351,6 @@ void kinit_numbers_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "sqrt", ksqrt, 0);
     /* 12.9.6 expt */
     add_applicative(K, ground_env, "expt", kexpt, 0);
+
+    /* TODO add some conversion like number->string, string->number */
 }

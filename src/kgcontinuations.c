@@ -344,11 +344,13 @@ void kinit_continuations_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "continuation->applicative",
 		    continuation_applicative, 0);
     /* 7.2.6 root-continuation */
+    klisp_assert(ttiscontinuation(K->root_cont));
     add_value(K, ground_env, "root-continuation",
 	      K->root_cont);
     /* 7.2.7 error-continuation */
+    klisp_assert(ttiscontinuation(K->error_cont));
     add_value(K, ground_env, "error-continuation",
-	      K->root_cont);
+	      K->error_cont);
     /* 7.3.1 apply-continuation */
     add_applicative(K, ground_env, "apply-continuation", apply_continuation, 
 		    0);
