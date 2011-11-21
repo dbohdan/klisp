@@ -313,7 +313,9 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
     UNUSED(denv);
     check_0p(K, ptree);
     
-    TValue new_env = kmake_environment(K, K->ground_env);
+    /* std environments have hashtable for bindings */
+    TValue new_env = kmake_table_environment(K, K->ground_env);
+//    TValue new_env = kmake_environment(K, K->ground_env);
     kapply_cc(K, new_env);
 }
 

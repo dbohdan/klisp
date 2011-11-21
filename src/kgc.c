@@ -581,7 +581,7 @@ static void markroot (klisp_State *K) {
     K->grayagain = NULL; 
     K->weak = NULL; 
 
-    /* TEMP: this is quite awfull, think of other way to do this */
+    /* TEMP: this is quite awful, think of other way to do this */
     /* MAYBE: some of these could be FIXED */
     markvalue(K, K->name_table);
     markvalue(K, K->cont_name_table);
@@ -611,6 +611,8 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->ktok_dot);
     markvalue(K, K->ktok_sexp_comment);
     markvalue(K, K->shared_dict);
+
+    markvalue(K, K->curr_port);
 
     /* Mark all objects in the auxiliary stack,
        (all valid indexes are below top), all the objects in

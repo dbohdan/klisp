@@ -559,7 +559,7 @@ TValue kread(klisp_State *K)
     return obj;
 }
 
-
+/* port is protected from GC in curr_port */
 TValue kread_from_port(klisp_State *K, TValue port, bool mut)
 {
     K->curr_port = port;

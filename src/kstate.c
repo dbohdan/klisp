@@ -38,7 +38,7 @@
 #include "kbytevector.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
-#include "kerror.h" /* for creating error hierarchy */
+#include "kgerror.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */
 
@@ -248,6 +248,9 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     kinit_ground_env(K);
 
+    /* create a std environment and leave it in K->next_env */
+    K->next_env = kmake_table_environment(K, K->ground_env);
+
     /* set the threshold for gc start now that we have allocated all mem */ 
     K->GCthreshold = 4*K->totalbytes;
 
@@ -263,8 +266,6 @@ void do_root_exit(klisp_State *K, TValue *xparams, TValue obj)
 
     /* Just save the value and end the loop */
     K->next_value = obj;
-    /* TEMP the return code is SUCCESS iff obj is inert */
-    K->script_exit_code = ttisinert(obj)? EXIT_SUCCESS : EXIT_FAILURE;
     K->next_func = NULL;     /* force the loop to terminate */
     return;
 }
@@ -272,11 +273,9 @@ void do_root_exit(klisp_State *K, TValue *xparams, TValue obj)
 void do_error_exit(klisp_State *K, TValue *xparams, TValue obj)
 {
     UNUSED(xparams);
-    UNUSED(obj);
 
-    /* TEMP Just pass a value to the root continuation that
-     would result in an EXIT_FAILURE */
-    kapply_cc(K, KFALSE);
+    /* TEMP Just pass the error to the root continuation */
+    kapply_cc(K, obj);
 }
 
 /*
@@ -589,6 +588,7 @@ void klispS_run(klisp_State *K)
 		    (*fn)(K, K->next_xparams, K->next_value, K->next_env);
 		}
 	    }
+	    /* K->next_func is NULL, this means we should exit already */
 	    break;
 	}
     }

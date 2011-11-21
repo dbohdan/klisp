@@ -314,7 +314,7 @@ TValue kget_keyed_static_var(klisp_State *K, TValue env, TValue key)
 }
 
 /* environments with hashtable bindings */
-/* TEMP: for now only for ground environment */
+/* TEMP: for now only for ground & std environments */
 TValue kmake_table_environment(klisp_State *K, TValue parents)
 {
     TValue new_env = kmake_environment(K, parents);

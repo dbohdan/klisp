@@ -15,7 +15,18 @@
 #include "klisp.h"
 #include "kstate.h"
 #include "kauxlib.h"
+
+#include "kstring.h"
+#include "kcontinuation.h"
+#include "koperative.h"
+#include "kenvironment.h"
+#include "kport.h"
+#include "kread.h"
+#include "kerror.h"
+#include "kgcontinuations.h" /* for do_pass_value */
 #include "kscript.h"
+
+/* TODO update dependencies in makefile */
 
 /* TODO this should be moved to a file named like klispconf.h (see lua) */
 /*
@@ -60,9 +71,137 @@ static void k_message (const char *pname, const char *msg)
     fflush(stderr);
 }
 
+static int report (klisp_State *K, int status) {
+    if (status && !lua_isnil(L, -1)) {
+/* TODO show error */
+	const char *msg = "Error! \n";
+	k_message(progname, msg)
+    }
+    return status;
+}
+
 static void print_version (void) 
 {
     k_message(NULL, KLISP_RELEASE "  " KLISP_COPYRIGHT);
+}
+
+/* REFACTOR maybe these should be moved to a general place to be used
+   from any program */
+void do_str_eval(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /* 
+    ** xparams[0]: dynamic environment
+    */
+    TValue denv = xparams[0];
+    ktail_eval(K, obj, denv);
+}
+
+void do_str_read(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /* 
+    ** xparams[0]: port
+    */
+    TValue port = xparams[0];
+    UNUSED(obj);
+    /* read just one value (as mutable data) */
+    TValue obj1 = kread_from_port(K, port, true);
+
+    if (ttiseof(obj1)) {
+	klispE_throw_simple_with_irritants(K, "No object could be read", 
+					   1, port);
+	return;
+    }
+
+    krooted_tvs_push(K, obj1);
+    TValue obj2 = kread_from_port(K, port, true);
+    krooted_tvs_pop(K);
+    
+    if (!ttiseof(obj2)) {
+	klispE_throw_simple_with_irritants(K, "More than one expression read", 
+					   1, port);
+	return;
+    }
+
+    /* all ok, just one exp read */
+    kapply_cc(K, obj1);
+}
+
+void do_int_mark_error(klisp_State *K, TValue *xparams, TValue ptree, 
+		       TValue denv)
+{
+    /*
+    ** xparams[0]: errorp pointer
+    */
+    UNUSED(denv);
+    bool *errorp = (bool *) pvalue(xparams[0]);
+    *errorp = true;
+    /* ptree is (object divert) */
+    TValue error_obj = kcar(ptree);
+    /* pass the error along after setting the flag */
+    kapply_cc(K, error_obj);
+}
+
+static int dostring (klisp_State *K, const char *s, const char *name) 
+{
+    bool errorp = false; /* may be set to true in error handler */
+
+    UNUSED(name); /* could use as filename?? */
+    /* create a string input port */
+    TValue str = kstring_new_b(K, s);
+    krooted_tvs_push(K, str);
+    TValue port = kmake_mport(K, str, false, false);
+    krooted_tvs_pop(K);
+    krooted_tvs_push(K, port);
+
+    /* create the guard set error flag after errors */
+    TValue exit_int = kmake_operative(K, do_int_mark_error, 
+				      1, p2tv(&errorp));
+    krooted_tvs_push(K, exit_int);
+    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    krooted_tvs_pop(K); /* already in guard */
+    krooted_tvs_push(K, exit_guard);
+    TValue exit_guards = kcons(K, exit_guard, KNIL);
+    krooted_tvs_pop(K); /* alread in guards */
+    krooted_tvs_push(K, exit_guards);
+
+    TValue entry_guards = KNIL;
+
+    /* this is needed for interception code */
+    TValue env = kmake_empty_environment(K);
+    krooted_tvs_push(K, env);
+    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+					   do_pass_value, 2, entry_guards, env);
+    kset_outer_cont(outer_cont);
+    krooted_tvs_push(K, outer_cont);
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
+					   do_pass_value, 2, exit_guards, env);
+    kset_inner_cont(inner_cont);
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
+
+    /* only port remains in the root stack */
+    krooted_tvs_push(K, inner_cont);
+
+    /* XXX This should probably be an extra param to the function */
+    env = K->next_env; /* this is the standard env that should be used for 
+			  evaluation */
+    TValue eval_cont = kmake_continuation(K, inner_cont, do_str_eval, 
+					  1, env);
+    krooted_tvs_pop(K); /* pop inner cont */
+    krooted_tvs_push(K, eval_cont);
+    TValue read_cont = kmake_continuation(K, eval_cont, do_str_read, 
+					  1, port);
+    krooted_tvs_pop(K); /* pop eval cont */
+    krooted_tvs_pop(K); /* pop port */
+    kset_cc(K, read_cont); /* this will protect all conts from gc */
+    klispS_apply_cc(K, KINERT);
+
+    klispS_run(K);
+
+    int status = errorp? 1 : 0;
+
+    /* get the standard environment again in K->next_env */
+    K->next_env = env;
+    return report(K, status);
 }
 
 /* check that argument has no extra characters at the end */
@@ -105,6 +244,11 @@ static int collectargs (char **argv, bool *pi, bool *pv, bool *pe)
 
 static int runargs (klisp_State *K, char **argv, int n) 
 {
+    /* There is a standard env in K->next_env, a common one is used for all 
+       evaluations (init, expression args, script/repl) */
+    TValue env = K->next_env; 
+    UNUSED(env);
+
     for (int i = 1; i < n; i++) {
 	if (argv[i] == NULL) 
 	    continue;
@@ -118,10 +262,8 @@ static int runargs (klisp_State *K, char **argv, int n)
 		chunk = argv[++i];
 	    klisp_assert(chunk != NULL);
 
-	    /* TODO do string */
-	    UNUSED(K);
-//	    if (dostring(L, chunk, "=(command line)") != 0)
-//		return 1;
+	    if (dostring(K, chunk, "=(command line)") != 0)
+		return 1;
 	    break;
 	}
 //	case 'l':  /* no libraries for now */
@@ -142,8 +284,12 @@ struct Smain {
 static int pmain (klisp_State *K) 
 {
     /* This is weird but was done to follow lua scheme */
-    struct Smain *s = (struct Smain *) pvalue(K->next_obj);
+    struct Smain *s = (struct Smain *) pvalue(K->next_value);
     char **argv = s->argv;
+
+    /* There is a standard env in K->next_env, a common one is used for all 
+       evaluations (init, expression args, script/repl) */
+    //TValue env = K->next_env; 
 
     if (argv[0] && argv[0][0])
 	progname = argv[0];
@@ -204,7 +350,7 @@ int main(int argc, char *argv[])
     /* This is weird but was done to follow lua scheme */
     s.argc = argc;
     s.argv = argv;
-    K->next_obj = p2tv(&s);
+    K->next_value = p2tv(&s);
     status = pmain(K);
 
     klisp_close(K);

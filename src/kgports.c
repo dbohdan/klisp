@@ -704,7 +704,9 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
 
-    TValue env = kmake_environment(K, K->ground_env);
+    /* std environments have hashtable for bindings */
+    TValue env = kmake_table_environment(K, K->ground_env);
+//    TValue env = kmake_environment(K, K->ground_env);
     krooted_tvs_push(K, env);
 
     if (get_opt_tpar(K, maybe_env, "environment", ttisenvironment)) {

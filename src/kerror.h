@@ -13,6 +13,7 @@
 
 #include "klisp.h"
 #include "kstate.h"
+#include "kpair.h" /* for klist */
 
 TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg, 
 		  TValue irritants);
