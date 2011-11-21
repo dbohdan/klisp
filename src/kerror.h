@@ -17,13 +17,28 @@
 
 TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg, 
 		  TValue irritants);
+TValue klispE_new_with_errno_irritants(klisp_State *K, const char *service, 
+			     int errnum, TValue irritants);
 
 void klispE_free(klisp_State *K, Error *error);
 
 void klispE_throw_simple(klisp_State *K, char *msg);
 void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants);
 
-void klispE_throw_system_error_with_irritants(klisp_State *K, const char *service, int errnum, TValue irritants);
+void klispE_throw_system_error_with_irritants(
+    klisp_State *K, const char *service, int errnum, TValue irritants);
+
+/* the objects should be rooted */
+#define klispE_new_simple_with_errno_irritants(K__, service__, ...)	\
+    ({									\
+        int errnum__ = errno;						\
+        TValue ls__ = klist(K__, __VA_ARGS__);				\
+        krooted_tvs_push(K__, ls__);					\
+        TValue err__ = klispE_new_with_errno_irritants(K__, service__,	\
+						       errnum__, ls__);	\
+	krooted_tvs_pop(K__);						\
+	err__;								\
+    })
 
 /* evaluates K__ more than once */
 /* the objects should be rooted */

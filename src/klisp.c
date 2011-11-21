@@ -5,6 +5,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -25,11 +26,44 @@
 #include "kwrite.h"
 #include "kerror.h"
 #include "kgcontinuations.h" /* for do_pass_value */
+#include "kgcontrol.h" /* for do_seq */
 #include "kscript.h"
 
 /* TODO update dependencies in makefile */
 
 /* TODO this should be moved to a file named like klispconf.h (see lua) */
+
+/*
+** ==================================================================
+** Search for "@@" to find all configurable definitions.
+** ===================================================================
+*/
+
+/*
+@@ KLISP_ANSI controls the use of non-ansi features.
+** CHANGE it (define it) if you want Klisp to avoid the use of any
+** non-ansi feature or library.
+*/
+#if defined(__STRICT_ANSI__)
+#define KLISP_ANSI
+#endif
+
+
+#if !defined(KLISP_ANSI) && defined(_WIN32)
+#define KLISP_WIN
+#endif
+
+#if defined(KLISP_USE_LINUX)
+#define KLISP_USE_POSIX
+#define KLISP_USE_DLOPEN		/* needs an extra library: -ldl */
+#define KLISP_USE_READLINE	/* needs some extra libraries */
+#endif
+
+#if defined(KLISP_USE_MACOSX)
+#define KLISP_USE_POSIX
+#define KLISP_DL_DYLD		/* does not need extra library */
+#endif
+
 /*
 @@ KLISP_PROGNAME is the default name for the stand-alone klisp program.
 ** CHANGE it if your stand-alone interpreter has a different name and
@@ -46,6 +80,18 @@
 /* /TODO */
 
 /*
+@@ KLISP_USE_POSIX includes all functionallity listed as X/Open System
+@* Interfaces Extension (XSI).
+** CHANGE it (define it) if your system is XSI compatible.
+*/
+#if defined(KLISP_USE_POSIX)
+#define KLISP_USE_MKSTEMP
+#define KLISP_USE_ISATTY
+#define KLISP_USE_POPEN
+#define KLISP_USE_ULONGJMP
+#endif
+
+/*
 @@ LUA_PATH and LUA_CPATH are the names of the environment variables that
 @* Lua check to set its paths.
 @@ KLISP_INIT is the name of the environment variable that klisp
@@ -55,6 +101,23 @@
 //#define LUA_PATH        "LUA_PATH"
 //#define LUA_CPATH       "LUA_CPATH"
 #define KLISP_INIT	"KLISP_INIT"
+
+/*
+@@ klisp_stdin_is_tty detects whether the standard input is a 'tty' (that
+@* is, whether we're running klisp interactively).
+** CHANGE it if you have a better definition for non-POSIX/non-Windows
+** systems.
+*/
+#if defined(KLISP_USE_ISATTY)
+#include <unistd.h>
+#define klisp_stdin_is_tty()	isatty(0)
+#elif defined(KLISP_WIN)
+#include <io.h>
+#include <stdio.h>
+#define klisp_stdin_is_tty()	_isatty(_fileno(stdin))
+#else
+#define klisp_stdin_is_tty()	1  /* assume stdin is a tty */
+#endif
 
 static const char *progname = KLISP_PROGNAME;
 
@@ -242,7 +305,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
-    krooted_tvs_pop(K); /* alread in guards */
+    krooted_tvs_pop(K); /* already in guards */
     krooted_tvs_push(K, exit_guards);
 
     TValue entry_guards = KNIL;
@@ -283,6 +346,125 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     /* get the standard environment again in K->next_env */
     K->next_env = env;
     return report(K, status);
+}
+
+void do_file_eval(klisp_State *K, TValue *xparams, TValue obj)
+{
+    /* 
+    ** xparams[0]: dynamic environment
+    */
+    TValue denv = xparams[0];
+    TValue ls = obj;
+    if (!ttisnil(ls)) {
+	TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, ls, denv);
+	kset_cc(K, new_cont);
+    } 
+    kapply_cc(K, KINERT);
+}
+
+void do_file_read(klisp_State *K, TValue *xparams, TValue obj)
+{
+    UNUSED(obj);
+    TValue port = xparams[0];
+    /* read all file as a list (as immutable data) */
+    TValue ls = kread_list_from_port(K, port, false);
+
+    /* all ok, just one exp read (or none and obj1 is eof) */
+    kapply_cc(K, ls);
+}
+
+/* name = NULL means use stdin */
+static int dofile(klisp_State *K, const char *name) 
+{
+    bool errorp = false; /* may be set to true in error handler */
+
+    /* create a file input port (unless it's stdin, then just use) */
+    TValue port;
+
+    if (name == NULL) {
+	port = kcdr(K->kd_in_port_key);
+    } else {
+	FILE *file = fopen(name, "r");
+	if (file == NULL) {
+	    TValue mode_str = kstring_new_b(K, "r");
+	    krooted_tvs_push(K, mode_str);
+	    TValue error_obj = klispE_new_simple_with_errno_irritants
+		(K, "fopen", 2, name, mode_str);
+	    krooted_tvs_pop(K);
+	    K->next_value = error_obj;
+	    return 1;
+	}
+	    
+	TValue name_str = kstring_new_b(K, name);
+	krooted_tvs_push(K, name_str);
+	port = kmake_std_fport(K, name_str, false, false, file);
+	krooted_tvs_pop(K);
+    }
+    
+    krooted_tvs_push(K, port);
+    /* TODO this is exactly the same as in string, factor the code out */
+    /* create the guard set error flag after errors */
+    TValue exit_int = kmake_operative(K, do_int_mark_error, 
+				      1, p2tv(&errorp));
+    krooted_tvs_push(K, exit_int);
+    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    krooted_tvs_pop(K); /* already in guard */
+    krooted_tvs_push(K, exit_guard);
+    TValue exit_guards = kcons(K, exit_guard, KNIL);
+    krooted_tvs_pop(K); /* already in guards */
+    krooted_tvs_push(K, exit_guards);
+
+    TValue entry_guards = KNIL;
+
+    /* this is needed for interception code */
+    TValue env = kmake_empty_environment(K);
+    krooted_tvs_push(K, env);
+    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+					   do_pass_value, 2, entry_guards, env);
+    kset_outer_cont(outer_cont);
+    krooted_tvs_push(K, outer_cont);
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
+					   do_pass_value, 2, exit_guards, env);
+    kset_inner_cont(inner_cont);
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
+
+    /* only port remains in the root stack */
+    krooted_tvs_push(K, inner_cont);
+
+    /* XXX This should probably be an extra param to the function */
+    env = K->next_env; /* this is the standard env that should be used for 
+			  evaluation */
+    TValue eval_cont = kmake_continuation(K, inner_cont, do_file_eval, 
+					  1, env);
+    krooted_tvs_pop(K); /* pop inner cont */
+    krooted_tvs_push(K, eval_cont);
+    TValue read_cont = kmake_continuation(K, eval_cont, do_file_read, 
+					  1, port);
+    krooted_tvs_pop(K); /* pop eval cont */
+    krooted_tvs_pop(K); /* pop port */
+    kset_cc(K, read_cont); /* this will protect all conts from gc */
+    klispS_apply_cc(K, KINERT);
+
+    klispS_run(K);
+
+    int status = errorp? 1 : 0;
+
+    /* get the standard environment again in K->next_env */
+    K->next_env = env;
+    return report(K, status);
+}
+
+static int handle_script(klisp_State *K, char **argv, int n) 
+{
+    const char *fname;
+    /* XXX/TODO save arguments to script */
+//    int narg = getargs(L, argv, n);  /* collect arguments */
+//    lua_setglobal(L, "arg");
+    fname = argv[n];
+    if (strcmp(fname, "-") == 0 && strcmp(argv[n-1], "--") != 0) 
+	fname = NULL;  /* stdin */
+
+    return dofile(K, fname);
 }
 
 /* check that argument has no extra characters at the end */
@@ -414,19 +596,23 @@ static int pmain(klisp_State *K)
     if (s->status != 0)
 	return 0;
 
-    if (script > 0) /* XXX FIX script */
-	s->status = 0;
+    if (script > 0) {
+	s->status = handle_script(K, argv, script);
+    }
 
     if (s->status != 0)
 	return 0;
 
-    if (has_i) /* TODO FIX REPL */
+    if (has_i) { /* TODO FIX REPL */
 	s->status = 0;
-    else if (script == 0 && !has_e && !has_v) {
-	print_version();
-	s->status = 0; /* TODO FIX REPL */
-    } else 
-	s->status = 0; /* TODO do FILE */
+    } else if (script == 0 && !has_e && !has_v) {
+	if (true) {
+	    print_version();
+	    s->status = 0; /* TODO FIX REPL */
+	} else {
+	    s->status = dofile(K, NULL);
+	}
+    }
 
     return 0;
 }

@@ -32,6 +32,21 @@ TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg,
     return gc2error(new_error);
 }
 
+TValue klispE_new_with_errno_irritants(klisp_State *K, const char *service, 
+			     int errnum, TValue irritants)
+{
+    TValue error_description = klispE_describe_errno(K, service, errnum);
+    krooted_tvs_push(K, error_description);
+    TValue all_irritants = kimm_cons(K, error_description, irritants);
+    krooted_tvs_push(K, all_irritants);
+    TValue error_obj = klispE_new(K, K->next_obj, K->curr_cont,
+                                  kcaddr(error_description),
+                                  all_irritants);
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+    return error_obj;
+}
+
 void klispE_free(klisp_State *K, Error *error)
 {
     klispM_free(K, error);
@@ -105,13 +120,8 @@ void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
 void klispE_throw_system_error_with_irritants(
     klisp_State *K, const char *service, int errnum, TValue irritants)
 {
-    TValue error_description = klispE_describe_errno(K, service, errnum);
-    krooted_tvs_push(K, error_description);
-    TValue all_irritants = kimm_cons(K, error_description, irritants);
-    krooted_tvs_push(K, all_irritants);
-    TValue error_obj = klispE_new(K, K->next_obj, K->curr_cont,
-                                  kcaddr(error_description),
-                                  all_irritants);
+    TValue error_obj = klispE_new_with_errno_irritants(K, service, errnum, 
+						       irritants);
     krooted_tvs_push(K, error_obj);
     clear_buffers(K);
     kcall_cont(K, K->system_error_cont, error_obj);

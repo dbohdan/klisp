@@ -88,8 +88,9 @@ TValue kmake_fport(klisp_State *K, TValue filename, bool writep, bool binaryp)
 	    
     FILE *f = fopen(kstring_buf(filename), mode);
     if (f == NULL) {
-        klispE_throw_errno_with_irritants(K, "fopen", 2, filename,
-                                          kstring_new_b_imm(K, mode));
+	TValue mode_str = kstring_new_b(K, mode);
+	krooted_tvs_push(K, mode_str);
+        klispE_throw_errno_with_irritants(K, "fopen", 2, filename, mode_str);
 	return KINERT;
     } else {
 	return kmake_std_fport(K, filename, writep, binaryp, f);
