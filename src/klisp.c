@@ -35,7 +35,8 @@
 
 static const char *progname = KLISP_PROGNAME;
 
-static void print_usage (void) {
+static void print_usage (void) 
+{
     fprintf(stderr,
 	    "usage: %s [options] [script [args]].\n"
 	    "Available options are:\n"
@@ -51,30 +52,101 @@ static void print_usage (void) {
     fflush(stderr);
 }
 
-static void k_message (const char *pname, const char *msg) {
+static void k_message (const char *pname, const char *msg) 
+{
     if (pname)
 	fprintf(stderr, "%s: ", pname);
     fprintf(stderr, "%s\n", msg);
     fflush(stderr);
 }
 
+static void print_version (void) 
+{
+    k_message(NULL, KLISP_RELEASE "  " KLISP_COPYRIGHT);
+}
+
+/* check that argument has no extra characters at the end */
+#define notail(x)	{if ((x)[2] != '\0') return -1;}
+
+static int collectargs (char **argv, bool *pi, bool *pv, bool *pe) 
+{
+    int i;
+    for (i = 1; argv[i] != NULL; i++) {
+	if (argv[i][0] != '-')  /* not an option? */
+	    return i;
+	switch (argv[i][1]) {  /* option */
+	case '-':
+	    notail(argv[i]);
+	    return (argv[i+1] != NULL ? i+1 : 0);
+	case '\0':
+	    return i;
+	case 'i':
+	    notail(argv[i]);
+	    *pi = true;  /* go through */
+	case 'v':
+	    notail(argv[i]);
+	    *pv = true;
+	    break;
+	case 'e':
+	    *pe = true;  /* go through */
+//	case 'l': /* No library for now */
+	    if (argv[i][2] == '\0') {
+		i++;
+		if (argv[i] == NULL)
+		    return -1;
+	    }
+	    break;
+	default: 
+	    return -1;  /* invalid option */
+	}
+    }
+    return 0;
+}
+
+static int runargs (klisp_State *K, char **argv, int n) 
+{
+    for (int i = 1; i < n; i++) {
+	if (argv[i] == NULL) 
+	    continue;
+
+	klisp_assert(argv[i][0] == '-');
+
+	switch (argv[i][1]) {  /* option */
+	case 'e': {
+	    const char *chunk = argv[i] + 2;
+	    if (*chunk == '\0') 
+		chunk = argv[++i];
+	    klisp_assert(chunk != NULL);
+
+	    /* TODO do string */
+	    UNUSED(K);
+//	    if (dostring(L, chunk, "=(command line)") != 0)
+//		return 1;
+	    break;
+	}
+//	case 'l':  /* no libraries for now */
+	default: 
+	    break;
+	}
+    }
+    return 0;
+}
+
+/* This is weird but was done to follow lua scheme */
 struct Smain {
-  int argc;
-  char **argv;
-  int status;
+    int argc;
+    char **argv;
+    int status;
 };
 
-int main(int argc, char *argv[]) 
+static int pmain (klisp_State *K) 
 {
+    /* This is weird but was done to follow lua scheme */
+    struct Smain *s = (struct Smain *) pvalue(K->next_obj);
+    char **argv = s->argv;
+
     if (argv[0] && argv[0][0])
 	progname = argv[0];
-
-    klisp_State *K = klispL_newstate();
-
-    if (K == NULL) {
-	k_message(argv[0], "cannot create state: not enough memory");
-	return EXIT_FAILURE;
-    }
 
     /* TODO Here we should load libraries, however we don't have any
        non native bindings in the ground environment yet */
@@ -83,14 +155,59 @@ int main(int argc, char *argv[])
        Also by writing all in c it's easy to be consistent, especially with
        error messages */
 
-    /* XXX Fix REPL, Fix Script */
+    /* TODO do init */
+    bool has_i = false, has_v = false, has_e = false;
+    int script = collectargs(argv, &has_i, &has_v, &has_e);
 
-    // klispS_run(K); /* XXX Now this does nothing */
-    int exit_code = EXIT_FAILURE; // K->script_exit_code;
+    if (script < 0) { /* invalid args? */
+	print_usage();
+	s->status = 1;
+	return 0;
+    }
+
+    if (has_v)
+	print_version();
+
+    s->status = runargs(K, argv, (script > 0) ? script : s->argc);
+
+    if (s->status != 0)
+	return 0;
+
+    if (script > 0) /* XXX FIX script */
+	s->status = 0;
+
+    if (s->status != 0)
+	return 0;
+
+    if (has_i) /* TODO FIX REPL */
+	s->status = 0;
+    else if (script == 0 && !has_e && !has_v) {
+	print_version();
+	s->status = 0; /* TODO FIX REPL */
+    } else 
+	s->status = 0; /* TODO do FILE */
+
+    return 0;
+}
+
+int main(int argc, char *argv[]) 
+{
+    int status;
+    struct Smain s;
+    klisp_State *K = klispL_newstate();
+
+    if (K == NULL) {
+	k_message(argv[0], "cannot create state: not enough memory");
+	return EXIT_FAILURE;
+    }
+
+    /* This is weird but was done to follow lua scheme */
+    s.argc = argc;
+    s.argv = argv;
+    K->next_obj = p2tv(&s);
+    status = pmain(K);
+
     klisp_close(K);
 
-    /* TEMP */
-    print_usage();
-
-    return exit_code;
+    return (status || s.status)? EXIT_FAILURE : EXIT_SUCCESS;
 }
