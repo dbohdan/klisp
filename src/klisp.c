@@ -22,6 +22,7 @@
 #include "kenvironment.h"
 #include "kport.h"
 #include "kread.h"
+#include "kwrite.h"
 #include "kerror.h"
 #include "kgcontinuations.h" /* for do_pass_value */
 #include "kscript.h"
@@ -82,12 +83,84 @@ static void k_message (const char *pname, const char *msg)
     fflush(stderr);
 }
 
+/* TODO move this to a common place to use it from elsewhere */
+static void show_error(klisp_State *K, TValue obj) {
+    /* FOR NOW used only for irritant list */
+    TValue port = kcdr(K->kd_error_port_key);
+    klisp_assert(ttisfport(port) && kfport_file(port) == stderr);
+
+    /* TEMP: obj should be an error obj */
+    if (ttiserror(obj)) {
+	Error *err_obj = tv2error(obj);
+	TValue who = err_obj->who;
+	char *who_str;
+	/* TEMP? */
+	if (ttiscontinuation(who))
+	    who = tv2cont(who)->comb;
+
+	if (ttisstring(who)) {
+	    who_str = kstring_buf(who);
+#if KTRACK_NAMES
+	} else if (khas_name(who)) {
+	    TValue name = kget_name(K, who);
+	    who_str = ksymbol_buf(name);
+#endif
+	} else {
+	    who_str = "?";
+	}
+	char *msg = kstring_buf(err_obj->msg);
+	fprintf(stderr, "\n*ERROR*: \n");
+	fprintf(stderr, "%s: %s", who_str, msg);
+
+	krooted_tvs_push(K, obj);
+
+	/* Msg + irritants */
+	/* TODO move to a new function */
+	if (!ttisnil(err_obj->irritants)) {
+	    fprintf(stderr, ": ");
+	    kwrite_display_to_port(K, port, err_obj->irritants, false);
+	}
+	kwrite_newline_to_port(K, port);
+
+#if KTRACK_NAMES
+#if KTRACK_SI
+	/* Location */
+	/* TODO move to a new function */
+	/* MAYBE: remove */
+	if (khas_name(who) || khas_si(who)) {
+	    fprintf(stderr, "Location: ");
+	    kwrite_display_to_port(K, port, who, false);
+	    kwrite_newline_to_port(K, port);
+	}
+
+	/* Backtrace */
+	/* TODO move to a new function */
+	TValue tv_cont = err_obj->cont;
+	fprintf(stderr, "Backtrace: \n");
+	while(ttiscontinuation(tv_cont)) {
+	    kwrite_display_to_port(K, port, tv_cont, false);
+	    kwrite_newline_to_port(K, port);
+	    Continuation *cont = tv2cont(tv_cont);
+	    tv_cont = cont->parent;
+	}
+	/* add extra newline at the end */
+	kwrite_newline_to_port(K, port);
+#endif
+#endif
+	krooted_tvs_pop(K);
+    } else {
+	fprintf(stderr, "\n*ERROR*: not an error object passed to " 
+		"error continuation");
+    }
+    fflush(stderr);
+}
+
 static int report (klisp_State *K, int status) 
 {
     if (status != 0) {
-/* TODO show error */
-	const char *msg = "Error!\n";
+	const char *msg = "Error!";
 	k_message(progname, msg);
+	show_error(K, K->next_value);
     }
     return status;
 }
