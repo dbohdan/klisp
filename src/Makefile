@@ -108,7 +108,7 @@ mingw:
 posix:
 	$(MAKE) all \
 		"MYCFLAGS=-DKLISP_USE_POSIX $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1 -Dread=klisp_read -Dwrite=klisp_write)" \
-		"MYLIBS=$(if $(USE_LIBFFI), -ldl -lffi)"
+		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi)"
 
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all default o clean

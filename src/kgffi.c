@@ -260,6 +260,23 @@ static void ffi_encode_uint32(ffi_codec_t *self, klisp_State *K, TValue v, void 
     }
 }
 
+static TValue ffi_decode_sint32(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    return i2tv(*(int32_t *)buf);
+}
+
+static void ffi_encode_sint32(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisfixint(v)) {
+        *(int32_t *) buf = ivalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C int32_t", 1, v);
+        return;
+    }
+}
+
 static TValue ffi_decode_uint64(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
     /* TODO */
@@ -352,6 +369,7 @@ static ffi_codec_t ffi_codecs[] = {
     SIMPLE_TYPE(uint16),
     SIMPLE_TYPE(sint16),
     SIMPLE_TYPE(uint32),
+    SIMPLE_TYPE(sint32),
     SIMPLE_TYPE(uint64),
     SIMPLE_TYPE(float),
     SIMPLE_TYPE(double)
@@ -478,30 +496,24 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
     size_t nargs = check_typed_list(K, "ffi-make-call-interface", "argtype string",
                                     kstringp, false, argtypes_tv, NULL);
 
-    krooted_tvs_push(K, abi_tv);
-    krooted_tvs_push(K, rtype_tv);
-    krooted_tvs_push(K, argtypes_tv);
-    TValue key = xparams[0];
-    krooted_tvs_push(K, key);
+    /* Allocate C structure ffi_call_interface_t inside
+     a mutable bytevector. The structure contains C pointers
+     into itself. It must never be reallocated or copied.
+     The bytevector will be encapsulated later to protect
+     it from lisp code. */
+
     size_t bytevector_size = sizeof(ffi_call_interface_t) + (sizeof(ffi_codec_t *) + sizeof(ffi_type)) * nargs;
-    /* XXX was immutable, but there is no immutable bytevector constructor
-       without buffer now, is it really immutable?? see end of function
-    Andres Navarro */
     TValue bytevector = kbytevector_new_sf(K, bytevector_size, 0);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
+    krooted_tvs_push(K, bytevector);
 
     ffi_call_interface_t *p = (ffi_call_interface_t *) tv2bytevector(bytevector)->b;
     p->acodecs = (ffi_codec_t **) ((char *) p + sizeof(ffi_call_interface_t));
     p->argtypes = (ffi_type **) ((char *) p + sizeof(ffi_call_interface_t) + nargs * sizeof(ffi_codec_t *));
-
     p->nargs = nargs;
     p->rcodec = tv2ffi_codec(K, rtype_tv);
     if (p->rcodec->decode == NULL) {
-      klispE_throw_simple(K, "this type is not allowed as a return type");
-      return;
+        klispE_throw_simple_with_irritants(K, "this type is not allowed as a return type", 1, rtype_tv);
+        return;
     }
 
     p->buffer_size = p->rcodec->libffi_type->size;
@@ -509,7 +521,7 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
     for (int i = 0; i < nargs; i++) {
         p->acodecs[i] = tv2ffi_codec(K, kcar(tail));
         if (p->acodecs[i]->encode == NULL) {
-            klispE_throw_simple(K, "this type is not allowed in argument list");
+            klispE_throw_simple_with_irritants(K, "this type is not allowed in argument list", 1, kcar(tail));
             return;
         }
         ffi_type *t = p->acodecs[i]->libffi_type;
@@ -533,15 +545,9 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
             klispE_throw_simple(K, "unknown error in ffi_prep_cif");
             return;
     }
-    /* XXX if it should really be immutable this is the only sane way I can
-       think of. If not, just remove.
-    Andres Navarro */
-    krooted_tvs_push(K, bytevector);
-    bytevector = kbytevector_new_bs_imm(K, kbytevector_buf(bytevector),
-					kbytevector_size(bytevector));
-    krooted_tvs_push(K, bytevector);
+
+    TValue key = xparams[0];
     TValue enc = kmake_encapsulation(K, key, bytevector);
-    krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     kapply_cc(K, enc);
 }
@@ -1088,6 +1094,15 @@ void ffi_type_suite(klisp_State *K, TValue *xparams,
     kapply_cc(K, suite_tv);
 }
 
+void ffi_klisp_state(klisp_State *K, TValue *xparams,
+                     TValue ptree, TValue denv)
+{
+    UNUSED(xparams);
+    UNUSED(denv);
+    check_0p(K, ptree);
+    kapply_cc(K, p2tv(K));
+}
+
 /* init ground */
 void kinit_ffi_ground_env(klisp_State *K)
 {
@@ -1116,6 +1131,7 @@ void kinit_ffi_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "ffi-make-callback", ffi_make_callback, 2, cif_key, cb_tab);
     add_applicative(K, ground_env, "ffi-memmove", ffi_memmove, 0);
     add_applicative(K, ground_env, "ffi-type-suite", ffi_type_suite, 0);
+    add_applicative(K, ground_env, "ffi-klisp-state", ffi_klisp_state, 0);
     add_applicative(K, ground_env, "ffi-library?", enc_typep, 1, dll_key);
     add_applicative(K, ground_env, "ffi-call-interface?", enc_typep, 1, cif_key);
 }

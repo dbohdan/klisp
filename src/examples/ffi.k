@@ -41,7 +41,7 @@
 ;;   "uint64"   uint64_t      fixint, bigint
 ;;   "float"    float         double
 ;;   "double"   double        double
-;;   "pointer"   (void *)     blob               (only for arguments)
+;;   "pointer"   (void *)     bytevector         (only for arguments)
 ;;                            string             (only for arguments)
 ;;                            nil
 ;;                            pointer (TAG_USER)
@@ -122,7 +122,7 @@
 ;; (REF MEMORY-LOCATION)
 ;; (SET! MEMORY-LOCATION VALUE)
 ;;
-;; MEMORY-LOCATION is either blob, string, pointer,
+;; MEMORY-LOCATION is either bytevector, string, pointer,
 ;; or a two-element list (MEMORY-LOCATION OFFSET).
 ;; The offset specification can not be nested, i.e.
 ;; ((blob 1) 2) is not valid memory location.
@@ -136,7 +136,7 @@
 (newline)
 
 ;; Using ffi-type-suite, one can define means to convert
-;; C structs (stored in blobs or arbitrary memory locations)
+;; C structs (stored in bytevectors or arbitrary memory locations)
 ;; to lists.
 ;;
 ($define! align
@@ -184,7 +184,7 @@
           (ffi-make-call-interface abi
              "sint" (list "pointer" "pointer")))))
     ($lambda ()
-      ($let* ((buffer (make-blob (* 2 sint-size))))
+      ($let* ((buffer (make-bytevector (* 2 sint-size))))
         (unix-gettimeofday buffer ())
         ($let (((tv_sec tv_usec) (struct-timeval-ref buffer)))
           (list tv_sec (/ tv_usec 1000000)))))))
@@ -203,8 +203,8 @@
         (decode-struct "sint" "sint" "sint" "sint" "sint" "sint" "sint" "sint")))
     ($lambda (t)
       ($let*
-        ( (t-buf (make-blob sint-size))
-          (tm-buf (make-blob 128)) )
+        ( (t-buf (make-bytevector sint-size))
+          (tm-buf (make-bytevector 128)) )
         (sint-set! t-buf t)
         (localtime-r t-buf tm-buf)
         ($let
@@ -236,21 +236,21 @@
 ;; (ffi-memmove DESTINATION SOURCE SIZE) copies
 ;; SIZE bytes from SOURCE to DESTINATION. Both SOURCE
 ;; and DESTINATION are memory locations as described above.
-;; ffi-memmove can copy data between blobs and arbitrary
+;; ffi-memmove can copy data between bytevectors and arbitrary
 ;; memory locations.
 ;;
 ($define! copy-location
   ($lambda (location size)
-    ($let ((blob (make-blob size)))
+    ($let ((blob (make-bytevector size)))
       (ffi-memmove blob location size)
       blob)))
 
-($define! blob->list
+($define! bytevector->list
   ($letrec
     ((aux ($lambda (blob index)
-      ($if (<? index (blob-length blob))
+      ($if (<? index (bytevector-length blob))
         (cons
-          (blob-u8-ref blob index)
+          (bytevector-u8-ref blob index)
           (aux blob (+ 1 index)))
         ()))))
     ($lambda (blob)
@@ -258,7 +258,7 @@
 
 ($define! parse-address
   ($lambda (location size)
-    (blob->list (copy-location location size))))
+    (bytevector->list (copy-location location size))))
 
 ($define!
   (voidptr-size voidptr-alignment voidptr-ref voidptr-set!)
@@ -322,10 +322,10 @@
 
 ($define! endianess
   ($let
-    ((buffer (make-blob 4)))
+    ((buffer (make-bytevector 4)))
     (uint32-set! buffer #x01020304)
     ($let
-      ((bytes (blob->list buffer)))
+      ((bytes (bytevector->list buffer)))
       ($cond
         ((equal? bytes (list 1 2 3 4)) "big-endian")
         ((equal? bytes (list 4 3 2 1)) "little-endian")
