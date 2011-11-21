@@ -551,36 +551,6 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* helpers for load */
 
-/* read all expressions in a file, as immutable pairs */
-/* GC: assume port is rooted */
-TValue read_all_expr(klisp_State *K, TValue port)
-{
-    /* GC: root dummy and obj */
-    TValue tail = kget_dummy1(K);
-    TValue obj = KINERT;
-    krooted_vars_push(K, &obj);
-
-    while(true) {
-	obj = kread_from_port(K, port, false); /* read immutable pairs */
-	if (ttiseof(obj)) {
-	    krooted_vars_pop(K);
-	    return kcutoff_dummy1(K);
-	} else {
-	    TValue new_pair = kimm_cons(K, obj, KNIL);
-#if KTRACK_SI
-	    /* put the source info */
-	    /* XXX: should first read all comments and whitespace,
-	     then save the source info, then read the object and
-	     lastly put the saved source info on the new pair...
-	     For now this will do, but it's not technically correct */
-	    kset_source_info(K, new_pair, ktry_get_si(K, obj));
-#endif
-	    kset_cdr_unsafe(K, tail, new_pair);
-	    tail = new_pair;
-	}
-    }
-}
-
 /* interceptor for errors during reading */
 void do_int_close_file(klisp_State *K, TValue *xparams, TValue ptree, 
 		   TValue denv)
@@ -663,7 +633,8 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
        current continuation as parent 
     GC: root this obj */
     kset_cc(K, guarded_cont); /* implicit rooting */
-    TValue ls = read_all_expr(K, port); /* any error will close the port */
+    /* any error will close the port */
+    TValue ls = kread_list_from_port(K, port, false);  /* immutable pairs */
 
     /* now the sequence of expresions should be evaluated in denv
        and #inert returned after all are done */
@@ -723,7 +694,9 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
     kset_cc(K, guarded_cont); /* implicit roooting */
 
-    TValue ls = read_all_expr(K, port); /* any error will close the port */
+    
+    /* any error will close the port */
+    TValue ls = kread_list_from_port(K, port, false); /* use immutable pairs */
 
     /* now the sequence of expresions should be evaluated in the created env
        and the environment returned after all are done */
