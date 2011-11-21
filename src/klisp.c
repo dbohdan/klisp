@@ -44,6 +44,17 @@
 #define KLISP_QS	KLISP_QL("%s")
 /* /TODO */
 
+/*
+@@ LUA_PATH and LUA_CPATH are the names of the environment variables that
+@* Lua check to set its paths.
+@@ KLISP_INIT is the name of the environment variable that klisp
+@* checks for initialization code.
+** CHANGE them if you want different names.
+*/
+//#define LUA_PATH        "LUA_PATH"
+//#define LUA_CPATH       "LUA_CPATH"
+#define KLISP_INIT	"KLISP_INIT"
+
 static const char *progname = KLISP_PROGNAME;
 
 static void print_usage (void) 
@@ -71,16 +82,17 @@ static void k_message (const char *pname, const char *msg)
     fflush(stderr);
 }
 
-static int report (klisp_State *K, int status) {
-    if (status && !lua_isnil(L, -1)) {
+static int report (klisp_State *K, int status) 
+{
+    if (status != 0) {
 /* TODO show error */
-	const char *msg = "Error! \n";
-	k_message(progname, msg)
+	const char *msg = "Error!\n";
+	k_message(progname, msg);
     }
     return status;
 }
 
-static void print_version (void) 
+static void print_version(void) 
 {
     k_message(NULL, KLISP_RELEASE "  " KLISP_COPYRIGHT);
 }
@@ -106,11 +118,7 @@ void do_str_read(klisp_State *K, TValue *xparams, TValue obj)
     /* read just one value (as mutable data) */
     TValue obj1 = kread_from_port(K, port, true);
 
-    if (ttiseof(obj1)) {
-	klispE_throw_simple_with_irritants(K, "No object could be read", 
-					   1, port);
-	return;
-    }
+    /* obj may be eof, that's not a problem, it just won't do anything */
 
     krooted_tvs_push(K, obj1);
     TValue obj2 = kread_from_port(K, port, true);
@@ -122,7 +130,7 @@ void do_str_read(klisp_State *K, TValue *xparams, TValue obj)
 	return;
     }
 
-    /* all ok, just one exp read */
+    /* all ok, just one exp read (or none and obj1 is eof) */
     kapply_cc(K, obj1);
 }
 
@@ -274,6 +282,15 @@ static int runargs (klisp_State *K, char **argv, int n)
     return 0;
 }
 
+static int handle_klispinit(klisp_State *K) 
+{
+  const char *init = getenv(KLISP_INIT);
+  if (init == NULL) 
+      return 0;  /* status OK */
+  else 
+      return dostring(K, init, "=" KLISP_INIT);
+}
+
 /* This is weird but was done to follow lua scheme */
 struct Smain {
     int argc;
@@ -281,7 +298,7 @@ struct Smain {
     int status;
 };
 
-static int pmain (klisp_State *K) 
+static int pmain(klisp_State *K) 
 {
     /* This is weird but was done to follow lua scheme */
     struct Smain *s = (struct Smain *) pvalue(K->next_value);
@@ -296,12 +313,17 @@ static int pmain (klisp_State *K)
 
     /* TODO Here we should load libraries, however we don't have any
        non native bindings in the ground environment yet */
+
     /* RATIONALE I wanted to write all bindings in c, so that I can later on
        profile them against non native versions and see how they fare.
        Also by writing all in c it's easy to be consistent, especially with
        error messages */
 
-    /* TODO do init */
+    /* init (eval KLISP_INIT env variable contents) */
+    s->status = handle_klispinit(K);
+    if (s->status != 0)
+	return 0;
+
     bool has_i = false, has_v = false, has_e = false;
     int script = collectargs(argv, &has_i, &has_v, &has_e);
 
