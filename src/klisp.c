@@ -4,6 +4,11 @@
 ** See Copyright Notice in klisp.h
 */
 
+/*
+** TODO This needs a serious clean up, I hacked it together during
+** an all nighter...
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -28,96 +33,9 @@
 #include "kgcontinuations.h" /* for do_pass_value */
 #include "kgcontrol.h" /* for do_seq */
 #include "kscript.h"
+#include "krepl.h"
 
 /* TODO update dependencies in makefile */
-
-/* TODO this should be moved to a file named like klispconf.h (see lua) */
-
-/*
-** ==================================================================
-** Search for "@@" to find all configurable definitions.
-** ===================================================================
-*/
-
-/*
-@@ KLISP_ANSI controls the use of non-ansi features.
-** CHANGE it (define it) if you want Klisp to avoid the use of any
-** non-ansi feature or library.
-*/
-#if defined(__STRICT_ANSI__)
-#define KLISP_ANSI
-#endif
-
-
-#if !defined(KLISP_ANSI) && defined(_WIN32)
-#define KLISP_WIN
-#endif
-
-#if defined(KLISP_USE_LINUX)
-#define KLISP_USE_POSIX
-#define KLISP_USE_DLOPEN		/* needs an extra library: -ldl */
-#define KLISP_USE_READLINE	/* needs some extra libraries */
-#endif
-
-#if defined(KLISP_USE_MACOSX)
-#define KLISP_USE_POSIX
-#define KLISP_DL_DYLD		/* does not need extra library */
-#endif
-
-/*
-@@ KLISP_PROGNAME is the default name for the stand-alone klisp program.
-** CHANGE it if your stand-alone interpreter has a different name and
-** your system is not able to detect that name automatically.
-*/
-#define KLISP_PROGNAME		"klisp"
-
-/*
-@@ KLISP_QL describes how error messages quote program elements.
-** CHANGE it if you want a different appearance.
-*/
-#define KLISP_QL(x)	"'" x "'"
-#define KLISP_QS	KLISP_QL("%s")
-/* /TODO */
-
-/*
-@@ KLISP_USE_POSIX includes all functionallity listed as X/Open System
-@* Interfaces Extension (XSI).
-** CHANGE it (define it) if your system is XSI compatible.
-*/
-#if defined(KLISP_USE_POSIX)
-#define KLISP_USE_MKSTEMP
-#define KLISP_USE_ISATTY
-#define KLISP_USE_POPEN
-#define KLISP_USE_ULONGJMP
-#endif
-
-/*
-@@ LUA_PATH and LUA_CPATH are the names of the environment variables that
-@* Lua check to set its paths.
-@@ KLISP_INIT is the name of the environment variable that klisp
-@* checks for initialization code.
-** CHANGE them if you want different names.
-*/
-//#define LUA_PATH        "LUA_PATH"
-//#define LUA_CPATH       "LUA_CPATH"
-#define KLISP_INIT	"KLISP_INIT"
-
-/*
-@@ klisp_stdin_is_tty detects whether the standard input is a 'tty' (that
-@* is, whether we're running klisp interactively).
-** CHANGE it if you have a better definition for non-POSIX/non-Windows
-** systems.
-*/
-#if defined(KLISP_USE_ISATTY)
-#include <unistd.h>
-#define klisp_stdin_is_tty()	isatty(0)
-#elif defined(KLISP_WIN)
-#include <io.h>
-#include <stdio.h>
-#define klisp_stdin_is_tty()	_isatty(_fileno(stdin))
-#else
-#define klisp_stdin_is_tty()	1  /* assume stdin is a tty */
-#endif
 
 static const char *progname = KLISP_PROGNAME;
 
@@ -146,7 +64,8 @@ static void k_message (const char *pname, const char *msg)
     fflush(stderr);
 }
 
-/* TODO move this to a common place to use it from elsewhere */
+/* TODO move this to a common place to use it from elsewhere 
+(like the repl) */
 static void show_error(klisp_State *K, TValue obj) {
     /* FOR NOW used only for irritant list */
     TValue port = kcdr(K->kd_error_port_key);
@@ -381,6 +300,7 @@ static int dofile(klisp_State *K, const char *name)
     /* create a file input port (unless it's stdin, then just use) */
     TValue port;
 
+    /* XXX better do this in a continuation */
     if (name == NULL) {
 	port = kcdr(K->kd_in_port_key);
     } else {
@@ -388,11 +308,14 @@ static int dofile(klisp_State *K, const char *name)
 	if (file == NULL) {
 	    TValue mode_str = kstring_new_b(K, "r");
 	    krooted_tvs_push(K, mode_str);
+	    TValue name_str = kstring_new_b(K, name);
+	    krooted_tvs_push(K, mode_str);
 	    TValue error_obj = klispE_new_simple_with_errno_irritants
-		(K, "fopen", 2, name, mode_str);
+		(K, "fopen", 2, name_str, mode_str);
+	    krooted_tvs_pop(K);
 	    krooted_tvs_pop(K);
 	    K->next_value = error_obj;
-	    return 1;
+	    return report(K, 1);
 	}
 	    
 	TValue name_str = kstring_new_b(K, name);
@@ -452,6 +375,15 @@ static int dofile(klisp_State *K, const char *name)
     /* get the standard environment again in K->next_env */
     K->next_env = env;
     return report(K, status);
+}
+
+static void dotty(klisp_State *K)
+{
+    TValue env = K->next_env;
+    kinit_repl(K);
+    klispS_run(K);
+    /* get the standard environment again in K->next_env */
+    K->next_env = env;
 }
 
 static int handle_script(klisp_State *K, char **argv, int n) 
@@ -558,6 +490,7 @@ static int pmain(klisp_State *K)
     /* This is weird but was done to follow lua scheme */
     struct Smain *s = (struct Smain *) pvalue(K->next_value);
     char **argv = s->argv;
+    s->status = 0;
 
     /* There is a standard env in K->next_env, a common one is used for all 
        evaluations (init, expression args, script/repl) */
@@ -603,12 +536,12 @@ static int pmain(klisp_State *K)
     if (s->status != 0)
 	return 0;
 
-    if (has_i) { /* TODO FIX REPL */
-	s->status = 0;
+    if (has_i) { 
+	dotty(K);
     } else if (script == 0 && !has_e && !has_v) {
 	if (true) {
 	    print_version();
-	    s->status = 0; /* TODO FIX REPL */
+	    dotty(K);
 	} else {
 	    s->status = dofile(K, NULL);
 	}

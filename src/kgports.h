@@ -61,10 +61,10 @@ void get_output_buffer(klisp_State *K, TValue *xparams, TValue ptree,
 		       TValue denv);
 
 /* 15.1.7 read */
-void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void gread(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.1.8 write */
-void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void gwrite(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 15.1.? eof-object? */
 /* uses typep */

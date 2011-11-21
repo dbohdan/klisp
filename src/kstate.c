@@ -242,7 +242,24 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* Create the root and error continuation (will be added to the 
      environment in kinit_ground_env) */
     K->root_cont = kmake_continuation(K, KNIL, do_root_exit, 0);
+
+    #if KTRACK_SI
+    /* Add source info to the cont */
+    TValue str = kstring_new_b_imm(K, __FILE__);
+    TValue tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    si = kcons(K, str, tail);
+    kset_source_info(K, K->root_cont, si);
+    #endif
+
     K->error_cont = kmake_continuation(K, K->root_cont, do_error_exit, 0);
+
+    #if KTRACK_SI
+    str = kstring_new_b_imm(K, __FILE__);
+    tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    si = kcons(K, str, tail);
+    kset_source_info(K, K->error_cont, si);
+    #endif
+
     /* this must be done before calling kinit_ground_env */
     kinit_error_hierarchy(K); 
 

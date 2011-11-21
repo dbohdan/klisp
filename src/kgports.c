@@ -245,7 +245,7 @@ void get_output_buffer(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 15.1.7 read */
-void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void gread(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -272,7 +272,7 @@ void read(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.8 write */
-void write(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void gwrite(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
     UNUSED(xparams);
     UNUSED(denv);
@@ -935,9 +935,9 @@ void kinit_ports_ground_env(klisp_State *K)
 		    1, b2tv(true));
 
     /* 15.1.7 read */
-    add_applicative(K, ground_env, "read", read, 0);
+    add_applicative(K, ground_env, "read", gread, 0);
     /* 15.1.8 write */
-    add_applicative(K, ground_env, "write", write, 0);
+    add_applicative(K, ground_env, "write", gwrite, 0);
 
     /* 15.1.? eof-object? */
     add_applicative(K, ground_env, "eof-object?", typep, 2, symbol, 
