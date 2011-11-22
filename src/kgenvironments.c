@@ -203,7 +203,7 @@ void do_let(klisp_State *K, TValue *xparams, TValue obj)
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
 			       kcar(bindings), kcdr(bindings), kcdr(exprs), 
-			       new_env, b2tv(false), body);
+			       new_env, b2tv(recp), body);
 	krooted_tvs_pop(K);
 	kset_cc(K, new_cont);
 	ktail_eval(K, kcar(exprs), recp? new_env : env);
