@@ -144,22 +144,29 @@ void do_combine(klisp_State *K)
 }
 
 /* the underlying function of the eval operative */
-void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env)
+void keval_ofn(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
     UNUSED(xparams);
+
+    TValue obj = ptree;
 
     switch(ttype(obj)) {
     case K_TPAIR: {
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), do_combine, 3, kcdr(obj), 
-			       env, ktry_get_si(K, obj));
+			       denv, ktry_get_si(K, obj));
 	kset_cc(K, new_cont);
-	ktail_eval(K, kcar(obj), env);
+	ktail_eval(K, kcar(obj), denv);
 	break;
     }
     case K_TSYMBOL:
 	/* error handling happens in kget_binding */
-	kapply_cc(K, kget_binding(K, env, obj));
+	kapply_cc(K, kget_binding(K, denv, obj));
 	break;
     default:
 	kapply_cc(K, obj);

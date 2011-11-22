@@ -28,8 +28,12 @@
 /* uses typep */
 
 /* 7.2.2 call/cc */
-void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void call_cc(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     bind_1tp(K, ptree, "combiner", ttiscombiner, comb);
 
@@ -56,9 +60,12 @@ void do_extended_cont(klisp_State *K)
 }
 
 /* 7.2.3 extend-continuation */
-void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void extend_continuation(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -164,9 +171,12 @@ TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
 }
 
 /* 7.2.4 guard-continuation */
-void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
-			TValue denv)
+void guard_continuation(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
 
     bind_3tp(K, ptree, "any", anytype, entry_guards,
@@ -200,10 +210,16 @@ void guard_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 
 
 /* 7.2.5 continuation->applicative */
-void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree, 
-			      TValue denv)
+void continuation_applicative(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
     UNUSED(xparams);
+    UNUSED(denv);
+
     bind_1tp(K, ptree, "continuation",
 	     ttiscontinuation, cont);
     /* cont_app is from kstate, it handles dynamic vars &
@@ -223,9 +239,12 @@ void continuation_applicative(klisp_State *K, TValue *xparams, TValue ptree,
 */
 
 /* 7.3.1 apply-continuation */
-void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree, 
-			TValue denv)
+void apply_continuation(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -238,9 +257,12 @@ void apply_continuation(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 7.3.2 $let/cc */
-void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree, 
-	     TValue denv)
+void Slet_cc(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     /* from the report: #ignore is not ok, only symbol */
     bind_al1tp(K, ptree, "symbol", ttissymbol, sym, objs);
@@ -278,9 +300,12 @@ void Slet_cc(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 7.3.3 guard-dynamic-extent */
-void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree, 
-			  TValue denv)
+void guard_dynamic_extent(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
 
     bind_3tp(K, ptree, "any", anytype, entry_guards,
@@ -316,9 +341,12 @@ void guard_dynamic_extent(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 7.3.4 exit */    
-void kgexit(klisp_State *K, TValue *xparams, TValue ptree, 
-	    TValue denv)
+void kgexit(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 

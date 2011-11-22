@@ -29,8 +29,12 @@
 void do_select_clause(klisp_State *K);
 
 /*  ASK JOHN: both clauses should probably be copied (copy-es-immutable) */
-void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Sif(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     (void) xparams;
 
@@ -69,8 +73,12 @@ void do_select_clause(klisp_State *K)
 }
 
 /* 5.1.1 $sequence */
-void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Ssequence(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
 
     if (ttisnil(ptree)) {
@@ -270,8 +278,12 @@ void do_cond(klisp_State *K)
 }
 
 /* 5.6.1 $cond */
-void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Scond(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) xparams;
 
     TValue bodies;
@@ -344,8 +356,12 @@ void do_for_each(klisp_State *K)
 }
 
 /* 6.9.1 for-each */
-void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void for_each(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) xparams;
 
     bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);

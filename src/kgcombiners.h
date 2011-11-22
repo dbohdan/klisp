@@ -26,23 +26,22 @@
 
 /* 4.10.3 $vau */
 /* 5.3.1 $vau */
-void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void Svau(klisp_State *K);
 
 /* 4.10.4 wrap */
-void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void wrap(klisp_State *K);
 
 /* 4.10.5 unwrap */
-void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void unwrap(klisp_State *K);
 
 /* 5.3.1 $vau */
 /* DONE: above, together with 4.10.4 */
 
 /* 5.3.2 $lambda */
-void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void Slambda(klisp_State *K);
 
 /* 5.5.1 apply */
-void apply(klisp_State *K, TValue *xparams, TValue ptree, 
-	   TValue denv);
+void apply(klisp_State *K);
 
 /* Helpers for map (also used by for each) */
 
@@ -69,7 +68,7 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 			      int32_t res_apairs, int32_t res_cpairs);
 
 /* 5.9.1 map */
-void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void map(klisp_State *K);
 
 /* 6.2.1 combiner? */
 /* uses ftypedp */
@@ -78,7 +77,7 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 bool kcombinerp(TValue obj);
 
 
-void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
+void do_vau(klisp_State *K);
 void do_map_ret(klisp_State *K);
 void do_map_encycle(klisp_State *K);
 void do_map(klisp_State *K);

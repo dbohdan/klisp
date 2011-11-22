@@ -32,9 +32,12 @@
 /* Helpers for make-keyed-dynamic-variable */
 
 /* accesor returned */
-void do_access(klisp_State *K, TValue *xparams, TValue ptree, 
-	       TValue denv)
+void do_access(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: dynamic key 
     */
@@ -73,9 +76,12 @@ void do_unbind(klisp_State *K)
 }
 
 /* operative for setting the key to the new/old flag/value */
-void do_set_pass(klisp_State *K, TValue *xparams, TValue ptree,
-    TValue denv)
+void do_set_pass(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: dynamic key
     ** xparams[1]: flag
@@ -152,9 +158,12 @@ inline TValue make_bind_continuation(klisp_State *K, TValue key,
 }
 
 /* binder returned */
-void do_bind(klisp_State *K, TValue *xparams, TValue ptree, 
-	       TValue denv)
+void do_bind(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: dynamic key 
     */
@@ -189,9 +198,12 @@ void do_bind(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 10.1.1 make-keyed-dynamic-variable */
-void make_keyed_dynamic_variable(klisp_State *K, TValue *xparams, 
-				 TValue ptree, TValue denv)
+void make_keyed_dynamic_variable(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv); 
     UNUSED(xparams);
 

@@ -22,8 +22,7 @@
 /* uses typep */
 
 /* ?.?.1? symbol->string */
-void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv);
+void symbol_to_string(klisp_State *K);
 
 /* ?.?.2? string->symbol */
 /* TEMP: for now this can create symbols with no external representation
@@ -35,8 +34,7 @@ void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree,
    because the report only says that read objects when written and read 
    again must be equal? which happens here 
 */
-void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv);
+void string_to_symbol(klisp_State *K);
 
 /* init ground */
 void kinit_symbols_ground_env(klisp_State *K);

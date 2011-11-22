@@ -26,7 +26,7 @@ inline void ptree_clear_all(klisp_State *K, TValue sym_ls);
 inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree, 
 			       TValue penv);
 /* 4.9.1 $define! */
-void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void SdefineB(klisp_State *K);
 
 /* MAYBE: don't make these inline */
 /*
@@ -235,7 +235,7 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 }
 
 /* 6.8.1 $set! */
-void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void SsetB(klisp_State *K);
 
 /* Helper for $set! */
 void do_set_eval_obj(klisp_State *K);
@@ -245,10 +245,10 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj);
 void do_import(klisp_State *K);
 
 /* 6.8.2 $provide! */
-void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void SprovideB(klisp_State *K);
 
 /* 6.8.3 $import! */
-void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void SimportB(klisp_State *K);
 
 /* init ground */
 void kinit_env_mut_ground_env(klisp_State *K);

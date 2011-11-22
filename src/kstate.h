@@ -21,6 +21,12 @@
 #include "ktoken.h"
 #include "kmem.h"
 
+/*
+** prototype for underlying c functions of continuations &
+** operatives
+*/
+typedef void (*klisp_CFunction) (klisp_State *K);
+
 /* XXX: for now, lines and column names are fixints */
 /* MAYBE: this should be in tokenizer */
 typedef struct {
@@ -51,13 +57,13 @@ struct klisp_State {
     TValue curr_cont;
 
     /*
-    ** If next_env is NIL, then the next_func is of type klisp_Cfunc
-    ** (from a continuation) and otherwise next_func is of type
-    ** klisp_Ofunc (from an operative)
+    ** If next_env is NIL, then the next_func from a continuation
+    ** and otherwise next_func is from an operative
     */
     TValue next_obj; /* this is the operative or continuation to call
 			must be here to protect it from gc */
-    void *next_func; /* the next function to call (operative or cont) */
+    klisp_CFunction next_func; /* the next function to call 
+				  (operative or continuation) */
     TValue next_value;     /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
     TValue *next_xparams; 
@@ -348,14 +354,6 @@ inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
 /* dummy functions will be in kpair.h, because we can't include
    it from here */
 
-/*
-** prototypes for underlying c functions of continuations &
-** operatives
-*/
-typedef void (*klisp_Cfunc) (klisp_State *K);
-typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree, 
-			     TValue env);
-
 /* XXX: this is ugly but we can't include kpair.h here so... */
 /* MAYBE: move car & cdr to kobject.h */
 #define kstate_car(p_) (tv2pair(p_)->car)
@@ -485,12 +483,13 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 #define ktail_eval(K_, p_, e_)						\
     { klisp_State *K__ = (K_);						\
 	TValue p__ = (p_);						\
+	/* XXX */ klisp_assert(ttisenvironment(e_));			\
 	klispS_tail_call_si(K__, K__->eval_op, p__, (e_),		\
 			    ktry_get_si(K__, p__));			\
 	return; }
 
 /* helper for continuation->applicative & kcall_cont */
-void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void cont_app(klisp_State *K);
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
 void klispS_init_repl(klisp_State *K);
 void klispS_run(klisp_State *K);

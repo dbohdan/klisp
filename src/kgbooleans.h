@@ -22,17 +22,17 @@
 /* uses typep */
 
 /* 6.1.1 not? */
-void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void notp(klisp_State *K);
 
 /* 6.1.2 and? */
-void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void andp(klisp_State *K);
 
 /* 6.1.3 or? */
-void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void orp(klisp_State *K);
 
 /* Helpers for $and? & $or? */
 void do_Sandp_Sorp(klisp_State *K);
-void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void Sandp_Sorp(klisp_State *K);
 
 /* 6.1.4 $and? */
 /* uses Sandp_Sorp */

@@ -83,8 +83,7 @@ void do_repl_eval(klisp_State *K)
 }
 
 void do_repl_loop(klisp_State *K);
-void do_int_repl_error(klisp_State *K, TValue *xparams, TValue ptree,
-		       TValue denv);
+void do_int_repl_error(klisp_State *K);
 
 /* this is called from both do_repl_loop and do_repl_error */
 /* GC: assumes denv is NOT rooted */
@@ -155,9 +154,12 @@ void do_repl_loop(klisp_State *K)
 } 
 
 /* the underlying function of the error cont */
-void do_int_repl_error(klisp_State *K, TValue *xparams, TValue ptree,
-    TValue denv)
+void do_int_repl_error(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */

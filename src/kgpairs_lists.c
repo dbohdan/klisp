@@ -32,8 +32,12 @@
 /* uses typep */
     
 /* 4.6.3 cons */
-void cons(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void cons(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
     bind_2p(K, ptree, car, cdr);
@@ -44,8 +48,12 @@ void cons(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 
 /* 5.2.1 list */
-void list(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void list(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 /* the underlying combiner of list return the complete ptree, the only list
    checking is implicit in the applicative evaluation */
     UNUSED(xparams);
@@ -54,8 +62,12 @@ void list(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 5.2.2 list* */
-void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void listS(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 /* TODO: 
    OPTIMIZE: if this call is a result of a call to eval, we could get away
    with just setting the kcdr of the next to last pair to the car of
@@ -103,8 +115,14 @@ void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 5.4.1 car, cdr */
 /* 5.4.2 caar, cadr, ... cddddr */
 
-void c_ad_r(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void c_ad_r(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(denv);
 
     /*
     ** xparams[0]: name as symbol
@@ -177,9 +195,12 @@ void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n,
 }
 
 /* 5.7.1 get-list-metrics */
-void get_list_metrics(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void get_list_metrics(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -230,9 +251,12 @@ int32_t ksmallest_index(klisp_State *K, char *name, TValue obj,
 
 
 /* 5.7.2 list-tail */
-void list_tail(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void list_tail(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 /* ASK John: can the object be a cyclic list? the wording of the report
    seems to indicate that can't be the case, but it makes sense here 
    (cf $encycle!) to allow cyclic lists, so that's what I do */
@@ -262,8 +286,12 @@ void list_tail(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 6.3.1 length */
-void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void length(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -283,8 +311,12 @@ void length(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.3.2 list-ref */
-void list_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void list_ref(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 /* ASK John: can the object be an improper list? the wording of the report
    seems to indicate that can't be the case, but it makes sense 
    (cf list-tail) For now we allow it. */
@@ -358,8 +390,12 @@ TValue append_check_copy_list(klisp_State *K, char *name, TValue obj,
 }
 
 /* 6.3.3 append */
-void append(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void append(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -420,9 +456,12 @@ void append(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.3.4 list-neighbors */
-void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void list_neighbors(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -611,8 +650,12 @@ void do_filter_cycle(klisp_State *K)
 }
 
 /* 6.3.5 filter */
-void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void filter(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "applicative", ttisapplicative, app,
@@ -652,8 +695,12 @@ void filter(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.3.6 assoc */
-void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void assoc(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -676,8 +723,12 @@ void assoc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.3.7 member? */
-void memberp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void memberp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -700,8 +751,12 @@ void memberp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 6.3.8 finite-list? */
 /* NOTE: can't use ftypep because the predicate marks pairs too */
-void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void finite_listp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     int32_t pairs = check_list(K, "finite-list?", true, ptree, NULL);
@@ -728,9 +783,12 @@ void finite_listp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 6.3.9 countable-list? */
 /* NOTE: can't use ftypep because the predicate marks pairs too */
-void countable_listp(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void countable_listp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     int32_t pairs = check_list(K, "countable-list?", true, ptree, NULL);
@@ -947,8 +1005,12 @@ void do_reduce(klisp_State *K)
    srfi-1 also defines reduce-left/reduce-right that work as in 
    kernel. The difference is the use or not of the id value if the list
    is not null */
-void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void reduce(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     
     bind_al3tp(K, ptree, "any", anytype, ls, "applicative",

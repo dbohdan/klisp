@@ -23,7 +23,7 @@
 
 /* 4.2.1 eq? */
 /* 6.5.1 eq? */
-void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void eqp(klisp_State *K);
 
 /* Helper (also used in equal?) */
 inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)

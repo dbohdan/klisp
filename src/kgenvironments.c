@@ -32,9 +32,12 @@
 /* uses typep */
 
 /* 4.8.3 eval */
-void eval(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void eval(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -45,9 +48,12 @@ void eval(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 4.8.4 make-environment */
-void make_environment(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void make_environment(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -215,8 +221,12 @@ void do_let(klisp_State *K)
 
 /* 5.10.1 $let */
 /* REFACTOR: reuse code in other members of the $let family */
-void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Slet(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     */
@@ -284,8 +294,12 @@ void do_bindsp(klisp_State *K)
 }
 
 /* 6.7.1 $binds? */
-void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Sbindsp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     bind_al1p(K, ptree, env_expr, symbols);
 
@@ -303,18 +317,24 @@ void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.7.2 get-current-environment */
-void get_current_environment(klisp_State *K, TValue *xparams, TValue ptree, 
-			     TValue denv)
+void get_current_environment(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     check_0p(K, ptree);
     kapply_cc(K, denv);
 }
 
 /* 6.7.3 make-kernel-standard-environment */
-void make_kernel_standard_environment(klisp_State *K, TValue *xparams, 
-				      TValue ptree, TValue denv)
+void make_kernel_standard_environment(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     check_0p(K, ptree);
@@ -326,8 +346,12 @@ void make_kernel_standard_environment(klisp_State *K, TValue *xparams,
 }
 
 /* 6.7.4 $let* */
-void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void SletS(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     */
@@ -375,8 +399,12 @@ void SletS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.7.5 $letrec */
-void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Sletrec(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     */
@@ -412,8 +440,12 @@ void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.7.6 $letrec* */
-void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void SletrecS(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     */
@@ -496,8 +528,12 @@ void do_let_redirect(klisp_State *K)
 }
 
 /* 6.7.7 $let-redirect */
-void Slet_redirect(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Slet_redirect(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     */
@@ -531,8 +567,12 @@ void Slet_redirect(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.7.8 $let-safe */
-void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Slet_safe(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     */
@@ -570,8 +610,12 @@ void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.7.9 $remote-eval */
-void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Sremote_eval(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -618,9 +662,12 @@ void do_b_to_env(klisp_State *K)
 }
 
 /* 6.7.10 $bindings->environment */
-void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree, 
-			      TValue denv)
+void Sbindings_to_environment(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     TValue exprs;
     TValue bptree = split_check_let_bindings(K, "$bindings->environment", 

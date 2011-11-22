@@ -25,9 +25,12 @@
 /* Helpers for make-static-dynamic-variable */
 
 /* accesor returned */
-void do_sv_access(klisp_State *K, TValue *xparams, TValue ptree, 
-	       TValue denv)
+void do_sv_access(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: static key 
     */
@@ -40,9 +43,12 @@ void do_sv_access(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* binder returned */
-void do_sv_bind(klisp_State *K, TValue *xparams, TValue ptree, 
-		TValue denv)
+void do_sv_bind(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: static key 
     */
@@ -56,9 +62,12 @@ void do_sv_bind(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 11.1.1 make-static-dynamic-variable */
-void make_keyed_static_variable(klisp_State *K, TValue *xparams, 
-				 TValue ptree, TValue denv)
+void make_keyed_static_variable(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv); 
     UNUSED(xparams);
 

@@ -67,8 +67,12 @@ void do_handle_result(klisp_State *K)
 }
 
 /* 9.1.2 force */
-void force(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void force(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1p(K, ptree, obj);
@@ -89,8 +93,12 @@ void force(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 9.1.3 $lazy */
-void Slazy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Slazy(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
 
     bind_1p(K, ptree, exp);
@@ -99,8 +107,12 @@ void Slazy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 9.1.4 memoize */
-void memoize(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void memoize(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 

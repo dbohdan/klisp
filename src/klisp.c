@@ -195,9 +195,12 @@ void do_str_read(klisp_State *K)
     kapply_cc(K, obj1);
 }
 
-void do_int_mark_error(klisp_State *K, TValue *xparams, TValue ptree, 
-		       TValue denv)
+void do_int_mark_error(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: errorp pointer
     */
