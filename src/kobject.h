@@ -167,6 +167,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TBYTEVECTOR   41
 #define K_TFPORT        42
 #define K_TMPORT        43
+#define K_TVECTOR       44
 
 /* for tables */
 #define K_TDEADKEY        60
@@ -221,7 +222,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_BYTEVECTOR K_MAKE_VTAG(K_TBYTEVECTOR)
 #define K_TAG_FPORT K_MAKE_VTAG(K_TFPORT)
 #define K_TAG_MPORT K_MAKE_VTAG(K_TMPORT)
-
+#define K_TAG_VECTOR K_MAKE_VTAG(K_TVECTOR)
 
 /*
 ** Macros to test types
@@ -309,6 +310,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttismport(o) (tbasetype_(o) == K_TAG_MPORT)
 #define ttisport(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FPORT || t_ == K_TAG_MPORT;})
+#define ttisvector(o) (tbasetype_(o) == K_TAG_VECTOR)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -515,6 +517,14 @@ typedef struct __attribute__ ((__packed__)) {
     uint8_t b[]; /* buffer */
 } Bytevector;
 
+/* Vectors (heterogenous arrays) */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
+    uint32_t sizearray; /* number of elements in array[] */
+    TValue array[]; /* array of elements */
+} Vector;
+
 /*
 ** `module' operation for hashing (size is always a power of 2)
 */
@@ -576,6 +586,7 @@ union GCObject {
     Port port; /* common fields for all types of ports */
     FPort fport;
     MPort mport;
+    Vector vector;
 };
 
 
@@ -679,6 +690,7 @@ const TValue kfree;
 #define gc2table(o_) (gc2tv(K_TAG_TABLE, o_))
 #define gc2error(o_) (gc2tv(K_TAG_ERROR, o_))
 #define gc2bytevector(o_) (gc2tv(K_TAG_BYTEVECTOR, o_))
+#define gc2vector(o_) (gc2tv(K_TAG_VECTOR, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -696,6 +708,7 @@ const TValue kfree;
 #define tv2table(v_) ((Table *) gcvalue(v_))
 #define tv2error(v_) ((Error *) gcvalue(v_))
 #define tv2bytevector(v_) ((Bytevector *) gcvalue(v_))
+#define tv2vector(v_) ((Vector *) gcvalue(v_))
 #define tv2fport(v_) ((FPort *) gcvalue(v_))
 #define tv2mport(v_) ((MPort *) gcvalue(v_))
 #define tv2port(v_) ((Port *) gcvalue(v_))

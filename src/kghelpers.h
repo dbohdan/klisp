@@ -273,7 +273,7 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 
 /* check that obj is a list, returns the number of pairs */
 /* TODO change the return to void and add int32_t pairs obj */
-int32_t check_list(klisp_State *K, char *name, bool allow_infp,
+int32_t check_list(klisp_State *K, const char *name, bool allow_infp,
 			  TValue obj, int32_t *cpairs);
 
 /*
