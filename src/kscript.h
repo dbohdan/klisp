@@ -15,8 +15,8 @@
 void kinit_script(klisp_State *K, int argc, char *argv[]);
 
 /* continuation functions */
-void do_script_exit(klisp_State *K, TValue *xparams, TValue obj);
-void do_script_error(klisp_State *K, TValue *xparams, TValue obj);
+void do_script_exit(klisp_State *K);
+void do_script_error(klisp_State *K);
 
 /* default exit code in case of error according to SRFI-22 */
 

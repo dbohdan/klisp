@@ -154,8 +154,11 @@ static void print_version(void)
 
 /* REFACTOR maybe these should be moved to a general place to be used
    from any program */
-void do_str_eval(klisp_State *K, TValue *xparams, TValue obj)
+void do_str_eval(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */
@@ -163,8 +166,11 @@ void do_str_eval(klisp_State *K, TValue *xparams, TValue obj)
     ktail_eval(K, obj, denv);
 }
 
-void do_str_read(klisp_State *K, TValue *xparams, TValue obj)
+void do_str_read(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: port
     */
@@ -267,8 +273,11 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     return report(K, status);
 }
 
-void do_file_eval(klisp_State *K, TValue *xparams, TValue obj)
+void do_file_eval(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */
@@ -281,8 +290,11 @@ void do_file_eval(klisp_State *K, TValue *xparams, TValue obj)
     kapply_cc(K, KINERT);
 }
 
-void do_file_read(klisp_State *K, TValue *xparams, TValue obj)
+void do_file_read(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(obj);
     TValue port = xparams[0];
     /* read all file as a list (as immutable data) */

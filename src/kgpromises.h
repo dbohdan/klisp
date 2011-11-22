@@ -30,7 +30,7 @@ void Slazy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 9.1.4 memoize */
 void memoize(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
-void do_handle_result(klisp_State *K, TValue *xparams, TValue obj);
+void do_handle_result(klisp_State *K);
 
 /* init ground */
 void kinit_promises_ground_env(klisp_State *K);

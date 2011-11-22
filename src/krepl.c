@@ -28,8 +28,11 @@
 /* TODO add names & source info to the repl continuations */
 
 /* the underlying function of the read cont */
-void do_repl_read(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_read(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
     UNUSED(obj);
 
@@ -50,8 +53,11 @@ void do_repl_read(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* the underlying function of the eval cont */
-void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_eval(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */
@@ -76,7 +82,7 @@ void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj);
+void do_repl_loop(klisp_State *K);
 void do_int_repl_error(klisp_State *K, TValue *xparams, TValue ptree,
 		       TValue denv);
 
@@ -128,8 +134,11 @@ void create_loop(klisp_State *K, TValue denv)
 }
 
 /* the underlying function of the write & loop  cont */
-void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_loop(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */

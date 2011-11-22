@@ -699,9 +699,11 @@ static TValue ffi_callback_guard(ffi_callback_t *cb, klisp_Ofunc fn)
     return ls2;
 }
 
-void do_ffi_callback_encode_result(klisp_State *K, TValue *xparams,
-                                   TValue obj)
+void do_ffi_callback_encode_result(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: cif
     ** xparams[1]: p2tv(libffi return buffer)
@@ -764,8 +766,11 @@ void do_ffi_callback_decode_arguments(klisp_State *K, TValue *xparams,
     ktail_call(K, app_tv, tail, denv);
 }
 
-void do_ffi_callback_return(klisp_State *K, TValue *xparams, TValue obj)
+void do_ffi_callback_return(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(obj);
     /*
     ** xparams[0]: p2tv(ffi_callback_t)

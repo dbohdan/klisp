@@ -28,8 +28,11 @@
 /* uses typep */
 
 /* Helper for force */
-void do_handle_result(klisp_State *K, TValue *xparams, TValue obj)
+void do_handle_result(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: promise
     */

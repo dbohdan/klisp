@@ -39,10 +39,10 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 /* 6.9.1 for-each */
 void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
-void do_seq(klisp_State *K, TValue *xparams, TValue obj);
-void do_cond(klisp_State *K, TValue *xparams, TValue obj);
-void do_select_clause(klisp_State *K, TValue *xparams, TValue obj);
-void do_for_each(klisp_State *K, TValue *xparams, TValue obj);
+void do_seq(klisp_State *K);
+void do_cond(klisp_State *K);
+void do_select_clause(klisp_State *K);
+void do_for_each(klisp_State *K);
 
 /* init ground */
 void kinit_control_ground_env(klisp_State *K);

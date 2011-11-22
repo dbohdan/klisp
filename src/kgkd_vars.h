@@ -28,7 +28,7 @@ void do_access(klisp_State *K, TValue *xparams, TValue ptree,
 void make_keyed_dynamic_variable(klisp_State *K, TValue *xparams, 
 				 TValue ptree, TValue denv);
 
-void do_unbind(klisp_State *K, TValue *xparams, TValue obj);
+void do_unbind(klisp_State *K);
 
 /* init ground */
 void kinit_kgkd_vars_ground_env(klisp_State *K);

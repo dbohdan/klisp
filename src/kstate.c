@@ -277,8 +277,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 /*
 ** Root and Error continuations
 */
-void do_root_exit(klisp_State *K, TValue *xparams, TValue obj)
+void do_root_exit(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
 
     /* Just save the value and end the loop */
@@ -287,8 +290,11 @@ void do_root_exit(klisp_State *K, TValue *xparams, TValue obj)
     return;
 }
 
-void do_error_exit(klisp_State *K, TValue *xparams, TValue obj)
+void do_error_exit(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
 
     /* TEMP Just pass the error to the root continuation */
@@ -506,8 +512,11 @@ void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kcall_cont(K, cont, ptree);
 }
 
-void do_interception(klisp_State *K, TValue *xparams, TValue obj)
+void do_interception(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: 
     ** xparams[1]: dst cont
@@ -598,7 +607,7 @@ void klispS_run(klisp_State *K)
 		if (ttisnil(K->next_env)) {
 		    /* continuation application */
 		    klisp_Cfunc fn = (klisp_Cfunc) K->next_func;
-		    (*fn)(K, K->next_xparams, K->next_value);
+		    (*fn)(K);
 		} else {
 		    /* operative calling */
 		    klisp_Ofunc fn = (klisp_Ofunc) K->next_func;

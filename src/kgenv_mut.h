@@ -21,7 +21,7 @@
 /* helpers */
 inline void match(klisp_State *K, char *name, TValue env, TValue ptree, 
 		  TValue obj);
-void do_match(klisp_State *K, TValue *xparams, TValue obj);
+void do_match(klisp_State *K);
 inline void ptree_clear_all(klisp_State *K, TValue sym_ls);
 inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree, 
 			       TValue penv);
@@ -238,11 +238,11 @@ inline TValue check_copy_ptree(klisp_State *K, char *name, TValue ptree,
 void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper for $set! */
-void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj);
+void do_set_eval_obj(klisp_State *K);
 
 /* Helpers for $provide & $import! */
 TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj);
-void do_import(klisp_State *K, TValue *xparams, TValue obj);
+void do_import(klisp_State *K);
 
 /* 6.8.2 $provide! */
 void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);

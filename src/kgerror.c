@@ -49,8 +49,11 @@ void error_object_irritants(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, err_obj->irritants);
 }
 /* REFACTOR this is the same as do_pass_value */
-void do_exception_cont(klisp_State *K, TValue *xparams, TValue obj)
+void do_exception_cont(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
     /* Just pass error object to general error continuation. */
     kapply_cc(K, obj);

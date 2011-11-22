@@ -35,7 +35,7 @@ void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 5.4.1 car, cdr */
 /* 5.4.2 caar, cadr, ... cddddr */
-void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void c_ad_r(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper macros to construct xparams[1] for c[ad]{1,4}r */
 #define C_AD_R_PARAM(len_, br_) \
@@ -87,15 +87,15 @@ void countable_listp(klisp_State *K, TValue *xparams, TValue ptree,
 void reduce(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 
-void do_ret_cdr(klisp_State *K, TValue *xparams, TValue obj);
-void do_filter_encycle(klisp_State *K, TValue *xparams, TValue obj);
-void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj);
-void do_filter(klisp_State *K, TValue *xparams, TValue obj);
-void do_reduce_prec(klisp_State *K, TValue *xparams, TValue obj);
-void do_reduce_postc(klisp_State *K, TValue *xparams, TValue obj);
-void do_reduce_combine(klisp_State *K, TValue *xparams, TValue obj);
-void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj);
-void do_reduce(klisp_State *K, TValue *xparams, TValue obj);
+void do_ret_cdr(klisp_State *K);
+void do_filter_encycle(klisp_State *K);
+void do_filter_cycle(klisp_State *K);
+void do_filter(klisp_State *K);
+void do_reduce_prec(klisp_State *K);
+void do_reduce_postc(klisp_State *K);
+void do_reduce_combine(klisp_State *K);
+void do_reduce_cycle(klisp_State *K);
+void do_reduce(klisp_State *K);
 
 /* init ground */
 void kinit_pairs_lists_ground_env(klisp_State *K);

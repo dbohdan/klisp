@@ -301,8 +301,11 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 ** Continuation that ignores the value received and instead returns
 ** a previously computed value.
 */
-void do_return_value(klisp_State *K, TValue *xparams, TValue obj)
+void do_return_value(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: saved_obj
     */

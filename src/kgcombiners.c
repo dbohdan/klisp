@@ -411,8 +411,11 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 /* Continuation helpers for map */
 
 /* For acyclic input lists: Return the mapped list */
-void do_map_ret(klisp_State *K, TValue *xparams, TValue obj)
+void do_map_ret(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: (dummy . complete-ls)
     */
@@ -427,8 +430,11 @@ void do_map_ret(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* For cyclic input list: close the cycle and return the mapped list */
-void do_map_encycle(klisp_State *K, TValue *xparams, TValue obj)
+void do_map_encycle(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: (dummy . complete-ls)
     ** xparams[1]: last non-cycle pair
@@ -450,8 +456,11 @@ void do_map_encycle(klisp_State *K, TValue *xparams, TValue obj)
     kapply_cc(K, copy);
 }
 
-void do_map(klisp_State *K, TValue *xparams, TValue obj)
+void do_map(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: rem-ls
@@ -499,8 +508,11 @@ void do_map(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
+void do_map_cycle(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: (dummy . res-list)

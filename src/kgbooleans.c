@@ -90,8 +90,11 @@ void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 ** call that is acomplished by checking if the current continuation will 
 ** perform a boolean check, and in that case, no continuation is created
 */
-void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj)
+void do_Sandp_Sorp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: termination boolean

@@ -45,8 +45,11 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* helper */
-void do_match(klisp_State *K, TValue *xparams, TValue obj)
+void do_match(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: ptree
     ** xparams[1]: dynamic environment
@@ -82,8 +85,11 @@ void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helpers for $set! */
-void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj)
+void do_set_eval_obj(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: name as symbol
     ** xparams[1]: ptree
@@ -169,8 +175,11 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
     return kcutoff_dummy1(K);
 }
 
-void do_import(klisp_State *K, TValue *xparams, TValue obj)
+void do_import(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: name as symbol
     ** xparams[1]: symbols

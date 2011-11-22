@@ -352,7 +352,7 @@ inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
 ** prototypes for underlying c functions of continuations &
 ** operatives
 */
-typedef void (*klisp_Cfunc) (klisp_State*K, TValue *ud, TValue val);
+typedef void (*klisp_Cfunc) (klisp_State *K);
 typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree, 
 			     TValue env);
 
@@ -496,11 +496,11 @@ void klispS_init_repl(klisp_State *K);
 void klispS_run(klisp_State *K);
 void klisp_close (klisp_State *K);
 
-void do_interception(klisp_State *K, TValue *xparams, TValue obj);
+void do_interception(klisp_State *K);
 
 /* for root and error continuations */
-void do_root_exit(klisp_State *K, TValue *xparams, TValue obj);
-void do_error_exit(klisp_State *K, TValue *xparams, TValue obj);
+void do_root_exit(klisp_State *K);
+void do_error_exit(klisp_State *K);
 
 /* simple accessors for dynamic keys */
 

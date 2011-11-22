@@ -51,8 +51,11 @@ void do_access(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* continuation to set the key to the old value on normal return */
-void do_unbind(klisp_State *K, TValue *xparams, TValue obj)
+void do_unbind(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: dynamic key
     ** xparams[1]: old flag

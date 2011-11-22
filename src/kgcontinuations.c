@@ -38,8 +38,11 @@ void call_cc(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for extend-continuation */
-void do_extended_cont(klisp_State *K, TValue *xparams, TValue obj)
+void do_extended_cont(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: applicative
     ** xparams[1]: environment
@@ -80,8 +83,11 @@ void extend_continuation(klisp_State *K, TValue *xparams, TValue ptree,
    passes the value. xparams is not actually empty, it contains
    the entry/exit guards, but they are used only in 
    continuation->applicative (that is during abnormal passes) */
-void do_pass_value(klisp_State *K, TValue *xparams, TValue obj)
+void do_pass_value(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
     kapply_cc(K, obj);
 }

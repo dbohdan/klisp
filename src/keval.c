@@ -15,8 +15,11 @@
 /*
 ** Eval helpers 
 */
-void do_eval_ls(klisp_State *K, TValue *xparams, TValue obj)
+void do_eval_ls(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: this argument list pair
     ** xparams[1]: dynamic environment
@@ -89,8 +92,11 @@ inline TValue make_arg_ls(klisp_State *K, TValue operands, TValue *tail)
     return arg_ls;
 }
 
-void do_combine(klisp_State *K, TValue *xparams, TValue obj)
+void do_combine(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: operand list
     ** xparams[1]: dynamic environment

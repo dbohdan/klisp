@@ -39,7 +39,7 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper for $binds? */
-void do_bindsp(klisp_State *K, TValue *xparams, TValue obj);
+void do_bindsp(klisp_State *K);
 
 /* 6.7.1 $binds? */
 void Sbindsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
@@ -62,7 +62,7 @@ void Sletrec(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper for $let-redirect */
-void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj);
+void do_let_redirect(klisp_State *K);
 
 /* 6.7.7 $let-redirect */
 void Slet_redirect(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
@@ -74,16 +74,16 @@ void Slet_safe(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helper for $remote-eval */
-void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj);
+void do_remote_eval(klisp_State *K);
 
 /* Helper for $bindings->environment */
-void do_b_to_env(klisp_State *K, TValue *xparams, TValue obj);
+void do_b_to_env(klisp_State *K);
 
 /* 6.7.10 $bindings->environment */
 void Sbindings_to_environment(klisp_State *K, TValue *xparams, TValue ptree, 
 			      TValue denv);
 
-void do_let(klisp_State *K, TValue *xparams, TValue obj);
+void do_let(klisp_State *K);
 
 /* init ground */
 void kinit_environments_ground_env(klisp_State *K);

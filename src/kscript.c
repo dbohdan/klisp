@@ -42,8 +42,11 @@ static inline TValue krooted_tvs_pass_si(klisp_State *K, TValue v, TValue si)
 #endif
 
 /* the exit continuation, it exits the loop */
-void do_script_exit(klisp_State *K, TValue *xparams, TValue obj)
+void do_script_exit(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
   UNUSED(xparams);
 
   /* save exit code */
@@ -68,12 +71,15 @@ void do_script_exit(klisp_State *K, TValue *xparams, TValue obj)
 
 
 /* the underlying function of the error cont */
-void do_script_error(klisp_State *K, TValue *xparams, TValue obj)
+void do_script_error(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */
-
+    UNUSED(xparams);
     /* FOR NOW used only for irritant list */
     TValue port = kcdr(K->kd_error_port_key);
     klisp_assert(kfport_file(port) == stderr);

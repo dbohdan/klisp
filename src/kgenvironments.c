@@ -156,8 +156,11 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 ** it expects the result of the last evaluation to be matched to 
 ** this-ptree
 */
-void do_let(klisp_State *K, TValue *xparams, TValue obj)
+void do_let(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: this ptree
@@ -248,8 +251,11 @@ void Slet(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for $binds? */
-void do_bindsp(klisp_State *K, TValue *xparams, TValue obj)
+void do_bindsp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: symbol list (may contain cycles)
     ** xparams[1]: symbol list count
@@ -456,8 +462,11 @@ void SletrecS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for $let-redirect */
-void do_let_redirect(klisp_State *K, TValue *xparams, TValue obj)
+void do_let_redirect(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: ptree
@@ -576,8 +585,11 @@ void Sremote_eval(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for $remote-eval */
-void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj)
+void do_remote_eval(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     if (!ttisenvironment(obj)) {
 	klispE_throw_simple(K, "bad type from second operand "
 		     "evaluation (expected environment)");
@@ -589,8 +601,11 @@ void do_remote_eval(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* Helper for $bindings->environment */
-void do_b_to_env(klisp_State *K, TValue *xparams, TValue obj)
+void do_b_to_env(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: ptree
     ** xparams[1]: created env

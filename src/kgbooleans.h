@@ -31,7 +31,7 @@ void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* Helpers for $and? & $or? */
-void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj);
+void do_Sandp_Sorp(klisp_State *K);
 void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 
 /* 6.1.4 $and? */

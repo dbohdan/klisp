@@ -54,8 +54,11 @@
 
 /* 15.1.3 with-input-from-file, with-ouput-to-file */
 /* helper for with-i/o-from/to-file & call-with-i/o-file */
-void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj)
+void do_close_file_ret(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: port
     */

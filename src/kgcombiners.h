@@ -79,10 +79,10 @@ bool kcombinerp(TValue obj);
 
 
 void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
-void do_map_ret(klisp_State *K, TValue *xparams, TValue obj);
-void do_map_encycle(klisp_State *K, TValue *xparams, TValue obj);
-void do_map(klisp_State *K, TValue *xparams, TValue obj);
-void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj);
+void do_map_ret(klisp_State *K);
+void do_map_encycle(klisp_State *K);
+void do_map(klisp_State *K);
+void do_map_cycle(klisp_State *K);
 
 /* init ground */
 void kinit_combiners_ground_env(klisp_State *K);

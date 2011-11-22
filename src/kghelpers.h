@@ -399,7 +399,7 @@ void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 ** Continuation that ignores the value received and instead returns
 ** a previously computed value.
 */
-void do_return_value(klisp_State *K, TValue *xparams, TValue obj);
+void do_return_value(klisp_State *K);
 
 /* GC: assumes parent & obj are rooted */
 inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)

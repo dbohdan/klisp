@@ -26,7 +26,7 @@
 /* 4.5.2 $if */
 
 /* helpers */
-void do_select_clause(klisp_State *K, TValue *xparams, TValue obj);
+void do_select_clause(klisp_State *K);
 
 /*  ASK JOHN: both clauses should probably be copied (copy-es-immutable) */
 void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
@@ -48,8 +48,11 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ktail_eval(K, test, denv);
 }
 
-void do_select_clause(klisp_State *K, TValue *xparams, TValue obj)
+void do_select_clause(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: dynamic env
     ** xparams[1]: consequent clause
@@ -98,9 +101,15 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper (also used by $vau and $lambda) */
-/* the ramaining list can't be null, that case is managed before */
-void do_seq(klisp_State *K, TValue *xparams, TValue obj)
+/* the remaining list can't be null, that case is managed before */
+void do_seq(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+
+    UNUSED(obj);
+
     /* 
     ** xparams[0]: remaining list
     ** xparams[1]: dynamic environment
@@ -198,8 +207,11 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
 }
 
 /* Helper for the $cond continuation */
-void do_cond(klisp_State *K, TValue *xparams, TValue obj)
+void do_cond(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: the body corresponding to obj
     ** xparams[1]: remaining tests
@@ -289,8 +301,11 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper continuation for for-each */
-void do_for_each(klisp_State *K, TValue *xparams, TValue obj)
+void do_for_each(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: rem-ls

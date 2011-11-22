@@ -103,7 +103,7 @@ void listS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 5.4.1 car, cdr */
 /* 5.4.2 caar, cadr, ... cddddr */
 
-void c_ad_r( klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void c_ad_r(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 {
 
     /*
@@ -469,8 +469,11 @@ void list_neighbors(klisp_State *K, TValue *xparams, TValue ptree,
 /* Helpers for filter */
 
 /* For acyclic input lists: Return the filtered list */
-void do_ret_cdr(klisp_State *K, TValue *xparams, TValue obj)
+void do_ret_cdr(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: (dummy . complete-ls)
     */
@@ -487,8 +490,11 @@ void do_ret_cdr(klisp_State *K, TValue *xparams, TValue obj)
 
 /* For cyclic input list: If the result cycle is non empty, 
    close it and return filtered list */
-void do_filter_encycle(klisp_State *K, TValue *xparams, TValue obj)
+void do_filter_encycle(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: (dummy . complete-ls)
     ** xparams[1]: last non-cycle pair
@@ -518,8 +524,11 @@ void do_filter_encycle(klisp_State *K, TValue *xparams, TValue obj)
     kapply_cc(K, copy);
 }
 
-void do_filter(klisp_State *K, TValue *xparams, TValue obj)
+void do_filter(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: (last-obj . rem-ls)
@@ -565,8 +574,11 @@ void do_filter(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void do_filter_cycle(klisp_State *K, TValue *xparams, TValue obj)
+void do_filter_cycle(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: (dummy . res-list)
@@ -746,10 +758,13 @@ void countable_listp(klisp_State *K, TValue *xparams, TValue ptree,
 /* Helpers for reduce */
 
 /* NOTE: This is used from both do_reduce_cycle and reduce */
-void do_reduce(klisp_State *K, TValue *xparams, TValue obj);
+void do_reduce(klisp_State *K);
 
-void do_reduce_prec(klisp_State *K, TValue *xparams, TValue obj)
+void do_reduce_prec(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: first-pair
     ** xparams[1]: (old-obj . rem-ls)
@@ -783,8 +798,11 @@ void do_reduce_prec(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void do_reduce_postc(klisp_State *K, TValue *xparams, TValue obj)
+void do_reduce_postc(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: postc
     ** xparams[1]: denv
@@ -799,8 +817,11 @@ void do_reduce_postc(klisp_State *K, TValue *xparams, TValue obj)
 /* This could be avoided by contructing a list and calling
    do_reduce, but the order would be backwards if the cycle
    is processed after the acyclic part */
-void do_reduce_combine(klisp_State *K, TValue *xparams, TValue obj)
+void do_reduce_combine(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: acyclic result
     ** xparams[1]: bin
@@ -818,8 +839,11 @@ void do_reduce_combine(klisp_State *K, TValue *xparams, TValue obj)
     ktail_eval(K, expr, denv);
 }
 
-void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj)
+void do_reduce_cycle(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: first-cpair
     ** xparams[1]: cpairs
@@ -879,8 +903,11 @@ void do_reduce_cycle(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* NOTE: This is used from both do_reduce_cycle and reduce */
-void do_reduce(klisp_State *K, TValue *xparams, TValue obj)
+void do_reduce(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: remaining list
     ** xparams[1]: remaining pairs
