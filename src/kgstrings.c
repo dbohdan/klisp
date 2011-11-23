@@ -33,8 +33,12 @@
 /* use ftypep */
 
 /* 13.1.2? make-string */
-void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void make_string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, 
@@ -57,9 +61,12 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.1.3? string-length */
-void string_length(klisp_State *K, TValue *xparams, TValue ptree, 
-		     TValue denv)
+void string_length(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
@@ -69,8 +76,12 @@ void string_length(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 13.1.4? string-ref */
-void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_ref(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "string", ttisstring, str,
@@ -94,8 +105,12 @@ void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.1.5? string-set! */
-void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_setS(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
@@ -148,8 +163,12 @@ inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
 }
 
 /* 13.2.1? string */
-void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -245,8 +264,12 @@ bool kstring_ci_gep(TValue str1, TValue str2)
 /* TEMP: at least for now this always returns mutable strings (like in Racket and
    following the Kernel Report where it says that object returned should be mutable 
    unless stated) */
-void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void substring(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
@@ -291,9 +314,12 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 13.2.6? string-append */
 /* TEMP: at least for now this always returns mutable strings */
 /* TEMP: this does 3 passes over the list */
-void string_append(klisp_State *K, TValue *xparams, TValue ptree, 
-		   TValue denv)
+void string_append(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     int32_t dummy;
@@ -340,9 +366,12 @@ void string_append(klisp_State *K, TValue *xparams, TValue ptree,
 
 
 /* 13.2.7? string->list, list->string */
-void string_to_list(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void string_to_list(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -361,9 +390,12 @@ void string_to_list(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, kcutoff_dummy1(K));
 }
 
-void list_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void list_to_string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -376,8 +408,12 @@ void list_to_string(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* 13.2.8? string-copy */
 /* TEMP: at least for now this always returns mutable strings */
-void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_copy(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
@@ -393,9 +429,12 @@ void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.2.9? string->immutable-string */
-void string_to_immutable_string(klisp_State *K, TValue *xparams, 
-				TValue ptree, TValue denv)
+void string_to_immutable_string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
@@ -410,8 +449,12 @@ void string_to_immutable_string(klisp_State *K, TValue *xparams,
 }
 
 /* 13.2.10? string-fill! */
-void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_fillS(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "string", ttisstring, str,

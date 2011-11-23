@@ -31,11 +31,11 @@
 /* use ftypep */
 
 /* (R7RS 3rd draft 6.3.6) make-vector */
-void make_vector(klisp_State *K, TValue *xparams, TValue ptree,
-                 TValue denv)
+void make_vector(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+    TValue ptree = K->next_value;
+
     bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, fill);
     if (!get_opt_tpar(K, fill, "any", anytype))
         fill = KINERT;
@@ -54,11 +54,11 @@ void make_vector(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* (R7RS 3rd draft 6.3.6) vector-length */
-void vector_length(klisp_State *K, TValue *xparams, TValue ptree,
-                   TValue denv)
+void vector_length(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+    TValue ptree = K->next_value;
+
     bind_1tp(K, ptree, "vector", ttisvector, vector);
 
     TValue res = i2tv(kvector_length(vector));
@@ -66,10 +66,11 @@ void vector_length(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* (R7RS 3rd draft 6.3.6) vector-ref */
-void vector_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void vector_ref(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+
+    TValue ptree = K->next_value;
     bind_2tp(K, ptree, "vector", ttisvector, vector,
              "exact integer", keintegerp, tv_i);
 
@@ -88,10 +89,11 @@ void vector_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* (R7RS 3rd draft 6.3.6) vector-set! */
-void vector_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void vector_setS(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+
+    TValue ptree = K->next_value;
     bind_3tp(K, ptree, "vector", ttisvector, vector,
              "exact integer", keintegerp, tv_i, "any", anytype, tv_new_value);
 
@@ -117,15 +119,15 @@ void vector_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* (R7RS 3rd draft 6.3.6) vector-copy */
 /* TEMP: at least for now this always returns mutable vectors */
-void vector_copy(klisp_State *K, TValue *xparams, TValue ptree,
-                 TValue denv)
+void vector_copy(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+    TValue ptree = K->next_value;
+
     bind_1tp(K, ptree, "vector", ttisvector, v);
 
-    TValue new_vector = kvector_emptyp(v)
-        ? v
+    TValue new_vector = kvector_emptyp(v)? 
+	v
         : kvector_new_bs_g(K, true, kvector_array(v), kvector_length(v));
     kapply_cc(K, new_vector);
 }
@@ -148,30 +150,30 @@ static TValue list_to_vector_h(klisp_State *K, const char *name, TValue ls)
 }
 
 /* (R7RS 3rd draft 6.3.6) vector */
-void vector(klisp_State *K, TValue *xparams,
-            TValue ptree, TValue denv)
+void vector(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+
+    TValue ptree = K->next_value;
     kapply_cc(K, list_to_vector_h(K, "vector", ptree));
 }
 
 /* (R7RS 3rd draft 6.3.6) list->vector */
-void list_to_vector(klisp_State *K, TValue *xparams,
-                    TValue ptree, TValue denv)
+void list_to_vector(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+
+    TValue ptree = K->next_value;
     bind_1p(K, ptree, ls);
     kapply_cc(K, list_to_vector_h(K, "list->vector", ls));
 }
 
 /* (R7RS 3rd draft 6.3.6) vector->list */
-void vector_to_list(klisp_State *K, TValue *xparams,
-                    TValue ptree, TValue denv)
+void vector_to_list(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+
+    TValue ptree = K->next_value;
     bind_1tp(K, ptree, "vector", ttisvector, v);
 
     TValue tail = KNIL;
@@ -184,16 +186,16 @@ void vector_to_list(klisp_State *K, TValue *xparams,
 }
 
 /* ??.?.? vector->immutable-vector */
-void vector_to_immutable_vector(klisp_State *K, TValue *xparams,
-                                TValue ptree, TValue denv)
+void vector_to_immutable_vector(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
+    klisp_assert(ttisenvironment(K->next_env));
+
+    TValue ptree = K->next_value;
     bind_1tp(K, ptree, "vector", ttisvector, v);
 
-    TValue res = kvector_immutablep(v)
-      ? v
-      : kvector_new_bs_g(K, false, kvector_array(v), kvector_length(v));
+    TValue res = kvector_immutablep(v)? 
+	v
+	: kvector_new_bs_g(K, false, kvector_array(v), kvector_length(v));
     kapply_cc(K, res);
 }
 
@@ -240,5 +242,4 @@ void kinit_vectors_ground_env(klisp_State *K)
     /* ??.1.?? vector->immutable-vector */
     add_applicative(K, ground_env, "vector->immutable-vector",
 		    vector_to_immutable_vector, 0);
-
 }

@@ -11,8 +11,8 @@
 #include "kstate.h"
 #include "kobject.h"
 
-void keval_ofn(klisp_State *K, TValue *xparams, TValue obj, TValue env);
-void do_eval_ls(klisp_State *K, TValue *xparams, TValue obj);
-void do_combine(klisp_State *K, TValue *xparams, TValue obj);
+void keval_ofn(klisp_State *K);
+void do_eval_ls(klisp_State *K);
+void do_combine(klisp_State *K);
 
 #endif

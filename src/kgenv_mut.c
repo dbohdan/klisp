@@ -23,8 +23,12 @@
 #include "kgcontrol.h" /* for do_seq */
 
 /* 4.9.1 $define! */
-void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void SdefineB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0] = define symbol
     */
@@ -45,8 +49,11 @@ void SdefineB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* helper */
-void do_match(klisp_State *K, TValue *xparams, TValue obj)
+void do_match(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: ptree
     ** xparams[1]: dynamic environment
@@ -61,8 +68,12 @@ void do_match(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 6.8.1 $set! */
-void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void SsetB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
 
     TValue sname = xparams[0];
@@ -82,8 +93,11 @@ void SsetB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helpers for $set! */
-void do_set_eval_obj(klisp_State *K, TValue *xparams, TValue obj)
+void do_set_eval_obj(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: name as symbol
     ** xparams[1]: ptree
@@ -169,8 +183,11 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
     return kcutoff_dummy1(K);
 }
 
-void do_import(klisp_State *K, TValue *xparams, TValue obj)
+void do_import(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: name as symbol
     ** xparams[1]: symbols
@@ -195,8 +212,12 @@ void do_import(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 6.8.2 $provide! */
-void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void SprovideB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /* 
     ** xparams[0]: name as symbol
     */
@@ -251,8 +272,12 @@ void SprovideB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.8.3 $import! */
-void SimportB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void SimportB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /* ASK John: The report says that symbols can have repeated symbols
        and even be cyclical (cf $provide!) however this doesn't work
        in the derivation (that uses $set! and so needs a ptree, which are

@@ -16,9 +16,12 @@
 #include "kghelpers.h"
 #include "kgerror.h"
 
-void r7rs_error(klisp_State *K, TValue *xparams, TValue ptree,
-                TValue denv)
+void r7rs_error(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     if (ttispair(ptree) && ttisstring(kcar(ptree))) {
@@ -28,9 +31,12 @@ void r7rs_error(klisp_State *K, TValue *xparams, TValue ptree,
     }
 }
 
-void error_object_message(klisp_State *K, TValue *xparams, TValue ptree,
-                          TValue denv)
+void error_object_message(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "error object", ttiserror, error_tv);
@@ -39,9 +45,12 @@ void error_object_message(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, err_obj->msg);
 }
 
-void error_object_irritants(klisp_State *K, TValue *xparams, TValue ptree,
-                          TValue denv)
+void error_object_irritants(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "error object", ttiserror, error_tv);
@@ -49,8 +58,11 @@ void error_object_irritants(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, err_obj->irritants);
 }
 /* REFACTOR this is the same as do_pass_value */
-void do_exception_cont(klisp_State *K, TValue *xparams, TValue obj)
+void do_exception_cont(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
     /* Just pass error object to general error continuation. */
     kapply_cc(K, obj);

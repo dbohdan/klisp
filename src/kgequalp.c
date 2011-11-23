@@ -34,8 +34,12 @@
 ** Idea to look up these papers from srfi 85: 
 ** "Recursive Equivalence Predicates" by William D. Clinger
 */
-void equalp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void equalp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 

@@ -363,13 +363,13 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 ** Generic function for type predicates
 ** It can only be used by types that have a unique tag
 */
-void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void typep(klisp_State *K);
 
 /*
 ** Generic function for type predicates
 ** It takes an arbitrary function pointer of type bool (*fn)(TValue o)
 */
-void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftypep(klisp_State *K);
 
 /*
 ** Generic function for typed predicates (like char-alphabetic? or finite?)
@@ -378,7 +378,7 @@ void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 ** both of the same type: bool (*fn)(TValue o).
 ** On zero operands this return true
 */
-void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftyped_predp(klisp_State *K);
 
 /*
 ** Generic function for typed binary predicates (like =? & char<?)
@@ -388,18 +388,18 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 ** This assumes the predicate is transitive and works even in cyclic lists
 ** On zero and one operand this return true
 */
-void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftyped_bpredp(klisp_State *K);
 
 /* This is the same, but the comparison predicate takes a klisp_State */
 /* TODO unify them */
-void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftyped_kbpredp(klisp_State *K);
 
 
 /* 
 ** Continuation that ignores the value received and instead returns
 ** a previously computed value.
 */
-void do_return_value(klisp_State *K, TValue *xparams, TValue obj);
+void do_return_value(klisp_State *K);
 
 /* GC: assumes parent & obj are rooted */
 inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)

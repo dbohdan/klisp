@@ -39,9 +39,12 @@ bool kchar_upper_casep(TValue ch) { return isupper(chvalue(ch)) != 0; }
 bool kchar_lower_casep(TValue ch) { return islower(chvalue(ch)) != 0; }
 
 /* 14.1.4? char->integer, integer->char */
-void kchar_to_integer(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void kchar_to_integer(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "character", ttischar, ch);
@@ -49,9 +52,12 @@ void kchar_to_integer(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, i2tv((int32_t) chvalue(ch)));
 }
 
-void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void kinteger_to_char(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "exact integer", ttiseinteger, itv);
@@ -71,9 +77,12 @@ void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 14.1.4? char-upcase, char-downcase */
-void kchar_upcase(klisp_State *K, TValue *xparams, TValue ptree, 
-		  TValue denv)
+void kchar_upcase(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "character", ttischar, chtv);
@@ -82,9 +91,12 @@ void kchar_upcase(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, ch2tv(ch));
 }
 
-void kchar_downcase(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void kchar_downcase(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "character", ttischar, chtv);

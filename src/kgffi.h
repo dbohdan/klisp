@@ -21,8 +21,7 @@
 #include "kstate.h"
 #include "kghelpers.h"
 
-void ffi_load_library(klisp_State *K, TValue *xparams,
-                      TValue ptree, TValue denv);
+void ffi_load_library(klisp_State *K);
 
 /* init ground */
 void kinit_ffi_ground_env(klisp_State *K);

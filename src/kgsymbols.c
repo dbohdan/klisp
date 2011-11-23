@@ -27,9 +27,12 @@
 
 /* 13.3.1? symbol->string */
 /* The strings in symbols are immutable so we can just return that */
-void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void symbol_to_string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "symbol", ttissymbol, sym);
@@ -48,9 +51,12 @@ void symbol_to_string(klisp_State *K, TValue *xparams, TValue ptree,
    again must be equal? which happens here 
 */
 /* If the string is mutable it is copied */
-void string_to_symbol(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void string_to_symbol(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);

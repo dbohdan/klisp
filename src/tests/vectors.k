@@ -88,9 +88,9 @@
 ;; (R7RS 3rd draft, section 6.3.6) vector-copy
 ;; TODO: implement equal? for vectors first
 
-;; XXX bytevector->immutable-bytevector
+;; XXX vector->immutable-vector
 
-($check-predicate (applicative? bytevector->immutable-bytevector))
+($check-predicate (applicative? vector->immutable-vector))
 
 ($check-predicate
   (immutable-vector? (vector->immutable-vector (vector 1 2))))

@@ -23,8 +23,12 @@
 /* uses typep */
 
 /* 6.1.1 not? */
-void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void notp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -38,8 +42,12 @@ void notp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 bool kbooleanp(TValue obj) { return ttisboolean(obj); }
 
 /* 6.1.2 and? */
-void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void andp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     /* don't care about cycle pairs */
@@ -59,8 +67,12 @@ void andp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 6.1.3 or? */
-void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void orp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     /* don't care about cycle pairs */
@@ -90,8 +102,11 @@ void orp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 ** call that is acomplished by checking if the current continuation will 
 ** perform a boolean check, and in that case, no continuation is created
 */
-void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj)
+void do_Sandp_Sorp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: termination boolean
@@ -141,8 +156,12 @@ void do_Sandp_Sorp(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void Sandp_Sorp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Sandp_Sorp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: termination boolean

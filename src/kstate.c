@@ -282,8 +282,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 /*
 ** Root and Error continuations
 */
-void do_root_exit(klisp_State *K, TValue *xparams, TValue obj)
+void do_root_exit(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
 
     /* Just save the value and end the loop */
@@ -292,8 +295,11 @@ void do_root_exit(klisp_State *K, TValue *xparams, TValue obj)
     return;
 }
 
-void do_error_exit(klisp_State *K, TValue *xparams, TValue obj)
+void do_error_exit(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
 
     /* TEMP Just pass the error to the root continuation */
@@ -503,16 +509,23 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
 }
 
 /* this passes the operand tree to the continuation */
-void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void cont_app(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     TValue cont = xparams[0];
     /* guards and dynamic variables are handled in kcall_cont() */
     kcall_cont(K, cont, ptree);
 }
 
-void do_interception(klisp_State *K, TValue *xparams, TValue obj)
+void do_interception(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: 
     ** xparams[1]: dst cont
@@ -600,15 +613,9 @@ void klispS_run(klisp_State *K)
 	} else {
 	    /* all ok, continue with next func */
 	    while (K->next_func) {
-		if (ttisnil(K->next_env)) {
-		    /* continuation application */
-		    klisp_Cfunc fn = (klisp_Cfunc) K->next_func;
-		    (*fn)(K, K->next_xparams, K->next_value);
-		} else {
-		    /* operative calling */
-		    klisp_Ofunc fn = (klisp_Ofunc) K->next_func;
-		    (*fn)(K, K->next_xparams, K->next_value, K->next_env);
-		}
+		/* next_func is either operative or continuation
+		   but in any case the call is the same */
+		(*(K->next_func))(K);
 	    }
 	    /* K->next_func is NULL, this means we should exit already */
 	    break;

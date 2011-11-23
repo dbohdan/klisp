@@ -54,8 +54,11 @@
 
 /* 15.1.3 with-input-from-file, with-ouput-to-file */
 /* helper for with-i/o-from/to-file & call-with-i/o-file */
-void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj)
+void do_close_file_ret(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: port
     */
@@ -70,9 +73,12 @@ void do_close_file_ret(klisp_State *K, TValue *xparams, TValue obj)
    the dynamic environment can be captured in the construction of the combiner 
    ASK John
 */
-void with_file(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void with_file(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     bool writep = bvalue(xparams[1]);
     TValue key = xparams[2];
 
@@ -100,9 +106,12 @@ void with_file(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 15.1.4 get-current-input-port, get-current-output-port */
-void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
-		      TValue denv)
+void get_current_port(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: dynamic key
@@ -120,8 +129,14 @@ void get_current_port(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* 15.1.5 open-input-file, open-output-file */
 /* 15.1.? open-binary-input-file, open-binary-output-file */
-void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void open_file(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+
     /*
     ** xparams[0]: write?
     ** xparams[1]: binary?
@@ -137,8 +152,12 @@ void open_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 15.1.? open-input-string, open-output-string */
 /* 15.1.? open-input-bytevector, open-output-bytevector */
-void open_mport(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void open_mport(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: write?
     ** xparams[1]: binary?
@@ -168,8 +187,12 @@ void open_mport(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 15.1.? open-output-string, open-output-bytevector */
 
 /* 15.1.6 close-input-file, close-output-file */
-void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void close_file(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: write?
     */
@@ -190,8 +213,12 @@ void close_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? close-input-port, close-output-port, close-port */
-void close_port(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void close_port(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: read?
     ** xparams[1]: write?
@@ -215,9 +242,12 @@ void close_port(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? get-output-string, get-output-bytevector */
-void get_output_buffer(klisp_State *K, TValue *xparams, TValue ptree, 
-		       TValue denv)
+void get_output_buffer(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: binary?
     */
@@ -245,8 +275,12 @@ void get_output_buffer(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 15.1.7 read */
-void gread(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void gread(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -272,8 +306,12 @@ void gread(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.8 write */
-void gwrite(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void gwrite(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -304,8 +342,12 @@ void gwrite(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* uses typep */
 
 /* 15.1.? newline */
-void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void newline(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -330,8 +372,12 @@ void newline(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? write-char */
-void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void write_char(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -358,9 +404,12 @@ void write_char(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for read-char and peek-char */
-void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void read_peek_char(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /* 
     ** xparams[0]: ret-char-after-readp
     */
@@ -400,8 +449,12 @@ void read_peek_char(klisp_State *K, TValue *xparams, TValue ptree,
    specific code (probably select for posix & a thread for windows
    (at least for files & consoles, I think pipes and sockets may
    have something) */
-void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void char_readyp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -426,8 +479,12 @@ void char_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? write-u8 */
-void write_u8(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void write_u8(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -453,9 +510,12 @@ void write_u8(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for read-u8 and peek-u8 */
-void read_peek_u8(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void read_peek_u8(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /* 
     ** xparams[0]: ret-u8-after-readp
     */
@@ -495,8 +555,12 @@ void read_peek_u8(klisp_State *K, TValue *xparams, TValue ptree,
    specific code (probably select for posix & a thread for windows
    (at least for files & consoles, I think pipes and sockets may
    have something) */
-void u8_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void u8_readyp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -525,9 +589,12 @@ void u8_readyp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
    the dynamic environment can be captured in the construction of the combiner 
    ASK John
 */
-void call_with_file(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void call_with_file(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     bool writep = bvalue(xparams[1]);
     UNUSED(denv);
 
@@ -552,9 +619,12 @@ void call_with_file(klisp_State *K, TValue *xparams, TValue ptree,
 /* helpers for load */
 
 /* interceptor for errors during reading */
-void do_int_close_file(klisp_State *K, TValue *xparams, TValue ptree, 
-		   TValue denv)
+void do_int_close_file(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: port
     */
@@ -614,8 +684,12 @@ TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
    applicative.
    ASK John: maybe we should return the result of the last expression. 
 */
-void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void load(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     bind_1tp(K, ptree, "string", ttisstring, filename);
 
@@ -665,8 +739,12 @@ void load(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.2.3 get-module */
-void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void get_module(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_al1tp(K, ptree, "string", ttisstring, filename, 
@@ -726,8 +804,12 @@ void get_module(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.2.? display */
-void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void display(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -755,8 +837,12 @@ void display(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? flush-output-port */
-void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void flush(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -781,8 +867,12 @@ void flush(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? file-exists? */
-void file_existsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void file_existsp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -800,8 +890,12 @@ void file_existsp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? delete-file */
-void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void delete_file(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -821,8 +915,12 @@ void delete_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 15.1.? rename-file */
-void rename_file(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void rename_file(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 

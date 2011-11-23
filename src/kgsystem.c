@@ -23,9 +23,16 @@
 */
 
 /* ??.?.?  current-second */
-void current_second(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void current_second(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    check_0p(K, ptree);
     time_t now = time(NULL);
     if (now == -1) {
 	klispE_throw_simple(K, "couldn't get time");
@@ -43,9 +50,16 @@ void current_second(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* ??.?.?  current-jiffy */
-void current_jiffy(klisp_State *K, TValue *xparams, TValue ptree, 
-		   TValue denv)
+void current_jiffy(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    check_0p(K, ptree);
     /* TODO, this may wrap around... use time+clock to a better number */
     /* XXX doesn't seem to work... should probably use gettimeofday
        in posix anyways */
@@ -66,9 +80,16 @@ void current_jiffy(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* ??.?.?  jiffies-per-second */
-void jiffies_per_second(klisp_State *K, TValue *xparams, TValue ptree, 
-			TValue denv)
+void jiffies_per_second(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    check_0p(K, ptree);
     if (CLOCKS_PER_SEC > INT32_MAX) {
 	    /* XXX/TODO create bigint */
 	    klispE_throw_simple(K, "integer too big");

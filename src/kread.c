@@ -150,7 +150,32 @@ void change_shared_def(klisp_State *K, TValue def_token, TValue value)
 	}
 	tail = kcdr(tail);
     }
-    /* NOTE: can't really happen */
+    klisp_assert(0); /* shouldn't happen */
+    return;
+}
+
+/* NOTE: the shared def is guaranteed to exist */
+void remove_shared_def(klisp_State *K, TValue def_token)
+{
+    /* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
+    int32_t ref_num = ivalue(kcdr(def_token));
+    TValue tail = K->shared_dict;
+    TValue last_pair = KNIL;
+    while (!ttisnil(tail)) {
+	TValue head = kcar(tail);
+	if (ref_num == ivalue(kcar(head))) {
+	    if (ttisnil(last_pair)) {
+		/* this is the first value */
+		K->shared_dict = kcdr(tail);
+	    } else {
+		kset_cdr(last_pair, kcdr(tail));
+	    }
+	    return;
+	}
+	last_pair = tail;
+	tail = kcdr(tail);
+    }
+    klisp_assert(0); /* shouldn't happen */
     return;
 }
 
@@ -202,10 +227,15 @@ TValue kread_fsm(klisp_State *K, bool listp)
     TValue obj_si = KNIL; /* put some value for gc */ 
     int32_t sexp_comments = 0;
     TValue last_sexp_comment_si = KNIL; /* put some value for gc */
+    /* list of shared list, each element represent a nested sexp comment,
+       each is a list of shared defs in that particular level, to be
+       undefined after the sexp comment ends */
+    TValue sexp_comment_shared = KNIL;
 
     krooted_vars_push(K, &obj);
     krooted_vars_push(K, &obj_si);
     krooted_vars_push(K, &last_sexp_comment_si);
+    krooted_vars_push(K, &sexp_comment_shared);
 
     while (!(get_state(K) == ST_READ && !read_next_token)) {
 	if (read_next_token) {
@@ -373,7 +403,13 @@ TValue kread_fsm(klisp_State *K, bool listp)
 		    default: {
 			krooted_tvs_push(K, tok);
 			try_shared_def(K, tok, KNIL);
-			/* token ok, read defined object */
+			/* token ok */
+			/* save the token for later undefining */
+			if (sexp_comments > 0) {
+			    kset_car(sexp_comment_shared, 
+				     kcons(K, tok, kcar(sexp_comment_shared)));
+			}
+			/* read defined object */
 			/* NOTE: save the source info to return it 
 			   after the defined object is read */
 			TValue si = ktok_get_source_info(K);
@@ -413,6 +449,8 @@ TValue kread_fsm(klisp_State *K, bool listp)
 		case ';': { /* sexp comment */
 		    klisp_assert(sexp_comments < 1000);
 		    ++sexp_comments;
+		    sexp_comment_shared = 
+			kcons(K, KNIL, sexp_comment_shared);
 		    push_data(K, last_sexp_comment_si);
 		    push_state(K, ST_SEXP_COMMENT);
 		    last_sexp_comment_si = ktok_get_source_info(K);
@@ -599,6 +637,14 @@ TValue kread_fsm(klisp_State *K, bool listp)
 	    case ST_SEXP_COMMENT:
 		klisp_assert(sexp_comments > 0);
 		--sexp_comments;
+		/* undefine all shared obj defined in the context
+		   of this sexp comment */
+		while(!ttisnil(kcar(sexp_comment_shared))) {
+		    TValue first = kcaar(sexp_comment_shared);
+		    remove_shared_def(K, first);
+		    kset_car(sexp_comment_shared, kcdar(sexp_comment_shared));
+		}
+		sexp_comment_shared = kcdr(sexp_comment_shared);
 		pop_state(K);
 		last_sexp_comment_si = get_data(K);
 		pop_data(K);
@@ -613,6 +659,7 @@ TValue kread_fsm(klisp_State *K, bool listp)
 	}
     }
 
+    krooted_vars_pop(K);
     krooted_vars_pop(K);
     krooted_vars_pop(K);
     krooted_vars_pop(K);

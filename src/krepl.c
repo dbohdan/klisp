@@ -28,8 +28,11 @@
 /* TODO add names & source info to the repl continuations */
 
 /* the underlying function of the read cont */
-void do_repl_read(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_read(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(xparams);
     UNUSED(obj);
 
@@ -50,8 +53,11 @@ void do_repl_read(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* the underlying function of the eval cont */
-void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_eval(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */
@@ -76,9 +82,8 @@ void do_repl_eval(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj);
-void do_int_repl_error(klisp_State *K, TValue *xparams, TValue ptree,
-		       TValue denv);
+void do_repl_loop(klisp_State *K);
+void do_int_repl_error(klisp_State *K);
 
 /* this is called from both do_repl_loop and do_repl_error */
 /* GC: assumes denv is NOT rooted */
@@ -128,8 +133,11 @@ void create_loop(klisp_State *K, TValue denv)
 }
 
 /* the underlying function of the write & loop  cont */
-void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj)
+void do_repl_loop(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */
@@ -146,9 +154,12 @@ void do_repl_loop(klisp_State *K, TValue *xparams, TValue obj)
 } 
 
 /* the underlying function of the error cont */
-void do_int_repl_error(klisp_State *K, TValue *xparams, TValue ptree,
-    TValue denv)
+void do_int_repl_error(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /* 
     ** xparams[0]: dynamic environment
     */

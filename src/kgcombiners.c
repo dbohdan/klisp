@@ -27,7 +27,7 @@
 #include "kgcombiners.h"
 
 /* Helper (used by $vau & $lambda) */
-void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
+void do_vau(klisp_State *K);
 
 /* 4.10.1 operative? */
 /* uses typep */
@@ -37,8 +37,12 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv);
 
 /* 4.10.3 $vau */
 /* 5.3.1 $vau */
-void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Svau(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) xparams;
     bind_al2p(K, ptree, vptree, vpenv, vbody);
 
@@ -71,15 +75,22 @@ void Svau(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, new_op);
 }
 
-void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
+void do_vau(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(denv);
+
     /*
-    ** xparams[0]: ptree
+    ** xparams[0]: op_ptree
     ** xparams[1]: penv
     ** xparams[2]: body
     ** xparams[3]: senv
     */
-    TValue ptree = xparams[0];
+    TValue op_ptree = xparams[0];
     TValue penv = xparams[1];
     TValue body = xparams[2];
     TValue senv = xparams[3];
@@ -91,7 +102,7 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
     krooted_tvs_push(K, env); 
 
     /* TODO use name from operative */
-    match(K, "[user-operative]", env, ptree, obj);
+    match(K, "[user-operative]", env, op_ptree, ptree);
     if (!ttisignore(penv))
 	kadd_binding(K, env, penv, denv);
 
@@ -120,8 +131,12 @@ void do_vau(klisp_State *K, TValue *xparams, TValue obj, TValue denv)
 }
 
 /* 4.10.4 wrap */
-void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void wrap(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -141,8 +156,12 @@ void wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 4.10.5 unwrap */
-void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void unwrap(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     (void) xparams;
     bind_1tp(K, ptree, "applicative", ttisapplicative, app);
@@ -153,8 +172,12 @@ void unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 5.3.1 $vau */
 /* DONE: above, together with 4.10.4 */
 /* 5.3.2 $lambda */
-void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Slambda(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) xparams;
     bind_al1p(K, ptree, vptree, vbody);
 
@@ -188,9 +211,12 @@ void Slambda(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 5.5.1 apply */
-void apply(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void apply(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -411,8 +437,11 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 /* Continuation helpers for map */
 
 /* For acyclic input lists: Return the mapped list */
-void do_map_ret(klisp_State *K, TValue *xparams, TValue obj)
+void do_map_ret(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: (dummy . complete-ls)
     */
@@ -427,8 +456,11 @@ void do_map_ret(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* For cyclic input list: close the cycle and return the mapped list */
-void do_map_encycle(klisp_State *K, TValue *xparams, TValue obj)
+void do_map_encycle(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: (dummy . complete-ls)
     ** xparams[1]: last non-cycle pair
@@ -450,8 +482,11 @@ void do_map_encycle(klisp_State *K, TValue *xparams, TValue obj)
     kapply_cc(K, copy);
 }
 
-void do_map(klisp_State *K, TValue *xparams, TValue obj)
+void do_map(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: rem-ls
@@ -499,8 +534,11 @@ void do_map(klisp_State *K, TValue *xparams, TValue obj)
     }
 }
 
-void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
+void do_map_cycle(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: (dummy . res-list)
@@ -528,7 +566,9 @@ void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
        the inert value passed to the first continuation */
     TValue new_cont = 
 	kmake_continuation(K, encycle_cont, do_map, 6, app, ls, 
-			   last_apair, cpairs, denv, KTRUE);
+			   last_apair, i2tv(cpairs), denv, KTRUE);
+    klisp_assert(ttisenvironment(denv));
+
     krooted_tvs_pop(K); 
     kset_cc(K, new_cont);
     /* this will be like a nop and will continue with do_map */
@@ -536,8 +576,12 @@ void do_map_cycle(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 5.9.1 map */
-void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void map(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
 
     bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);
@@ -577,7 +621,6 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 	: kmake_continuation(K, kget_cc(K), do_map_cycle, 4, 
 			     app, dummy, i2tv(res_cpairs), denv);
 
-
     krooted_tvs_push(K, ret_cont);
 
     /* schedule the mapping of the elements of the acyclic part.
@@ -592,6 +635,7 @@ void map(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     krooted_tvs_pop(K); 
 
     kset_cc(K, new_cont);
+
     /* this will be a nop, and will continue with do_map */
     kapply_cc(K, KINERT);
 }
