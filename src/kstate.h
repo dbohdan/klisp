@@ -466,6 +466,7 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
     K->next_func = op->fn;
     K->next_value = ptree;
     /* NOTE: this is what differentiates a tail call from a return */
+    klisp_assert(ttisenvironment(env));
     K->next_env = env;
     K->next_xparams = op->extra;
     K->next_si = si;
@@ -483,7 +484,6 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 #define ktail_eval(K_, p_, e_)						\
     { klisp_State *K__ = (K_);						\
 	TValue p__ = (p_);						\
-	/* XXX */ klisp_assert(ttisenvironment(e_));			\
 	klispS_tail_call_si(K__, K__->eval_op, p__, (e_),		\
 			    ktry_get_si(K__, p__));			\
 	return; }

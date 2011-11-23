@@ -1,7 +1,7 @@
 (load "tests/check.k")
 (load "tests/test-helpers.k")
 
-;; (check-set-mode! check-mode-report)
+ (check-set-mode! check-mode-report)
 
 ;; TODO add applicative?/operative? for all cominers in all test files
 
