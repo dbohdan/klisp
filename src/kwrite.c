@@ -25,6 +25,7 @@
 #include "kport.h"
 #include "kenvironment.h"
 #include "kbytevector.h"
+#include "kvector.h"
 
 /*
 ** Stack for the write FSM
@@ -509,6 +510,15 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	#endif
 	kw_printf(K, "]");
 	break;
+    case K_TVECTOR:
+        kw_printf(K, "#[vector");
+        #if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+        #endif
+        kw_printf(K, "]");
+        break;
     default:
 	/* shouldn't happen */
 	kwrite_error(K, "unknown object type");

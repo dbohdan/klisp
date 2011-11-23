@@ -206,6 +206,9 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 		    result = false;
 		    break;
 		}
+            } else if (ttisvector(obj1) && ttisvector(obj2)) {
+                fprintf(stderr, "TODO: equal? for vectors not implemented!\n");
+                result = false;
 	    } else {
 		result = false;
 		break;

@@ -36,6 +36,7 @@
 #include "kport.h"
 #include "ktable.h"
 #include "kbytevector.h"
+#include "kvector.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
 #include "kgerror.h" /* for creating error hierarchy */
@@ -157,6 +158,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* XXX: find a better way to do this */
     K->empty_bytevector = KNIL; /* trick constructor to create empty bytevector */
     K->empty_bytevector = kbytevector_new_bs_imm(K, NULL, 0);
+
+    /* Empty vector */
+    /* MAYBE: see above */
+    K->empty_vector = kvector_new_bs_g(K, false, NULL, 0);
 
     /* initialize tokenizer */
 
