@@ -209,7 +209,7 @@
 	  10))
 
 
-#;($check equal?
+($check equal?
 	(map ($lambda (x)
 	       (- 0 x))
 	     (list 1 . #0=(2 3 4 . #0#)))

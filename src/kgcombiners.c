@@ -500,7 +500,6 @@ void do_map(klisp_State *K)
     TValue last_pair = xparams[2];
     int32_t n = ivalue(xparams[3]);
     TValue denv = xparams[4];
-    /* XXX */    klisp_assert(ttisenvironment(denv));
     bool dummyp = bvalue(xparams[5]);
 
     /* this case is used to kick start the mapping of both
@@ -525,7 +524,6 @@ void do_map(klisp_State *K)
 	/* have to unwrap the applicative to avoid extra evaluation of first */
 	TValue new_expr = kcons(K, kunwrap(app), first_ptree);
 	krooted_tvs_push(K, new_expr);
-	/* XXX */ klisp_assert(ttisenvironment(denv));
 	TValue new_cont = 
 	    kmake_continuation(K, kget_cc(K), do_map, 6, app, 
 			       ls, last_pair, i2tv(n), denv, KFALSE);
@@ -552,7 +550,6 @@ void do_map_cycle(klisp_State *K)
     TValue dummy = xparams[1];
     int32_t cpairs = ivalue(xparams[2]);
     TValue denv = xparams[3];
-    /* XXX */ klisp_assert(ttisenvironment(denv));
 
     /* obj: (cycle-part . last-result-pair) */
     TValue ls = kcar(obj);
@@ -567,10 +564,11 @@ void do_map_cycle(klisp_State *K)
     /* schedule the mapping of the elements of the cycle, 
        signal dummyp = true to avoid creating a pair for
        the inert value passed to the first continuation */
-    /* XXX */ klisp_assert(ttisenvironment(denv));
     TValue new_cont = 
 	kmake_continuation(K, encycle_cont, do_map, 6, app, ls, 
-			   last_apair, cpairs, denv, KTRUE);
+			   last_apair, i2tv(cpairs), denv, KTRUE);
+    klisp_assert(ttisenvironment(denv));
+
     krooted_tvs_pop(K); 
     kset_cc(K, new_cont);
     /* this will be like a nop and will continue with do_map */
@@ -623,13 +621,11 @@ void map(klisp_State *K)
 	: kmake_continuation(K, kget_cc(K), do_map_cycle, 4, 
 			     app, dummy, i2tv(res_cpairs), denv);
 
-
     krooted_tvs_push(K, ret_cont);
 
     /* schedule the mapping of the elements of the acyclic part.
        signal dummyp = true to avoid creating a pair for
        the inert value passed to the first continuation */
-    /* XXX */ klisp_assert(ttisenvironment(denv));
     TValue new_cont = 
 	kmake_continuation(K, ret_cont, do_map, 6, app, lss, dummy,
 			   i2tv(res_apairs), denv, KTRUE);
@@ -639,6 +635,7 @@ void map(klisp_State *K)
     krooted_tvs_pop(K); 
 
     kset_cc(K, new_cont);
+
     /* this will be a nop, and will continue with do_map */
     kapply_cc(K, KINERT);
 }
