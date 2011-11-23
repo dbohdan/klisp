@@ -86,7 +86,14 @@
 ($check-predicate (mutable-vector? (list->vector (list "a" "b"))))
 
 ;; (R7RS 3rd draft, section 6.3.6) vector-copy
-;; TODO: implement equal? for vectors first
+($check equal? (vector-copy (vector 1 2 3)) (vector 1 2 3))
+($check equal? (vector-copy (vector (vector 1 2 3) (vector 4 5 6)))
+	(vector (vector 1 2 3) (vector 4 5 6)))
+($check-predicate (mutable-vector? (vector-copy (vector 1 2 3))))
+
+($check-predicate
+  (mutable-vector?
+    (vector-copy (vector->immutable-vector (vector 1 2 3)))))
 
 ;; XXX vector->immutable-vector
 

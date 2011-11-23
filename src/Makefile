@@ -170,9 +170,10 @@ kgeqp.o: kgeqp.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kapplicative.h koperative.h kenvironment.h ksymbol.h kstring.h kgeqp.h \
  kinteger.h imath.h krational.h imrat.h
 kgequalp.o: kgequalp.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
- ktoken.h kmem.h kpair.h kgc.h kstring.h kbytevector.h kcontinuation.h \
- kerror.h kghelpers.h kapplicative.h koperative.h kenvironment.h \
- ksymbol.h kgeqp.h kinteger.h imath.h krational.h imrat.h kgequalp.h
+ ktoken.h kmem.h kpair.h kvector.h kgc.h kstring.h kbytevector.h \
+ kcontinuation.h kerror.h kghelpers.h kapplicative.h koperative.h \
+ kenvironment.h ksymbol.h kgeqp.h kinteger.h imath.h krational.h imrat.h \
+ kgequalp.h
 kgerror.o: kgerror.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kstring.h kpair.h kgc.h kerror.h kghelpers.h \
  kapplicative.h koperative.h kcontinuation.h kenvironment.h ksymbol.h \

@@ -47,8 +47,8 @@ void make_vector(klisp_State *K)
         klispE_throw_simple(K, "vector length is too big");
         return;
     }
-    TValue new_vector = (ivalue(tv_s) == 0)
-        ? K->empty_vector
+    TValue new_vector = (ivalue(tv_s) == 0)?
+	K->empty_vector
         : kvector_new_sf(K, ivalue(tv_s), fill);
     kapply_cc(K, new_vector);
 }
@@ -101,15 +101,15 @@ void vector_setS(klisp_State *K)
         klispE_throw_simple_with_irritants(K, "vector index out of bounds",
                                            1, tv_i);
         return;
-    } else if (kvector_immutablep(vector)) {
-        klispE_throw_simple(K, "immutable vector");
-        return;
     }
 
     int32_t i = ivalue(tv_i);
     if (i < 0 || i >= kvector_length(vector)) {
         klispE_throw_simple_with_irritants(K, "vector index out of bounds",
                                            1, tv_i);
+        return;
+    } else if (kvector_immutablep(vector)) {
+        klispE_throw_simple(K, "immutable vector");
         return;
     }
 
@@ -155,7 +155,8 @@ void vector(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
 
     TValue ptree = K->next_value;
-    kapply_cc(K, list_to_vector_h(K, "vector", ptree));
+    TValue res = list_to_vector_h(K, "vector", ptree);
+    kapply_cc(K, res);
 }
 
 /* (R7RS 3rd draft 6.3.6) list->vector */
@@ -165,7 +166,8 @@ void list_to_vector(klisp_State *K)
 
     TValue ptree = K->next_value;
     bind_1p(K, ptree, ls);
-    kapply_cc(K, list_to_vector_h(K, "list->vector", ls));
+    TValue res = list_to_vector_h(K, "list->vector", ls);
+    kapply_cc(K, res);
 }
 
 /* (R7RS 3rd draft 6.3.6) vector->list */

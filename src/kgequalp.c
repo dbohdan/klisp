@@ -13,6 +13,7 @@
 #include "kstate.h"
 #include "kobject.h"
 #include "kpair.h"
+#include "kvector.h" 
 #include "kstring.h" /* for kstring_equalp */
 #include "kbytevector.h" /* for kbytevector_equalp */
 #include "kcontinuation.h"
@@ -121,7 +122,7 @@ inline TValue equal_find(klisp_State *K, TValue obj)
 inline void equal_merge(klisp_State *K, TValue root1, TValue root2)
 {
     /* K isn't needed but added for consistency */
-    (void)K;
+    UNUSED(K);
     int32_t size1 = ivalue(kcdr(root1));
     int32_t size2 = ivalue(kcdr(root2));
     TValue new_size = i2tv(size1 + size2);
@@ -185,37 +186,65 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
     while(!ks_sisempty(K)) {
 	obj2 = ks_spop(K);
 	obj1 = ks_spop(K);
-/* REFACTOR these ifs: compare both types first, then switch on type */
+
 	if (!eq2p(K, obj1, obj2)) {
-	    if (ttispair(obj1) && ttispair(obj2)) {
-		/* if they were already compaired, consider equal for now 
-		   otherwise they are equal if both their cars and cdrs are */
-		if (!equal_find2_mergep(K, obj1, obj2)) {
-		    ks_spush(K, kcdr(obj1));
-		    ks_spush(K, kcdr(obj2));
-		    ks_spush(K, kcar(obj1));
-		    ks_spush(K, kcar(obj2));
-		}
-	    } else if (ttisstring(obj1) && ttisstring(obj2)) {
-		if (!kstring_equalp(obj1, obj2)) {
-		    result = false;
+	    /* This type comparison works because we just care about
+	       pairs, vectors, strings & bytevectors */
+	    if (ttype(obj1) == ttype(obj2)) {
+		switch(ttype(obj1)) {
+		case K_TPAIR:
+		    /* if they were already compaired, consider equal for 
+		       now otherwise they are equal if both their cars 
+		       and cdrs are */
+		    if (!equal_find2_mergep(K, obj1, obj2)) {
+			ks_spush(K, kcdr(obj1));
+			ks_spush(K, kcdr(obj2));
+			ks_spush(K, kcar(obj1));
+			ks_spush(K, kcar(obj2));
+		    }
 		    break;
-		}
-	    } else if (ttisbytevector(obj1) && ttisbytevector(obj2)) {
-		if (!kbytevector_equalp(obj1, obj2)) {
-		    result = false;
+		case K_TVECTOR:
+		    if (kvector_length(obj1) == kvector_length(obj2)) {
+			/* if they were already compaired, consider equal for 
+			   now otherwise they are equal if all their elements
+			   are equal pairwise */
+			if (!equal_find2_mergep(K, obj1, obj2)) {
+			    uint32_t i = kvector_length(obj1);
+			    TValue *array1 = kvector_array(obj1);
+			    TValue *array2 = kvector_array(obj1);
+			    while(i-- > 0) {
+				ks_spush(K, array1[i]);
+				ks_spush(K, array2[i]);
+			    }
+			}
+		    } else {
+			result = false;
+			goto end;
+		    }
 		    break;
+		case K_TSTRING:
+		    if (!kstring_equalp(obj1, obj2)) {
+			result = false;
+			goto end;
+		    }
+		    break;
+		case K_TBYTEVECTOR:
+		    if (!kbytevector_equalp(obj1, obj2)) {
+			result = false;
+			goto end;
+		    }
+		    break;
+		default:
+		    result = false;
+		    goto end;
 		}
-            } else if (ttisvector(obj1) && ttisvector(obj2)) {
-                fprintf(stderr, "TODO: equal? for vectors not implemented!\n");
-                result = false;
 	    } else {
 		result = false;
-		break;
+		goto end;
 	    }
 	}
     }
-
+end:
     /* if result is false, the stack may not be empty */
     ks_sclear(K);
 
