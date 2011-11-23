@@ -868,7 +868,18 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
     TValue exit_guard = ffi_callback_guard(cb, do_ffi_callback_exit_guard);
     krooted_tvs_push(K, exit_guard);
 
+    /* TEMP: Construct dummy dynamic environment
+     * for guard_dynamic_extent. Currently, guard_dynamic_extent()
+     * stores the environment in the interceptor list. The reason
+     * is not clear, because guard_dynamic_extent() and all
+     * interceptors() are applicatives.
+     *
+     * TODO: investigate and fix */
+    TValue denv = kmake_empty_environment(K);
+    krooted_tvs_push(K, denv);
+
     TValue ptree = kimm_list(K, 3, entry_guard, app, exit_guard);
+    krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -876,7 +887,8 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
 
     K->next_xparams = NULL;
     K->next_value = ptree;
-    /* K->next_env already has the correct value */
+    K->next_env = denv;
+
     guard_dynamic_extent(K);
 
     /* Enter new "inner" trampoline loop. */
