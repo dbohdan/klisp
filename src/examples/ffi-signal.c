@@ -58,7 +58,7 @@ static void open_signal_port(klisp_State *K, TValue *xparams,
     FILE *fw = fdopen(self_pipe[0], "r");
     TValue filename = kstring_new_b_imm(K, "**SIGNAL**");
     krooted_tvs_push(K, filename);
-    TValue port = kmake_std_port(K, filename, false, fw);
+    TValue port = kmake_std_fport(K, filename, false, true, fw);
     krooted_tvs_pop(K);
     kapply_cc(K, port);
 }

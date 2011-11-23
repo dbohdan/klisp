@@ -13,6 +13,8 @@
 #include "kstate.h"
 #include "kmem.h"
 #include "kgc.h"
+/* for immutable table */
+#include "kstring.h" 
 
 /* NOTE: symbols can have source info, they should be compared with
    tv_sym_equal, NOT tv_equal */
@@ -39,12 +41,13 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
 	for (o = K->strt.hash[lmod(h, K->strt.size)];
 	     o != NULL; o = o->gch.next) {
 	    String *ts = NULL;
-	    if (o->gch.tt == K_TSTRING) {
+	    if (o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR) {
 		continue; 
 	    } else if (o->gch.tt == K_TSYMBOL) {
 		ts = tv2str(((Symbol *) o)->str);
 	    } else {
-		klisp_assert(0); /* only symbols and immutable strings */
+		/* only symbols, immutable bytevectors and immutable strings */
+		klisp_assert(0);
 	    }
 	    if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
 		/* symbol may be dead */

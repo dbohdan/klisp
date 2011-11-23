@@ -29,16 +29,23 @@
 /* 13.1.1? string? */
 /* uses typep */
 
+/* 13.1.? immutable-string?, mutable-string? */
+/* use ftypep */
+
 /* 13.1.2? make-string */
-void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void make_string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, 
 	       maybe_char);
 
     char fill = ' ';
-    if (get_opt_tpar(K, "make-string", K_TCHAR, &maybe_char))
+    if (get_opt_tpar(K, maybe_char, "char", ttischar))
 	fill = chvalue(maybe_char);
 
     if (knegativep(tv_s)) {
@@ -54,9 +61,12 @@ void make_string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.1.3? string-length */
-void string_length(klisp_State *K, TValue *xparams, TValue ptree, 
-		     TValue denv)
+void string_length(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
@@ -66,8 +76,12 @@ void string_length(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 13.1.4? string-ref */
-void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_ref(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "string", ttisstring, str,
@@ -91,8 +105,12 @@ void string_ref(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.1.5? string-set! */
-void string_setS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_setS(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
@@ -145,8 +163,12 @@ inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
 }
 
 /* 13.2.1? string */
-void string(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -239,9 +261,15 @@ bool kstring_ci_gep(TValue str1, TValue str2)
 }
 
 /* 13.2.5? substring */
-/* Note: This will return an mutable string iff the source string is mutable */
-void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+/* TEMP: at least for now this always returns mutable strings (like in Racket and
+   following the Kernel Report where it says that object returned should be mutable 
+   unless stated) */
+void substring(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
@@ -276,10 +304,9 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     /* the if isn't strictly necessary but it's clearer this way */
     if (size == 0) {
 	new_str = K->empty_string;
-    } else if (kstring_mutablep(str)) {
-	new_str = kstring_new_bs(K, kstring_buf(str)+start, size);
     } else {
-	new_str = kstring_new_bs_imm(K, kstring_buf(str)+start, size);
+	/* always returns mutable strings */
+	new_str = kstring_new_bs(K, kstring_buf(str)+start, size);
     }
     kapply_cc(K, new_str);
 }
@@ -287,9 +314,12 @@ void substring(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 13.2.6? string-append */
 /* TEMP: at least for now this always returns mutable strings */
 /* TEMP: this does 3 passes over the list */
-void string_append(klisp_State *K, TValue *xparams, TValue ptree, 
-		   TValue denv)
+void string_append(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     int32_t dummy;
@@ -336,9 +366,12 @@ void string_append(klisp_State *K, TValue *xparams, TValue ptree,
 
 
 /* 13.2.7? string->list, list->string */
-void string_to_list(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void string_to_list(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -357,9 +390,12 @@ void string_to_list(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, kcutoff_dummy1(K));
 }
 
-void list_to_string(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void list_to_string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     
@@ -372,8 +408,12 @@ void list_to_string(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* 13.2.8? string-copy */
 /* TEMP: at least for now this always returns mutable strings */
-void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_copy(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
@@ -389,9 +429,12 @@ void string_copy(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 13.2.9? string->immutable-string */
-void string_to_immutable_string(klisp_State *K, TValue *xparams, 
-				TValue ptree, TValue denv)
+void string_to_immutable_string(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
@@ -406,8 +449,12 @@ void string_to_immutable_string(klisp_State *K, TValue *xparams,
 }
 
 /* 13.2.10? string-fill! */
-void string_fillS(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void string_fillS(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "string", ttisstring, str,
@@ -438,6 +485,11 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.1.1? string? */
     add_applicative(K, ground_env, "string?", typep, 2, symbol, 
 		    i2tv(K_TSTRING));
+    /* 13.? immutable-string?, mutable-string? */
+    add_applicative(K, ground_env, "immutable-string?", ftypep, 2, symbol, 
+		    p2tv(kimmutable_stringp));
+    add_applicative(K, ground_env, "mutable-string?", ftypep, 2, symbol, 
+		    p2tv(kmutable_stringp));
     /* 13.1.2? make-string */
     add_applicative(K, ground_env, "make-string", make_string, 0);
     /* 13.1.3? string-length */
@@ -484,7 +536,6 @@ void kinit_strings_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "string->immutable-string", 
 		    string_to_immutable_string, 0);
 
-    /* TODO: add string-immutable? or general immutable? */
     /* TODO: add string-upcase and string-downcase like in r7rs-draft */
 
     /* 13.2.10? string-fill! */

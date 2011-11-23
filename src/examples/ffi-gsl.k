@@ -24,7 +24,7 @@
       (cif (ffi-make-call-interface abi "double" (list "double" "pointer"))) )
   ($lambda (f)
     ($let
-      ( (gslf (make-blob (* 2 pointer-size)) )
+      ( (gslf (make-bytevector (* 2 pointer-size)) )
         (aux ($lambda (x params) (f x))))
       (set! (list gslf 0) (ffi-make-callback aux cif))
       gslf))))
@@ -39,8 +39,8 @@
         ((gslf (make-gsl-function f)))
         ($lambda (x h)
           ($let
-            ( (result (make-blob double-size))
-              (abserr (make-blob double-size)))
+            ( (result (make-bytevector double-size))
+              (abserr (make-bytevector double-size)))
            (gsl_deriv_central gslf x h result abserr)
            (list (ref result) (ref abserr))))))))
 

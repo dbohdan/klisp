@@ -13,7 +13,7 @@
 #include "kgc.h"
 
 /* GC: Assumes all argps are rooted */
-TValue kmake_operative(klisp_State *K, klisp_Ofunc fn, int32_t xcount, ...)
+TValue kmake_operative(klisp_State *K, klisp_CFunction fn, int32_t xcount, ...)
 {
     va_list argp;
 

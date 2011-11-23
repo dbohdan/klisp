@@ -23,13 +23,11 @@
 
 /* 4.2.1 eq? */
 /* 6.5.1 eq? */
-void eqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void eqp(klisp_State *K);
 
 /* Helper (also used in equal?) */
 inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 {
-    /* TODO/FIXME: immutable blobs aren't interned and so will compare
-       as un-eq? even if the contents are the same */
     bool res = (tv_equal(obj1, obj2));
     if (!res && (ttype(obj1) == ttype(obj2))) {
 	switch (ttype(obj1)) {
@@ -56,7 +54,9 @@ inline bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 	       (eq? obj1 obj2) */
 	    res = kbigrat_eqp(K, obj1, obj2);
 	    break;
-	} /* immutable strings are interned so are covered already */
+	} /* immutable strings & bytevectors are interned so they are 
+	     covered already by tv_equalp */
+
     }
     return res;
 }

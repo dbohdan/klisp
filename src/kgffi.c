@@ -36,7 +36,7 @@
 #include "kinteger.h"
 #include "kpair.h"
 #include "kerror.h"
-#include "kblob.h"
+#include "kbytevector.h"
 #include "kencapsulation.h"
 #include "ktable.h"
 
@@ -123,8 +123,8 @@ static TValue ffi_decode_pointer(ffi_codec_t *self, klisp_State *K, const void *
 
 static void ffi_encode_pointer(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
 {
-    if (ttisblob(v)) {
-        *(void **)buf = tv2blob(v)->b;
+    if (ttisbytevector(v)) {
+        *(void **)buf = tv2bytevector(v)->b;
     } else if (ttisstring(v)) {
         *(void **)buf = kstring_buf(v);
     } else if (ttisnil(v)) {
@@ -133,7 +133,7 @@ static void ffi_encode_pointer(ffi_codec_t *self, klisp_State *K, TValue v, void
        /* TODO: do not use internal macro tbasetype_ */
         *(void **)buf = pvalue(v);
     } else {
-        klispE_throw_simple_with_irritants(K, "neither blob, string, pointer or nil", 1, v);
+        klispE_throw_simple_with_irritants(K, "neither bytevector, string, pointer or nil", 1, v);
     }
 }
 
@@ -260,6 +260,23 @@ static void ffi_encode_uint32(ffi_codec_t *self, klisp_State *K, TValue v, void 
     }
 }
 
+static TValue ffi_decode_sint32(ffi_codec_t *self, klisp_State *K, const void *buf)
+{
+    UNUSED(self);
+    return i2tv(*(int32_t *)buf);
+}
+
+static void ffi_encode_sint32(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
+{
+    UNUSED(self);
+    if (ttisfixint(v)) {
+        *(int32_t *) buf = ivalue(v);
+    } else {
+        klispE_throw_simple_with_irritants(K, "unable to convert to C int32_t", 1, v);
+        return;
+    }
+}
+
 static TValue ffi_decode_uint64(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
     /* TODO */
@@ -352,6 +369,7 @@ static ffi_codec_t ffi_codecs[] = {
     SIMPLE_TYPE(uint16),
     SIMPLE_TYPE(sint16),
     SIMPLE_TYPE(uint32),
+    SIMPLE_TYPE(sint32),
     SIMPLE_TYPE(uint64),
     SIMPLE_TYPE(float),
     SIMPLE_TYPE(double)
@@ -376,9 +394,12 @@ static TValue ffi_win32_error_message(klisp_State *K, DWORD dwMessageId)
 }
 #endif
 
-void ffi_load_library(klisp_State *K, TValue *xparams,
-                      TValue ptree, TValue denv)
+void ffi_load_library(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: encapsulation key denoting loaded library
@@ -386,8 +407,8 @@ void ffi_load_library(klisp_State *K, TValue *xparams,
 
     TValue filename = ptree;
     const char *filename_c =
-       get_opt_tpar(K, "ffi-load-library", K_TSTRING, &filename)
-           ? kstring_buf(filename) : NULL;
+	get_opt_tpar(K, filename, "string", ttisstring)
+	? kstring_buf(filename) : NULL;
 
 #if KGFFI_DLFCN
     void *handle = dlopen(filename_c, RTLD_LAZY | RTLD_GLOBAL);
@@ -460,9 +481,12 @@ inline size_t align(size_t offset, size_t alignment)
     return offset + (alignment - offset % alignment) % alignment;
 }
 
-void ffi_make_call_interface(klisp_State *K, TValue *xparams,
-                             TValue ptree, TValue denv)
+void ffi_make_call_interface(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: encapsulation key denoting call interface
@@ -478,30 +502,24 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
     size_t nargs = check_typed_list(K, "ffi-make-call-interface", "argtype string",
                                     kstringp, false, argtypes_tv, NULL);
 
-    krooted_tvs_push(K, abi_tv);
-    krooted_tvs_push(K, rtype_tv);
-    krooted_tvs_push(K, argtypes_tv);
-    TValue key = xparams[0];
-    krooted_tvs_push(K, key);
-    size_t blob_size = sizeof(ffi_call_interface_t) + (sizeof(ffi_codec_t *) + sizeof(ffi_type)) * nargs;
-    TValue blob = kblob_new_imm(K, blob_size);
-    krooted_tvs_push(K, blob);
-    TValue enc = kmake_encapsulation(K, key, blob);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
+    /* Allocate C structure ffi_call_interface_t inside
+     a mutable bytevector. The structure contains C pointers
+     into itself. It must never be reallocated or copied.
+     The bytevector will be encapsulated later to protect
+     it from lisp code. */
 
-    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2blob(blob)->b;
+    size_t bytevector_size = sizeof(ffi_call_interface_t) + (sizeof(ffi_codec_t *) + sizeof(ffi_type)) * nargs;
+    TValue bytevector = kbytevector_new_sf(K, bytevector_size, 0);
+    krooted_tvs_push(K, bytevector);
+
+    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2bytevector(bytevector)->b;
     p->acodecs = (ffi_codec_t **) ((char *) p + sizeof(ffi_call_interface_t));
     p->argtypes = (ffi_type **) ((char *) p + sizeof(ffi_call_interface_t) + nargs * sizeof(ffi_codec_t *));
-
     p->nargs = nargs;
     p->rcodec = tv2ffi_codec(K, rtype_tv);
     if (p->rcodec->decode == NULL) {
-      klispE_throw_simple(K, "this type is not allowed as a return type");
-      return;
+        klispE_throw_simple_with_irritants(K, "this type is not allowed as a return type", 1, rtype_tv);
+        return;
     }
 
     p->buffer_size = p->rcodec->libffi_type->size;
@@ -509,7 +527,7 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
     for (int i = 0; i < nargs; i++) {
         p->acodecs[i] = tv2ffi_codec(K, kcar(tail));
         if (p->acodecs[i]->encode == NULL) {
-            klispE_throw_simple(K, "this type is not allowed in argument list");
+            klispE_throw_simple_with_irritants(K, "this type is not allowed in argument list", 1, kcar(tail));
             return;
         }
         ffi_type *t = p->acodecs[i]->libffi_type;
@@ -533,19 +551,27 @@ void ffi_make_call_interface(klisp_State *K, TValue *xparams,
             klispE_throw_simple(K, "unknown error in ffi_prep_cif");
             return;
     }
+
+    TValue key = xparams[0];
+    TValue enc = kmake_encapsulation(K, key, bytevector);
+    krooted_tvs_pop(K);
     kapply_cc(K, enc);
 }
 
-void do_ffi_call(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void do_ffi_call(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: function pointer
-    ** xparams[1]: call interface (encapsulated blob)
+    ** xparams[1]: call interface (encapsulated bytevector)
     */
 
     void *funptr = pvalue(xparams[0]);
-    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2blob(kget_enc_val(xparams[1]))->b;
+    ffi_call_interface_t *p = (ffi_call_interface_t *) tv2bytevector(kget_enc_val(xparams[1]))->b;
 
 
     int64_t buffer[(p->buffer_size + sizeof(int64_t) - 1) / sizeof(int64_t)];
@@ -580,9 +606,12 @@ void do_ffi_call(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, result);
 }
 
-void ffi_make_applicative(klisp_State *K, TValue *xparams,
-                          TValue ptree, TValue denv)
+void ffi_make_applicative(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: encapsulation key denoting dynamically loaded library
@@ -671,7 +700,7 @@ static TValue ffi_callback_pop(ffi_callback_t *cb)
     return v;
 }
 
-static TValue ffi_callback_guard(ffi_callback_t *cb, klisp_Ofunc fn)
+static TValue ffi_callback_guard(ffi_callback_t *cb, klisp_CFunction fn)
 {
     TValue app = kmake_applicative(cb->K, fn, 1, p2tv(cb));
     krooted_tvs_push(cb->K, app);
@@ -683,22 +712,27 @@ static TValue ffi_callback_guard(ffi_callback_t *cb, klisp_Ofunc fn)
     return ls2;
 }
 
-void do_ffi_callback_encode_result(klisp_State *K, TValue *xparams,
-                                   TValue obj)
+void do_ffi_callback_encode_result(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: cif
     ** xparams[1]: p2tv(libffi return buffer)
     */
-    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(xparams[0]));
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kbytevector_buf(kget_enc_val(xparams[0]));
     void *ret = pvalue(xparams[1]);
     p->rcodec->encode(p->rcodec, K, obj, ret);
     kapply_cc(K, KINERT);
 }
 
-void do_ffi_callback_decode_arguments(klisp_State *K, TValue *xparams,
-                                      TValue ptree, TValue denv)
+void do_ffi_callback_decode_arguments(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: p2tv(ffi_callback_t)
     ** xparams[1]: p2tv(libffi return buffer)
@@ -719,7 +753,7 @@ void do_ffi_callback_decode_arguments(klisp_State *K, TValue *xparams,
     assert(ttisencapsulation(cif_tv));
     krooted_tvs_push(K, app_tv);
     krooted_tvs_push(K, cif_tv);
-    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(cif_tv));
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kbytevector_buf(kget_enc_val(cif_tv));
 
     /* Decode arguments. */
 
@@ -748,8 +782,11 @@ void do_ffi_callback_decode_arguments(klisp_State *K, TValue *xparams,
     ktail_call(K, app_tv, tail, denv);
 }
 
-void do_ffi_callback_return(klisp_State *K, TValue *xparams, TValue obj)
+void do_ffi_callback_return(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     UNUSED(obj);
     /*
     ** xparams[0]: p2tv(ffi_callback_t)
@@ -762,11 +799,15 @@ void do_ffi_callback_return(klisp_State *K, TValue *xparams, TValue obj)
     K->next_func = NULL;
 }
 
-void do_ffi_callback_entry_guard(klisp_State *K, TValue *xparams,
-                                 TValue ptree, TValue denv)
+void do_ffi_callback_entry_guard(klisp_State *K)
 {
-    UNUSED(denv);
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
+    UNUSED(ptree);
+    UNUSED(denv);
     /* The entry guard is invoked only if the user captured
      * the continuation under foreign callback and applied
      * it later after the foreign callback terminated.
@@ -778,9 +819,13 @@ void do_ffi_callback_entry_guard(klisp_State *K, TValue *xparams,
     klispE_throw_simple(K, "tried to re-enter continuation under FFI callback");
 }
 
-void do_ffi_callback_exit_guard(klisp_State *K, TValue *xparams,
-                                TValue ptree, TValue denv)
+void do_ffi_callback_exit_guard(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(ptree);
     UNUSED(denv);
     /*
     ** xparams[0]: p2tv(ffi_callback_t)
@@ -829,7 +874,10 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
 
-    guard_dynamic_extent(K, NULL, ptree, K->next_env);
+    K->next_xparams = NULL;
+    K->next_value = ptree;
+    /* K->next_env already has the correct value */
+    guard_dynamic_extent(K);
 
     /* Enter new "inner" trampoline loop. */
 
@@ -862,9 +910,12 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
 }
 
 
-void ffi_make_callback(klisp_State *K, TValue *xparams,
-                       TValue ptree, TValue denv)
+void ffi_make_callback(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: encapsulation key denoting call interface
@@ -878,7 +929,7 @@ void ffi_make_callback(klisp_State *K, TValue *xparams,
         klispE_throw_simple(K, "second argument shall be call interface");
         return;
     }
-    ffi_call_interface_t *p = (ffi_call_interface_t *) kblob_buf(kget_enc_val(cif_tv));
+    ffi_call_interface_t *p = (ffi_call_interface_t *) kbytevector_buf(kget_enc_val(cif_tv));
     TValue cb_tab = xparams[1];
 
     /* Allocate memory for libffi closure. */
@@ -936,15 +987,15 @@ void ffi_make_callback(klisp_State *K, TValue *xparams,
 static uint8_t * ffi_memory_location(klisp_State *K, bool allow_nesting,
                                      TValue v, bool mutable, size_t size)
 {
-    if (ttisblob(v)) {
-        if (mutable && kblob_immutablep(v)) {
-            klispE_throw_simple_with_irritants(K, "blob not mutable", 1, v);
+    if (ttisbytevector(v)) {
+        if (mutable && kbytevector_immutablep(v)) {
+            klispE_throw_simple_with_irritants(K, "bytevector not mutable", 1, v);
             return NULL;
-        } else if (size > kblob_size(v)) {
-            klispE_throw_simple_with_irritants(K, "blob too small", 1, v);
+        } else if (size > kbytevector_size(v)) {
+            klispE_throw_simple_with_irritants(K, "bytevector too small", 1, v);
             return NULL;
         } else {
-            return kblob_buf(v);
+            return kbytevector_buf(v);
         }
     } else if (ttisstring(v)) {
         if (mutable && kstring_immutablep(v)) {
@@ -980,9 +1031,12 @@ static uint8_t * ffi_memory_location(klisp_State *K, bool allow_nesting,
     }
 }
 
-void ffi_memmove(klisp_State *K, TValue *xparams,
-                TValue ptree, TValue denv)
+void ffi_memmove(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -1002,10 +1056,14 @@ void ffi_memmove(klisp_State *K, TValue *xparams,
     kapply_cc(K, KINERT);
 }
 
-static void ffi_type_ref(klisp_State *K, TValue *xparams,
-                         TValue ptree, TValue denv)
+static void ffi_type_ref(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
+
     /*
     ** xparams[0]: pointer to ffi_codec_t
     */
@@ -1022,10 +1080,14 @@ static void ffi_type_ref(klisp_State *K, TValue *xparams,
     kapply_cc(K, result);
 }
 
-static void ffi_type_set(klisp_State *K, TValue *xparams,
-                         TValue ptree, TValue denv)
+static void ffi_type_set(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
+
     /*
     ** xparams[0]: pointer to ffi_codec_t
     */
@@ -1044,9 +1106,16 @@ static void ffi_type_set(klisp_State *K, TValue *xparams,
     kapply_cc(K, KINERT);
 }
 
-void ffi_type_suite(klisp_State *K, TValue *xparams,
-                    TValue ptree, TValue denv)
+void ffi_type_suite(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+
     bind_1tp(K, ptree, "string", ttisstring, type_tv);
     ffi_codec_t *codec = tv2ffi_codec(K, type_tv);
 
@@ -1078,9 +1147,12 @@ void ffi_type_suite(klisp_State *K, TValue *xparams,
     kapply_cc(K, suite_tv);
 }
 
-void ffi_klisp_state(klisp_State *K, TValue *xparams,
-                     TValue ptree, TValue denv)
+void ffi_klisp_state(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     check_0p(K, ptree);

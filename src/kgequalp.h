@@ -20,7 +20,7 @@
 
 /* 4.3.1 equal? */
 /* 6.6.1 equal? */
-void equalp(klisp_State *K, TValue *xparas, TValue ptree, TValue denv);
+void equalp(klisp_State *K);
 
 /* Helper (may be used in assoc and member) */
 /* compare two objects and check to see if they are "equal?". */

@@ -21,6 +21,12 @@
 #include "ktoken.h"
 #include "kmem.h"
 
+/*
+** prototype for underlying c functions of continuations &
+** operatives
+*/
+typedef void (*klisp_CFunction) (klisp_State *K);
+
 /* XXX: for now, lines and column names are fixints */
 /* MAYBE: this should be in tokenizer */
 typedef struct {
@@ -51,13 +57,13 @@ struct klisp_State {
     TValue curr_cont;
 
     /*
-    ** If next_env is NIL, then the next_func is of type klisp_Cfunc
-    ** (from a continuation) and otherwise next_func is of type
-    ** klisp_Ofunc (from an operative)
+    ** If next_env is NIL, then the next_func from a continuation
+    ** and otherwise next_func is from an operative
     */
     TValue next_obj; /* this is the operative or continuation to call
 			must be here to protect it from gc */
-    void *next_func; /* the next function to call (operative or cont) */
+    klisp_CFunction next_func; /* the next function to call 
+				  (operative or continuation) */
     TValue next_value;     /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
     TValue *next_xparams; 
@@ -99,10 +105,8 @@ struct klisp_State {
     /* TEMP: error handling */
     jmp_buf error_jb;
 
-     /* input and output files in use (for read & write) */
+     /* input/output port in use (for read & write) */
     TValue curr_port; /* save the port to update source info on errors */
-    FILE *curr_in;
-    FILE *curr_out;
 
     /* for current-input-port, current-output-port, current-error-port */
     TValue kd_in_port_key;
@@ -115,14 +119,19 @@ struct klisp_State {
     /* Strings */
     TValue empty_string;
 
-    /* Blobs */
-    TValue empty_blob;
+    /* Bytevectors */
+    TValue empty_bytevector;
+
+    /* Vectors */
+    TValue empty_vector;
+
     
     /* tokenizer */
     /* special tokens, see ktoken.c for rationale */
     TValue ktok_lparen;
     TValue ktok_rparen;
     TValue ktok_dot;
+    TValue ktok_sexp_comment;
 
     /* WORKAROUND for repl */
     bool ktok_seen_eof;
@@ -131,6 +140,8 @@ struct klisp_State {
     int32_t ktok_buffer_size;
     int32_t ktok_buffer_idx;
     char *ktok_buffer;
+
+    int32_t ktok_nested_comments;
 
     /* reader */
     /* TODO: replace the list with a hashtable */
@@ -141,6 +152,7 @@ struct klisp_State {
     bool write_displayp;
 
     /* script */
+    /* REFACTOR rename to exit_code */
     int script_exit_code;
 
     /* auxiliary stack */
@@ -346,14 +358,6 @@ inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
 /* dummy functions will be in kpair.h, because we can't include
    it from here */
 
-/*
-** prototypes for underlying c functions of continuations &
-** operatives
-*/
-typedef void (*klisp_Cfunc) (klisp_State*K, TValue *ud, TValue val);
-typedef void (*klisp_Ofunc) (klisp_State *K, TValue *ud, TValue ptree, 
-			     TValue env);
-
 /* XXX: this is ugly but we can't include kpair.h here so... */
 /* MAYBE: move car & cdr to kobject.h */
 #define kstate_car(p_) (tv2pair(p_)->car)
@@ -466,6 +470,7 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
     K->next_func = op->fn;
     K->next_value = ptree;
     /* NOTE: this is what differentiates a tail call from a return */
+    klisp_assert(ttisenvironment(env));
     K->next_env = env;
     K->next_xparams = op->extra;
     K->next_si = si;
@@ -488,13 +493,17 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 	return; }
 
 /* helper for continuation->applicative & kcall_cont */
-void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void cont_app(klisp_State *K);
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
 void klispS_init_repl(klisp_State *K);
 void klispS_run(klisp_State *K);
 void klisp_close (klisp_State *K);
 
-void do_interception(klisp_State *K, TValue *xparams, TValue obj);
+void do_interception(klisp_State *K);
+
+/* for root and error continuations */
+void do_root_exit(klisp_State *K);
+void do_error_exit(klisp_State *K);
 
 /* simple accessors for dynamic keys */
 

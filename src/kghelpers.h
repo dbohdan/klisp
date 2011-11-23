@@ -34,6 +34,10 @@
 */
 
 /* XXX: add parens around macro vars!! */
+/* TODO try to rewrite all of these with just check_0p and check_al1p,
+   (the same with check_0tp and check_al1tp)
+   add a number param and use an array of strings for msgs */
+
 #define check_0p(K_, ptree_) \
     if (!ttisnil(ptree_)) { \
 	klispE_throw_simple((K_), \
@@ -195,31 +199,26 @@
 
 /* returns true if the obj pointed by par is a list of one element of 
    type type, and puts that element in par
-   returns false if *par is nil
+   returns false if par is nil
    In any other case it throws an error */
-inline bool get_opt_tpar(klisp_State *K, char *name, int32_t type, TValue *par)
-{
-    if (ttisnil(*par)) {
-	return false;
-    } else if (ttispair(*par) && ttisnil(kcdr(*par))) {
-	*par = kcar(*par);
-	if (ttype(*par) != type) {
-	    /* TODO show expected type */
-	    klispE_throw_simple(K, "Bad type on optional argument "
-			 "(expected ?)");    
-	    /* avoid warning */
-	    return false;
-	} else {
-	    return true;
-	}
-    } else {
-	klispE_throw_simple(K, "Bad ptree structure (in optional "
-			   "argument)");
-	/* avoid warning */
-	return false;
-    }
-}
-
+#define get_opt_tpar(K_, par_, tstr_, t_)  ({				\
+    bool res_;								\
+    if (ttisnil(par_)) {						\
+	res_ = false;							\
+    } else if (!ttispair(par_) || !ttisnil(kcdr(par_))) {		\
+	klispE_throw_simple((K_),					\
+			    "Bad ptree structure "			\
+			    "(in optional argument)");			\
+	return;								\
+    } else if (!t_(kcar(par_))) {					\
+	klispE_throw_simple(K_, "Bad type on optional argument "	\
+			    "(expected "	tstr_ ")");		\
+	return;								\
+    } else {								\
+        par_ = kcar(par_);						\
+        res_ = true;							\
+    }									\
+    res_; })								
 
 /*
 ** This states are useful for traversing trees, saving the state in the
@@ -274,7 +273,7 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 
 /* check that obj is a list, returns the number of pairs */
 /* TODO change the return to void and add int32_t pairs obj */
-int32_t check_list(klisp_State *K, char *name, bool allow_infp,
+int32_t check_list(klisp_State *K, const char *name, bool allow_infp,
 			  TValue obj, int32_t *cpairs);
 
 /*
@@ -364,13 +363,13 @@ inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
 ** Generic function for type predicates
 ** It can only be used by types that have a unique tag
 */
-void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void typep(klisp_State *K);
 
 /*
 ** Generic function for type predicates
 ** It takes an arbitrary function pointer of type bool (*fn)(TValue o)
 */
-void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftypep(klisp_State *K);
 
 /*
 ** Generic function for typed predicates (like char-alphabetic? or finite?)
@@ -379,7 +378,7 @@ void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 ** both of the same type: bool (*fn)(TValue o).
 ** On zero operands this return true
 */
-void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftyped_predp(klisp_State *K);
 
 /*
 ** Generic function for typed binary predicates (like =? & char<?)
@@ -389,18 +388,18 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
 ** This assumes the predicate is transitive and works even in cyclic lists
 ** On zero and one operand this return true
 */
-void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftyped_bpredp(klisp_State *K);
 
 /* This is the same, but the comparison predicate takes a klisp_State */
 /* TODO unify them */
-void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void ftyped_kbpredp(klisp_State *K);
 
 
 /* 
 ** Continuation that ignores the value received and instead returns
 ** a previously computed value.
 */
-void do_return_value(klisp_State *K, TValue *xparams, TValue obj);
+void do_return_value(klisp_State *K);
 
 /* GC: assumes parent & obj are rooted */
 inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)

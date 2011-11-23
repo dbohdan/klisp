@@ -46,7 +46,7 @@ typedef union GCObject GCObject;
 ** included in other objects)
 */
 #define CommonHeader GCObject *next; uint8_t tt; uint8_t kflags; \
-    uint16_t gct; GCObject *si; GCObject *gclist;
+    uint16_t gct; GCObject *si; GCObject *gclist
     
 /* NOTE: the gc flags are called marked in lua, but we reserve that them
    for marks used in cycle traversal. The field kflags is also missing
@@ -127,6 +127,10 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 */
 
 /* LUA NOTE: In Lua the corresponding defines are in lua.h */
+/*
+** The name strings for all TValue types are in kobject.c
+** Thoseshould be updated if types here are modified
+*/
 #define K_TFIXINT       0
 #define K_TBIGINT       1
 #define K_TFIXRAT       2
@@ -158,10 +162,12 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAPPLICATIVE  36
 #define K_TENCAPSULATION 37
 #define K_TPROMISE      38
-#define K_TPORT         39
-#define K_TTABLE        40
-#define K_TERROR        41
-#define K_TBLOB         42
+#define K_TTABLE        39
+#define K_TERROR        40
+#define K_TBYTEVECTOR   41
+#define K_TFPORT        42
+#define K_TMPORT        43
+#define K_TVECTOR       44
 
 /* for tables */
 #define K_TDEADKEY        60
@@ -211,11 +217,12 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_APPLICATIVE K_MAKE_VTAG(K_TAPPLICATIVE)
 #define K_TAG_ENCAPSULATION K_MAKE_VTAG(K_TENCAPSULATION)
 #define K_TAG_PROMISE K_MAKE_VTAG(K_TPROMISE)
-#define K_TAG_PORT K_MAKE_VTAG(K_TPORT)
 #define K_TAG_TABLE K_MAKE_VTAG(K_TTABLE)
 #define K_TAG_ERROR K_MAKE_VTAG(K_TERROR)
-#define K_TAG_BLOB K_MAKE_VTAG(K_TBLOB)
-
+#define K_TAG_BYTEVECTOR K_MAKE_VTAG(K_TBYTEVECTOR)
+#define K_TAG_FPORT K_MAKE_VTAG(K_TFPORT)
+#define K_TAG_MPORT K_MAKE_VTAG(K_TMPORT)
+#define K_TAG_VECTOR K_MAKE_VTAG(K_TVECTOR)
 
 /*
 ** Macros to test types
@@ -237,6 +244,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
 #define ttiseinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+#define ttisu8(o) ({							\
+	TValue o__ = (o);						\
+	(ttisfixint(o__) && ivalue(o__) >= 0 && ivalue(o__) < 256); })		
 #define ttisinteger(o) ({ TValue o__ = (o);				\
 	    (ttiseinteger(o__) ||					\
 	     (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})
@@ -293,10 +303,14 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
 #define ttisencapsulation(o) (tbasetype_(o) == K_TAG_ENCAPSULATION)
 #define ttispromise(o) (tbasetype_(o) == K_TAG_PROMISE)
-#define ttisport(o) (tbasetype_(o) == K_TAG_PORT)
 #define ttistable(o) (tbasetype_(o) == K_TAG_TABLE)
 #define ttiserror(o) (tbasetype_(o) == K_TAG_ERROR)
-#define ttisblob(o) (tbasetype_(o) == K_TAG_BLOB)
+#define ttisbytevector(o) (tbasetype_(o) == K_TAG_BYTEVECTOR)
+#define ttisfport(o) (tbasetype_(o) == K_TAG_FPORT)
+#define ttismport(o) (tbasetype_(o) == K_TAG_MPORT)
+#define ttisport(o_) ({ int32_t t_ = tbasetype_(o_); \
+	    t_ == K_TAG_FPORT || t_ == K_TAG_MPORT;})
+#define ttisvector(o) (tbasetype_(o) == K_TAG_VECTOR)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -430,17 +444,30 @@ typedef struct __attribute__ ((__packed__)) {
        sharing the pair */
 } Promise;
 
-/* input/output direction and open/close status are in kflags */
+/* common fields for all types of ports */
+/* TEMP: for now source code info is in fixints */
+#define PortCommonFields TValue filename; int32_t row; int32_t col
+
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    TValue filename;
-    /* TEMP: for now source code info is in fixints */
-    int32_t row;
-    int32_t col;
-    FILE *file;
+    PortCommonFields;
 } Port;
 
 /* input/output direction and open/close status are in kflags */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    PortCommonFields;
+    FILE *file;
+} FPort;
+
+/* input/output direction and open/close status are in kflags */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    PortCommonFields;
+    TValue buf;
+    uint32_t off;
+} MPort;
+
 
 /*
 ** Hashtables
@@ -481,14 +508,22 @@ typedef struct __attribute__ ((__packed__)) {
     TValue irritants;  /* list of extra objs */
 } Error;
 
-/* Blobs (binary vectors) */
+/* Bytevectors */
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark; /* for cycle/sharing aware algorithms */
     uint32_t size;
-    int32_t __dummy; /* for alignment to 64 bits */
+    uint32_t hash; /* only used for immutable strings */
     uint8_t b[]; /* buffer */
-} Blob;
+} Bytevector;
+
+/* Vectors (heterogenous arrays) */
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader;
+    TValue mark; /* for cycle/sharing aware algorithms */
+    uint32_t sizearray; /* number of elements in array[] */
+    TValue array[]; /* array of elements */
+} Vector;
 
 /*
 ** `module' operation for hashing (size is always a power of 2)
@@ -546,9 +581,12 @@ union GCObject {
     Applicative app;
     Encapsulation enc;
     Promise prom;
-    Port port;
     Table table;
-    Blob blob;
+    Bytevector bytevector;
+    Port port; /* common fields for all types of ports */
+    FPort fport;
+    MPort mport;
+    Vector vector;
 };
 
 
@@ -647,10 +685,12 @@ const TValue kfree;
 #define gc2app(o_) (gc2tv(K_TAG_APPLICATIVE, o_))
 #define gc2enc(o_) (gc2tv(K_TAG_ENCAPSULATION, o_))
 #define gc2prom(o_) (gc2tv(K_TAG_PROMISE, o_))
-#define gc2port(o_) (gc2tv(K_TAG_PORT, o_))
+#define gc2fport(o_) (gc2tv(K_TAG_FPORT, o_))
+#define gc2mport(o_) (gc2tv(K_TAG_MPORT, o_))
 #define gc2table(o_) (gc2tv(K_TAG_TABLE, o_))
 #define gc2error(o_) (gc2tv(K_TAG_ERROR, o_))
-#define gc2blob(o_) (gc2tv(K_TAG_BLOB, o_))
+#define gc2bytevector(o_) (gc2tv(K_TAG_BYTEVECTOR, o_))
+#define gc2vector(o_) (gc2tv(K_TAG_VECTOR, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -665,10 +705,13 @@ const TValue kfree;
 #define tv2app(v_) ((Applicative *) gcvalue(v_))
 #define tv2enc(v_) ((Encapsulation *) gcvalue(v_))
 #define tv2prom(v_) ((Promise *) gcvalue(v_))
-#define tv2port(v_) ((Port *) gcvalue(v_))
 #define tv2table(v_) ((Table *) gcvalue(v_))
 #define tv2error(v_) ((Error *) gcvalue(v_))
-#define tv2blob(v_) ((Blob *) gcvalue(v_))
+#define tv2bytevector(v_) ((Bytevector *) gcvalue(v_))
+#define tv2vector(v_) ((Vector *) gcvalue(v_))
+#define tv2fport(v_) ((FPort *) gcvalue(v_))
+#define tv2mport(v_) ((MPort *) gcvalue(v_))
+#define tv2port(v_) ((Port *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
@@ -789,14 +832,20 @@ int32_t kmark_count;
 #define K_FLAG_OUTPUT_PORT 0x01
 #define K_FLAG_INPUT_PORT 0x02
 #define K_FLAG_CLOSED_PORT 0x04
+/* At least for now ports are either binary or textual */
+#define K_FLAG_BINARY_PORT 0x08
 
 #define kport_set_input(o_) (tv_get_kflags(o_) |= K_FLAG_INPUT_PORT)
 #define kport_set_output(o_) (tv_get_kflags(o_) |= K_FLAG_INPUT_PORT)
 #define kport_set_closed(o_) (tv_get_kflags(o_) |= K_FLAG_CLOSED_PORT)
+#define kport_set_binary(o_) (tv_get_kflags(o_) |= K_FLAG_BINARY_PORT)
 
 #define kport_is_input(o_) ((tv_get_kflags(o_) & K_FLAG_INPUT_PORT) != 0)
 #define kport_is_output(o_) ((tv_get_kflags(o_) & K_FLAG_OUTPUT_PORT) != 0)
+#define kport_is_open(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) == 0)
 #define kport_is_closed(o_) ((tv_get_kflags(o_) & K_FLAG_CLOSED_PORT) != 0)
+#define kport_is_binary(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) != 0)
+#define kport_is_textual(o_) ((tv_get_kflags(o_) & K_FLAG_BINARY_PORT) == 0)
 
 #define K_FLAG_WEAK_KEYS 0x01
 #define K_FLAG_WEAK_VALUES 0x02
@@ -806,11 +855,6 @@ int32_t kmark_count;
     ((tv_get_kflags(o_) & K_FLAG_WEAK_KEYS) != 0)
 #define ktable_has_weak_values(o_) \
     ((tv_get_kflags(o_) & K_FLAG_WEAK_VALUES) != 0)
-
-/* can't be inline because we also use pointers to them,
- (at least gcc doesn't bother to create them and the linker fails) */
-bool kis_input_port(TValue o);
-bool kis_output_port(TValue o);
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)

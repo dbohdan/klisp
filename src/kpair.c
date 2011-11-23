@@ -58,3 +58,11 @@ TValue klist_g(klisp_State *K, bool m, int32_t n, ...)
 
 
 bool kpairp(TValue obj) { return ttispair(obj); }
+bool kimmutable_pairp(TValue obj)
+{ 
+    return ttispair(obj) && kis_immutable(obj); 
+}
+bool kmutable_pairp(TValue obj)
+{ 
+    return ttispair(obj) && kis_mutable(obj); 
+}

@@ -20,7 +20,8 @@
 #include "imrat.h"
 #include "ktable.h"
 #include "kstring.h"
-#include "kblob.h"
+#include "kbytevector.h"
+#include "kvector.h"
 #include "kerror.h"
 
 #define GCSTEPSIZE	1024u
@@ -106,10 +107,12 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TAPPLICATIVE:
     case K_TENCAPSULATION:
     case K_TPROMISE:
-    case K_TPORT:
     case K_TTABLE:
     case K_TERROR:
-    case K_TBLOB:
+    case K_TBYTEVECTOR:
+    case K_TVECTOR:
+    case K_TFPORT:
+    case K_TMPORT:
 	o->gch.gclist = K->gray;
 	K->gray = o;
 	break;
@@ -261,7 +264,7 @@ static int32_t propagatemark (klisp_State *K) {
     case K_TSTRING: {
 	String *s = cast(String *, o);
 	markvalue(K, s->mark); 
-	return sizeof(String) + s->size * sizeof(char);
+	return sizeof(String) + (s->size + 1 * sizeof(char));
     }
     case K_TENVIRONMENT: {
 	Environment *e = cast(Environment *, o);
@@ -301,11 +304,6 @@ static int32_t propagatemark (klisp_State *K) {
 	markvalue(K, p->node);
 	return sizeof(Promise);
     }
-    case K_TPORT: {
-	Port *p = cast(Port *, o);
-	markvalue(K, p->filename);
-	return sizeof(Port);
-    }
     case K_TTABLE: {
 	Table *h = cast(Table *, o);
 	if (traversetable(K, h))  /* table is weak? */
@@ -321,10 +319,27 @@ static int32_t propagatemark (klisp_State *K) {
 	markvalue(K, e->irritants);
 	return sizeof(Error);
     }
-    case K_TBLOB: {
-	Blob *b = cast(Blob *, o);
+    case K_TBYTEVECTOR: {
+	Bytevector *b = cast(Bytevector *, o);
 	markvalue(K, b->mark); 
-	return sizeof(String) + b->size * sizeof(uint8_t);
+	return sizeof(Bytevector) + b->size * sizeof(uint8_t);
+    }
+    case K_TFPORT: {
+	FPort *p = cast(FPort *, o);
+	markvalue(K, p->filename);
+	return sizeof(FPort);
+    }
+    case K_TMPORT: {
+	MPort *p = cast(MPort *, o);
+	markvalue(K, p->filename);
+	markvalue(K, p->buf);
+	return sizeof(MPort);
+    }
+    case K_TVECTOR: {
+        Vector *v = cast(Vector *, o);
+        markvalue(K, v->mark);
+        markvaluearray(K, v->array, v->sizearray);
+        return sizeof(Vector) + v->sizearray * sizeof(TValue);
     }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
@@ -347,6 +362,8 @@ static size_t propagateall (klisp_State *K) {
 ** other objects: if really collected, cannot keep them; for userdata
 ** being finalized, keep them in keys, but not in values
 */
+/* XXX what the hell is this, I should reread this part of the lua
+   source Andres Navarro */
 static int32_t iscleared (TValue o, int iskey) {
     if (!iscollectable(o)) return 0;
 #if 0 /* klisp: strings may be mutable... */
@@ -441,24 +458,35 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TPROMISE:
 	klispM_free(K, (Promise *)o);
 	break;
-    case K_TPORT:
-	/* first close the port to free the FILE structure.
-	   This works even if the port was already closed,
-	   it is important that this don't throw errors, because
-	   the mechanism used in error handling would crash at this
-	   point */
-	kclose_port(K, gc2port(o));
-	klispM_free(K, (Port *)o);
-	break;
     case K_TTABLE:
 	klispH_free(K, (Table *)o);
 	break;
     case K_TERROR:
 	klispE_free(K, (Error *)o);
 	break;
-    case K_TBLOB:
-	klispM_freemem(K, o, sizeof(Blob)+o->blob.size);
+    case K_TBYTEVECTOR:
+	/* immutable bytevectors are in the string/symbol table */
+	if (kbytevector_immutablep(gc2str(o)))
+	    K->strt.nuse--;
+	klispM_freemem(K, o, sizeof(Bytevector)+o->bytevector.size);
 	break;
+    case K_TFPORT:
+	/* first close the port to free the FILE structure.
+	   This works even if the port was already closed,
+	   it is important that this don't throw errors, because
+	   the mechanism used in error handling would crash at this
+	   point */
+	kclose_port(K, gc2fport(o));
+	klispM_free(K, (FPort *)o);
+	break;
+    case K_TMPORT:
+	/* memory ports (string & bytevector) don't need to be closed
+	   explicitly */
+	klispM_free(K, (MPort *)o);
+	break;
+    case K_TVECTOR:
+        klispM_freemem(K, o, sizeof(Vector) + sizeof(TValue) * o->vector.sizearray);
+        break;
     default:
 	/* shouldn't happen */
 	fprintf(stderr, "Unknown GCObject type (in GC free): %d\n", 
@@ -552,7 +580,7 @@ void klispC_freeall (klisp_State *K) {
     K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT); /* in klisp this may not be
 							 necessary */
     sweepwholelist(K, &K->rootgc);
-    /* free all symbol/string lists */
+    /* free all symbol/string/bytevectors lists */
     for (int32_t i = 0; i < K->strt.size; i++)  
 	sweepwholelist(K, &K->strt.hash[i]);
 }
@@ -564,7 +592,7 @@ static void markroot (klisp_State *K) {
     K->grayagain = NULL; 
     K->weak = NULL; 
 
-    /* TEMP: this is quite awfull, think of other way to do this */
+    /* TEMP: this is quite awful, think of other way to do this */
     /* MAYBE: some of these could be FIXED */
     markvalue(K, K->name_table);
     markvalue(K, K->cont_name_table);
@@ -587,12 +615,16 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->kd_error_port_key);
     markvalue(K, K->kd_strict_arith_key);
     markvalue(K, K->empty_string);
-    markvalue(K, K->empty_blob);
+    markvalue(K, K->empty_bytevector);
+    markvalue(K, K->empty_vector);
 
     markvalue(K, K->ktok_lparen);
     markvalue(K, K->ktok_rparen);
     markvalue(K, K->ktok_dot);
+    markvalue(K, K->ktok_sexp_comment);
     markvalue(K, K->shared_dict);
+
+    markvalue(K, K->curr_port);
 
     /* Mark all objects in the auxiliary stack,
        (all valid indexes are below top), all the objects in
@@ -778,7 +810,8 @@ void klispC_barrierback (klisp_State *K, Table *t) {
 }
 
 /* NOTE: kflags is added for klisp */
-/* NOTE: both symbols & strings do this "by hand", they don't call this */
+/* NOTE: symbols, immutable strings and immutable bytevectors do this 
+  "by hand", they don't call this */
 void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
     o->gch.next = K->rootgc;
     K->rootgc = o;

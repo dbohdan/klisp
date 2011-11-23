@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "kread.h"
 #include "kobject.h"
@@ -36,12 +35,18 @@
 **   info as above (but no pair with last pair).
 ** ST_SHARED_DEF: a pair with car: shared def token and cdr: source
 **   info of the shared def token.
-** 
+** ST_SEXP_COMMENT: the source info of the comment token
+** ST_FIRST_EOF_LIST: first pair of the list (with source info, start of file)
+** ST_MIDDLE_EOF_LIST: two elements, first below, second on top:
+**   - a pair with car: first pair of the list (with source info corrected 
+**     to car of list) and cdr: source info of the start of file.
+**   - last pair of the list so far. 
 */
 
 typedef enum {
     ST_READ, ST_SHARED_DEF, ST_LAST_ILIST, ST_PAST_LAST_ILIST,
-    ST_FIRST_LIST, ST_MIDDLE_LIST 
+    ST_FIRST_LIST, ST_MIDDLE_LIST, ST_SEXP_COMMENT, ST_FIRST_EOF_LIST,
+    ST_MIDDLE_EOF_LIST
 } state_t;
 
 #define push_state(kst_, st_) (ks_spush(kst_, (i2tv((int32_t)(st_)))))
@@ -56,7 +61,12 @@ typedef enum {
 /*
 ** Error management
 */
-void kread_error(klisp_State *K, char *str)
+#define kread_error(K, str) \
+    kread_error_g(K, str, false, KINERT)
+#define kread_error_extra(K, str, extra) \
+    kread_error_g(K, str, true, extra)
+
+void kread_error_g(klisp_State *K, char *str, bool extra, TValue extra_value)
 {
     /* all cleaning is done in throw 
        (stacks, shared_dict, rooted objs) */
@@ -65,10 +75,18 @@ void kread_error(klisp_State *K, char *str)
     kport_update_source_info(K->curr_port, K->ktok_source_info.line,
 			     K->ktok_source_info.col);
 
-    /* include the source info in the error */
-    TValue si = ktok_get_source_info(K);
-    krooted_tvs_push(K, si); /* will be popped by throw */
-    klispE_throw_with_irritants(K, str, si);
+    /* include the source info (and extra value if present) in the error */
+    TValue irritants;
+    if (extra) {
+	krooted_tvs_push(K, extra_value); /* will be popped by throw */
+	TValue si = ktok_get_source_info(K);
+	krooted_tvs_push(K, si); /* will be popped by throw */
+	irritants = klist_g(K, false, 2, si, extra_value);
+    } else {
+	irritants = ktok_get_source_info(K);
+    }
+    krooted_tvs_push(K, irritants); /* will be popped by throw */
+    klispE_throw_with_irritants(K, str, irritants);
 }
 
 /*
@@ -89,7 +107,7 @@ TValue try_shared_ref(klisp_State *K, TValue ref_token)
 	tail = kcdr(tail);
     }
     
-    kread_error(K, "undefined shared ref found");
+    kread_error_extra(K, "undefined shared ref found", i2tv(ref_num));
     /* avoid warning */
     return KINERT;
 }
@@ -103,7 +121,7 @@ void try_shared_def(klisp_State *K, TValue def_token, TValue value)
     while (!ttisnil(tail)) {
 	TValue head = kcar(tail);
 	if (ref_num == ivalue(kcar(head))) {
-	    kread_error(K, "duplicate shared def found");
+	    kread_error_extra(K, "duplicate shared def found", i2tv(ref_num));
 	    /* avoid warning */
 	    return;
 	}
@@ -132,19 +150,74 @@ void change_shared_def(klisp_State *K, TValue def_token, TValue value)
 	}
 	tail = kcdr(tail);
     }
-    /* NOTE: can't really happen */
+    klisp_assert(0); /* shouldn't happen */
+    return;
+}
+
+/* NOTE: the shared def is guaranteed to exist */
+void remove_shared_def(klisp_State *K, TValue def_token)
+{
+    /* IMPLEMENTATION RESTRICTION: only allow fixints in shared tokens */
+    int32_t ref_num = ivalue(kcdr(def_token));
+    TValue tail = K->shared_dict;
+    TValue last_pair = KNIL;
+    while (!ttisnil(tail)) {
+	TValue head = kcar(tail);
+	if (ref_num == ivalue(kcar(head))) {
+	    if (ttisnil(last_pair)) {
+		/* this is the first value */
+		K->shared_dict = kcdr(tail);
+	    } else {
+		kset_cdr(last_pair, kcdr(tail));
+	    }
+	    return;
+	}
+	last_pair = tail;
+	tail = kcdr(tail);
+    }
+    klisp_assert(0); /* shouldn't happen */
     return;
 }
 
 /*
 ** Reader FSM
 */
+
+/* 
+** listp: 
+** false: read one value
+** true: read all values as a list
+*/
+
 /* TEMP: For now we'll use just one big function */
-TValue kread_fsm(klisp_State *K)
+TValue kread_fsm(klisp_State *K, bool listp)
 {
-    assert(ks_sisempty(K));
-    assert(ttisnil(K->shared_dict));
+    /* TODO add more specific sexp comment error msgs */
+    /* TODO replace some read errors with asserts where appropriate */
+    klisp_assert(ks_sisempty(K));
+    klisp_assert(ttisnil(K->shared_dict));
+
     push_state(K, ST_READ);
+
+    if (listp) { /* read a list of values */
+	/* create the first pair */
+	TValue np = kcons_g(K, K->read_mconsp, KINERT, KNIL);
+	krooted_tvs_push(K, np);
+	/* 
+	** NOTE: the source info of the start of file is temporarily 
+	** saved in np (later it will be replace by the source info
+	** of the car of the list)
+	*/
+	TValue si = ktok_get_source_info(K);
+	krooted_tvs_push(K, si);
+#if KTRACK_SI
+	kset_source_info(K, np, si);
+#endif
+	krooted_tvs_pop(K);
+	push_data(K, np);
+	krooted_tvs_pop(K);
+	push_state(K, ST_FIRST_EOF_LIST);
+    }
 
     /* read next token or process obj */
     bool read_next_token = true; 
@@ -152,9 +225,17 @@ TValue kread_fsm(klisp_State *K)
     TValue obj = KINERT; /* put some value for gc */ 
     /* the source code information of that obj */
     TValue obj_si = KNIL; /* put some value for gc */ 
+    int32_t sexp_comments = 0;
+    TValue last_sexp_comment_si = KNIL; /* put some value for gc */
+    /* list of shared list, each element represent a nested sexp comment,
+       each is a list of shared defs in that particular level, to be
+       undefined after the sexp comment ends */
+    TValue sexp_comment_shared = KNIL;
 
     krooted_vars_push(K, &obj);
     krooted_vars_push(K, &obj_si);
+    krooted_vars_push(K, &last_sexp_comment_si);
+    krooted_vars_push(K, &sexp_comment_shared);
 
     while (!(get_state(K) == ST_READ && !read_next_token)) {
 	if (read_next_token) {
@@ -218,6 +299,7 @@ TValue kread_fsm(klisp_State *K)
 			obj_si = kget_source_info(K, fp_with_old_si);
 			#else
 			UNUSED(fp_with_old_si);
+			obj_si = KNIL;
 		        #endif
 			read_next_token = false;
 			break;
@@ -246,7 +328,14 @@ TValue kread_fsm(klisp_State *K)
 				    "in shared def");
 			/* avoid warning */
 			return KINERT;
+		    case ST_SEXP_COMMENT:
+			kread_error_extra(K, "unmatched closing paren found in "
+					  "sexp comment", last_sexp_comment_si);
+			/* avoid warning */
+			return KINERT;
 		    case ST_READ:
+		    case ST_FIRST_EOF_LIST:
+		    case ST_MIDDLE_EOF_LIST:
 			kread_error(K, "unmatched closing paren found");
 			/* avoid warning */
 			return KINERT;
@@ -280,7 +369,14 @@ TValue kread_fsm(klisp_State *K)
 			kread_error(K, "dot found in shared def");
 			/* avoid warning */
 			return KINERT;
+		    case ST_SEXP_COMMENT:
+			kread_error_extra(K, "dot found outside list in sexp "
+					  "comment", last_sexp_comment_si);
+			/* avoid warning */
+			return KINERT;
 		    case ST_READ:
+		    case ST_FIRST_EOF_LIST:
+		    case ST_MIDDLE_EOF_LIST:
 			kread_error(K, "dot found outside list");
 			/* avoid warning */
 			return KINERT;
@@ -307,7 +403,13 @@ TValue kread_fsm(klisp_State *K)
 		    default: {
 			krooted_tvs_push(K, tok);
 			try_shared_def(K, tok, KNIL);
-			/* token ok, read defined object */
+			/* token ok */
+			/* save the token for later undefining */
+			if (sexp_comments > 0) {
+			    kset_car(sexp_comment_shared, 
+				     kcons(K, tok, kcar(sexp_comment_shared)));
+			}
+			/* read defined object */
 			/* NOTE: save the source info to return it 
 			   after the defined object is read */
 			TValue si = ktok_get_source_info(K);
@@ -344,6 +446,17 @@ TValue kread_fsm(klisp_State *K)
 		    }
 		    break;
 		}
+		case ';': { /* sexp comment */
+		    klisp_assert(sexp_comments < 1000);
+		    ++sexp_comments;
+		    sexp_comment_shared = 
+			kcons(K, KNIL, sexp_comment_shared);
+		    push_data(K, last_sexp_comment_si);
+		    push_state(K, ST_SEXP_COMMENT);
+		    last_sexp_comment_si = ktok_get_source_info(K);
+		    read_next_token = true;
+		    break;
+		}
 		default:
 		    /* shouldn't happen */
 		    kread_error(K, "unknown special token");
@@ -352,10 +465,42 @@ TValue kread_fsm(klisp_State *K)
 		}
 	    } else if (ttiseof(tok)) {
 		switch (get_state(K)) {
+		case ST_SEXP_COMMENT:
+		    kread_error_extra(K, "EOF found while reading sexp "
+				      " comment", last_sexp_comment_si);
+		    /* avoid warning */
+		    return KINERT;		    
+		case ST_FIRST_EOF_LIST: {
+		    pop_state(K);
+		    TValue fp_with_old_si = get_data(K);
+		    pop_data(K);
+		    obj = KNIL;
+                    #if KTRACK_SI
+		    obj_si = kget_source_info(K, fp_with_old_si);
+		    #else
+		    UNUSED(fp_with_old_si);
+		    obj_si = KNIL;
+		    #endif
+		    read_next_token = false;
+		    break;
+		}
+		case ST_MIDDLE_EOF_LIST: {
+		    pop_state(K);
+		    /* discard info on last pair */
+		    pop_data(K);
+		    pop_state(K);
+		    TValue fp_old_si = get_data(K);
+		    pop_data(K);
+		    /* list read ok, process it in next iteration */
+		    obj = kcar(fp_old_si);
+		    obj_si = kcdr(fp_old_si);
+		    read_next_token = false;
+		    break;
+		}
 		case ST_READ:
-		    /* will exit in next loop */
 		    obj = tok;
 		    obj_si = ktok_get_source_info(K);
+		    /* will exit in next loop */
 		    read_next_token = false;
 		    break;
 		case ST_FIRST_LIST:
@@ -395,7 +540,9 @@ TValue kread_fsm(klisp_State *K)
 	} else { /* if(read_next_token) */
 	    /* process the object just read */
 	    switch(get_state(K)) {
+	    case ST_FIRST_EOF_LIST: 
 	    case ST_FIRST_LIST: {
+		state_t state = get_state(K);
 		/* get the state out of the way */
 		pop_state(K);
 		TValue fp = get_data(K);
@@ -421,13 +568,22 @@ TValue kread_fsm(klisp_State *K)
 		push_data(K, kcons (K, fp, fp_old_si));
 		krooted_tvs_pop(K);
 		krooted_tvs_pop(K);
-		push_state(K, ST_FIRST_LIST);
+		push_state(K, state);
 		push_data(K, fp);
-		push_state(K, ST_MIDDLE_LIST);
+		if (state == ST_FIRST_LIST) {
+		    push_state(K, ST_MIDDLE_LIST);
+		} else {
+		    push_state(K, ST_MIDDLE_EOF_LIST);
+		    /* shared dict must be cleared after every element
+		       of an eof list */
+		    clear_shared_dict(K);
+		}
 		read_next_token = true;
 		break;
 	    }
-	    case ST_MIDDLE_LIST: {
+	    case ST_MIDDLE_LIST:
+	    case ST_MIDDLE_EOF_LIST: {
+		state_t state = get_state(K);
 		/* get the state out of the way */
 		pop_state(K);
 		/* construct the list with the correct type of pair */
@@ -441,7 +597,12 @@ TValue kread_fsm(klisp_State *K)
 		/* replace last pair of the (still incomplete) read next obj */
 		pop_data(K);
 		push_data(K, np);
-		push_state(K, ST_MIDDLE_LIST);
+		push_state(K, state);
+		if (state == ST_MIDDLE_EOF_LIST) {
+		    /* shared dict must be cleared after every element
+		       of an eof list */
+		    clear_shared_dict(K);
+		}
 		krooted_tvs_pop(K);
 		read_next_token = true;
 		break;
@@ -473,6 +634,22 @@ TValue kread_fsm(klisp_State *K)
 		kread_error(K, "invalid read state (read in while)");
 		/* avoid warning */
 		return KINERT;
+	    case ST_SEXP_COMMENT:
+		klisp_assert(sexp_comments > 0);
+		--sexp_comments;
+		/* undefine all shared obj defined in the context
+		   of this sexp comment */
+		while(!ttisnil(kcar(sexp_comment_shared))) {
+		    TValue first = kcaar(sexp_comment_shared);
+		    remove_shared_def(K, first);
+		    kset_car(sexp_comment_shared, kcdar(sexp_comment_shared));
+		}
+		sexp_comment_shared = kcdr(sexp_comment_shared);
+		pop_state(K);
+		last_sexp_comment_si = get_data(K);
+		pop_data(K);
+		read_next_token = true;
+		break;
 	    default:
 		/* shouldn't happen */
 		kread_error(K, "unknown read state in process obj");
@@ -484,24 +661,26 @@ TValue kread_fsm(klisp_State *K)
 
     krooted_vars_pop(K);
     krooted_vars_pop(K);
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
 
     pop_state(K);
-    assert(ks_sisempty(K));
+    klisp_assert(ks_sisempty(K));
     return obj;
 }
 
 /*
 ** Reader Main Function
 */
-TValue kread(klisp_State *K)
+TValue kread(klisp_State *K, bool listp)
 {
     TValue obj;
 
-    assert(ttisnil(K->shared_dict));
-    /* TEMP: workaround repl problem with eofs */
+    klisp_assert(ttisnil(K->shared_dict));
+    /* WORKAROUND: for repl problem with eofs */
     K->ktok_seen_eof = false;
 
-    obj = kread_fsm(K);
+    obj = kread_fsm(K, listp); 
 
     /* NOTE: clear after function to allow earlier gc */
     clear_shared_dict(K);
@@ -509,21 +688,30 @@ TValue kread(klisp_State *K)
     return obj;
 }
 
-
-TValue kread_from_port(klisp_State *K, TValue port, bool mut)
+/* port is protected from GC in curr_port */
+TValue kread_from_port_g(klisp_State *K, TValue port, bool mut, bool listp)
 {
     K->curr_port = port;
-    K->curr_in = kport_file(port);
     K->read_mconsp = mut;
 
     ktok_set_source_info(K, kport_filename(port), 
 			 kport_line(port), kport_col(port));
 
-    TValue obj = kread(K);
+    TValue obj = kread(K, listp);
 
     kport_update_source_info(port, K->ktok_source_info.line, 
 			     K->ktok_source_info.col);
     return obj;
+}
+
+TValue kread_from_port(klisp_State *K, TValue port, bool mut)
+{
+    return kread_from_port_g(K, port, mut, false);
+}
+
+TValue kread_list_from_port(klisp_State *K, TValue port, bool mut)
+{
+    return kread_from_port_g(K, port, mut, true);
 }
 
 TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
@@ -533,7 +721,6 @@ TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
     K->ktok_seen_eof = false;
 
     K->curr_port = port;
-    K->curr_in = kport_file(port);
     int ch;
     if (peek) {
 	ch = ktok_peekc(K);
@@ -547,13 +734,33 @@ TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
     return ch == EOF? KEOF : ch2tv((char)ch);
 }
 
+TValue kread_peek_u8_from_port(klisp_State *K, TValue port, bool peek)
+{
+    /* Reset the EOF flag in the tokenizer. The flag is shared,
+       by operations on all ports. */
+    K->ktok_seen_eof = false;
+    K->curr_port = port;
+    int32_t u8;
+    if (peek) {
+	u8 = ktok_peekc(K);
+    } else {
+	ktok_set_source_info(K, kport_filename(port), 
+			     kport_line(port), kport_col(port));
+	u8 = ktok_getc(K);
+	kport_update_source_info(port, K->ktok_source_info.line, 
+				 K->ktok_source_info.col);    
+    }
+    return u8 == EOF? KEOF : i2tv(u8 & 0xff);
+}
+
 /* This is needed by the repl to ignore trailing spaces (especially newlines)
    that could affect the source info */
+/* XXX This should be replaced somehow, as it doesn't work for sexp and
+   multi line comments */
 void kread_ignore_whitespace_and_comments_from_port(klisp_State *K, 
 						    TValue port)
 {
     K->curr_port = port;
-    K->curr_in = kport_file(port);
     /* source code info isn't important because it will be reset later */
     ktok_ignore_whitespace_and_comments(K);
 }

@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
@@ -23,7 +24,8 @@
 #include "ktable.h"
 #include "kport.h"
 #include "kenvironment.h"
-#include "kblob.h"
+#include "kbytevector.h"
+#include "kvector.h"
 
 /*
 ** Stack for the write FSM
@@ -34,26 +36,69 @@
 #define get_data(ks_) (ks_sget(ks_))
 #define data_is_empty(ks_) (ks_sisempty(ks_))
 
-/* macro for printing */
-#define kw_printf(ks_, ...)						\
-    if (fprintf((ks_)->curr_out, __VA_ARGS__) < 0) {			\
-	clearerr((ks_)->curr_out); /* clear error for next time */	\
-	kwrite_error(ks_, "error writing");				\
-    }
-    
-#define kw_flush(ks_)							\
-    if (fflush((ks_)->curr_out) == EOF) {				\
-	clearerr((ks_)->curr_out); /* clear error for next time */	\
-	kwrite_error(ks_, "error writing");				\
-    }
-
 void kwrite_error(klisp_State *K, char *msg)
 {
     /* all cleaning is done in throw 
        (stacks, shared_dict, rooted objs) */
-
     klispE_throw_simple(K, msg);
 }
+
+void kw_printf(klisp_State *K, const char *format, ...)
+{
+    va_list argp;
+    TValue port = K->curr_port;
+
+    if (ttisfport(port)) {
+	FILE *file = kfport_file(port);
+	va_start(argp, format);
+	int ret = vfprintf(file, format, argp);
+	va_end(argp);
+
+	if (ret < 0) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing");
+	    return;
+	}
+    } else if (ttismport(port)) {
+	/* bytevector ports shouldn't write chars */
+	klisp_assert(kport_is_textual(port));
+	/* string port */
+	uint32_t size;
+	int written;
+	uint32_t off = kmport_off(port);
+
+	size = kstring_size(kmport_buf(port)) -
+	    kmport_off(port) + 1;
+
+	/* size is always at least 1 (for the '\0') */
+	va_start(argp, format);
+	written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
+			    size, format, argp);
+	va_end(argp);
+
+	if (written >= size) { /* space wasn't enough */
+	    kmport_resize_buffer(K, port, off + written);
+	    /* size may be greater than off + written, so get again */
+	    size = kstring_size(kmport_buf(port)) - off + 1;
+	    va_start(argp, format);
+	    written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
+				size, format, argp);
+	    va_end(argp);
+	    if (written < 0 || written >= size) {
+		/* shouldn't happen */
+		kwrite_error(K, "error writing");
+		return;
+	    }
+	}
+	kmport_off(port) = off + written;
+    } else {
+	kwrite_error(K, "unknown port type");
+	return;
+    }
+}
+
+void kw_flush(klisp_State *K) { kwrite_flush_port(K, K->curr_port); }
+    
 
 /* TODO: check for return codes and throw error if necessary */
 #define KDEFAULT_NUMBER_RADIX 10
@@ -421,9 +466,22 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	/* TODO try to get the name */
 	kw_printf(K, "#[promise]");
 	break;
-    case K_TPORT:
-	/* TODO try to get the name/ I/O direction / filename */
-	kw_printf(K, "#[%s port", kport_is_input(obj)? "input" : "output");
+    case K_TFPORT:
+	/* TODO try to get the filename */
+	kw_printf(K, "#[%s %s file port", 
+		  kport_is_binary(obj)? "binary" : "textual",
+		  kport_is_input(obj)? "input" : "output");
+	#if KTRACK_NAMES
+	if (khas_name(obj)) {
+	    kw_print_name(K, obj);
+	}
+	#endif
+	kw_printf(K, "]");
+	break;
+    case K_TMPORT:
+	kw_printf(K, "#[%s %s port", 
+		  kport_is_binary(obj)? "bytevector" : "string",
+		  kport_is_input(obj)? "input" : "output");
 	#if KTRACK_NAMES
 	if (khas_name(obj)) {
 	    kw_print_name(K, obj);
@@ -443,8 +501,8 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "]");
 	break;
     }
-    case K_TBLOB:
-	kw_printf(K, "#[blob");
+    case K_TBYTEVECTOR:
+	kw_printf(K, "#[bytevector");
 	#if KTRACK_NAMES
 	if (khas_name(obj)) {
 	    kw_print_name(K, obj);
@@ -452,6 +510,15 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	#endif
 	kw_printf(K, "]");
 	break;
+    case K_TVECTOR:
+        kw_printf(K, "#[vector");
+        #if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+        #endif
+        kw_printf(K, "]");
+        break;
     default:
 	/* shouldn't happen */
 	kwrite_error(K, "unknown object type");
@@ -565,12 +632,6 @@ void kwrite(klisp_State *K, TValue obj)
     krooted_tvs_pop(K);
 }
 
-void kwrite_newline(klisp_State *K)
-{
-    kw_printf(K, "\n");
-    kw_flush(K);
-}
-
 /*
 ** Interface
 */
@@ -578,27 +639,98 @@ void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj,
 			    bool displayp)
 {
     K->curr_port = port;
-    K->curr_out = kport_file(port);
     K->write_displayp = displayp;
     kwrite(K, obj);
 }
 
 void kwrite_newline_to_port(klisp_State *K, TValue port)
 {
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
     kwrite_char_to_port(K, port, ch2tv('\n'));
 }
 
 void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 {
-    K->curr_port = port;
-    K->curr_out = kport_file(port);
-    int res = fputc(chvalue(ch), K->curr_out);
-    /* implicit flush, MAYBE add flush call */
-    if (res != EOF)
-	res = fflush(K->curr_out);
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
 
-    if (res == EOF) {
-	clearerr(K->curr_out); /* clear error for next time */
-	kwrite_error(K, "error writing char");
+    if (ttisfport(port)) {
+	FILE *file = kfport_file(port);
+	int res = fputc(chvalue(ch), file);
+
+	if (res == EOF) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing char");
+	}
+    } else if (ttismport(port)) {
+	if (kport_is_binary(port)) {
+	    /* bytebuffer port */
+	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kbytevector_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
+	    ++kmport_off(port);
+	} else {
+	    /* string port */
+	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kstring_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
+	    ++kmport_off(port);
+	}
+    } else {
+	kwrite_error(K, "unknown port type");
+	return;
+    }
+}
+
+void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
+{
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
+    if (ttisfport(port)) {
+	FILE *file = kfport_file(port);
+	int res = fputc(ivalue(u8), file);
+
+	if (res == EOF) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing u8");
+	}
+    } else if (ttismport(port)) {
+	if (kport_is_binary(port)) {
+	    /* bytebuffer port */
+	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kbytevector_buf(kmport_buf(port))[kmport_off(port)] = 
+		(uint8_t) ivalue(u8);
+	    ++kmport_off(port);
+	} else {
+	    /* string port */
+	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+		kmport_resize_buffer(K, port, kmport_off(port) + 1);
+	    }
+	    kstring_buf(kmport_buf(port))[kmport_off(port)] = 
+		(char) ivalue(u8);
+	    ++kmport_off(port);
+	}
+    } else {
+	kwrite_error(K, "unknown port type");
+	return;
+    }
+}
+
+void kwrite_flush_port(klisp_State *K, TValue port) 
+{
+    K->curr_port = port; /* this isn't needed but all other 
+			    i/o functions set it */
+    if (ttisfport(port)) { /* only necessary for file ports */
+	FILE *file = kfport_file(port);
+	klisp_assert(file);
+	if ((fflush(file)) == EOF) {
+	    clearerr(file); /* clear error for next time */
+	    kwrite_error(K, "error writing");
+	}
     }
 }

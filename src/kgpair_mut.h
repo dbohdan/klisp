@@ -23,33 +23,34 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue ptree,
 			   bool mut_flag);
 
 /* 4.7.1 set-car!, set-cdr! */
-void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void set_carB(klisp_State *K);
 
-void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void set_cdrB(klisp_State *K);
 
 /* Helper for copy-es & copy-es-immutable */
-void copy_es(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void copy_es(klisp_State *K);
 
 /* 4.7.2 copy-es-immutable */
 /* uses copy_es helper */
 
 
 /* 5.8.1 encycle! */
-void encycleB(klisp_State *K, TValue *xparams, TValue ptree, 
-	      TValue denv);
+void encycleB(klisp_State *K);
 
 /* 6.4.1 append! */
-void appendB(klisp_State *K, TValue *xparams, TValue ptree, 
-	      TValue denv);
+void appendB(klisp_State *K);
 
 /* 6.4.2 copy-es */
 /* uses copy_es helper */
 
 /* 6.4.3 assq */
-void assq(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void assq(klisp_State *K);
 
 /* 6.4.3 memq? */
-void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv);
+void memqp(klisp_State *K);
+
+/* ?.? immutable-pair?, mutable-pair */
+/* use ftypep */
 
 /* init ground */
 void kinit_pair_mut_ground_env(klisp_State *K);

@@ -14,7 +14,9 @@
 ** Reader interface
 */
 TValue kread_from_port(klisp_State *K, TValue port, bool mut);
+TValue kread_list_from_port(klisp_State *K, TValue port, bool mut);
 TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek);
+TValue kread_peek_u8_from_port(klisp_State *K, TValue port, bool peek);
 
 void kread_ignore_whitespace_and_comments_from_port(klisp_State *K, 
 						    TValue port);

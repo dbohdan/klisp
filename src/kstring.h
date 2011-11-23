@@ -46,27 +46,6 @@ TValue kstring_new_b(klisp_State *K, const char *buf);
 /* with size & fill char */
 TValue kstring_new_sf(klisp_State *K, uint32_t size, char fill);
 
-/* macros for mutable & immutable versions of the above */
-#if 0
-#define kstring_new_s(K_, size_)		\
-    kstring_new_s_g(K_, true, size_)
-#define kstring_new_bs(K_, buf_, size_)		\
-    kstring_new_bs_g(K_, true, buf_, size_)
-#define kstring_new_b(K_, buf_)			\
-    kstring_new_b_g(K_, true, buf_)
-#define kstring_new_sf(K_, size_, fill_)	\
-    kstring_new_sf_g(K_, true, size_, fill_)
-
-#define kstring_new_s_imm(K_, size_)		\
-    kstring_new_s_g(K_, false, size_)
-#define kstring_new_bs_imm(K_, buf_, size_)	\
-    kstring_new_bs_g(K_, false, buf_, size_)
-#define kstring_new_b_imm(K_, buf_)		\
-    kstring_new_b_g(K_, false, buf_)
-#define kstring_new_sf_imm(K_, size_, fill_)	\
-    kstring_new_sf_g(K_, false, size_, fill_)
-#endif
-
 /* some macros to access the parts of the string */
 #define kstring_buf(tv_) (tv2str(tv_)->b)
 #define kstring_size(tv_) (tv2str(tv_)->size)
@@ -79,5 +58,7 @@ TValue kstring_new_sf(klisp_State *K, uint32_t size, char fill);
   and doesn't differentiate immutable from mutable strings */
 bool kstring_equalp(TValue obj1, TValue obj2);
 bool kstringp(TValue obj);
+bool kimmutable_stringp(TValue obj);
+bool kmutable_stringp(TValue obj);
 
 #endif

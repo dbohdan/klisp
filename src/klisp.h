@@ -16,6 +16,12 @@
 ** SOURCE NOTE: This is mostly from Lua.
 */
 
+#define KLISP_VERSION	"klisp 0.2"
+#define KLISP_RELEASE	"klisp 0.2"
+#define KLISP_VERSION_NUM	02
+#define KLISP_COPYRIGHT	"Copyright (C) 2011 Andres Navarro, Oto Havle"
+#define KLISP_AUTHORS 	"Andres Navarro, Oto Havle"
+
 typedef struct klisp_State klisp_State;
 
 /*

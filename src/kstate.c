@@ -35,9 +35,11 @@
 #include "kstring.h"
 #include "kport.h"
 #include "ktable.h"
-#include "kblob.h"
+#include "kbytevector.h"
+#include "kvector.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
+#include "kgerror.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */
 
@@ -85,8 +87,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ud = ud;
 
     /* current input and output */
-    K->curr_in = NULL; /* set on each call to read */
-    K->curr_out = NULL; /* set on each call to write */
     K->curr_port = KINERT; /* set on each call to read/write */
 
     /* input / output for dynamic keys */
@@ -153,11 +153,15 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* MAYBE: fix it so we can remove empty_string from roots */
     K->empty_string = kstring_new_b_imm(K, "");
 
-    /* Empty blob */
-    /* MAYBE: fix it so we can remove empty_blob from roots */
+    /* Empty bytevector */
+    /* MAYBE: fix it so we can remove empty_bytevector from roots */
     /* XXX: find a better way to do this */
-    K->empty_blob = KNIL; /* trick constructor to create empty blob */
-    K->empty_blob = kblob_new_imm(K, 0);
+    K->empty_bytevector = KNIL; /* trick constructor to create empty bytevector */
+    K->empty_bytevector = kbytevector_new_bs_imm(K, NULL, 0);
+
+    /* Empty vector */
+    /* MAYBE: see above */
+    K->empty_vector = kvector_new_bs_g(K, false, NULL, 0);
 
     /* initialize tokenizer */
 
@@ -172,6 +176,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ktok_lparen = kcons(K, ch2tv('('), KNIL);
     K->ktok_rparen = kcons(K, ch2tv(')'), KNIL);
     K->ktok_dot = kcons(K, ch2tv('.'), KNIL);
+    K->ktok_sexp_comment = kcons(K, ch2tv(';'), KNIL);
 
     /* TEMP: For now just hardcode it to 8 spaces tab-stop */
     K->ktok_source_info.tab_width = 8;
@@ -179,6 +184,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->ktok_source_info.filename = KINERT; 
     K->ktok_source_info.line = 1; 
     K->ktok_source_info.col = 0;
+
+    K->ktok_nested_comments = 0;
 
     ktok_init(K);
 
@@ -198,12 +205,12 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->sbuf = (TValue *)s;
 
     /* the dynamic ports and the keys for the dynamic ports */
-    TValue in_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDIN*"),
-				    false, stdin);
-    TValue out_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDOUT*"),
-				     true, stdout);
-    TValue error_port = kmake_std_port(K, kstring_new_b_imm(K, "*STDERR*"),
-				     true, stderr);
+    TValue in_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDIN*"),
+				    false, false,  stdin);
+    TValue out_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDOUT*"),
+				     true, false, stdout);
+    TValue error_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDERR*"),
+				       true, false, stderr);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
     K->kd_error_port_key = kcons(K, KTRUE, error_port);
@@ -237,12 +244,66 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* TODO si */
     K->module_params_sym = ksymbol_new(K, "module-parameters", KNIL);
 
+    /* Create the root and error continuation (will be added to the 
+     environment in kinit_ground_env) */
+    K->root_cont = kmake_continuation(K, KNIL, do_root_exit, 0);
+
+    #if KTRACK_SI
+    /* Add source info to the cont */
+    TValue str = kstring_new_b_imm(K, __FILE__);
+    TValue tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    si = kcons(K, str, tail);
+    kset_source_info(K, K->root_cont, si);
+    #endif
+
+    K->error_cont = kmake_continuation(K, K->root_cont, do_error_exit, 0);
+
+    #if KTRACK_SI
+    str = kstring_new_b_imm(K, __FILE__);
+    tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    si = kcons(K, str, tail);
+    kset_source_info(K, K->error_cont, si);
+    #endif
+
+    /* this must be done before calling kinit_ground_env */
+    kinit_error_hierarchy(K); 
+
     kinit_ground_env(K);
+
+    /* create a std environment and leave it in K->next_env */
+    K->next_env = kmake_table_environment(K, K->ground_env);
 
     /* set the threshold for gc start now that we have allocated all mem */ 
     K->GCthreshold = 4*K->totalbytes;
 
     return K;
+}
+
+/*
+** Root and Error continuations
+*/
+void do_root_exit(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    UNUSED(xparams);
+
+    /* Just save the value and end the loop */
+    K->next_value = obj;
+    K->next_func = NULL;     /* force the loop to terminate */
+    return;
+}
+
+void do_error_exit(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    UNUSED(xparams);
+
+    /* TEMP Just pass the error to the root continuation */
+    kapply_cc(K, obj);
 }
 
 /*
@@ -448,16 +509,23 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
 }
 
 /* this passes the operand tree to the continuation */
-void cont_app(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void cont_app(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     TValue cont = xparams[0];
     /* guards and dynamic variables are handled in kcall_cont() */
     kcall_cont(K, cont, ptree);
 }
 
-void do_interception(klisp_State *K, TValue *xparams, TValue obj)
+void do_interception(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: 
     ** xparams[1]: dst cont
@@ -545,16 +613,11 @@ void klispS_run(klisp_State *K)
 	} else {
 	    /* all ok, continue with next func */
 	    while (K->next_func) {
-		if (ttisnil(K->next_env)) {
-		    /* continuation application */
-		    klisp_Cfunc fn = (klisp_Cfunc) K->next_func;
-		    (*fn)(K, K->next_xparams, K->next_value);
-		} else {
-		    /* operative calling */
-		    klisp_Ofunc fn = (klisp_Ofunc) K->next_func;
-		    (*fn)(K, K->next_xparams, K->next_value, K->next_env);
-		}
+		/* next_func is either operative or continuation
+		   but in any case the call is the same */
+		(*(K->next_func))(K);
 	    }
+	    /* K->next_func is NULL, this means we should exit already */
 	    break;
 	}
     }

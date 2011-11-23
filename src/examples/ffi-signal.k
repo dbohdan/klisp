@@ -39,7 +39,7 @@
 ;;   an internal pipe.
 ;;
 ;;   (open-signal-port) opens the read-end of the internal pipe
-;;   as a port.
+;;   as a binary input port.
 ;;
 ;; The following code demonstrates the signal handling (it is not
 ;; possible to install arbitrary klisp procedure as a signal handler,
@@ -48,10 +48,10 @@
 (install-signal-handler "SIGINT")
 ($define! signal-port (open-signal-port))
 (display "Installed signal handler for SIGINT. Press Ctrl-C to continue...")
-(read-char signal-port)
+(read-u8 signal-port)
 (newline)
 (display "Signal detected. Press Ctrl-C again...")
-(read-char signal-port)
+(read-u8 signal-port)
 (newline)
 (display "Done.")
 (newline)

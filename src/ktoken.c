@@ -26,7 +26,6 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -40,6 +39,7 @@
 #include "kreal.h"
 #include "kpair.h"
 #include "kstring.h"
+#include "kbytevector.h"
 #include "ksymbol.h"
 #include "kerror.h"
 #include "kport.h"
@@ -134,7 +134,10 @@ void clear_shared_dict(klisp_State *K)
     K->shared_dict = KNIL;
 }
 
-void ktok_error(klisp_State *K, char *str)
+#define ktok_error(K, str) ktok_error_g(K, str, false, KINERT)
+#define ktok_error_extra(K, str, extra) ktok_error_g(K, str, true, extra)
+
+void ktok_error_g(klisp_State *K, char *str, bool extra, TValue extra_value)
 {
     /* all cleaning is done in throw 
        (stacks, shared_dict, rooted objs) */
@@ -143,69 +146,137 @@ void ktok_error(klisp_State *K, char *str)
     kport_update_source_info(K->curr_port, K->ktok_source_info.line,
 			     K->ktok_source_info.col);
 
-    /* include the source info in the error */
-    TValue si = ktok_get_source_info(K);
-    krooted_tvs_push(K, si); /* will be popped by throw */
-    klispE_throw_with_irritants(K, str, si);
+    /* include the source info (and extra value if present) in the error */
+    TValue irritants;
+    if (extra) {
+	krooted_tvs_push(K, extra_value); /* will be popped by throw */
+	TValue si = ktok_get_source_info(K);
+	krooted_tvs_push(K, si); /* will be popped by throw */
+	irritants = klist_g(K, false, 2, si, extra_value);
+    } else {
+	irritants = ktok_get_source_info(K);
+    }
+    krooted_tvs_push(K, irritants); /* will be popped by throw */
+    klispE_throw_with_irritants(K, str, irritants);
 }
 
 /*
 ** Underlying stream interface & source code location tracking
 */
 
-/* TODO check for error if getc returns EOF */
-int ktok_getc(klisp_State *K) {
-    /* WORKAROUND: for stdin line buffering & reading of EOF */
-    /* Is this really necessary?? double check */
-    if (K->ktok_seen_eof) {
-	return EOF;
-    } else {
-	int chi = getc(K->curr_in);
+/* TODO/OPTIMIZE We should use buffering to shorten the 
+   average code path to read each char */
+/* this reads one character from curr_port */
+int ktok_ggetc(klisp_State *K)
+{
+    /* XXX when full unicode is used (uint32_t) a different way should
+       be use to signal EOF */
+	       
+    TValue port = K->curr_port;
+    if (ttisfport(port)) {
+	/* fport */
+	FILE *file = kfport_file(port);
+	int chi = getc(file);
 	if (chi == EOF) {
 	    /* NOTE: eof doesn't change source code location info */
-	    if (ferror(K->curr_in) != 0) {
+	    if (ferror(file) != 0) {
 		/* clear error marker to allow retries later */
-		clearerr(K->curr_in);
+		clearerr(file);
+                /* TODO put error info on the error obj */
 		ktok_error(K, "reading error");
 		return 0;
-	    } else { /* if (feof(K->curr_in) != 0) */
+	    } else { /* if (feof(file) != 0) */
 		/* let the eof marker set */
 		K->ktok_seen_eof = true;
 		return EOF;
 	    }
-	}
-	
-	/* track source code location before returning the char */
-	if (chi == '\t') {
-	    /* align column to next tab stop */
-	    K->ktok_source_info.col = 
-		(K->ktok_source_info.col + K->ktok_source_info.tab_width) -
-		(K->ktok_source_info.col % K->ktok_source_info.tab_width);
-	    return '\t';
-	} else if (chi == '\n') {
-	    K->ktok_source_info.line++;
-	    K->ktok_source_info.col = 0;
-	    return '\n';
+	} else 
+	    return chi;
+    } else {
+	/* mport */
+	if (kport_is_binary(port)) {
+	    /* bytevector port */
+	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+		K->ktok_seen_eof = true;
+		return EOF;
+	    }
+	    int chi = kbytevector_buf(kmport_buf(port))[kmport_off(port)];
+	    ++kmport_off(port);
+	    return chi;
 	} else {
-	    K->ktok_source_info.col++;
+	    /* string port */
+	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+		K->ktok_seen_eof = true;
+		return EOF;
+	    }
+	    int chi = kstring_buf(kmport_buf(port))[kmport_off(port)];
+	    ++kmport_off(port);
 	    return chi;
 	}
     }
 }
 
-int ktok_peekc(klisp_State *K) {
-    /* WORKAROUND: for stdin line buffering & reading of EOF */
-    /* Is this really necessary?? double check */
-    if (K->ktok_seen_eof) {
-	return EOF;
+/* this returns one character to curr_port */
+void ktok_gungetc(klisp_State *K, int chi)
+{
+    if (chi == EOF)
+	return;
+
+    TValue port = K->curr_port;
+    if (ttisfport(port)) {
+	/* fport */
+	FILE *file = kfport_file(port);
+
+	if (ungetc(chi, file) == EOF) {
+	    if (ferror(file) != 0) {
+		/* clear error marker to allow retries later */
+		clearerr(file);
+	    }
+	    /* TODO put error info on the error obj */
+	    ktok_error(K, "reading error");
+	    return;
+	}
     } else {
-	int chi = getc(K->curr_in);
-	if (chi == EOF)
-	    K->ktok_seen_eof = true;
-	else
-	    ungetc(chi, K->curr_in);
+	/* mport */
+	if (kport_is_binary(port)) {
+	    /* bytevector port */
+	    --kmport_off(port);
+	} else {
+	    /* string port */
+	    --kmport_off(port);
+	}
+    }
+}
+
+int ktok_peekc_getc(klisp_State *K, bool peekp)
+{
+    /* WORKAROUND: for stdin line buffering & reading of EOF, this flag
+     is reset on every read */
+    /* Otherwise, at least in linux, after reading or peeking an EOF from the 
+       console, the next char isn't eof anymore */
+    if (K->ktok_seen_eof)
+	return EOF;
+
+    int chi = ktok_ggetc(K);
+
+    if (peekp) {
+	ktok_gungetc(K, chi);
 	return chi;
     }
+
+    /* track source code location before returning the char */
+    if (chi == '\t') {
+	/* align column to next tab stop */
+	K->ktok_source_info.col = 
+	    (K->ktok_source_info.col + K->ktok_source_info.tab_width) -
+	    (K->ktok_source_info.col % K->ktok_source_info.tab_width);
+    } else if (chi == '\n') {
+	K->ktok_source_info.line++;
+	K->ktok_source_info.col = 0;
+    } else {
+	K->ktok_source_info.col++;
+    }
+    return chi;
 }
 
 void ktok_save_source_info(klisp_State *K)
@@ -240,6 +311,7 @@ void ktok_set_source_info(klisp_State *K, TValue filename, int32_t line,
 */
 void ktok_ignore_whitespace(klisp_State *K);
 void ktok_ignore_single_line_comment(klisp_State *K);
+void ktok_ignore_multi_line_comment(klisp_State *K);
 bool ktok_check_delimiter(klisp_State *K);
 TValue ktok_read_string(klisp_State *K);
 TValue ktok_read_special(klisp_State *K);
@@ -255,7 +327,7 @@ int ktok_read_until_delimiter(klisp_State *K);
 */
 TValue ktok_read_token(klisp_State *K)
 {
-    assert(ks_tbisempty(K));
+    klisp_assert(ks_tbisempty(K));
 
     while(true) {
 	ktok_ignore_whitespace(K);
@@ -293,12 +365,26 @@ TValue ktok_read_token(klisp_State *K)
 	case '#': {
 	    ktok_getc(K);
 	    chi = ktok_peekc(K);
-	    if ((chi != EOF) && (char) chi == '!') {
+
+	    switch(chi) {
+	    case EOF:
+		ktok_error(K, "# constant is too short");
+		/* avoid warning */
+		return KINERT;
+	    case '!': /* single line comment (alternative syntax) */
 		/* this handles the #! style script header too! */
 		ktok_ignore_single_line_comment(K);
 		continue;
-	    } else {
-		/* also handles EOF case */
+	    case '|': /* nested/multiline comment */
+		ktok_getc(K); /* discard the '|' */
+		klisp_assert(K->ktok_nested_comments == 0);
+		K->ktok_nested_comments = 1;
+		ktok_ignore_multi_line_comment(K);
+		continue;
+	    case ';': /* sexp comment */
+		ktok_getc(K); /* discard the ';' */
+		return K->ktok_sexp_comment;
+	    default:
 		return ktok_read_special(K);
 	    }
 	}
@@ -330,9 +416,22 @@ TValue ktok_read_token(klisp_State *K)
 	    ** identifier-first-char (in the cases above)
 	    */
 	    return ktok_read_identifier(K);
-	default:
+	case '|':
 	    ktok_getc(K);
-	    ktok_error(K, "unrecognized token starting char");
+	    chi = ktok_peekc(K);
+	    if (chi == EOF || chi != '#') {
+		chi = '|';
+		goto unrecognized_error;
+	    }
+	    ktok_getc(K);
+ 	    ktok_error(K, "unmatched multiline comment close (\"|#\")");
+	    /* avoid warning */
+	    return KINERT;
+	default:
+	    chi = ktok_getc(K);
+	    /* TODO add char to error */
+	unrecognized_error:
+	    ktok_error_extra(K, "unrecognized token starting char", ch2tv((char) chi));
 	    /* avoid warning */
 	    return KINERT;
 	}
@@ -348,6 +447,63 @@ void ktok_ignore_single_line_comment(klisp_State *K)
     do {
 	chi = ktok_getc(K);
     } while (chi != EOF && chi != '\n');
+}
+
+void ktok_ignore_multi_line_comment(klisp_State *K)
+{
+    /* the first "#|' was already read */
+    klisp_assert(K->ktok_nested_comments == 1);
+    int chi;
+    TValue last_nested_comment_si = ktok_get_source_info(K);
+    krooted_vars_push(K, &last_nested_comment_si);
+    ks_spush(K, KNIL);
+
+    while(K->ktok_nested_comments > 0) {
+	chi = ktok_peekc(K);
+	while (chi != EOF && chi != '|' && chi != '#') {
+	    UNUSED(ktok_getc(K));
+	    chi = ktok_peekc(K);
+	}
+	if (chi == EOF)
+	    goto eof_error;
+
+	char first_char = (char) chi;
+
+	/* this first char will actually be the same just peeked, that's no
+	   problem, it will save the source info the first time around the 
+	   loop */
+	chi = ktok_peekc(K);
+	while (chi != EOF && chi == first_char) {
+	    ktok_save_source_info(K);
+	    UNUSED(ktok_getc(K));
+	    chi = ktok_peekc(K);
+	}
+	if (chi == EOF)
+	    goto eof_error;
+
+	UNUSED(ktok_getc(K));
+
+	if (chi == '#') {
+	    /* close comment (first char was '|', so the seq is "|#") */
+	    --K->ktok_nested_comments;
+	    last_nested_comment_si = ks_spop(K);
+	} else if (chi == '|') {
+	    /* open comment (first char was '#', so the seq is "#|") */
+	    klisp_assert(K->ktok_nested_comments < 1000);
+	    ++K->ktok_nested_comments;
+	    ks_spush(K, last_nested_comment_si);
+	    last_nested_comment_si = ktok_get_source_info(K);
+	} 
+        /* else lone '#' or '|', just continue */
+    }
+    krooted_vars_pop(K);
+    return;
+eof_error:
+    K->ktok_nested_comments = 0;
+    ktok_save_source_info(K);
+    UNUSED(ktok_getc(K));
+    krooted_vars_pop(K);
+    ktok_error_extra(K, "unterminated multi line comment", last_nested_comment_si);
 }
 
 void ktok_ignore_whitespace(klisp_State *K)
@@ -728,7 +884,8 @@ TValue ktok_read_special(klisp_State *K)
 	    has_radixp = true;
 	    break;
 	default:
-	    ktok_error(K, "unexpected char in number after #");
+	    ktok_error(K, "unknown # constant or "
+		       "unexpected char in number after #");
 	    /* avoid warning */
 	    return KINERT;
 	}

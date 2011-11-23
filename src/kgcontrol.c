@@ -26,11 +26,15 @@
 /* 4.5.2 $if */
 
 /* helpers */
-void do_select_clause(klisp_State *K, TValue *xparams, TValue obj);
+void do_select_clause(klisp_State *K);
 
 /*  ASK JOHN: both clauses should probably be copied (copy-es-immutable) */
-void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Sif(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     (void) xparams;
 
@@ -48,8 +52,11 @@ void Sif(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     ktail_eval(K, test, denv);
 }
 
-void do_select_clause(klisp_State *K, TValue *xparams, TValue obj)
+void do_select_clause(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: dynamic env
     ** xparams[1]: consequent clause
@@ -66,8 +73,12 @@ void do_select_clause(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 5.1.1 $sequence */
-void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Ssequence(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
 
     if (ttisnil(ptree)) {
@@ -98,9 +109,15 @@ void Ssequence(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper (also used by $vau and $lambda) */
-/* the ramaining list can't be null, that case is managed before */
-void do_seq(klisp_State *K, TValue *xparams, TValue obj)
+/* the remaining list can't be null, that case is managed before */
+void do_seq(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+
+    UNUSED(obj);
+
     /* 
     ** xparams[0]: remaining list
     ** xparams[1]: dynamic environment
@@ -198,8 +215,11 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
 }
 
 /* Helper for the $cond continuation */
-void do_cond(klisp_State *K, TValue *xparams, TValue obj)
+void do_cond(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /* 
     ** xparams[0]: the body corresponding to obj
     ** xparams[1]: remaining tests
@@ -258,8 +278,12 @@ void do_cond(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 5.6.1 $cond */
-void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void Scond(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) xparams;
 
     TValue bodies;
@@ -289,8 +313,11 @@ void Scond(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper continuation for for-each */
-void do_for_each(klisp_State *K, TValue *xparams, TValue obj)
+void do_for_each(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: app
     ** xparams[1]: rem-ls
@@ -329,8 +356,12 @@ void do_for_each(klisp_State *K, TValue *xparams, TValue obj)
 }
 
 /* 6.9.1 for-each */
-void for_each(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void for_each(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) xparams;
 
     bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);

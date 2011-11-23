@@ -131,9 +131,10 @@
 
 
 ;; immutable strings are eq? iff string=?
+;; substring generates mutable strings
 ;; Andres Navarro
 ($check-predicate
-  ($let* ((p "abc") (q (substring p 0 3)))
+  ($let* ((p "abc") (q (string->immutable-string (substring p 0 3))))
     (eq? p q)))
 
 ;; string-copy always generate mutable strings
@@ -142,8 +143,9 @@
  ($let* ((p (string-copy "abc")) (q (substring p 0 3)))
    (eq? p q)))
 
+;; substring always generate mutable strings
 ($check-predicate (immutable-string? (substring "abc" 0 0)))
-($check-predicate (immutable-string? (substring "abc" 0 1)))
+($check-not-predicate (immutable-string? (substring "abc" 0 1)))
 
 ;; XXX string-append
 

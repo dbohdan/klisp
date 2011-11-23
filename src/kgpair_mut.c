@@ -23,8 +23,12 @@
 #include "kgnumbers.h" /* for kpositivep and keintegerp */
 
 /* 4.7.1 set-car!, set-cdr! */
-void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void set_carB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     (void) xparams;
     bind_2tp(K, ptree, "pair", ttispair, pair, 
@@ -38,8 +42,12 @@ void set_carB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, KINERT);
 }
 
-void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void set_cdrB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     (void) xparams;
     bind_2tp(K, ptree, "pair", ttispair, pair, 
@@ -54,9 +62,15 @@ void set_cdrB(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Helper for copy-es-immutable & copy-es */
-void copy_es(klisp_State *K, TValue *xparams, 
-	     TValue ptree, TValue denv)
+void copy_es(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(denv);
+
     /*
     ** xparams[0]: copy-es-immutable symbol
     ** xparams[1]: boolean (#t: use mutable pairs, #f: use immutable pairs)
@@ -154,9 +168,12 @@ TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj,
 }
 
 /* 5.8.1 encycle! */
-void encycleB(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void encycleB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 /* ASK John: can the object be a cyclic list of length less than k1+k2? 
    the wording of the report seems to indicate that can't be the case, 
    and here it makes sense to forbid it because otherwise the list-metrics 
@@ -400,9 +417,12 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
 }
 
 /* 6.4.1 append! */
-void appendB(klisp_State *K, TValue *xparams, TValue ptree, 
-	      TValue denv)
+void appendB(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     if (ttisnil(ptree)) {
@@ -444,8 +464,12 @@ void appendB(klisp_State *K, TValue *xparams, TValue ptree,
 
 /* 6.4.3 assq */
 /* REFACTOR: do just one pass, maybe use generalized accum function */
-void assq(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void assq(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -469,8 +493,12 @@ void assq(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* 6.4.3 memq? */
 /* REFACTOR: do just one pass, maybe use generalized accum function */
-void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void memqp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -490,6 +518,9 @@ void memqp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
     kapply_cc(K, res);
 }
+
+/* ?.? immutable-pair?, mutable-pair */
+/* use ftypep */
 
 /* init ground */
 void kinit_pair_mut_ground_env(klisp_State *K)
@@ -513,4 +544,9 @@ void kinit_pair_mut_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "assq", assq, 0);
     /* 6.4.3 memq? */
     add_applicative(K, ground_env, "memq?", memqp, 0);
+    /* ?.? immutable-pair?, mutable-pair? */
+    add_applicative(K, ground_env, "immutable-pair?", ftypep, 2, symbol, 
+		    p2tv(kimmutable_pairp));
+    add_applicative(K, ground_env, "mutable-pair?", ftypep, 2, symbol, 
+		    p2tv(kmutable_pairp));
 }

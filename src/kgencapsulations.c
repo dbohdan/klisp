@@ -23,8 +23,12 @@
 /* Helpers for make-encapsulation-type */
 
 /* Type predicate for encapsulations */
-void enc_typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void enc_typep(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: encapsulation key
@@ -54,8 +58,12 @@ void enc_typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Constructor for encapsulations */
-void enc_wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void enc_wrap(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     bind_1p(K, ptree, obj);
     UNUSED(denv);
     /*
@@ -67,8 +75,12 @@ void enc_wrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* Accessor for encapsulations */
-void enc_unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void enc_unwrap(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     bind_1p(K, ptree, enc);
     UNUSED(denv);
     /*
@@ -86,9 +98,12 @@ void enc_unwrap(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 8.1.1 make-encapsulation-type */
-void make_encapsulation_type(klisp_State *K, TValue *xparams, TValue ptree,
-			     TValue denv)
+void make_encapsulation_type(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     check_0p(K, ptree);
     UNUSED(denv);
     UNUSED(xparams);

@@ -35,7 +35,8 @@
 #include "kgstrings.h"
 #include "kgchars.h"
 #include "kgports.h"
-#include "kgblobs.h"
+#include "kgbytevectors.h"
+#include "kgvectors.h"
 #include "kgsystem.h"
 #include "kgerror.h"
 
@@ -67,11 +68,11 @@ void kinit_cont_names(klisp_State *K)
     Table *t = tv2table(K->cont_name_table);
 
     /* REPL, root-continuation & error-continuation */
-    add_cont_name(K, t, do_repl_exit, "exit");
+    add_cont_name(K, t, do_root_exit, "exit");
+    add_cont_name(K, t, do_error_exit, "error");
     add_cont_name(K, t, do_repl_read, "repl-read");
     add_cont_name(K, t, do_repl_eval, "repl-eval");
     add_cont_name(K, t, do_repl_loop, "repl-loop");
-    add_cont_name(K, t, do_repl_error, "repl-report-error");
 
     /* SCRIPT, root-continuation & error-continuation */
     add_cont_name(K, t, do_script_exit, "script-exit");
@@ -142,7 +143,8 @@ void kinit_ground_env(klisp_State *K)
     kinit_strings_ground_env(K);
     kinit_chars_ground_env(K);
     kinit_ports_ground_env(K);
-    kinit_blobs_ground_env(K);
+    kinit_bytevectors_ground_env(K);
+    kinit_vectors_ground_env(K);
     kinit_system_ground_env(K);
     kinit_error_ground_env(K);
 #if KUSE_LIBFFI

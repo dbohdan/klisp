@@ -38,16 +38,12 @@ bool kchar_upper_casep(TValue ch);
 bool kchar_lower_casep(TValue ch);
 
 /* 14.1.4? char->integer, integer->char */
-void kchar_to_integer(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv);
-void kinteger_to_char(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv);
+void kchar_to_integer(klisp_State *K);
+void kinteger_to_char(klisp_State *K);
 
 /* 14.1.4? char-upcase, char-downcase */
-void kchar_upcase(klisp_State *K, TValue *xparams, TValue ptree, 
-		  TValue denv);
-void kchar_downcase(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv);
+void kchar_upcase(klisp_State *K);
+void kchar_downcase(klisp_State *K);
 
 /* 14.2.1? char=? */
 /* uses ftyped_bpredp */

@@ -14,7 +14,7 @@
 #include "kobject.h"
 #include "kpair.h"
 #include "kstring.h" /* for kstring_equalp */
-#include "kblob.h" /* for kblob_equalp */
+#include "kbytevector.h" /* for kbytevector_equalp */
 #include "kcontinuation.h"
 #include "kerror.h"
 
@@ -34,8 +34,12 @@
 ** Idea to look up these papers from srfi 85: 
 ** "Recursive Equivalence Predicates" by William D. Clinger
 */
-void equalp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void equalp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -197,11 +201,14 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 		    result = false;
 		    break;
 		}
-	    } else if (ttisblob(obj1) && ttisblob(obj2)) {
-		if (!kblob_equalp(obj1, obj2)) {
+	    } else if (ttisbytevector(obj1) && ttisbytevector(obj2)) {
+		if (!kbytevector_equalp(obj1, obj2)) {
 		    result = false;
 		    break;
 		}
+            } else if (ttisvector(obj1) && ttisvector(obj2)) {
+                fprintf(stderr, "TODO: equal? for vectors not implemented!\n");
+                result = false;
 	    } else {
 		result = false;
 		break;

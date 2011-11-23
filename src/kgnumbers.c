@@ -50,6 +50,8 @@ bool kfinitep(TValue obj) { return !ttisinf(obj); }
 bool kintegerp(TValue obj) { return ttisinteger(obj); }
 /* only exact integers (like for indices), bigints & fixints */
 bool keintegerp(TValue obj) { return ttiseinteger(obj); }
+/* exact integers between 0 and 255 inclusive */
+bool ku8p(TValue obj) { return ttisu8(obj); }
 bool krationalp(TValue obj) { return ttisrational(obj); }
 bool krealp(TValue obj) { return ttisreal(obj); }
 /* TEMP used (as a type predicate) in all predicates that need a real with 
@@ -896,8 +898,12 @@ TValue knum_rationalize(klisp_State *K, TValue n1, TValue n2)
 }
 
 /* 12.5.4 + */
-void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kplus(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
@@ -963,8 +969,12 @@ void kplus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.5.5 * */
-void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void ktimes(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
@@ -1041,8 +1051,12 @@ void ktimes(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.5.6 - */
-void kminus(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kminus(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
@@ -1193,8 +1207,12 @@ int32_t kfixint_div0_mod0(int32_t n, int32_t d, int32_t *res_mod)
 }
 
 /* flags are FDIV_DIV, FDIV_MOD, FDIV_ZERO */
-void kdiv_mod(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kdiv_mod(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: name symbol
     ** xparams[1]: div_mod_flags
@@ -1434,8 +1452,12 @@ bool kevenp(TValue n)
 }
 
 /* 12.5.12 abs */
-void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kabs(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
 
@@ -1448,8 +1470,12 @@ void kabs(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* 12.5.13 min, max */
 /* NOTE: this does two passes, one for error checking and one for doing
    the actual work */
-void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kmin_max(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: bool: true min, false max
@@ -1486,8 +1512,12 @@ void kmin_max(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.5.14 gcm, lcm */
-void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kgcd(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
@@ -1520,8 +1550,12 @@ void kgcd(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     arith_kapply_cc(K, res);
 }
 
-void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void klcm(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
@@ -1549,9 +1583,16 @@ void klcm(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /* use fyped_predp */
 
 /* 12.6.2 get-real-internal-bounds, get-real-exact-bounds */
-void kget_real_internal_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
-			       TValue denv)
+void kget_real_internal_bounds(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_1tp(K, ptree, "real", krealp, tv_n);
     /* TEMP: do it here directly, for now all inexact objects have
        [-inf, +inf] bounds */
@@ -1564,9 +1605,15 @@ void kget_real_internal_bounds(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
-void kget_real_exact_bounds(klisp_State *K, TValue *xparams, TValue ptree, 
-			    TValue denv)
+void kget_real_exact_bounds(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_1tp(K, ptree, "real", krealp, tv_n);
     /* TEMP: do it here directly, for now all inexact objects have
        [-inf, +inf] bounds, when bounded reals are implemented this
@@ -1582,9 +1629,15 @@ void kget_real_exact_bounds(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 12.6.3 get-real-internal-primary, get-real-exact-primary */
-void kget_real_internal_primary(klisp_State *K, TValue *xparams, 
-				TValue ptree, TValue denv)
+void kget_real_internal_primary(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_1tp(K, ptree, "real", krealp, tv_n);
     /* TEMP: do it here directly */
     if (ttisrwnpv(tv_n)) {
@@ -1595,9 +1648,15 @@ void kget_real_internal_primary(klisp_State *K, TValue *xparams,
     }
 }
 
-void kget_real_exact_primary(klisp_State *K, TValue *xparams, 
-			     TValue ptree, TValue denv)
+void kget_real_exact_primary(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    klisp_assert(ttisenvironment(K->next_env));
     bind_1tp(K, ptree, "real", krealp, tv_n);
     
     /* NOTE: this handles no primary value errors & exact cases just fine */
@@ -1606,8 +1665,15 @@ void kget_real_exact_primary(klisp_State *K, TValue *xparams,
 }
 
 /* 12.6.4 make-inexact */
-void kmake_inexact(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kmake_inexact(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+
     bind_3tp(K, ptree, "real", krealp, real1, 
 	     "real", krealp, real2, "real", krealp, real3);
 
@@ -1625,9 +1691,12 @@ void kmake_inexact(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.6.5 real->inexact, real->exact */
-void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void kreal_to_inexact(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -1638,9 +1707,12 @@ void kreal_to_inexact(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
-void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree, 
-		    TValue denv)
+void kreal_to_exact(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -1651,9 +1723,14 @@ void kreal_to_exact(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 12.6.6 with-strict-arithmetic, get-strict-arithmetic? */
-void kwith_strict_arithmetic(klisp_State *K, TValue *xparams, TValue ptree, 
-			     TValue denv)
+void kwith_strict_arithmetic(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+
     bind_2tp(K, ptree, "bool", ttisboolean, strictp,
 	     "combiner", ttiscombiner, comb);
 
@@ -1669,9 +1746,12 @@ void kwith_strict_arithmetic(klisp_State *K, TValue *xparams, TValue ptree,
     ktail_call(K, op, args, denv);
 }
 
-void kget_strict_arithmeticp(klisp_State *K, TValue *xparams, TValue ptree, 
-			     TValue denv)
+void kget_strict_arithmeticp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -1686,8 +1766,12 @@ void kget_strict_arithmeticp(klisp_State *K, TValue *xparams, TValue ptree,
 /* uses ftypep */
 
 /* 12.8.2 / */
-void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kdivided(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
@@ -1781,8 +1865,12 @@ void kdivided(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.8.3 numerator, denominator */
-void knumerator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void knumerator(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
     
@@ -1792,8 +1880,12 @@ void knumerator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
-void kdenominator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kdenominator(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
     
@@ -1804,9 +1896,12 @@ void kdenominator(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 }
 
 /* 12.8.4 floor, ceiling, truncate, round */
-void kreal_to_integer(klisp_State *K, TValue *xparams, TValue ptree, 
-		      TValue denv)
+void kreal_to_integer(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: symbol name
     ** xparams[1]: bool: true min, false max
@@ -1821,9 +1916,12 @@ void kreal_to_integer(klisp_State *K, TValue *xparams, TValue ptree,
 }
 
 /* 12.8.5 rationalize, simplest-rational */
-void krationalize(klisp_State *K, TValue *xparams, TValue ptree, 
-		  TValue denv)
+void krationalize(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -1834,9 +1932,12 @@ void krationalize(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
-void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree, 
-			TValue denv)
+void ksimplest_rational(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -1847,8 +1948,12 @@ void ksimplest_rational(klisp_State *K, TValue *xparams, TValue ptree,
     kapply_cc(K, res);
 }
 
-void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kexp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -1884,8 +1989,12 @@ void kexp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
-void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void klog(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -1931,8 +2040,12 @@ void klog(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     kapply_cc(K, res);
 }
 
-void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void ktrig(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: trig function
@@ -1971,8 +2084,12 @@ void ktrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     arith_kapply_cc(K, res);
 }
 
-void katrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void katrig(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     /*
     ** xparams[0]: trig function
@@ -2016,8 +2133,12 @@ void katrig(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     arith_kapply_cc(K, res);
 }
 
-void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void katan(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -2103,8 +2224,12 @@ void katan(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     arith_kapply_cc(K, res);
 }
 
-void ksqrt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void ksqrt(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -2144,8 +2269,12 @@ void ksqrt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     arith_kapply_cc(K, res);
 }
 
-void kexpt(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void kexpt(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
 
@@ -2349,4 +2478,6 @@ void kinit_numbers_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "sqrt", ksqrt, 0);
     /* 12.9.6 expt */
     add_applicative(K, ground_env, "expt", kexpt, 0);
+
+    /* TODO add some conversion like number->string, string->number */
 }

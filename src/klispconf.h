@@ -13,6 +13,101 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/*
+** ==================================================================
+** Search for "@@" to find all configurable definitions.
+** ===================================================================
+*/
+
+/*
+@@ KLISP_ANSI controls the use of non-ansi features.
+** CHANGE it (define it) if you want Klisp to avoid the use of any
+** non-ansi feature or library.
+*/
+#if defined(__STRICT_ANSI__)
+#define KLISP_ANSI
+#endif
+
+
+#if !defined(KLISP_ANSI) && defined(_WIN32)
+#define KLISP_WIN
+#endif
+
+#if defined(KLISP_USE_LINUX)
+#define KLISP_USE_POSIX
+#define KLISP_USE_DLOPEN		/* needs an extra library: -ldl */
+#define KLISP_USE_READLINE	/* needs some extra libraries */
+#endif
+
+#if defined(KLISP_USE_MACOSX)
+#define KLISP_USE_POSIX
+#define KLISP_DL_DYLD		/* does not need extra library */
+#endif
+
+/*
+@@ KLISP_PROGNAME is the default name for the stand-alone klisp program.
+** CHANGE it if your stand-alone interpreter has a different name and
+** your system is not able to detect that name automatically.
+*/
+#define KLISP_PROGNAME		"klisp"
+
+/*
+@@ KLISP_QL describes how error messages quote program elements.
+** CHANGE it if you want a different appearance.
+*/
+#define KLISP_QL(x)	"'" x "'"
+#define KLISP_QS	KLISP_QL("%s")
+/* /TODO */
+
+/*
+@@ KLISP_USE_POSIX includes all functionallity listed as X/Open System
+@* Interfaces Extension (XSI).
+** CHANGE it (define it) if your system is XSI compatible.
+*/
+#if defined(KLISP_USE_POSIX)
+#define KLISP_USE_MKSTEMP
+#define KLISP_USE_ISATTY
+#define KLISP_USE_POPEN
+#define KLISP_USE_ULONGJMP
+#endif
+
+/*
+@@ LUA_PATH and LUA_CPATH are the names of the environment variables that
+@* Lua check to set its paths.
+@@ KLISP_INIT is the name of the environment variable that klisp
+@* checks for initialization code.
+** CHANGE them if you want different names.
+*/
+//#define LUA_PATH        "LUA_PATH"
+//#define LUA_CPATH       "LUA_CPATH"
+#define KLISP_INIT	"KLISP_INIT"
+
+/*
+@@ klisp_stdin_is_tty detects whether the standard input is a 'tty' (that
+@* is, whether we're running klisp interactively).
+** CHANGE it if you have a better definition for non-POSIX/non-Windows
+** systems.
+*/
+#if defined(KLISP_USE_ISATTY)
+#include <unistd.h>
+#define klisp_stdin_is_tty()	isatty(0)
+#elif defined(KLISP_WIN)
+#include <io.h>
+#include <stdio.h>
+#define klisp_stdin_is_tty()	_isatty(_fileno(stdin))
+#else
+#define klisp_stdin_is_tty()	1  /* assume stdin is a tty */
+#endif
+
+/*
+@@ KLISP_PROMPT is the default prompt used by stand-alone Klisp.
+@@ KLISP_PROMPT2 is not currently used.
+** CHANGE them if you want different prompts. 
+*/
+#define KLISP_PROMPT		"klisp> "
+/* XXX not used for now */
+#define KLISP_PROMPT2		">> "
+
 /* temp defines till gc is stabilized */
 #define KUSE_GC 1
 /* Print msgs when starting and ending gc */

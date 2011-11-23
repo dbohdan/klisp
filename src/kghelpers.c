@@ -17,8 +17,12 @@
 #include "kerror.h"
 #include "ksymbol.h"
 
-void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void typep(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     /*
     ** xparams[0]: name symbol
     ** xparams[1]: type tag (as by i2tv)
@@ -47,8 +51,12 @@ void typep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
     }
 }
 
-void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void ftypep(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     /*
     ** xparams[0]: name symbol
@@ -80,8 +88,12 @@ void ftypep(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /*
 ** REFACTOR: Change this to make it a single pass
 */
-void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void ftyped_predp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     /*
     ** xparams[0]: name symbol
@@ -120,8 +132,12 @@ void ftyped_predp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 /*
 ** REFACTOR: Change this to make it a single pass
 */
-void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void ftyped_bpredp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     /*
     ** xparams[0]: name symbol
@@ -176,8 +192,12 @@ void ftyped_bpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
 
 /* This is the same, but the comparison predicate takes a klisp_State */
 /* TODO unify them */
-void ftyped_kbpredp(klisp_State *K, TValue *xparams, TValue ptree, TValue denv)
+void ftyped_kbpredp(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
     (void) denv;
     /*
     ** xparams[0]: name symbol
@@ -268,7 +288,7 @@ int32_t check_typed_list(klisp_State *K, char *name, char *typename,
     return pairs;
 }
 
-int32_t check_list(klisp_State *K, char *name, bool allow_infp,
+int32_t check_list(klisp_State *K, const char *name, bool allow_infp,
 			  TValue obj, int32_t *cpairs)
 {
     TValue tail = obj;
@@ -301,8 +321,11 @@ int32_t check_list(klisp_State *K, char *name, bool allow_infp,
 ** Continuation that ignores the value received and instead returns
 ** a previously computed value.
 */
-void do_return_value(klisp_State *K, TValue *xparams, TValue obj)
+void do_return_value(klisp_State *K)
 {
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: saved_obj
     */
