@@ -341,6 +341,8 @@ void guard_dynamic_extent(klisp_State *K)
 }
 
 /* 7.3.4 exit */    
+/* Unlike in the report, in klisp this takes an optional argument
+   to be passed to the root continuation (defaults to #inert) */
 void kgexit(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -350,11 +352,13 @@ void kgexit(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
 
-    check_0p(K, ptree);
+    TValue obj = ptree;
+    if (!get_opt_tpar(K, obj, "any", anytype))
+	obj = KINERT;
 
     /* TODO: look out for guards and dynamic variables */
     /* should be probably handled in kcall_cont() */
-    kcall_cont(K, K->root_cont, KINERT);
+    kcall_cont(K, K->root_cont, obj);
 }
 
 /* init ground */
