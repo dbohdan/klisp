@@ -866,80 +866,6 @@ void flush(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* 15.1.? file-exists? */
-void file_existsp(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
-    bind_1tp(K, ptree, "string", ttisstring, filename);
-
-    /* TEMP: this should probably be done in a operating system specific
-       manner, but this will do for now */
-    TValue res = KFALSE;
-    FILE *file = fopen(kstring_buf(filename), "r");
-    if (file) {
-	res = KTRUE;
-	UNUSED(fclose(file));
-    }
-    kapply_cc(K, res);
-}
-
-/* 15.1.? delete-file */
-void delete_file(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
-    bind_1tp(K, ptree, "string", ttisstring, filename);
-
-    /* TEMP: this should probably be done in a operating system specific
-       manner, but this will do for now */
-    /* XXX: this could fail if there's a dead (in the gc sense) port still 
-       open, should probably retry once after doing a complete GC */
-    if (remove(kstring_buf(filename))) {
-        klispE_throw_errno_with_irritants(K, "remove", 1, filename);
-        return;
-    } else {
-	kapply_cc(K, KINERT);
-	return;
-    }
-}
-
-/* 15.1.? rename-file */
-void rename_file(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
-    bind_2tp(K, ptree, "string", ttisstring, old_filename, 
-	     "string", ttisstring, new_filename);
-
-    /* TEMP: this should probably be done in a operating system specific
-       manner, but this will do for now */
-    /* XXX: this could fail if there's a dead (in the gc sense) port still 
-       open, should probably retry once after doing a complete GC */
-    if (rename(kstring_buf(old_filename), kstring_buf(new_filename))) {
-        klispE_throw_errno_with_irritants(K, "rename", 2, old_filename, new_filename);
-        return;
-    } else {
-	kapply_cc(K, KINERT);
-	return;
-    }
-}
-
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K)
 {
@@ -1084,19 +1010,6 @@ void kinit_ports_ground_env(klisp_State *K)
 
     /* 15.1.? flush-output-port */
     add_applicative(K, ground_env, "flush-output-port", flush, 0);
-
-    /* REFACTOR move to system module */
-
-    /* 15.1.? file-exists? */
-    add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
-
-    /* 15.1.? delete-file */
-    add_applicative(K, ground_env, "delete-file", delete_file, 0);
-
-    /* this isn't in r7rs but it's in ansi c and quite easy to implement */
-
-    /* 15.1.? rename-file */
-    add_applicative(K, ground_env, "rename-file", rename_file, 0);
 
     /*
      * That's all there is in the report combined with r5rs and r7rs scheme.
