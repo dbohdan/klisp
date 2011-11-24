@@ -25,6 +25,8 @@
 #include "kstring.h"
 #include "kcontinuation.h"
 #include "koperative.h"
+#include "kapplicative.h"
+#include "ksymbol.h"
 #include "kenvironment.h"
 #include "kport.h"
 #include "kread.h"
@@ -507,6 +509,40 @@ static int runargs (klisp_State *K, char **argv, int n)
     return EXIT_SUCCESS;
 }
 
+static void populate_argument_lists(klisp_State *K, char **argv, int argc, 
+				    int script)
+{
+    /* first create the script list */
+    TValue tail = KNIL;
+    TValue obj = KINERT;
+    krooted_tvs_push(K, tail);
+    krooted_tvs_push(K, obj);
+    while(argc > script) {
+	char *arg = argv[--argc];
+	obj = kstring_new_b_imm(K, arg);
+	tail = kimm_cons(K, obj, tail);
+    }
+    /* Store the script argument list */
+    obj = ksymbol_new(K, "get-script-arguments", KNIL);
+    klisp_assert(kbinds(K, K->ground_env, obj));
+    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    tv2op(obj)->extra[0] = tail;
+
+    while(argc > 0) {
+	char *arg = argv[--argc];
+	obj = kstring_new_b_imm(K, arg);
+	tail = kimm_cons(K, obj, tail);
+    }
+    /* Store the interpreter argument list */
+    obj = ksymbol_new(K, "get-interpreter-arguments", KNIL);
+    klisp_assert(kbinds(K, K->ground_env, obj));
+    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    tv2op(obj)->extra[0] = tail;
+
+    krooted_tvs_pop(K);
+    krooted_tvs_pop(K);
+}
+
 static int handle_klispinit(klisp_State *K) 
 {
   const char *init = getenv(KLISP_INIT);
@@ -562,6 +598,10 @@ static void pmain(klisp_State *K)
     if (has_v)
 	print_version();
 
+    /* TEMP this could be either set before or after running the arguments,
+       we'll do it before for now */
+    populate_argument_lists(K, argv, s->argc, (script > 0) ? script : s->argc);
+    
     s->status = runargs(K, argv, (script > 0) ? script : s->argc);
 
     if (s->status != EXIT_SUCCESS)

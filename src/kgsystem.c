@@ -175,6 +175,20 @@ void rename_file(klisp_State *K)
     }
 }
 
+/* used for both get_script_arguments and get_interpreter_arguments */
+void get_arguments(klisp_State *K)
+{
+    /*
+     * xparams[0]: immutable argument list
+     */
+    TValue ptree = K->next_value;
+    TValue *xparams = K->next_xparams;
+    check_0p(K, ptree);
+
+    TValue res = xparams[0];
+    kapply_cc(K, res);
+}
+
 /* init ground */
 void kinit_system_ground_env(klisp_State *K)
 {
@@ -188,15 +202,18 @@ void kinit_system_ground_env(klisp_State *K)
     /* ??.?.? jiffies-per-second */
     add_applicative(K, ground_env, "jiffies-per-second", jiffies_per_second, 
 		    0);
-
     /* ?.? file-exists? */
     add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
-
     /* ?.? delete-file */
     add_applicative(K, ground_env, "delete-file", delete_file, 0);
-
     /* this isn't in r7rs but it's in ansi c and quite easy to implement */
-
     /* ?.? rename-file */
     add_applicative(K, ground_env, "rename-file", rename_file, 0);
+    /* The value for these two will get set later by the interpreter */
+    /* ?.? get-script-arguments */
+    add_applicative(K, ground_env, "get-script-arguments", get_arguments, 
+		    1, KNIL);
+    /* ?.? get-interpreter-arguments */
+    add_applicative(K, ground_env, "get-interpreter-arguments", get_arguments, 
+		    1, KNIL);
 }
