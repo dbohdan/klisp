@@ -198,8 +198,6 @@
         (#t
           (event-loop screen drawing))))))
 
-($define! main
-  ($lambda (argv)
-    (with-sdl "klisp ffi demo"
-      ($lambda (screen) (event-loop screen #f)))))
+(with-sdl "klisp ffi demo"
+  ($lambda (screen) (event-loop screen #f)))
 

@@ -29,12 +29,9 @@ static void handler(int signo)
     write(self_pipe[1], &message, 1);
 }
 
-static void install_signal_handler(klisp_State *K, TValue *xparams,
-                                   TValue ptree, TValue denv)
+static void install_signal_handler(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
-    bind_1tp(K, ptree, "string", ttisstring, signame);
+    bind_1tp(K, K->next_value, "string", ttisstring, signame);
     int signo;
 
     if (!strcmp(kstring_buf(signame), "SIGINT")) {
@@ -49,12 +46,8 @@ static void install_signal_handler(klisp_State *K, TValue *xparams,
     kapply_cc(K, KINERT);
 }
 
-static void open_signal_port(klisp_State *K, TValue *xparams,
-                             TValue ptree, TValue denv)
+static void open_signal_port(klisp_State *K)
 {
-    UNUSED(xparams);
-    UNUSED(denv);
-
     FILE *fw = fdopen(self_pipe[0], "r");
     TValue filename = kstring_new_b_imm(K, "**SIGNAL**");
     krooted_tvs_push(K, filename);
@@ -65,7 +58,7 @@ static void open_signal_port(klisp_State *K, TValue *xparams,
 
 static void safe_add_applicative(klisp_State *K, TValue env,
                                  const char *name,
-                                 klisp_Ofunc fn)
+                                 klisp_CFunction fn)
 {
     TValue symbol = ksymbol_new(K, name, KNIL);
     krooted_tvs_push(K, symbol);
