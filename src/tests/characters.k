@@ -74,7 +74,6 @@
 ($check-predicate ($false-for-all? char-lower-case? #\0 #\A #\Z #\' #\@ #\{ #\[ #\~))
 
 ;; XXX char-upcase char-downcase char-titlecase char-foldcase
-
 ($check equal? (char-upcase #\a) #\A)
 ($check equal? (char-upcase #\z) #\Z)
 ($check equal? (char-upcase #\R) #\R)
