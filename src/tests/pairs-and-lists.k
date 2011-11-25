@@ -31,11 +31,11 @@
 				  (enc #inert))))
 ($check-not-predicate (null? (memoize #inert)))
 ($check-not-predicate (null? 1))
-;($check-not-predicate (null? 1.0))
+($check-not-predicate (null? 1.0))
 ($check-not-predicate (null? #e+infinity))
-;($check-not-predicate (null? #i+infinity))
-;($check-not-predicate (null? #undefined))
-;($check-not-predicate (null? #real-with-no-primary-value))
+($check-not-predicate (null? #i+infinity))
+($check-not-predicate (null? #undefined))
+($check-not-predicate (null? #real))
 ($check-not-predicate (null? "string"))
 ($check-not-predicate (null? #\a))
 ($check-not-predicate (null? (get-current-input-port)))
@@ -54,11 +54,11 @@
 				  (enc #inert))))
 ($check-not-predicate (pair? (memoize #inert)))
 ($check-not-predicate (pair? 1))
-;($check-not-predicate (pair? 1.0))
+($check-not-predicate (pair? 1.0))
 ($check-not-predicate (pair? #e+infinity))
-;($check-not-predicate (pair? #i+infinity))
-;($check-not-predicate (pair? #undefined))
-;($check-not-predicate (pair? #real-with-no-primary-value))
+($check-not-predicate (pair? #i+infinity))
+($check-not-predicate (pair? #undefined))
+($check-not-predicate (pair? #real))
 ($check-not-predicate (pair? "string"))
 ($check-not-predicate (pair? #\a))
 ($check-not-predicate (pair? (get-current-input-port)))
@@ -127,6 +127,26 @@
   ($check eq? (cdaddr tree16) 14)
   ($check eq? (cadddr tree16) 15)
   ($check eq? (cddddr tree16) 16))
+
+;; make-list
+($check-predicate (null? (make-list 0)))
+($check-predicate (mutable-pair? (make-list 1)))
+($check equal? (make-list 2) (list #inert #inert))
+($check equal? (make-list 3 "val") (list "val" "val" "val"))
+
+;; list-copy
+($check-predicate (null? (list-copy ())))
+($check-predicate (mutable-pair? (list-copy (list 1))))
+($check-predicate (mutable-pair? (list-copy (copy-es-immutable (list 1)))))
+($check equal? (list-copy (list 1 2 3)) (list 1 2 3))
+($check equal? (list-copy (list . #1=(1 2 . #1#))) (list . #2=(1 2 . #2#)))
+
+;; reverse
+($check-predicate (null? (reverse ())))
+($check-predicate (mutable-pair? (reverse (list 1))))
+($check-predicate (mutable-pair? (reverse (copy-es-immutable (list 1)))))
+($check equal? (reverse (list 1)) (list 1))
+($check equal? (reverse (list 1 2 3)) (list 3 2 1))
 
 ;; get-list-metrics
 ($check equal? (get-list-metrics ()) (list 0 1 0 0))
@@ -352,6 +372,24 @@
   ($check-error (cdaddr tree8))
   ($check-error (cadddr tree8))
   ($check-error (cddddr tree8)))
+
+;; make-list
+($check-error (make-list))
+($check-error (make-list "str"))
+($check-error (make-list 1 "str" "str2"))
+
+;; list-copy
+($check-error (list-copy))
+($check-error (list-copy () ()))
+($check-error (list-copy #inert))
+($check-error (list-copy (list* 1 2 3)))
+
+;; reverse
+($check-error (reverse))
+($check-error (reverse () ()))
+($check-error (reverse #inert))
+($check-error (reverse (list* 1 2 3)))
+($check-error (reverse (list 1 . #1=(2 . #1#))))
 
 ;; get-list-metrics
 ($check-error (get-list-metrics))

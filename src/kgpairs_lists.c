@@ -60,56 +60,6 @@ void list(klisp_State *K)
     kapply_cc(K, ptree);
 }
 
-/* 5.2.? make-list */
-void make_list(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-
-    UNUSED(xparams);
-    UNUSED(denv);
-    
-    bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, fill);
-
-    if (!get_opt_tpar(K, fill, "any", anytype))
-        fill = KINERT;
-
-    if (knegativep(tv_s)) {
-        klispE_throw_simple(K, "negative list length");
-        return;
-    } else if (!ttisfixint(tv_s)) {
-        klispE_throw_simple(K, "list length is too big");
-        return;
-    }
-    TValue tail = KNIL;
-    int i = ivalue(tv_s); 
-    krooted_vars_push(K, &tail);
-    while(i-- > 0) {
-	tail = kcons(K, fill, tail);
-    }
-    krooted_vars_pop(K);
-
-    kapply_cc(K, tail);
-}
-
-/* 5.2.? list-copy */
-void list_copy(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-
-    UNUSED(xparams);
-    UNUSED(denv);
-    
-    bind_1p(K, ptree, ls);
-    TValue copy = check_copy_list(K, "list-copy", ls, true);
-    kapply_cc(K, copy);
-}
-
 /* 5.2.2 list* */
 void listS(klisp_State *K)
 {
@@ -202,6 +152,89 @@ void c_ad_r(klisp_State *K)
     }
     kapply_cc(K, obj);
 }
+
+/* 5.4.? make-list */
+void make_list(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, fill);
+
+    if (!get_opt_tpar(K, fill, "any", anytype))
+        fill = KINERT;
+
+    if (knegativep(tv_s)) {
+        klispE_throw_simple(K, "negative list length");
+        return;
+    } else if (!ttisfixint(tv_s)) {
+        klispE_throw_simple(K, "list length is too big");
+        return;
+    }
+    TValue tail = KNIL;
+    int i = ivalue(tv_s); 
+    krooted_vars_push(K, &tail);
+    while(i-- > 0) {
+	tail = kcons(K, fill, tail);
+    }
+    krooted_vars_pop(K);
+
+    kapply_cc(K, tail);
+}
+
+/* 5.4.? list-copy */
+void list_copy(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1p(K, ptree, ls);
+    TValue copy = check_copy_list(K, "list-copy", ls, true);
+    kapply_cc(K, copy);
+}
+
+/* 5.4.? reverse */
+void reverse(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1p(K, ptree, ls);
+    TValue tail = ls;
+    TValue res = KNIL;
+    krooted_vars_push(K, &res);
+    while(ttispair(tail) && !kis_marked(tail)) {
+	kmark(tail);
+	res = kcons(K, kcar(tail), res);
+	tail = kcdr(tail);
+    }
+    unmark_list(K, ls);
+    krooted_vars_pop(K);
+
+    if (ttispair(tail)) {
+	klispE_throw_simple(K, "expected acyclic list"); 
+    } else if (!ttisnil(tail)) {
+	klispE_throw_simple(K, "expected list"); 
+    } else {
+	kapply_cc(K, res);
+    }
+}
+
 
 /* also used in list-tail and list-ref when receiving
    bigint indexes */
@@ -1218,6 +1251,8 @@ void kinit_pairs_lists_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "make-list", make_list, 0);
     /* 5.?.? list-copy */
     add_applicative(K, ground_env, "list-copy", list_copy, 0);
+    /* 5.?.? reverse */
+    add_applicative(K, ground_env, "reverse", reverse, 0);
     /* 5.7.1 get-list-metrics */
     add_applicative(K, ground_env, "get-list-metrics", get_list_metrics, 0);
     /* 5.7.2 list-tail */
