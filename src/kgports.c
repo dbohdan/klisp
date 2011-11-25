@@ -27,8 +27,6 @@
 #include "kwrite.h"
 #include "kpair.h"
 
-#include "kscript.h"
-
 #include "kghelpers.h"
 #include "kgports.h"
 #include "kgcontinuations.h" /* for guards */

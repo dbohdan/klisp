@@ -235,8 +235,8 @@ void get_environment_variables(klisp_State *K)
    avoiding taking extra params in main */
 /* I think it's defined in unistd, but it needs to have __USE_GNU 
  defined. The correct way to do that would be to define _GNU_SOURCE
- before including any system files... That's not good for an 
- embeddable interpreter... */
+ before including any system files... That's not so good for an 
+ embeddable interpreter, but it could be done in the makefile I guess */
 extern char **environ;
 
 /* Helper for get-environment-variables */

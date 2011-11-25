@@ -35,7 +35,6 @@
 #include "kghelpers.h" /* for do_return_value */
 #include "kgcontinuations.h" /* for do_pass_value */
 #include "kgcontrol.h" /* for do_seq */
-#include "kscript.h"
 #include "krepl.h"
 
 /* TODO update dependencies in makefile */

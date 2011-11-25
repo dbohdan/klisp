@@ -33,7 +33,7 @@ PLATS= generic mingw posix
 KRN_A= libklisp.a
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
-	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o kscript.o \
+	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
 	kencapsulation.o kpromise.o kport.o kinteger.o krational.o \
 	kreal.o ktable.o kgc.o imath.o imrat.o kbytevector.o kvector.o \
 	kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
@@ -213,7 +213,7 @@ kgpairs_lists.o: kgpairs_lists.c kstate.h klimits.h klisp.h kobject.h \
 kgports.o: kgports.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kport.h kstring.h kbytevector.h kenvironment.h \
  kapplicative.h koperative.h kcontinuation.h kpair.h kgc.h kerror.h \
- ksymbol.h kread.h kwrite.h kscript.h kghelpers.h kgports.h \
+ ksymbol.h kread.h kwrite.h kghelpers.h kgports.h \
  kgcontinuations.h kgcontrol.h kgkd_vars.h
 kgpromises.o: kgpromises.c kstate.h klimits.h klisp.h kobject.h \
  klispconf.h ktoken.h kmem.h kpromise.h kpair.h kgc.h kapplicative.h \
@@ -227,7 +227,7 @@ kground.o: kground.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kgenvironments.h kgenv_mut.h kgcombiners.h kgcontinuations.h \
  kgencapsulations.h kgpromises.h kgkd_vars.h kgks_vars.h kgnumbers.h \
  kgstrings.h kgchars.h kgports.h kgbytevectors.h kgvectors.h kgsystem.h \
- kgerrors.h kgffi.h ktable.h keval.h krepl.h kscript.h
+ kgerrors.h kgffi.h ktable.h keval.h krepl.h
 kgstrings.o: kgstrings.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  kpair.h kgc.h ksymbol.h kstring.h kghelpers.h kenvironment.h kgchars.h \
@@ -250,7 +250,7 @@ klisp.o: klisp.c klimits.h klisp.h kobject.h klispconf.h kstate.h \
  ktoken.h kmem.h kauxlib.h kstring.h kcontinuation.h koperative.h \
  kenvironment.h kport.h kread.h kwrite.h kerror.h kpair.h kgc.h \
  kgcontinuations.h kghelpers.h kapplicative.h ksymbol.h kgcontrol.h \
- kscript.h krepl.h
+ krepl.h
 kmem.o: kmem.c klisp.h kobject.h klimits.h klispconf.h kstate.h ktoken.h \
  kmem.h kerror.h kpair.h kgc.h
 kobject.o: kobject.c kobject.h klimits.h klisp.h klispconf.h
@@ -273,14 +273,10 @@ krepl.o: krepl.c klisp.h kobject.h klimits.h klispconf.h kstate.h \
  ktoken.h kmem.h kcontinuation.h kenvironment.h kerror.h kpair.h kgc.h \
  kread.h kwrite.h kstring.h krepl.h ksymbol.h kport.h kgerrors.h \
  kghelpers.h kapplicative.h koperative.h ktable.h kgcontinuations.h
-kscript.o: kscript.c klisp.h kobject.h klimits.h klispconf.h kstate.h \
- ktoken.h kmem.h kcontinuation.h kenvironment.h kerror.h kpair.h kgc.h \
- kread.h kwrite.h kstring.h krepl.h kscript.h ksymbol.h kport.h \
- kgcontrol.h kghelpers.h kapplicative.h koperative.h kgerrors.h ktable.h
 kstate.o: kstate.c klisp.h kobject.h klimits.h klispconf.h kstate.h \
  ktoken.h kmem.h kstring.h kpair.h kgc.h keval.h koperative.h \
  kapplicative.h kcontinuation.h kenvironment.h kground.h krepl.h \
- kscript.h ksymbol.h kport.h ktable.h kbytevector.h kvector.h \
+ ksymbol.h kport.h ktable.h kbytevector.h kvector.h \
  kgpairs_lists.h kghelpers.h kerror.h kgerrors.h
 kstring.o: kstring.c kstring.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kgc.h
