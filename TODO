@@ -23,7 +23,7 @@
 ** $unless (r7rs)
 ** $string-for-each (r7rs)
 ** $vector-for-each (r7rs)
-** $bytevector-for-each (r7rs)
+** $bytevector-for-each
 ** $case (r7rs)
 ** $case-lambda (r7rs)
 ** $case-vau (r7rs)

@@ -19,10 +19,10 @@
 #include "kcontinuation.h"
 #include "kerror.h"
 #include "ksymbol.h"
+#include "kchar.h"
 #include "kstring.h"
 
 #include "kghelpers.h"
-#include "kgchars.h" /* for kcharp */
 #include "kgstrings.h"
 #include "kgnumbers.h" /* for keintegerp & knegativep */
 

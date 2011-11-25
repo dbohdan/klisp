@@ -17,6 +17,7 @@
 #include "koperative.h"
 #include "kcontinuation.h"
 #include "kerror.h"
+#include "kchar.h"
 
 #include "kghelpers.h"
 #include "kgchars.h"
@@ -29,14 +30,6 @@
 
 /* 14.1.3? char-upper-case?, char-lower-case? */
 /* use ftyped_predp */
-
-/* Helpers for typed predicates */
-bool kcharp(TValue tv) { return ttischar(tv); }
-bool kchar_alphabeticp(TValue ch) { return isalpha(chvalue(ch)) != 0; }
-bool kchar_numericp(TValue ch)    { return isdigit(chvalue(ch)) != 0; }
-bool kchar_whitespacep(TValue ch) { return isspace(chvalue(ch)) != 0; }
-bool kchar_upper_casep(TValue ch) { return isupper(chvalue(ch)) != 0; }
-bool kchar_lower_casep(TValue ch) { return islower(chvalue(ch)) != 0; }
 
 /* 14.1.4? char->integer, integer->char */
 void kchar_to_integer(klisp_State *K)
