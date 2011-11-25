@@ -514,8 +514,8 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     /* first create the script list */
     TValue tail = KNIL;
     TValue obj = KINERT;
-    krooted_tvs_push(K, tail);
-    krooted_tvs_push(K, obj);
+    krooted_vars_push(K, &tail);
+    krooted_vars_push(K, &obj);
     while(argc > script) {
 	char *arg = argv[--argc];
 	obj = kstring_new_b_imm(K, arg);
@@ -538,8 +538,8 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     obj = kunwrap(kget_binding(K, K->ground_env, obj));
     tv2op(obj)->extra[0] = tail;
 
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
 }
 
 static int handle_klispinit(klisp_State *K) 

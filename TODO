@@ -8,6 +8,10 @@
 ** use some convention for ground operative underlaying function names
    maybe add "kgop_"
 ** use a better convention for continuation underlaying function names
+** try to use krooted_vars_push more to save some lines and avoid
+   clutter (e.g. when creating continuations)
+** Study differrent c interfaces (maybe a stack like in lua would be
+   better than dealing with gc push/pop
 * fix:
 ** current-jiffy (r7rs)
 ** jiffies-per-second (r7rs)
