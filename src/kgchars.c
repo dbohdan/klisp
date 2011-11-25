@@ -76,6 +76,7 @@ void kinteger_to_char(klisp_State *K)
     kapply_cc(K, ch2tv((char) i));
 }
 
+/* REFACTOR merge with downcase and future foldcase */
 /* 14.1.4? char-upcase, char-downcase */
 void kchar_upcase(klisp_State *K)
 {

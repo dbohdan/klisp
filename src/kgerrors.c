@@ -57,6 +57,7 @@ void error_object_message(klisp_State *K)
     UNUSED(denv);
     bind_1tp(K, ptree, "error object", ttiserror, error_tv);
     Error *err_obj = tv2error(error_tv);
+    /* the string is immutable, no need to copy it */
     klisp_assert(ttisstring(err_obj->msg));
     kapply_cc(K, err_obj->msg);
 }
@@ -102,11 +103,24 @@ void kinit_error_ground_env(klisp_State *K)
     TValue ground_env = K->ground_env;
     TValue symbol, value;
 
-    add_applicative(K, ground_env, "error-object?", typep, 2, symbol, i2tv(K_TERROR));
+    add_applicative(K, ground_env, "error-object?", typep, 2, symbol, 
+		    i2tv(K_TERROR));
     add_applicative(K, ground_env, "error", kgerror, 0);
     add_applicative(K, ground_env, "raise", kgraise, 0);
-    add_applicative(K, ground_env, "error-object-message", error_object_message, 0);
-    add_applicative(K, ground_env, "error-object-irritants", error_object_irritants, 0);
+    /* MAYBE add get- and remove object from these names */
+    add_applicative(K, ground_env, "error-object-message", 
+		    error_object_message, 0);
+    add_applicative(K, ground_env, "error-object-irritants", 
+		    error_object_irritants, 0);
+    /* TODO raise-continuable from r7rs doesn't make sense in the Kernel 
+       system of handling continuations.
+       What we could have is a more sofisticated system
+       of restarts, which would be added to an error object
+       and would encapsulate continuations and descriptions of them. 
+       It would be accessible with 
+       error-object-restarts or something like that.
+       See Common Lisp and mit scheme for examples
+    */
 
     klisp_assert(ttiscontinuation(K->system_error_cont));
     add_value(K, ground_env, "system-error-continuation", K->system_error_cont);

@@ -1,0 +1,55 @@
+r7rs branch:
+
+* refactor:
+** double check combiner names to be verbs 
+   (e.g. add get- where appropriate)
+* fix:
+** current-jiffy
+** jiffies-per-second
+* operatives: 
+** $when
+** $unless
+** $string-for-each
+** $vector-for-each
+** $bytevector-for-each 
+** $case
+** $case-lambda
+** $case-vau
+** $named-let
+** $do
+* applicatives: 
+** exact-integer?
+** reverse
+** make-list
+** list-copy
+** list-set!
+** vector-map
+** bytevector-map
+** char-foldcase
+** string-map
+** string-downcase
+** string-foldcase
+** string-upcase
+** vector->string
+** string->vector
+** vector-fill
+** vector-copy!
+** vector-copy-partial
+** vector-copy-partial!
+** read-line
+** number->string
+** string->number
+** define-record-type
+* reader
+** symbol escapes
+** string escapes
+** char escapes
+* other
+** optional argument to member?
+** optional argument to assoc
+** some simplified error guarding
+** restarts
+** add restart support to the repl/interpreter
+** simple modules (something inspired in r7rs)
+** add modules support to the interpreter
+

@@ -537,6 +537,7 @@ void kinit_strings_ground_env(klisp_State *K)
 		    string_to_immutable_string, 0);
 
     /* TODO: add string-upcase and string-downcase like in r7rs-draft */
+    /* foldcase too */
 
     /* 13.2.10? string-fill! */
     add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
