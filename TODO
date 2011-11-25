@@ -30,7 +30,6 @@
 ** $named-let (r7rs)
 ** $do (r7rs)
 * applicatives: 
-** list-set! (r7rs)
 ** vector-map (r7rs)
 ** bytevector-map (r7rs)
 ** char-foldcase (r7rs)

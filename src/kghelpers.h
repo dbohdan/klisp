@@ -430,6 +430,18 @@ inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i)
 int64_t kgcd32_64(int32_t a, int32_t b);
 int64_t klcm32_64(int32_t a, int32_t b);
 
+/*
+** Other
+*/
+
+/* Helper for list-tail, list-ref and list-set! */
+int32_t ksmallest_index(klisp_State *K, char *name, TValue obj, 
+			TValue tk);
+
+/* Helper for get-list-metrics, and list-tail, list-ref and list-set! 
+   when receiving bigint indexes */
+void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n, 
+			  int32_t *a, int32_t *c);
 
 /*
 ** Macros for ground environment initialization

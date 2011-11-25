@@ -16,6 +16,7 @@
 #include "klisp.h"
 #include "kerror.h"
 #include "ksymbol.h"
+#include "kinteger.h"
 
 void typep(klisp_State *K)
 {
@@ -382,4 +383,77 @@ int64_t klcm32_64(int32_t a_, int32_t b_)
     int64_t b = kabs64(b_);
     /* divide first to avoid possible overflow */
     return (a / gcd) * b;
+}
+
+/* Helper for get-list-metrics, and list-tail, list-ref and list-set! 
+   when receiving bigint indexes */
+void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n, 
+			  int32_t *a, int32_t *c)
+{
+    TValue tail = obj;
+    int32_t pairs = 0;
+
+    while(ttispair(tail) && !kis_marked(tail)) {
+	/* record the pair number to simplify cycle pair counting */
+	kset_mark(tail, i2tv(pairs));
+	++pairs;
+	tail = kcdr(tail);
+    }
+    int32_t apairs, cpairs, nils;
+    if (ttisnil(tail)) {
+	/* simple (possibly empty) list */
+	apairs = pairs;
+	nils = 1;
+	cpairs = 0;
+    } else if (ttispair(tail)) {
+	/* cyclic (maybe circular) list */
+	apairs = ivalue(kget_mark(tail));
+	cpairs = pairs - apairs;
+	nils = 0;
+    } else {
+	apairs = pairs;
+	cpairs = 0;
+	nils = 0;
+    }
+
+    unmark_list(K, obj);
+
+    if (p != NULL) *p = pairs;
+    if (n != NULL) *n = nils;
+    if (a != NULL) *a = apairs;
+    if (c != NULL) *c = cpairs;
+}
+
+/* Helper for list-tail, list-ref and list-set! */
+/* Calculate the smallest i such that 
+   (eq? (list-tail obj i) (list-tail obj tk))
+   tk is a bigint and all lists have fixint range number of pairs,
+   so the list should cyclic and we should calculate an index that
+   doesn't go through the complete cycle not even once */
+int32_t ksmallest_index(klisp_State *K, char *name, TValue obj, 
+		      TValue tk)
+{
+    int32_t apairs, cpairs;
+    get_list_metrics_aux(K, obj, NULL, NULL, &apairs, &cpairs);
+    if (cpairs == 0) {
+	klispE_throw_simple(K, "non pair found while traversing "
+			   "object");
+	return 0;
+    }
+    TValue tv_apairs = i2tv(apairs);
+    TValue tv_cpairs = i2tv(cpairs);
+	
+    /* all calculations will be done with bigints */
+    kensure_bigint(tv_apairs);
+    kensure_bigint(tv_cpairs);
+	
+    TValue idx = kbigint_minus(K, tk, tv_apairs);
+    krooted_tvs_push(K, idx); /* root idx if it is a bigint */
+    /* idx may have become a fixint */
+    kensure_bigint(idx);
+    UNUSED(kbigint_div_mod(K, idx, tv_cpairs, &idx));
+    krooted_tvs_pop(K);
+    /* now idx is less than cpairs so it fits in a fixint */
+    assert(ttisfixint(idx));
+    return ivalue(idx) + apairs; 
 }

@@ -172,7 +172,7 @@
 ;; list-ref
 ($check =? (list-ref (list 1 2 3 4 5) 0) 1)
 ($check =? (list-ref (list 1 2 3 4 5) 1) 2)
-;; see ground/pairs-and-lists.scm for rationale on allowing
+;; see kgpairs_lists.c for rationale on allowing
 ;; improper lists as argument to list-ref 
 ($check =? (list-ref (list* 1 2 3 4) 2) 3)
 ($check =? (list-ref (list . #0=(1 2 3 4 5 . #0#)) 10) 1)
@@ -377,6 +377,9 @@
 ($check-error (make-list))
 ($check-error (make-list "str"))
 ($check-error (make-list 1 "str" "str2"))
+($check-error (make-list -2))
+($check-error (make-list 3/4))
+($check-error (make-list #e+infinity))
 
 ;; list-copy
 ($check-error (list-copy))

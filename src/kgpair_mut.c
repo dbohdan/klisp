@@ -264,9 +264,53 @@ void encycleB(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* 6.?? list-set! */
+void list_setB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+/* ASK John: can the object be an improper list? 
+   We foolow list-tail here and allow it */
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_3tp(K, ptree, "any", anytype, obj,
+	     "exact integer", keintegerp, tk, 
+	     "any", anytype, val);
+
+    if (knegativep(tk)) {
+	klispE_throw_simple(K, "negative index");
+	return;
+    }
+
+    int32_t k = (ttisfixint(tk))? ivalue(tk)
+	: ksmallest_index(K, "list-set!", obj, tk);
+
+    while(k) {
+	if (!ttispair(obj)) {
+	    klispE_throw_simple(K, "non pair found while traversing "
+			 "object");
+	    return;
+	}
+	obj = kcdr(obj);
+	--k;
+    }
+
+    if (!ttispair(obj)) {
+	klispE_throw_simple(K, "non pair found while traversing "
+		     "object");
+    } else if (kis_immutable(obj)) {
+    /* this could be checked before, but the error here seems better */
+	klispE_throw_simple(K, "immutable pair");
+    } else {
+	kset_car(obj, val);
+	kapply_cc(K, KINERT);
+    }
+}
+
 /* Helpers for append! */
-
-
 inline void appendB_clear_last_pairs(klisp_State *K, TValue ls)
 {
     UNUSED(K);
@@ -536,6 +580,8 @@ void kinit_pair_mut_ground_env(klisp_State *K)
 		    b2tv(false));
     /* 5.8.1 encycle! */
     add_applicative(K, ground_env, "encycle!", encycleB, 0);
+    /* 6.?? list-set! */
+    add_applicative(K, ground_env, "list-set!", list_setB, 0);
     /* 6.4.1 append! */
     add_applicative(K, ground_env, "append!", appendB, 0);
     /* 6.4.2 copy-es */
