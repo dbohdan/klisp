@@ -31,19 +31,19 @@ void bytevector_length(klisp_State *K);
 void bytevector_u8_ref(klisp_State *K);
 
 /* ??.1.5? bytevector-u8-set! */
-void bytevector_u8_setS(klisp_State *K);
+void bytevector_u8_setB(klisp_State *K);
 
 /* ??.2.?? bytevector-copy */
 void bytevector_copy(klisp_State *K);
 
 /* ??.2.?? bytevector-copy! */
-void bytevector_copyS(klisp_State *K);
+void bytevector_copyB(klisp_State *K);
 
 /* ??.2.?? bytevector-copy-partial */
 void bytevector_copy_partial(klisp_State *K);
 
 /* ??.2.?? bytevector-copy-partial! */
-void bytevector_copy_partialS(klisp_State *K);
+void bytevector_copy_partialB(klisp_State *K);
 
 /* ??.2.?? bytevector->immutable-bytevector */
 void bytevector_to_immutable_bytevector(klisp_State *K);

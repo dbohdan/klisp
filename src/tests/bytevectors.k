@@ -162,6 +162,13 @@
   ($check-error (bytevector-copy-partial! (u8 1 2) -1 0 v 0))
   ($check-error (bytevector-copy-partial! (u8 1 2) 0 2 w 0)))
 
+;; XXX bytevector-u8-fill!
+($check-predicate (inert? (bytevector-u8-fill! (bytevector 1 2) 0)))
+($check equal? ($let ((b (bytevector 1 2 3)))
+		 (bytevector-u8-fill! b 0)
+		 b)
+	(bytevector 0 0 0))
+
 ;; XXX bytevector->immutable-bytevector
 
 ($check-predicate

@@ -81,7 +81,7 @@ void string_copy(klisp_State *K);
 void string_to_immutable_string(klisp_State *K);
 
 /* 13.2.10? string-fill! */
-void string_fillS(klisp_State *K);
+void string_fillB(klisp_State *K);
 
 /* Helpers */
 bool kstringp(TValue obj);

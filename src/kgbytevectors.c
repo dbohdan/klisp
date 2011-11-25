@@ -23,13 +23,13 @@
 #include "kgbytevectors.h"
 #include "kgnumbers.h" /* for keintegerp & knegativep */
 
-/* 13.1.1? bytevector? */
+/* ?.? bytevector? */
 /* uses typep */
 
-/* 13.? immutable-bytevector?, mutable-bytevector? */
+/* ?.? immutable-bytevector?, mutable-bytevector? */
 /* use ftypep */
 
-/* 13.1.2? make-bytevector */
+/* ?.? make-bytevector */
 void make_bytevector(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -57,7 +57,7 @@ void make_bytevector(klisp_State *K)
     kapply_cc(K, new_bytevector);
 }
 
-/* 13.1.3? bytevector-length */
+/* ?.? bytevector-length */
 void bytevector_length(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -72,7 +72,7 @@ void bytevector_length(klisp_State *K)
     kapply_cc(K, res);
 }
 
-/* 13.1.4? bytevector-u8-ref */
+/* ?.? bytevector-u8-ref */
 void bytevector_u8_ref(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -101,8 +101,8 @@ void bytevector_u8_ref(klisp_State *K)
     kapply_cc(K, res);
 }
 
-/* 13.1.5? bytevector-u8-set! */
-void bytevector_u8_setS(klisp_State *K)
+/* ?.? bytevector-u8-set! */
+void bytevector_u8_setB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -134,7 +134,7 @@ void bytevector_u8_setS(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* 13.2.8? bytevector-copy */
+/* ?.? bytevector-copy */
 /* TEMP: at least for now this always returns mutable bytevectors */
 void bytevector_copy(klisp_State *K)
 {
@@ -158,7 +158,7 @@ void bytevector_copy(klisp_State *K)
 }
 
 /* 13.2.9? bytevector-copy! */
-void bytevector_copyS(klisp_State *K)
+void bytevector_copyB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -186,7 +186,7 @@ void bytevector_copyS(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* 13.2.10? bytevector-copy-partial */
+/* ?.? bytevector-copy-partial */
 /* TEMP: at least for now this always returns mutable bytevectors */
 void bytevector_copy_partial(klisp_State *K)
 {
@@ -235,8 +235,8 @@ void bytevector_copy_partial(klisp_State *K)
     kapply_cc(K, new_bytevector);
 }
 
-/* 13.2.11? bytevector-copy-partial! */
-void bytevector_copy_partialS(klisp_State *K)
+/* ?.? bytevector-copy-partial! */
+void bytevector_copy_partialB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -307,7 +307,32 @@ void bytevector_copy_partialS(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* 13.2.12? bytevector->immutable-bytevector */
+/* ?.? bytevector-u8-fill! */
+void bytevector_u8_fillB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "bytevector", ttisbytevector, bytevector,
+	     "u8", ttisu8, tv_byte);
+
+    if (kbytevector_immutablep(bytevector)) {
+	klispE_throw_simple(K, "immutable bytevector");
+	return;
+    } 
+
+    uint32_t size = kbytevector_size(bytevector);
+    uint8_t *buf = kbytevector_buf(bytevector);
+    while(size-- > 0) {
+	*buf++ = (uint8_t) ivalue(tv_byte);
+    }
+    kapply_cc(K, KINERT);
+}
+
+/* ?.? bytevector->immutable-bytevector */
 void bytevector_to_immutable_bytevector(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -357,21 +382,25 @@ void kinit_bytevectors_ground_env(klisp_State *K)
     /* ??.1.4? bytevector-u8-ref */
     add_applicative(K, ground_env, "bytevector-u8-ref", bytevector_u8_ref, 0);
     /* ??.1.5? bytevector-u8-set! */
-    add_applicative(K, ground_env, "bytevector-u8-set!", bytevector_u8_setS, 
+    add_applicative(K, ground_env, "bytevector-u8-set!", bytevector_u8_setB, 
 		    0);
 
     /* ??.1.?? bytevector-copy */
     add_applicative(K, ground_env, "bytevector-copy", bytevector_copy, 0);
     /* ??.1.?? bytevector-copy! */
-    add_applicative(K, ground_env, "bytevector-copy!", bytevector_copyS, 0);
+    add_applicative(K, ground_env, "bytevector-copy!", bytevector_copyB, 0);
 
     /* ??.1.?? bytevector-copy-partial */
     add_applicative(K, ground_env, "bytevector-copy-partial", 
 		    bytevector_copy_partial, 0);
     /* ??.1.?? bytevector-copy-partial! */
     add_applicative(K, ground_env, "bytevector-copy-partial!", 
-		    bytevector_copy_partialS, 0);
+		    bytevector_copy_partialB, 0);
 
+    /* ??.?? bytevector-u8-fill! */
+    add_applicative(K, ground_env, "bytevector-u8-fill!", 
+		    bytevector_u8_fillB, 0);
+    
     /* ??.1.?? bytevector->immutable-bytevector */
     add_applicative(K, ground_env, "bytevector->immutable-bytevector", 
 		    bytevector_to_immutable_bytevector, 0);

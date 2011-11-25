@@ -105,7 +105,7 @@ void string_ref(klisp_State *K)
 }
 
 /* 13.1.5? string-set! */
-void string_setS(klisp_State *K)
+void string_setB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -208,11 +208,11 @@ void kstring_title_case(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "string", ttisstring, str);
-    int32_t size = kstring_size(str);
+    uint32_t size = kstring_size(str);
     TValue res = kstring_new_bs(K, kstring_buf(str), size);
     char *buf = kstring_buf(res);
     bool first = true;
-    for(int32_t i = 0; i < size; ++i, buf++) {
+    while(size-- > 0) {
 	char ch = *buf;
 	if (ch == ' ')
 	    first = true;
@@ -223,6 +223,7 @@ void kstring_title_case(klisp_State *K)
 	    *buf = toupper(ch);
 	    first = false;
 	} 
+	++buf;
     }
     kapply_cc(K, res);
 }
@@ -500,7 +501,7 @@ void string_to_immutable_string(klisp_State *K)
 }
 
 /* 13.2.10? string-fill! */
-void string_fillS(klisp_State *K)
+void string_fillB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -548,7 +549,7 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.1.4? string-ref */
     add_applicative(K, ground_env, "string-ref", string_ref, 0);
     /* 13.1.5? string-set! */
-    add_applicative(K, ground_env, "string-set!", string_setS, 0);
+    add_applicative(K, ground_env, "string-set!", string_setB, 0);
     /* 13.2.1? string */
     add_applicative(K, ground_env, "string", string, 0);
     /* 13.?? string-upcase, string-downcase, string-titlecase, 
@@ -597,5 +598,5 @@ void kinit_strings_ground_env(klisp_State *K)
 		    string_to_immutable_string, 0);
 
     /* 13.2.10? string-fill! */
-    add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
+    add_applicative(K, ground_env, "string-fill!", string_fillB, 0);
 }

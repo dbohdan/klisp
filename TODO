@@ -29,20 +29,19 @@
 ** $case-vau (r7rs)
 ** $named-let (r7rs)
 ** $do (r7rs)
+** $define-record-type (r7rs)
 * applicatives: 
 ** vector-map (r7rs)
 ** bytevector-map (r7rs)
 ** string-map (r7rs)
 ** vector->string (r7rs)
 ** string->vector (r7rs)
-** vector-fill (r7rs)
 ** vector-copy! (r7rs)
 ** vector-copy-partial (r7rs)
 ** vector-copy-partial! (r7rs)
 ** read-line (r7rs)
 ** number->string (r7rs)
 ** string->number (r7rs)
-** define-record-type (r7rs)
 ** char-digit?
 ** digit->char
 ** char->digit
