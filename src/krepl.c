@@ -237,7 +237,7 @@ void do_int_repl_error(klisp_State *K)
 	krooted_tvs_pop(K);
     } else {
 	fprintf(stderr, "\n*ERROR*: not an error object passed to " 
-		"error continuation");
+		"error continuation\n\n");
     }
 
     UNUSED(divert);

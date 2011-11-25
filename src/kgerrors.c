@@ -16,7 +16,7 @@
 #include "kghelpers.h"
 #include "kgerrors.h"
 
-void r7rs_error(klisp_State *K)
+void kgerror(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -32,6 +32,19 @@ void r7rs_error(klisp_State *K)
     krooted_tvs_push(K, irritants);
     /* the msg is implicitly copied here */
     klispE_throw_with_irritants(K, kstring_buf(str), irritants);
+}
+
+void kgraise(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1p(K, ptree, obj);
+    kcall_cont(K, K->error_cont, obj);
 }
 
 void error_object_message(klisp_State *K)
@@ -90,7 +103,8 @@ void kinit_error_ground_env(klisp_State *K)
     TValue symbol, value;
 
     add_applicative(K, ground_env, "error-object?", typep, 2, symbol, i2tv(K_TERROR));
-    add_applicative(K, ground_env, "error", r7rs_error, 0);
+    add_applicative(K, ground_env, "error", kgerror, 0);
+    add_applicative(K, ground_env, "raise", kgraise, 0);
     add_applicative(K, ground_env, "error-object-message", error_object_message, 0);
     add_applicative(K, ground_env, "error-object-irritants", error_object_irritants, 0);
 
