@@ -94,6 +94,22 @@ void make_list(klisp_State *K)
     kapply_cc(K, tail);
 }
 
+/* 5.2.? list-copy */
+void list_copy(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1p(K, ptree, ls);
+    TValue copy = check_copy_list(K, "list-copy", ls, true);
+    kapply_cc(K, copy);
+}
+
 /* 5.2.2 list* */
 void listS(klisp_State *K)
 {
@@ -1200,6 +1216,8 @@ void kinit_pairs_lists_ground_env(klisp_State *K)
 		    C_AD_R_PARAM(4, 0x1111));
     /* 5.?.? make-list */
     add_applicative(K, ground_env, "make-list", make_list, 0);
+    /* 5.?.? list-copy */
+    add_applicative(K, ground_env, "list-copy", list_copy, 0);
     /* 5.7.1 get-list-metrics */
     add_applicative(K, ground_env, "get-list-metrics", get_list_metrics, 0);
     /* 5.7.2 list-tail */

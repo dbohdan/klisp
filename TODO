@@ -12,6 +12,9 @@
    clutter (e.g. when creating continuations)
 ** Study differrent c interfaces (maybe a stack like in lua would be
    better than dealing with gc push/pop
+** eliminate char * arguments where not needed (like list check/copy
+   functions in kghelpers
+** check if all inline functions need to be inline
 * fix:
 ** current-jiffy (r7rs)
 ** jiffies-per-second (r7rs)
@@ -28,7 +31,6 @@
 ** $do (r7rs)
 * applicatives: 
 ** reverse (r7rs)
-** list-copy (r7rs)
 ** list-set! (r7rs)
 ** vector-map (r7rs)
 ** bytevector-map (r7rs)
