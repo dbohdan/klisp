@@ -32,7 +32,6 @@
 * applicatives: 
 ** vector-map (r7rs)
 ** bytevector-map (r7rs)
-** char-foldcase (r7rs)
 ** string-map (r7rs)
 ** string-downcase (r7rs)
 ** string-foldcase (r7rs)
@@ -47,6 +46,9 @@
 ** number->string (r7rs)
 ** string->number (r7rs)
 ** define-record-type (r7rs)
+** char-digit?
+** digit->char
+** char->digit
 * reader
 ** symbol escapes (r7rs)
 ** string escapes (r7rs)
@@ -59,4 +61,7 @@
 ** add restart support to the repl/interpreter (r7rs)
 ** simple modules (something inspired in r7rs) (r7rs)
 ** add modules support to the interpreter (r7rs)
+** eager comprehensions (at least for check.k) see SRFIs 42 and 78
+   (srfi)
+
 
