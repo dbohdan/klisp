@@ -19,7 +19,7 @@
 #include "ksymbol.h"
 #include "kport.h"
 #include "kpair.h"
-#include "kgerror.h"
+#include "kgerrors.h"
 /* for names */
 #include "ktable.h"
 /* for do_pass_value */

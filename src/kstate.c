@@ -39,7 +39,7 @@
 #include "kvector.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
-#include "kgerror.h" /* for creating error hierarchy */
+#include "kgerrors.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */
 

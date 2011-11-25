@@ -38,7 +38,7 @@
 #include "kgbytevectors.h"
 #include "kgvectors.h"
 #include "kgsystem.h"
-#include "kgerror.h"
+#include "kgerrors.h"
 
 #if KUSE_LIBFFI
 #  include "kgffi.h"

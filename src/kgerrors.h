@@ -4,8 +4,8 @@
 ** See Copyright Notice in klisp.h
 */
 
-#ifndef kgerror_h
-#define kgerror_h
+#ifndef kgerrors_h
+#define kgerrors_h
 
 #include <assert.h>
 #include <stdio.h>

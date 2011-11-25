@@ -1,5 +1,5 @@
 /*
-** kgerror.c
+** kgerrors.c
 ** Error handling features for the ground environment
 ** See Copyright Notice in klisp.h
 */
@@ -14,7 +14,7 @@
 #include "kerror.h"
 
 #include "kghelpers.h"
-#include "kgerror.h"
+#include "kgerrors.h"
 
 void r7rs_error(klisp_State *K)
 {
@@ -24,11 +24,14 @@ void r7rs_error(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
-    if (ttispair(ptree) && ttisstring(kcar(ptree))) {
-        klispE_throw_with_irritants(K, kstring_buf(kcar(ptree)), kcdr(ptree));
-    } else {
-        klispE_throw_with_irritants(K, "Unknown error in user code", ptree);
-    }
+
+    bind_al1tp(K, ptree, "string", ttisstring, str, rest);
+    /* copy the list of irritants, to avoid modification later */
+    /* also check that is a list! */
+    TValue irritants = check_copy_list(K, "error", rest, false);
+    krooted_tvs_push(K, irritants);
+    /* the msg is implicitly copied here */
+    klispE_throw_with_irritants(K, kstring_buf(str), irritants);
 }
 
 void error_object_message(klisp_State *K)
@@ -57,6 +60,7 @@ void error_object_irritants(klisp_State *K)
     Error *err_obj = tv2error(error_tv);
     kapply_cc(K, err_obj->irritants);
 }
+
 /* REFACTOR this is the same as do_pass_value */
 void do_exception_cont(klisp_State *K)
 {

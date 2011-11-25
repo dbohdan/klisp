@@ -21,7 +21,7 @@
 #include "kport.h"
 #include "kpair.h"
 #include "kgcontrol.h"
-#include "kgerror.h"
+#include "kgerrors.h"
 /* for names */
 #include "ktable.h"
 
