@@ -1,5 +1,3 @@
-r7rs branch:
-
 * refactor:
 ** double check combiner names to be verbs 
    (e.g. add get- where appropriate)
@@ -7,52 +5,54 @@ r7rs branch:
    ones that are used in more than one place to kghelpers.h
 ** create knumber.h knumber.c and move there kfinitep, kintegerp, etc
    from kgnumbers.
+** use some convention for ground operative underlaying function names
+   maybe add "kgop_"
+** use a better convention for continuation underlaying function names
 * fix:
-** current-jiffy
-** jiffies-per-second
+** current-jiffy (r7rs)
+** jiffies-per-second (r7rs)
 * operatives: 
-** $when
-** $unless
-** $string-for-each
-** $vector-for-each
-** $bytevector-for-each 
-** $case
-** $case-lambda
-** $case-vau
-** $named-let
-** $do
+** $when (r7rs)
+** $unless (r7rs)
+** $string-for-each (r7rs)
+** $vector-for-each (r7rs)
+** $bytevector-for-each (r7rs)
+** $case (r7rs)
+** $case-lambda (r7rs)
+** $case-vau (r7rs)
+** $named-let (r7rs)
+** $do (r7rs)
 * applicatives: 
-** reverse
-** make-list
-** list-copy
-** list-set!
-** vector-map
-** bytevector-map
-** char-foldcase
-** string-map
-** string-downcase
-** string-foldcase
-** string-upcase
-** vector->string
-** string->vector
-** vector-fill
-** vector-copy!
-** vector-copy-partial
-** vector-copy-partial!
-** read-line
-** number->string
-** string->number
-** define-record-type
+** reverse (r7rs)
+** list-copy (r7rs)
+** list-set! (r7rs)
+** vector-map (r7rs)
+** bytevector-map (r7rs)
+** char-foldcase (r7rs)
+** string-map (r7rs)
+** string-downcase (r7rs)
+** string-foldcase (r7rs)
+** string-upcase (r7rs)
+** vector->string (r7rs)
+** string->vector (r7rs)
+** vector-fill (r7rs)
+** vector-copy! (r7rs)
+** vector-copy-partial (r7rs)
+** vector-copy-partial! (r7rs)
+** read-line (r7rs)
+** number->string (r7rs)
+** string->number (r7rs)
+** define-record-type (r7rs)
 * reader
-** symbol escapes
-** string escapes
-** char escapes
+** symbol escapes (r7rs)
+** string escapes (r7rs)
+** char escapes (r7rs)
 * other
-** optional argument to member?
-** optional argument to assoc
-** some simplified error guarding
-** restarts
-** add restart support to the repl/interpreter
-** simple modules (something inspired in r7rs)
-** add modules support to the interpreter
+** optional argument to member? (r7rs)
+** optional argument to assoc (r7rs)
+** some simplified error guarding (r7rs)
+** restarts (r7rs)
+** add restart support to the repl/interpreter (r7rs)
+** simple modules (something inspired in r7rs) (r7rs)
+** add modules support to the interpreter (r7rs)
 

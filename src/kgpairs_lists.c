@@ -46,7 +46,6 @@ void cons(klisp_State *K)
     kapply_cc(K, new_pair);
 }
 
-
 /* 5.2.1 list */
 void list(klisp_State *K)
 {
@@ -59,6 +58,40 @@ void list(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     kapply_cc(K, ptree);
+}
+
+/* 5.2.? make-list */
+void make_list(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, fill);
+
+    if (!get_opt_tpar(K, fill, "any", anytype))
+        fill = KINERT;
+
+    if (knegativep(tv_s)) {
+        klispE_throw_simple(K, "negative list length");
+        return;
+    } else if (!ttisfixint(tv_s)) {
+        klispE_throw_simple(K, "list length is too big");
+        return;
+    }
+    TValue tail = KNIL;
+    int i = ivalue(tv_s); 
+    krooted_vars_push(K, &tail);
+    while(i-- > 0) {
+	tail = kcons(K, fill, tail);
+    }
+    krooted_vars_pop(K);
+
+    kapply_cc(K, tail);
 }
 
 /* 5.2.2 list* */
@@ -114,7 +147,6 @@ void listS(klisp_State *K)
 
 /* 5.4.1 car, cdr */
 /* 5.4.2 caar, cadr, ... cddddr */
-
 void c_ad_r(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -1166,6 +1198,8 @@ void kinit_pairs_lists_ground_env(klisp_State *K)
 		    C_AD_R_PARAM(4, 0x1110));
     add_applicative(K, ground_env, "cddddr", c_ad_r, 2, symbol,
 		    C_AD_R_PARAM(4, 0x1111));
+    /* 5.?.? make-list */
+    add_applicative(K, ground_env, "make-list", make_list, 0);
     /* 5.7.1 get-list-metrics */
     add_applicative(K, ground_env, "get-list-metrics", get_list_metrics, 0);
     /* 5.7.2 list-tail */
