@@ -60,7 +60,6 @@
 ($check equal? #i+infinity #i+infinity)
 
 ;; 12.5.1 number? finite? integer?
-
 ($check-predicate (number? 0 1 3/5 -3.14e0 #real))
 ($check-not-predicate (number? 5 "6" 7))
 
@@ -76,6 +75,15 @@
 ($check-not-predicate (integer? #e-infinity))
 ($check-not-predicate (integer? #real))
 ($check-not-predicate (integer? "0"))
+
+;; 12.?? exact-integer?
+($check-predicate (exact-integer? 0 8/2 -12/6))
+($check-not-predicate (exact-integer? 1.0))
+($check-not-predicate (exact-integer? #e+infinity))
+($check-not-predicate (exact-integer? #e-infinity))
+($check-not-predicate (exact-integer? #real))
+($check-not-predicate (exact-integer? "0"))
+
 
 ;; 12.5.2 =?
 
