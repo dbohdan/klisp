@@ -139,7 +139,7 @@ void string_setB(klisp_State *K)
 
 /* Helper for string and list->string */
 /* GC: Assumes ls is rooted */
-inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
+TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
 {
     int32_t dummy;
     /* don't allow cycles */

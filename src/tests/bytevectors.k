@@ -5,9 +5,6 @@
 
 ;; helper functions
 ;;
-;; (list->bytevector INTEGERS) converts list of integers to bytevector
-;; The elements of INTEGERS must be in the range 0...255.
-;;
 ;; (u8 X_0 X_1 ... X_{N-1}) returns a bytevector B of length N,
 ;;   such that B[k] = X_k
 ;;
@@ -19,23 +16,8 @@
 ;;   such that the bytes B[4k] ... B[4k+3], combined into 32-bit
 ;;   unsigned integer, represent the number X_k
 ;;
-($define! list->bytevector
-  ($lambda (bytes)
-    ($let*
-      ( (n (length bytes))
-        (v (make-bytevector n)) )
-      ($letrec
-        ((loop ($lambda (i xs)
-          ($if (<? i n)
-            ($sequence
-              (bytevector-u8-set! v i (car xs))
-              (loop (+ i 1) (cdr xs)))
-            #inert))))
-        (loop 0 bytes)
-        v))))
 
-($define! u8
-  ($lambda bytes (list->bytevector bytes)))
+($define! u8 bytevector)
 
 ;; TODO: endianess
 ($define! u16
@@ -72,6 +54,27 @@
 
 ($check-predicate (mutable-bytevector?))
 ($check-predicate (mutable-bytevector? (make-bytevector 1)))
+
+;; XXX bytevector
+($check-predicate (bytevector? (bytevector 1 2 3)))
+($check-predicate (mutable-bytevector? (bytevector 1 2 3)))
+($check equal? (bytevector 1 2 3) (list->bytevector (list 1 2 3)))
+
+;; XXX list->bytevector
+($check equal? (make-bytevector 0) (list->bytevector ()))
+($check equal? (make-bytevector 3 1) (list->bytevector (list 1 1 1)))
+($check equal? (list->bytevector (list 1 2 3 4)) (u8 1 2 3 4))
+($check-predicate (mutable-bytevector? (list->bytevector (list 1 2 3))))
+($check-predicate (mutable-bytevector? (list->bytevector 
+					(copy-es-immutable (list 1 2 3)))))
+
+;; XXX bytevector->list
+($check-predicate (null? (bytevector->list (u8))))
+($check equal? (bytevector->list (u8 1 2 3 4)) (list 1 2 3 4))
+($check-predicate (mutable-pair? (bytevector->list (u8 1 2))))
+($check-predicate (mutable-pair? (bytevector->list 
+				  (bytevector->immutable-bytevector 
+				   (u8 1 2)))))
 
 ;; (R7RS 3rd draft, section 6.3.7) make-bytevector bytevector-length
 
@@ -163,11 +166,11 @@
   ($check-error (bytevector-copy-partial! (u8 1 2) 0 2 w 0)))
 
 ;; XXX bytevector-u8-fill!
-($check-predicate (inert? (bytevector-u8-fill! (bytevector 1 2) 0)))
-($check equal? ($let ((b (bytevector 1 2 3)))
+($check-predicate (inert? (bytevector-u8-fill! (u8 1 2) 0)))
+($check equal? ($let ((b (u8 1 2 3)))
 		 (bytevector-u8-fill! b 0)
 		 b)
-	(bytevector 0 0 0))
+	(u8 0 0 0))
 
 ;; XXX bytevector->immutable-bytevector
 

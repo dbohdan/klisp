@@ -29,6 +29,87 @@
 /* ?.? immutable-bytevector?, mutable-bytevector? */
 /* use ftypep */
 
+/* Helper for bytevector and list->bytevector */
+/* GC: Assumes ls is rooted */
+TValue list_to_bytevector_h(klisp_State *K, char *name, TValue ls)
+{
+    int32_t dummy;
+    /* don't allow cycles */
+    int32_t pairs = check_typed_list(K, name, "u8", ku8p, false,
+				     ls, &dummy);
+
+    TValue new_bb;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (pairs == 0) {
+	return K->empty_bytevector; 
+    } else {
+	new_bb = kbytevector_new_s(K, pairs);
+	uint8_t *buf = kbytevector_buf(new_bb);
+	TValue tail = ls;
+	while(pairs--) {
+	    *buf++ = ivalue(kcar(tail));
+	    tail = kcdr(tail);
+	}
+	return new_bb;
+    }
+}
+
+/* ?.? bytevector */
+void bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue new_bb = list_to_bytevector_h(K, "bytevector", ptree);
+    kapply_cc(K, new_bb);
+}
+
+/* ?.? bytevector->list */
+void bytevector_to_list(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
+    int32_t pairs = kbytevector_size(bb);
+    uint8_t *buf = kbytevector_buf(bb);
+
+    TValue tail = kget_dummy1(K);
+
+    while(pairs--) {
+	TValue new_pair = kcons(K, i2tv(*buf), KNIL);
+	buf++;
+	kset_cdr(tail, new_pair);
+	tail = new_pair;
+    }
+    kapply_cc(K, kcutoff_dummy1(K));
+}
+
+/* ?.? list->bytevector */
+void list_to_bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    /* check later in list_to_bytevector_h */
+    bind_1p(K, ptree, ls);
+
+    TValue new_bb = list_to_bytevector_h(K, "list->bytevector", ls);
+    kapply_cc(K, new_bb);
+}
+
 /* ?.? make-bytevector */
 void make_bytevector(klisp_State *K)
 {
@@ -374,6 +455,12 @@ void kinit_bytevectors_ground_env(klisp_State *K)
 		    p2tv(kimmutable_bytevectorp));
     add_applicative(K, ground_env, "mutable-bytevector?", ftypep, 2, symbol, 
 		    p2tv(kmutable_bytevectorp));
+    /* ??.1.? bytevector */
+    add_applicative(K, ground_env, "bytevector", bytevector, 0);
+    /* ??.1.? list->bytevector */
+    add_applicative(K, ground_env, "list->bytevector", list_to_bytevector, 0);
+    /* ??.1.? bytevector->list */
+    add_applicative(K, ground_env, "bytevector->list", bytevector_to_list, 0);
     /* ??.1.2? make-bytevector */
     add_applicative(K, ground_env, "make-bytevector", make_bytevector, 0);
     /* ??.1.3? bytevector-length */
