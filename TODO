@@ -3,6 +3,10 @@ r7rs branch:
 * refactor:
 ** double check combiner names to be verbs 
    (e.g. add get- where appropriate)
+** remove function prototypes from kg*.h, move the
+   ones that are used in more than one place to kghelpers.h
+** create knumber.h knumber.c and move there kfinitep, kintegerp, etc
+   from kgnumbers.
 * fix:
 ** current-jiffy
 ** jiffies-per-second
@@ -18,7 +22,6 @@ r7rs branch:
 ** $named-let
 ** $do
 * applicatives: 
-** exact-integer?
 ** reverse
 ** make-list
 ** list-copy
