@@ -16,6 +16,7 @@
 #include "kobject.h"
 #include "kpair.h"
 #include "kerror.h"
+#include "ksystem.h"
 
 #include "kghelpers.h"
 #include "kgsystem.h"
@@ -54,52 +55,17 @@ void current_second(klisp_State *K)
 /* ??.?.?  current-jiffy */
 void current_jiffy(klisp_State *K)
 {
-    TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
     check_0p(K, ptree);
-    /* TODO, this may wrap around... use time+clock to a better number */
-    /* XXX doesn't seem to work... should probably use gettimeofday
-       in posix anyways */
-    clock_t now = clock();
-    if (now == -1) {
-	klispE_throw_simple(K, "couldn't get time");
-	return;
-    } else {
-	if (now > INT32_MAX) {
-	    /* XXX/TODO create bigint */
-	    klispE_throw_simple(K, "integer too big");
-	    return;
-	} else {
-	    kapply_cc(K, i2tv((int32_t) now));
-	    return;
-	}
-    }
+    kapply_cc(K, ksystem_current_jiffy(K));
 }
 
 /* ??.?.?  jiffies-per-second */
 void jiffies_per_second(klisp_State *K)
 {
-    TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
     check_0p(K, ptree);
-    if (CLOCKS_PER_SEC > INT32_MAX) {
-	    /* XXX/TODO create bigint */
-	    klispE_throw_simple(K, "integer too big");
-	    return;
-    } else {
-	kapply_cc(K, i2tv((int32_t) CLOCKS_PER_SEC));
-	return;
-    }
+    kapply_cc(K, ksystem_jiffies_per_second(K));
 }
 
 /* 15.1.? file-exists? */
@@ -237,7 +203,11 @@ void get_environment_variables(klisp_State *K)
  defined. The correct way to do that would be to define _GNU_SOURCE
  before including any system files... That's not so good for an 
  embeddable interpreter, but it could be done in the makefile I guess */
-extern char **environ;
+extern
+#ifdef _WIN32
+  __declspec(dllimport)
+#endif
+  char **environ;
 
 /* Helper for get-environment-variables */
 TValue create_env_var_list(klisp_State *K)

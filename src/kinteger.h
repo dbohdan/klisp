@@ -132,4 +132,7 @@ TValue kbigint_abs(klisp_State *K, TValue tv_bigint);
 TValue kbigint_gcd(klisp_State *K, TValue n1, TValue n2);
 TValue kbigint_lcm(klisp_State *K, TValue n1, TValue n2);
 
+/* conversion from uint64_t */
+TValue kinteger_new_uint64(klisp_State *K, uint64_t x);
+
 #endif

@@ -34,7 +34,7 @@ KRN_A= libklisp.a
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kwrite.o kstate.o kmem.o kerror.o kauxlib.o kenvironment.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
-	kencapsulation.o kpromise.o kport.o kinteger.o krational.o \
+	kencapsulation.o kpromise.o kport.o kinteger.o krational.o ksystem.o \
 	kreal.o ktable.o kgc.o imath.o imrat.o kbytevector.o kvector.o \
 	kchar.o kground.o kghelpers.o kgbooleans.o kgeqp.o kgequalp.o \
 	kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o kgenvironments.o \
@@ -285,6 +285,8 @@ kstring.o: kstring.c kstring.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kgc.h
 ksymbol.o: ksymbol.c ksymbol.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kstring.h kgc.h
+ksystem.o: ksystem.c ksystem.posix.c ksystem.win32.c kobject.h klimits.h klisp.h klispconf.h kstate.h \
+ ktoken.h kmem.h ksystem.h
 ktable.o: ktable.c klisp.h kobject.h klimits.h klispconf.h kgc.h kstate.h \
  ktoken.h kmem.h ktable.h kapplicative.h koperative.h kgeqp.h kinteger.h \
  imath.h krational.h imrat.h kghelpers.h kerror.h kpair.h kcontinuation.h \

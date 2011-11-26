@@ -293,3 +293,23 @@ TValue kbigint_lcm(klisp_State *K, TValue n1, TValue n2)
     krooted_tvs_pop(K);
     return kbigint_try_fixint(K, tv_res);
 }
+
+TValue kinteger_new_uint64(klisp_State *K, uint64_t x)
+{
+    if (x <= INT32_MAX) {
+        return i2tv((int32_t) x);
+    } else {
+        TValue res = kbigint_make_simple(K);
+        krooted_tvs_push(K, res);
+
+        uint8_t d[8];
+        for (int i = 7; i >= 0; i--) {
+          d[i] = (x & 0xFF);
+          x >>= 8;
+        }
+
+        mp_int_read_unsigned(K, tv2bigint(res), d, 8);
+        krooted_tvs_pop(K);
+        return res;
+    }
+}

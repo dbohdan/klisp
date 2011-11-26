@@ -279,25 +279,8 @@ static void ffi_encode_sint32(ffi_codec_t *self, klisp_State *K, TValue v, void 
 
 static TValue ffi_decode_uint64(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
-    /* TODO */
     UNUSED(self);
-    uint64_t x = *(uint64_t *)buf;
-    if (x <= INT32_MAX) {
-        return i2tv((int32_t) x);
-    } else {
-        TValue res = kbigint_make_simple(K);
-        krooted_tvs_push(K, res);
-
-        uint8_t d[8];
-        for (int i = 7; i >= 0; i--) {
-          d[i] = (x & 0xFF);
-          x >>= 8;
-        }
-
-        mp_int_read_unsigned(K, tv2bigint(res), d, 8);
-        krooted_tvs_pop(K);
-        return res;
-    }
+    return kinteger_new_uint64(K, *(uint64_t *)buf);
 }
 
 static void ffi_encode_uint64(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)

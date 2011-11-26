@@ -73,7 +73,7 @@ static const Node dummynode_ = {
 /*
 ** hash for klisp numbers
 */
-inline static Node *hashfixint (const Table *t, int32_t n) {
+inline /*static*/ Node *hashfixint (const Table *t, int32_t n) {
     return hashmod(t, (uint32_t) n);
 }
 
