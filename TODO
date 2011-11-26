@@ -1,0 +1,65 @@
+* refactor:
+** double check combiner names to be verbs 
+   (e.g. add get- where appropriate)
+** remove function prototypes from kg*.h, move the
+   ones that are used in more than one place to kghelpers.h
+** create knumber.h knumber.c and move there kfinitep, kintegerp, etc
+   from kgnumbers.
+** use some convention for ground operative underlaying function names
+   maybe add "kgop_"
+** use a better convention for continuation underlaying function names
+** try to use krooted_vars_push more to save some lines and avoid
+   clutter (e.g. when creating continuations)
+** Study differrent c interfaces (maybe a stack like in lua would be
+   better than dealing with gc push/pop
+** eliminate char * arguments where not needed (like list check/copy
+   functions in kghelpers
+** check if all inline functions need to be inline
+* fix:
+** current-jiffy (r7rs)
+** jiffies-per-second (r7rs)
+* operatives: 
+** $when (r7rs)
+** $unless (r7rs)
+** $string-for-each (r7rs)
+** $vector-for-each (r7rs)
+** $bytevector-for-each
+** $case (r7rs)
+** $case-lambda (r7rs)
+** $case-vau (r7rs)
+** $named-let (r7rs)
+** $do (r7rs)
+** $define-record-type (r7rs)
+* applicatives: 
+** vector-map (r7rs)
+** bytevector-map (r7rs)
+** string-map (r7rs)
+** vector->bytevector
+** bytevector->vector
+** vector->string (r7rs)
+** string->vector (r7rs)
+** vector-copy! (r7rs)
+** vector-copy-partial (r7rs)
+** vector-copy-partial! (r7rs)
+** read-line (r7rs)
+** number->string (r7rs)
+** string->number (r7rs)
+** char-digit?
+** digit->char
+** char->digit
+* reader
+** symbol escapes (r7rs)
+** string escapes (r7rs)
+** char escapes (r7rs)
+* other
+** optional argument to member? (r7rs)
+** optional argument to assoc (r7rs)
+** some simplified error guarding (r7rs)
+** restarts (r7rs)
+** add restart support to the repl/interpreter (r7rs)
+** simple modules (something inspired in r7rs) (r7rs)
+** add modules support to the interpreter (r7rs)
+** eager comprehensions (at least for check.k) see SRFIs 42 and 78
+   (srfi)
+
+

@@ -1,0 +1,163 @@
+.TH KLISP 1 "$Date: 2011/11/23 06:35:03 $"
+.SH NAME
+klisp \- Kernel Programming Language interpreter
+.SH SYNOPSIS
+.B klisp
+[
+.I options
+]
+[
+.I script
+[
+.I args
+]
+]
+.SH DESCRIPTION
+.B klisp
+is a stand-alone klisp interpreter for 
+the Kernel Programming Language.
+It loads and evaluates Kernel programs
+in textual source form.
+.B klisp
+can be used as a batch interpreter and also interactively.
+.LP
+The given
+.I options
+(see below)
+are evaluated and then
+the klisp program in file
+.I script
+is loaded and evaluated.
+All evaluations, including the initialization 
+that is described below, take place in the same
+(initially) standard environment.
+The given
+.I args
+are available to
+.I script
+as a list of strings via the applicative
+.RI ' get-script-arguments '.
+If these arguments contain spaces or other characters special to the shell,
+then they should be quoted
+(but note that the quotes will be removed by the shell).
+The arguments in the returned string start with the string
+.RI ' script '.
+The arguments given in the command line before
+.IR script ,
+including the name of the interpreter,
+are available via the applicative 
+.RI ' get-interpreter-arguments '.
+.LP
+At the very beginning,
+before even handling the command line,
+.B klisp
+reads and evaluates the contents of the environment variable
+.BR KLISP_INIT ,
+if it is defined.
+To use an init file, just define 
+.B KLISP_INIT
+to the following form
+.RI '(load
+"/path/to/init-file")'.
+.LP
+Options start with
+.B '\-'
+and are described below.
+You can use
+.B "'\--'"
+to signal the end of options.
+.LP
+If no arguments are given,
+then
+.B "\-v \-i"
+is assumed when the standard input is a terminal;
+otherwise,
+.B "\-"
+is assumed.
+.LP
+In interactive mode,
+.B klisp
+prompts the user,
+reads expressions from the standard input,
+and evaluates them as they are read.
+The default prompt is "klisp> ".
+.SH OPTIONS
+.TP
+.B \-
+load and execute the standard input as a file,
+that is,
+not interactively,
+even when the standard input is a terminal.
+.TP
+.BI \-e " expr"
+evaluate expression
+.IR expr .
+You need to quote
+.I expr 
+if it contains spaces, quotes,
+or other characters special to the shell.
+.TP
+.B \-i
+enter interactive mode after
+.I script
+is executed.
+.TP
+.\" .BI \-l " name"
+.\" call
+.\" .BI require(' name ')
+.\" before executing
+.\" .IR script .
+.\" Typically used to load libraries.
+.\" .TP
+.B \-v
+show version information.
+.SH EXIT STATUS
+If the 
+.I script
+or 
+.I stdin 
+reach EOF or if there is no script,
+.B EXIT_SUCCESS 
+is returned.
+If there is an error during the evaluation of
+the options, 
+.B EXIT_FAILURE
+is returned.
+If the 
+.I root-continuation 
+is passed an object,
+.B klisp 
+tries to convert the value passed to the 
+.I root-continuation
+to an exit status as follows:
+.TP
+If the value is an integer it is used as exit status.
+.TP
+If the value is a boolean then 
+.B EXIT_SUCCESS 
+is returned for 
+.I #t 
+and 
+.B EXIT_FAILURE 
+for 
+.I #f.
+.TP
+If the value is inert, then
+.B EXIT_SUCCESS 
+is returned.
+.TP
+In any other case 
+.B EXIT_FAILURE
+is returned.
+.SH "SEE ALSO"
+.br
+http://klisp.org/
+.br
+The klisp Manual (info & html versions available).
+.SH DIAGNOSTICS
+Error messages should be self explanatory.
+.SH AUTHORS
+Andres Navarro
+and
+Oto Havle
+.\" EOF

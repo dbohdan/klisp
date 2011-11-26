@@ -23,13 +23,94 @@
 #include "kgbytevectors.h"
 #include "kgnumbers.h" /* for keintegerp & knegativep */
 
-/* 13.1.1? bytevector? */
+/* ?.? bytevector? */
 /* uses typep */
 
-/* 13.? immutable-bytevector?, mutable-bytevector? */
+/* ?.? immutable-bytevector?, mutable-bytevector? */
 /* use ftypep */
 
-/* 13.1.2? make-bytevector */
+/* Helper for bytevector and list->bytevector */
+/* GC: Assumes ls is rooted */
+TValue list_to_bytevector_h(klisp_State *K, char *name, TValue ls)
+{
+    int32_t dummy;
+    /* don't allow cycles */
+    int32_t pairs = check_typed_list(K, name, "u8", ku8p, false,
+				     ls, &dummy);
+
+    TValue new_bb;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (pairs == 0) {
+	return K->empty_bytevector; 
+    } else {
+	new_bb = kbytevector_new_s(K, pairs);
+	uint8_t *buf = kbytevector_buf(new_bb);
+	TValue tail = ls;
+	while(pairs--) {
+	    *buf++ = ivalue(kcar(tail));
+	    tail = kcdr(tail);
+	}
+	return new_bb;
+    }
+}
+
+/* ?.? bytevector */
+void bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue new_bb = list_to_bytevector_h(K, "bytevector", ptree);
+    kapply_cc(K, new_bb);
+}
+
+/* ?.? bytevector->list */
+void bytevector_to_list(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
+    int32_t pairs = kbytevector_size(bb);
+    uint8_t *buf = kbytevector_buf(bb);
+
+    TValue tail = kget_dummy1(K);
+
+    while(pairs--) {
+	TValue new_pair = kcons(K, i2tv(*buf), KNIL);
+	buf++;
+	kset_cdr(tail, new_pair);
+	tail = new_pair;
+    }
+    kapply_cc(K, kcutoff_dummy1(K));
+}
+
+/* ?.? list->bytevector */
+void list_to_bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    /* check later in list_to_bytevector_h */
+    bind_1p(K, ptree, ls);
+
+    TValue new_bb = list_to_bytevector_h(K, "list->bytevector", ls);
+    kapply_cc(K, new_bb);
+}
+
+/* ?.? make-bytevector */
 void make_bytevector(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -57,7 +138,7 @@ void make_bytevector(klisp_State *K)
     kapply_cc(K, new_bytevector);
 }
 
-/* 13.1.3? bytevector-length */
+/* ?.? bytevector-length */
 void bytevector_length(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -72,7 +153,7 @@ void bytevector_length(klisp_State *K)
     kapply_cc(K, res);
 }
 
-/* 13.1.4? bytevector-u8-ref */
+/* ?.? bytevector-u8-ref */
 void bytevector_u8_ref(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -101,8 +182,8 @@ void bytevector_u8_ref(klisp_State *K)
     kapply_cc(K, res);
 }
 
-/* 13.1.5? bytevector-u8-set! */
-void bytevector_u8_setS(klisp_State *K)
+/* ?.? bytevector-u8-set! */
+void bytevector_u8_setB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -134,7 +215,7 @@ void bytevector_u8_setS(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* 13.2.8? bytevector-copy */
+/* ?.? bytevector-copy */
 /* TEMP: at least for now this always returns mutable bytevectors */
 void bytevector_copy(klisp_State *K)
 {
@@ -158,7 +239,7 @@ void bytevector_copy(klisp_State *K)
 }
 
 /* 13.2.9? bytevector-copy! */
-void bytevector_copyS(klisp_State *K)
+void bytevector_copyB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -186,7 +267,7 @@ void bytevector_copyS(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* 13.2.10? bytevector-copy-partial */
+/* ?.? bytevector-copy-partial */
 /* TEMP: at least for now this always returns mutable bytevectors */
 void bytevector_copy_partial(klisp_State *K)
 {
@@ -235,8 +316,8 @@ void bytevector_copy_partial(klisp_State *K)
     kapply_cc(K, new_bytevector);
 }
 
-/* 13.2.11? bytevector-copy-partial! */
-void bytevector_copy_partialS(klisp_State *K)
+/* ?.? bytevector-copy-partial! */
+void bytevector_copy_partialB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -307,7 +388,32 @@ void bytevector_copy_partialS(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* 13.2.12? bytevector->immutable-bytevector */
+/* ?.? bytevector-u8-fill! */
+void bytevector_u8_fillB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "bytevector", ttisbytevector, bytevector,
+	     "u8", ttisu8, tv_byte);
+
+    if (kbytevector_immutablep(bytevector)) {
+	klispE_throw_simple(K, "immutable bytevector");
+	return;
+    } 
+
+    uint32_t size = kbytevector_size(bytevector);
+    uint8_t *buf = kbytevector_buf(bytevector);
+    while(size-- > 0) {
+	*buf++ = (uint8_t) ivalue(tv_byte);
+    }
+    kapply_cc(K, KINERT);
+}
+
+/* ?.? bytevector->immutable-bytevector */
 void bytevector_to_immutable_bytevector(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -349,6 +455,12 @@ void kinit_bytevectors_ground_env(klisp_State *K)
 		    p2tv(kimmutable_bytevectorp));
     add_applicative(K, ground_env, "mutable-bytevector?", ftypep, 2, symbol, 
 		    p2tv(kmutable_bytevectorp));
+    /* ??.1.? bytevector */
+    add_applicative(K, ground_env, "bytevector", bytevector, 0);
+    /* ??.1.? list->bytevector */
+    add_applicative(K, ground_env, "list->bytevector", list_to_bytevector, 0);
+    /* ??.1.? bytevector->list */
+    add_applicative(K, ground_env, "bytevector->list", bytevector_to_list, 0);
     /* ??.1.2? make-bytevector */
     add_applicative(K, ground_env, "make-bytevector", make_bytevector, 0);
     /* ??.1.3? bytevector-length */
@@ -357,21 +469,25 @@ void kinit_bytevectors_ground_env(klisp_State *K)
     /* ??.1.4? bytevector-u8-ref */
     add_applicative(K, ground_env, "bytevector-u8-ref", bytevector_u8_ref, 0);
     /* ??.1.5? bytevector-u8-set! */
-    add_applicative(K, ground_env, "bytevector-u8-set!", bytevector_u8_setS, 
+    add_applicative(K, ground_env, "bytevector-u8-set!", bytevector_u8_setB, 
 		    0);
 
     /* ??.1.?? bytevector-copy */
     add_applicative(K, ground_env, "bytevector-copy", bytevector_copy, 0);
     /* ??.1.?? bytevector-copy! */
-    add_applicative(K, ground_env, "bytevector-copy!", bytevector_copyS, 0);
+    add_applicative(K, ground_env, "bytevector-copy!", bytevector_copyB, 0);
 
     /* ??.1.?? bytevector-copy-partial */
     add_applicative(K, ground_env, "bytevector-copy-partial", 
 		    bytevector_copy_partial, 0);
     /* ??.1.?? bytevector-copy-partial! */
     add_applicative(K, ground_env, "bytevector-copy-partial!", 
-		    bytevector_copy_partialS, 0);
+		    bytevector_copy_partialB, 0);
 
+    /* ??.?? bytevector-u8-fill! */
+    add_applicative(K, ground_env, "bytevector-u8-fill!", 
+		    bytevector_u8_fillB, 0);
+    
     /* ??.1.?? bytevector->immutable-bytevector */
     add_applicative(K, ground_env, "bytevector->immutable-bytevector", 
 		    bytevector_to_immutable_bytevector, 0);

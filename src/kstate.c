@@ -30,7 +30,6 @@
 #include "kenvironment.h"
 #include "kground.h"
 #include "krepl.h"
-#include "kscript.h"
 #include "ksymbol.h"
 #include "kstring.h"
 #include "kport.h"
@@ -39,7 +38,7 @@
 #include "kvector.h"
 
 #include "kgpairs_lists.h" /* for creating list_app */
-#include "kgerror.h" /* for creating error hierarchy */
+#include "kgerrors.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */
 
@@ -195,9 +194,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* initialize writer */
     K->write_displayp = false; /* set on each call to write */
-
-    /* initialize script */
-    K->script_exit_code = KSCRIPT_DEFAULT_ERROR_EXIT_CODE;
 
     /* initialize temp stack */
     K->ssize = KS_ISSIZE;

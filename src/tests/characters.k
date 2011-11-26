@@ -73,8 +73,7 @@
 ($check-predicate (char-lower-case? #\a #\b #\j #\y #\z))
 ($check-predicate ($false-for-all? char-lower-case? #\0 #\A #\Z #\' #\@ #\{ #\[ #\~))
 
-;; XXX char-upcase char-downcase
-
+;; XXX char-upcase char-downcase char-titlecase char-foldcase
 ($check equal? (char-upcase #\a) #\A)
 ($check equal? (char-upcase #\z) #\Z)
 ($check equal? (char-upcase #\R) #\R)
@@ -84,6 +83,16 @@
 ($check equal? (char-downcase #\Z) #\z)
 ($check equal? (char-downcase #\r) #\r)
 ($check equal? (char-downcase #\9) #\9)
+
+($check equal? (char-titlecase #\a) #\A)
+($check equal? (char-titlecase #\z) #\Z)
+($check equal? (char-titlecase #\R) #\R)
+($check equal? (char-titlecase #\2) #\2)
+
+($check equal? (char-foldcase #\A) #\a)
+($check equal? (char-foldcase #\Z) #\z)
+($check equal? (char-foldcase #\r) #\r)
+($check equal? (char-foldcase #\9) #\9)
 
 ;; XXX char->integer integer->char
 

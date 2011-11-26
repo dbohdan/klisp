@@ -17,6 +17,7 @@
 #include "koperative.h"
 #include "kcontinuation.h"
 #include "kerror.h"
+#include "kchar.h"
 
 #include "kghelpers.h"
 #include "kgchars.h"
@@ -29,14 +30,6 @@
 
 /* 14.1.3? char-upper-case?, char-lower-case? */
 /* use ftyped_predp */
-
-/* Helpers for typed predicates */
-bool kcharp(TValue tv) { return ttischar(tv); }
-bool kchar_alphabeticp(TValue ch) { return isalpha(chvalue(ch)) != 0; }
-bool kchar_numericp(TValue ch)    { return isdigit(chvalue(ch)) != 0; }
-bool kchar_whitespacep(TValue ch) { return isspace(chvalue(ch)) != 0; }
-bool kchar_upper_casep(TValue ch) { return isupper(chvalue(ch)) != 0; }
-bool kchar_lower_casep(TValue ch) { return islower(chvalue(ch)) != 0; }
 
 /* 14.1.4? char->integer, integer->char */
 void kchar_to_integer(klisp_State *K)
@@ -76,32 +69,21 @@ void kinteger_to_char(klisp_State *K)
     kapply_cc(K, ch2tv((char) i));
 }
 
-/* 14.1.4? char-upcase, char-downcase */
-void kchar_upcase(klisp_State *K)
+/* 14.1.4? char-upcase, char-downcase, char-titlecase, char-foldcase */
+void kchar_change_case(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
     TValue denv = K->next_env;
     klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
+    /*
+    ** xparams[0]: conversion fn
+    */
     UNUSED(denv);
     bind_1tp(K, ptree, "character", ttischar, chtv);
     char ch = chvalue(chtv);
-    ch = toupper(ch);
-    kapply_cc(K, ch2tv(ch));
-}
-
-void kchar_downcase(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-    bind_1tp(K, ptree, "character", ttischar, chtv);
-    char ch = chvalue(chtv);
-    ch = tolower(ch);
+    char (*fn)(char) = pvalue(xparams[0]);
+    ch = fn(ch);
     kapply_cc(K, ch2tv(ch));
 }
 
@@ -174,9 +156,15 @@ void kinit_chars_ground_env(klisp_State *K)
     /* 14.1.4? char->integer, integer->char */
     add_applicative(K, ground_env, "char->integer", kchar_to_integer, 0);
     add_applicative(K, ground_env, "integer->char", kinteger_to_char, 0);
-    /* 14.1.4? char-upcase, char-downcase */
-    add_applicative(K, ground_env, "char-upcase", kchar_upcase, 0);
-    add_applicative(K, ground_env, "char-downcase", kchar_downcase, 0);
+    /* 14.1.4? char-upcase, char-downcase, char-titlecase, char-foldcase */
+    add_applicative(K, ground_env, "char-upcase", kchar_change_case, 1,
+		    p2tv(toupper));
+    add_applicative(K, ground_env, "char-downcase", kchar_change_case, 1,
+		    p2tv(tolower));
+    add_applicative(K, ground_env, "char-titlecase", kchar_change_case, 1,
+		    p2tv(toupper));
+    add_applicative(K, ground_env, "char-foldcase", kchar_change_case, 1,
+		    p2tv(tolower));
     /* 14.2.1? char=? */
     add_applicative(K, ground_env, "char=?", ftyped_bpredp, 3,
 		    symbol, p2tv(kcharp), p2tv(kchar_eqp));

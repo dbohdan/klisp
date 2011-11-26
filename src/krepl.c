@@ -19,7 +19,7 @@
 #include "ksymbol.h"
 #include "kport.h"
 #include "kpair.h"
-#include "kgerror.h"
+#include "kgerrors.h"
 /* for names */
 #include "ktable.h"
 /* for do_pass_value */
@@ -237,7 +237,7 @@ void do_int_repl_error(klisp_State *K)
 	krooted_tvs_pop(K);
     } else {
 	fprintf(stderr, "\n*ERROR*: not an error object passed to " 
-		"error continuation");
+		"error continuation\n\n");
     }
 
     UNUSED(divert);

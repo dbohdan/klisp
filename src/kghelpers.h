@@ -265,12 +265,14 @@ inline void unmark_tree(klisp_State *K, TValue obj)
 
 /* TODO: move all bools to a flag parameter (with constants like
    KCHK_LS_FORCE_COPY, KCHK_ALLOW_CYCLE, KCHK_AVOID_ENCYCLE, etc) */
+/* REFACTOR: remove the name argument */
 
 /* typed finite list. Structure error should be throw before type errors */
 int32_t check_typed_list(klisp_State *K, char *name, char *typename,
 			 bool (*typep)(TValue), bool allow_infp, TValue obj,
 			 int32_t *cpairs);
 
+/* REFACTOR: remove the name argument */
 /* check that obj is a list, returns the number of pairs */
 /* TODO change the return to void and add int32_t pairs obj */
 int32_t check_list(klisp_State *K, const char *name, bool allow_infp,
@@ -280,7 +282,7 @@ int32_t check_list(klisp_State *K, const char *name, bool allow_infp,
 ** MAYBE: These shouldn't be inline really.
 */
 
-
+/* REFACTOR: remove the name argument */
 /* REFACTOR: return the number of pairs and cycle pairs in two extra params */
 /* TODO: add check_copy_typed_list */
 /* TODO: remove inline */
@@ -328,6 +330,7 @@ inline TValue check_copy_list(klisp_State *K, char *name, TValue obj,
     }
 }
 
+/* REFACTOR: remove the name argument */
 /* check that obj is a list of environments and make a copy but don't keep 
    the cycles */
 /* GC: assume obj is rooted, uses dummy3 */
@@ -427,6 +430,18 @@ inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i)
 int64_t kgcd32_64(int32_t a, int32_t b);
 int64_t klcm32_64(int32_t a, int32_t b);
 
+/*
+** Other
+*/
+
+/* Helper for list-tail, list-ref and list-set! */
+int32_t ksmallest_index(klisp_State *K, char *name, TValue obj, 
+			TValue tk);
+
+/* Helper for get-list-metrics, and list-tail, list-ref and list-set! 
+   when receiving bigint indexes */
+void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n, 
+			  int32_t *a, int32_t *c);
 
 /*
 ** Macros for ground environment initialization

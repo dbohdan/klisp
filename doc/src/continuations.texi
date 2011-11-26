@@ -182,15 +182,21 @@ continuation, with no operands and the dynamic environment of the call
 to @code{guard-dynamic-extent}.
 @end deffn
 
-@deffn Applicative exit (exit)
+@deffn Applicative exit (exit [object])
 @c TODO add xref
   Applicative @code{exit} initiates an abnormal transfer of
-@code{#inert} to @code{root-continuation}.
-
+@code{object} (or @code{#inert} if @code{object} was not specified), 
+to @code{root-continuation}.
   That is:
 @example
-(exit ) @equiv{} (apply-continuation root-continuation #inert)
+(exit) @equiv{} (apply-continuation root-continuation #inert)
+(exit obj) @equiv{} (apply-continuation root-continuation obj)
 @end example
+
+  SOURCE NOTE: This applicative doesn't have the optional argument in
+the report.  It was added to klisp to allow a simple way to terminate
+the interpreter passing a value that is then tried to convert to an
+exit status.
 @end deffn
 
 

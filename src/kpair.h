@@ -61,7 +61,6 @@ inline TValue kcdr(TValue p)
 #define kcdddar(p_) (kcdr(kcdr(kcdr(kcar(p_)))))
 #define kcddddr(p_) (kcdr(kcdr(kcdr(kcdr(p_)))))
 
-/* these will also work with immutable pairs */
 inline void kset_car(TValue p, TValue v)
 {
     klisp_assert(kmutable_pairp(p));

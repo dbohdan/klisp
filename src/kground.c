@@ -38,7 +38,7 @@
 #include "kgbytevectors.h"
 #include "kgvectors.h"
 #include "kgsystem.h"
-#include "kgerror.h"
+#include "kgerrors.h"
 
 #if KUSE_LIBFFI
 #  include "kgffi.h"
@@ -49,7 +49,6 @@
 #include "kstring.h"
 #include "keval.h"
 #include "krepl.h"
-#include "kscript.h"
 
 /* for init_cont_names */
 #define add_cont_name(K_, t_, c_, n_)					\
@@ -73,10 +72,6 @@ void kinit_cont_names(klisp_State *K)
     add_cont_name(K, t, do_repl_read, "repl-read");
     add_cont_name(K, t, do_repl_eval, "repl-eval");
     add_cont_name(K, t, do_repl_loop, "repl-loop");
-
-    /* SCRIPT, root-continuation & error-continuation */
-    add_cont_name(K, t, do_script_exit, "script-exit");
-    add_cont_name(K, t, do_script_error, "script-report-error");
 
     /* GROUND ENV */
     add_cont_name(K, t, do_eval_ls, "eval-list");

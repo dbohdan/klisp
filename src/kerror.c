@@ -106,6 +106,8 @@ void klispE_throw_simple(klisp_State *K, char *msg)
 /* GC: assumes all objs passed are rooted */
 void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
 {
+    /* it's important that this is immutable, because it's user
+       accessible */
     TValue error_msg = kstring_new_b_imm(K, msg);
     krooted_tvs_push(K, error_msg);
     TValue error_obj = 

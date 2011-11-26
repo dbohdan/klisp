@@ -105,15 +105,6 @@ void do_close_file_ret(klisp_State *K);
 /* 15.1.? flush-output-port */
 void flush(klisp_State *K);
 
-/* 15.1.? file-exists? */
-void file_existsp(klisp_State *K);
-
-/* 15.1.? delete-file */
-void delete_file(klisp_State *K);
-
-/* 15.1.? rename-file */
-void rename_file(klisp_State *K);
-
 /* init ground */
 void kinit_ports_ground_env(klisp_State *K);
 

@@ -25,14 +25,16 @@
 #include "kstring.h"
 #include "kcontinuation.h"
 #include "koperative.h"
+#include "kapplicative.h"
+#include "ksymbol.h"
 #include "kenvironment.h"
 #include "kport.h"
 #include "kread.h"
 #include "kwrite.h"
 #include "kerror.h"
+#include "kghelpers.h" /* for do_return_value */
 #include "kgcontinuations.h" /* for do_pass_value */
 #include "kgcontrol.h" /* for do_seq */
-#include "kscript.h"
 #include "krepl.h"
 
 /* TODO update dependencies in makefile */
@@ -139,7 +141,7 @@ static void show_error(klisp_State *K, TValue obj) {
 
 static int report (klisp_State *K, int status) 
 {
-    if (status != 0) {
+    if (status != EXIT_SUCCESS) {
 	const char *msg = "Error!";
 	k_message(progname, msg);
 	show_error(K, K->next_value);
@@ -253,12 +255,22 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     /* only port remains in the root stack */
     krooted_tvs_push(K, inner_cont);
 
+    /* This continuation will discard the result of the evaluation
+       and pass the root continuation #inert instead. This has to do with
+       the way the exit value of the interpreter is calculated (see man page)
+    */
+    TValue discard_cont = kmake_continuation(K, inner_cont, do_return_value,
+					     1, KINERT);
+
+    krooted_tvs_pop(K); /* pop inner cont */
+    krooted_tvs_push(K, discard_cont);
+
     /* XXX This should probably be an extra param to the function */
     env = K->next_env; /* this is the standard env that should be used for 
 			  evaluation */
-    TValue eval_cont = kmake_continuation(K, inner_cont, do_str_eval, 
+    TValue eval_cont = kmake_continuation(K, discard_cont, do_str_eval, 
 					  1, env);
-    krooted_tvs_pop(K); /* pop inner cont */
+    krooted_tvs_pop(K); /* pop discard cont */
     krooted_tvs_push(K, eval_cont);
     TValue read_cont = kmake_continuation(K, eval_cont, do_str_read, 
 					  1, port);
@@ -269,8 +281,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
 
     klispS_run(K);
 
-    int status = errorp? 1 : 0;
-
+    int status = errorp? EXIT_FAILURE : EXIT_SUCCESS;
     /* get the standard environment again in K->next_env */
     K->next_env = env;
     return report(K, status);
@@ -330,7 +341,7 @@ static int dofile(klisp_State *K, const char *name)
 	    krooted_tvs_pop(K);
 	    krooted_tvs_pop(K);
 	    K->next_value = error_obj;
-	    return report(K, 1);
+	    return report(K, EXIT_FAILURE);
 	}
 	    
 	TValue name_str = kstring_new_b(K, name);
@@ -369,12 +380,23 @@ static int dofile(klisp_State *K, const char *name)
     /* only port remains in the root stack */
     krooted_tvs_push(K, inner_cont);
 
+
+    /* This continuation will discard the result of the evaluation
+       and pass the root continuation #inert instead. This has to do with
+       the way the exit value of the interpreter is calculated (see man page)
+    */
+    TValue discard_cont = kmake_continuation(K, inner_cont, do_return_value,
+					     1, KINERT);
+
+    krooted_tvs_pop(K); /* pop inner cont */
+    krooted_tvs_push(K, discard_cont);
+
     /* XXX This should probably be an extra param to the function */
     env = K->next_env; /* this is the standard env that should be used for 
 			  evaluation */
-    TValue eval_cont = kmake_continuation(K, inner_cont, do_file_eval, 
+    TValue eval_cont = kmake_continuation(K, discard_cont, do_file_eval, 
 					  1, env);
-    krooted_tvs_pop(K); /* pop inner cont */
+    krooted_tvs_pop(K); /* pop discard cont */
     krooted_tvs_push(K, eval_cont);
     TValue read_cont = kmake_continuation(K, eval_cont, do_file_read, 
 					  1, port);
@@ -385,7 +407,7 @@ static int dofile(klisp_State *K, const char *name)
 
     klispS_run(K);
 
-    int status = errorp? 1 : 0;
+    int status = errorp? EXIT_FAILURE : EXIT_SUCCESS;
 
     /* get the standard environment again in K->next_env */
     K->next_env = env;
@@ -459,6 +481,8 @@ static int runargs (klisp_State *K, char **argv, int n)
     TValue env = K->next_env; 
     UNUSED(env);
 
+    /* TEMP All passes to root cont and all resulting values will be ignored,
+     the only way to interrupt the running of arguments is to throw an error */
     for (int i = 1; i < n; i++) {
 	if (argv[i] == NULL) 
 	    continue;
@@ -473,7 +497,7 @@ static int runargs (klisp_State *K, char **argv, int n)
 	    klisp_assert(chunk != NULL);
 
 	    if (dostring(K, chunk, "=(command line)") != 0)
-		return 1;
+		return EXIT_FAILURE;
 	    break;
 	}
 //	case 'l':  /* no libraries for now */
@@ -481,14 +505,48 @@ static int runargs (klisp_State *K, char **argv, int n)
 	    break;
 	}
     }
-    return 0;
+    return EXIT_SUCCESS;
+}
+
+static void populate_argument_lists(klisp_State *K, char **argv, int argc, 
+				    int script)
+{
+    /* first create the script list */
+    TValue tail = KNIL;
+    TValue obj = KINERT;
+    krooted_vars_push(K, &tail);
+    krooted_vars_push(K, &obj);
+    while(argc > script) {
+	char *arg = argv[--argc];
+	obj = kstring_new_b_imm(K, arg);
+	tail = kimm_cons(K, obj, tail);
+    }
+    /* Store the script argument list */
+    obj = ksymbol_new(K, "get-script-arguments", KNIL);
+    klisp_assert(kbinds(K, K->ground_env, obj));
+    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    tv2op(obj)->extra[0] = tail;
+
+    while(argc > 0) {
+	char *arg = argv[--argc];
+	obj = kstring_new_b_imm(K, arg);
+	tail = kimm_cons(K, obj, tail);
+    }
+    /* Store the interpreter argument list */
+    obj = ksymbol_new(K, "get-interpreter-arguments", KNIL);
+    klisp_assert(kbinds(K, K->ground_env, obj));
+    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    tv2op(obj)->extra[0] = tail;
+
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
 }
 
 static int handle_klispinit(klisp_State *K) 
 {
   const char *init = getenv(KLISP_INIT);
   if (init == NULL) 
-      return 0;  /* status OK */
+      return EXIT_SUCCESS;
   else 
       return dostring(K, init, "=" KLISP_INIT);
 }
@@ -500,12 +558,12 @@ struct Smain {
     int status;
 };
 
-static int pmain(klisp_State *K) 
+static void pmain(klisp_State *K) 
 {
     /* This is weird but was done to follow lua scheme */
     struct Smain *s = (struct Smain *) pvalue(K->next_value);
     char **argv = s->argv;
-    s->status = 0;
+    s->status = EXIT_SUCCESS;
 
     /* There is a standard env in K->next_env, a common one is used for all 
        evaluations (init, expression args, script/repl) */
@@ -524,32 +582,36 @@ static int pmain(klisp_State *K)
 
     /* init (eval KLISP_INIT env variable contents) */
     s->status = handle_klispinit(K);
-    if (s->status != 0)
-	return 0;
+    if (s->status != EXIT_SUCCESS)
+	return;
 
     bool has_i = false, has_v = false, has_e = false;
     int script = collectargs(argv, &has_i, &has_v, &has_e);
 
     if (script < 0) { /* invalid args? */
 	print_usage();
-	s->status = 1;
-	return 0;
+	s->status = EXIT_FAILURE;
+	return;
     }
 
     if (has_v)
 	print_version();
 
+    /* TEMP this could be either set before or after running the arguments,
+       we'll do it before for now */
+    populate_argument_lists(K, argv, s->argc, (script > 0) ? script : s->argc);
+    
     s->status = runargs(K, argv, (script > 0) ? script : s->argc);
 
-    if (s->status != 0)
-	return 0;
+    if (s->status != EXIT_SUCCESS)
+	return;
 
     if (script > 0) {
 	s->status = handle_script(K, argv, script);
     }
 
-    if (s->status != 0)
-	return 0;
+    if (s->status != EXIT_SUCCESS)
+	return;
 
     if (has_i) { 
 	dotty(K);
@@ -561,13 +623,10 @@ static int pmain(klisp_State *K)
 	    s->status = dofile(K, NULL);
 	}
     }
-
-    return 0;
 }
 
 int main(int argc, char *argv[]) 
 {
-    int status;
     struct Smain s;
     klisp_State *K = klispL_newstate();
 
@@ -580,9 +639,24 @@ int main(int argc, char *argv[])
     s.argc = argc;
     s.argv = argv;
     K->next_value = p2tv(&s);
-    status = pmain(K);
+
+    pmain(K);
+
+    if (s.status == EXIT_SUCCESS) {
+	/* must check value passed to the root continuation to
+	   return proper exit status */
+	if (ttisinert(K->next_value)) {
+	    s.status = EXIT_SUCCESS;
+	} else if (ttisboolean(K->next_value)) {
+	    s.status = kis_true(K->next_value)? EXIT_SUCCESS : EXIT_FAILURE;
+	} else if (ttisfixint(K->next_value)) {
+	    s.status = ivalue(K->next_value);
+	} else {
+	    s.status = EXIT_FAILURE;
+	}
+    }
 
     klisp_close(K);
 
-    return (status || s.status)? EXIT_FAILURE : EXIT_SUCCESS;
+    return s.status;
 }

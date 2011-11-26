@@ -89,7 +89,7 @@ void vector_ref(klisp_State *K)
 }
 
 /* (R7RS 3rd draft 6.3.6) vector-set! */
-void vector_setS(klisp_State *K)
+void vector_setB(klisp_State *K)
 {
     klisp_assert(ttisenvironment(K->next_env));
 
@@ -187,6 +187,31 @@ void vector_to_list(klisp_State *K)
     kapply_cc(K, tail);
 }
 
+/* ?.? vector-fill! */
+void vector_fillB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "vector", ttisvector, vector,
+	     "any", anytype, fill);
+
+    if (kvector_immutablep(vector)) {
+	klispE_throw_simple(K, "immutable vector");
+	return;
+    } 
+
+    uint32_t size = kvector_length(vector);
+    TValue *buf = kvector_array(vector);
+    while(size-- > 0) {
+	*buf++ = fill;
+    }
+    kapply_cc(K, KINERT);
+}
+
 /* ??.?.? vector->immutable-vector */
 void vector_to_immutable_vector(klisp_State *K)
 {
@@ -228,7 +253,7 @@ void kinit_vectors_ground_env(klisp_State *K)
 
     /* (R7RS 3rd draft 6.3.6) vector-ref vector-set! */
     add_applicative(K, ground_env, "vector-ref", vector_ref, 0);
-    add_applicative(K, ground_env, "vector-set!", vector_setS, 0);
+    add_applicative(K, ground_env, "vector-set!", vector_setB, 0);
 
     /* (R7RS 3rd draft 6.3.6) vector, vector->list, list->vector */
     add_applicative(K, ground_env, "vector", vector, 0);
@@ -238,8 +263,10 @@ void kinit_vectors_ground_env(klisp_State *K)
     /* ??.1.?? vector-copy */
     add_applicative(K, ground_env, "vector-copy", vector_copy, 0);
 
-    /* TODO: vector->string, string->vector, vector-fill */
+    /* TODO: vector->string, string->vector */
     /* TODO: vector-copy! vector-copy-partial vector-copy-partial! */
+
+    add_applicative(K, ground_env, "vector-fill!", vector_fillB, 0);
 
     /* ??.1.?? vector->immutable-vector */
     add_applicative(K, ground_env, "vector->immutable-vector",

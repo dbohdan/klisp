@@ -19,10 +19,10 @@
 #include "kcontinuation.h"
 #include "kerror.h"
 #include "ksymbol.h"
+#include "kchar.h"
 #include "kstring.h"
 
 #include "kghelpers.h"
-#include "kgchars.h" /* for kcharp */
 #include "kgstrings.h"
 #include "kgnumbers.h" /* for keintegerp & knegativep */
 
@@ -105,7 +105,7 @@ void string_ref(klisp_State *K)
 }
 
 /* 13.1.5? string-set! */
-void string_setS(klisp_State *K)
+void string_setB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -139,7 +139,7 @@ void string_setS(klisp_State *K)
 
 /* Helper for string and list->string */
 /* GC: Assumes ls is rooted */
-inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
+TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
 {
     int32_t dummy;
     /* don't allow cycles */
@@ -174,6 +174,58 @@ void string(klisp_State *K)
     
     TValue new_str = list_to_string_h(K, "string", ptree);
     kapply_cc(K, new_str);
+}
+
+/* 13.?? string-upcase, string-downcase, string-titlecase, string-foldcase */
+/* this will work for upcase, downcase and foldcase (in ASCII) */
+void kstring_change_case(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    /*
+    ** xparams[0]: conversion fn
+    */
+    UNUSED(denv);
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    char (*fn)(char) = pvalue(xparams[0]);
+    int32_t size = kstring_size(str);
+    TValue res = kstring_new_bs(K, kstring_buf(str), size);
+    char *buf = kstring_buf(res);
+    for(int32_t i = 0; i < size; ++i, buf++) {
+	*buf = fn(*buf);
+    }
+    kapply_cc(K, res);
+}
+
+void kstring_title_case(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    uint32_t size = kstring_size(str);
+    TValue res = kstring_new_bs(K, kstring_buf(str), size);
+    char *buf = kstring_buf(res);
+    bool first = true;
+    while(size-- > 0) {
+	char ch = *buf;
+	if (ch == ' ')
+	    first = true;
+	else if (!first)
+	    *buf = tolower(ch);
+	else if (isalpha(ch)) { 
+            /* only count as first letter something that can be capitalized */
+	    *buf = toupper(ch);
+	    first = false;
+	} 
+	++buf;
+    }
+    kapply_cc(K, res);
 }
 
 /* 13.2.2? string=?, string-ci=? */
@@ -449,7 +501,7 @@ void string_to_immutable_string(klisp_State *K)
 }
 
 /* 13.2.10? string-fill! */
-void string_fillS(klisp_State *K)
+void string_fillB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -497,9 +549,18 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.1.4? string-ref */
     add_applicative(K, ground_env, "string-ref", string_ref, 0);
     /* 13.1.5? string-set! */
-    add_applicative(K, ground_env, "string-set!", string_setS, 0);
+    add_applicative(K, ground_env, "string-set!", string_setB, 0);
     /* 13.2.1? string */
     add_applicative(K, ground_env, "string", string, 0);
+    /* 13.?? string-upcase, string-downcase, string-titlecase, 
+       string-foldcase */
+    add_applicative(K, ground_env, "string-upcase", kstring_change_case, 1,
+		    p2tv(toupper));
+    add_applicative(K, ground_env, "string-downcase", kstring_change_case, 1,
+		    p2tv(tolower));
+    add_applicative(K, ground_env, "string-titlecase", kstring_title_case, 0);
+    add_applicative(K, ground_env, "string-foldcase", kstring_change_case, 1,
+		    p2tv(tolower));
     /* 13.2.2? string=?, string-ci=? */
     add_applicative(K, ground_env, "string=?", ftyped_bpredp, 3,
 		    symbol, p2tv(kstringp), p2tv(kstring_eqp));
@@ -536,8 +597,6 @@ void kinit_strings_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "string->immutable-string", 
 		    string_to_immutable_string, 0);
 
-    /* TODO: add string-upcase and string-downcase like in r7rs-draft */
-
     /* 13.2.10? string-fill! */
-    add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
+    add_applicative(K, ground_env, "string-fill!", string_fillB, 0);
 }

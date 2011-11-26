@@ -1379,12 +1379,17 @@ continuation type is encapsulated.
      the new continuation, with no operands and the dynamic environment
      of the call to `guard-dynamic-extent'.
 
- -- Applicative: exit (exit)
-     Applicative `exit' initiates an abnormal transfer of `#inert' to
-     `root-continuation'.
-
+ -- Applicative: exit (exit [object])
+     Applicative `exit' initiates an abnormal transfer of `object' (or
+     `#inert' if `object' was not specified), to `root-continuation'.
      That is:
-          (exit ) == (apply-continuation root-continuation #inert)
+          (exit) == (apply-continuation root-continuation #inert)
+          (exit obj) == (apply-continuation root-continuation obj)
+
+     SOURCE NOTE: This applicative doesn't have the optional argument in
+     the report.  It was added to klisp to allow a simple way to
+     terminate the interpreter passing a value that is then tried to
+     convert to an exit status.
 
 
 File: klisp.info,  Node: Encapsulations,  Next: Promises,  Prev: Continuations,  Up: Top
@@ -2823,13 +2828,13 @@ Node: Pairs and lists22662
 Node: Environments39685
 Node: Combiners49892
 Node: Continuations55928
-Node: Encapsulations64102
-Node: Promises65555
-Node: Keyed Variables69478
-Node: Numbers72249
-Node: Strings91748
-Node: Characters97095
-Node: Ports99805
-Node: Alphabetical Index117409
+Node: Encapsulations64461
+Node: Promises65914
+Node: Keyed Variables69837
+Node: Numbers72608
+Node: Strings92107
+Node: Characters97454
+Node: Ports100164
+Node: Alphabetical Index117768
 
 End Tag Table

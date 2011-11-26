@@ -218,15 +218,20 @@ to <code>guard-dynamic-extent</code>.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>exit</b> (<var>exit</var>)<var><a name="index-exit-137"></a></var><br>
+&mdash; Applicative: <b>exit</b> (<var>exit </var>[<var>object</var>])<var><a name="index-exit-137"></a></var><br>
 <blockquote><!-- TODO add xref -->
         <p>Applicative <code>exit</code> initiates an abnormal transfer of
-<code>#inert</code> to <code>root-continuation</code>.
-
-        <p>That is:
-     <pre class="example">          (exit ) == (apply-continuation root-continuation #inert)
+<code>object</code> (or <code>#inert</code> if <code>object</code> was not specified),
+to <code>root-continuation</code>. 
+  That is:
+     <pre class="example">          (exit) == (apply-continuation root-continuation #inert)
+          (exit obj) == (apply-continuation root-continuation obj)
 </pre>
-        </blockquote></div>
+        <p>SOURCE NOTE: This applicative doesn't have the optional argument in
+the report.  It was added to klisp to allow a simple way to terminate
+the interpreter passing a value that is then tried to convert to an
+exit status. 
+</p></blockquote></div>
 
 <!-- *-texinfo-*- -->
    </body></html>

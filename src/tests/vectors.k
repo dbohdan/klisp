@@ -95,6 +95,13 @@
   (mutable-vector?
     (vector-copy (vector->immutable-vector (vector 1 2 3)))))
 
+;; XXX vector-fill!
+($check-predicate (inert? (vector-fill! (vector 1 2) 0)))
+($check equal? ($let ((v (vector 1 2 3)))
+		 (vector-fill! v "str")
+		 v)
+	(vector "str" "str" "str"))
+
 ;; XXX vector->immutable-vector
 
 ($check-predicate (applicative? vector->immutable-vector))

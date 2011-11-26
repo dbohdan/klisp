@@ -23,7 +23,6 @@
 #include "kgequalp.h"
 #include "kgpairs_lists.h"
 #include "kgnumbers.h"
-#include "kinteger.h"
 
 /* 4.6.1 pair? */
 /* uses typep */
@@ -45,7 +44,6 @@ void cons(klisp_State *K)
     TValue new_pair = kcons(K, car, cdr);
     kapply_cc(K, new_pair);
 }
-
 
 /* 5.2.1 list */
 void list(klisp_State *K)
@@ -114,7 +112,6 @@ void listS(klisp_State *K)
 
 /* 5.4.1 car, cdr */
 /* 5.4.2 caar, cadr, ... cddddr */
-
 void c_ad_r(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -155,43 +152,86 @@ void c_ad_r(klisp_State *K)
     kapply_cc(K, obj);
 }
 
-/* also used in list-tail and list-ref when receiving
-   bigint indexes */
-void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n, 
-			  int32_t *a, int32_t *c)
+/* 5.4.? make-list */
+void make_list(klisp_State *K)
 {
-    TValue tail = obj;
-    int32_t pairs = 0;
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, fill);
+
+    if (!get_opt_tpar(K, fill, "any", anytype))
+        fill = KINERT;
+
+    if (knegativep(tv_s)) {
+        klispE_throw_simple(K, "negative list length");
+        return;
+    } else if (!ttisfixint(tv_s)) {
+        klispE_throw_simple(K, "list length is too big");
+        return;
+    }
+    TValue tail = KNIL;
+    int i = ivalue(tv_s); 
+    krooted_vars_push(K, &tail);
+    while(i-- > 0) {
+	tail = kcons(K, fill, tail);
+    }
+    krooted_vars_pop(K);
+
+    kapply_cc(K, tail);
+}
+
+/* 5.4.? list-copy */
+void list_copy(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1p(K, ptree, ls);
+    TValue copy = check_copy_list(K, "list-copy", ls, true);
+    kapply_cc(K, copy);
+}
+
+/* 5.4.? reverse */
+void reverse(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1p(K, ptree, ls);
+    TValue tail = ls;
+    TValue res = KNIL;
+    krooted_vars_push(K, &res);
     while(ttispair(tail) && !kis_marked(tail)) {
-	/* record the pair number to simplify cycle pair counting */
-	kset_mark(tail, i2tv(pairs));
-	++pairs;
+	kmark(tail);
+	res = kcons(K, kcar(tail), res);
 	tail = kcdr(tail);
     }
-    int32_t apairs, cpairs, nils;
-    if (ttisnil(tail)) {
-	/* simple (possibly empty) list */
-	apairs = pairs;
-	nils = 1;
-	cpairs = 0;
-    } else if (ttispair(tail)) {
-	/* cyclic (maybe circular) list */
-	apairs = ivalue(kget_mark(tail));
-	cpairs = pairs - apairs;
-	nils = 0;
+    unmark_list(K, ls);
+    krooted_vars_pop(K);
+
+    if (ttispair(tail)) {
+	klispE_throw_simple(K, "expected acyclic list"); 
+    } else if (!ttisnil(tail)) {
+	klispE_throw_simple(K, "expected list"); 
     } else {
-	apairs = pairs;
-	cpairs = 0;
-	nils = 0;
+	kapply_cc(K, res);
     }
-
-    unmark_list(K, obj);
-
-    if (p != NULL) *p = pairs;
-    if (n != NULL) *n = nils;
-    if (a != NULL) *a = apairs;
-    if (c != NULL) *c = cpairs;
 }
 
 /* 5.7.1 get-list-metrics */
@@ -213,42 +253,6 @@ void get_list_metrics(klisp_State *K)
 	i2tv(apairs), i2tv(cpairs));
     kapply_cc(K, res);
 }
-
-/* Helper for list-tail and list-ref */
-
-/* Calculate the smallest i such that 
-   (eq? (list-tail obj i) (list-tail obj tk))
-   tk is a bigint and all lists have fixint range number of pairs,
-   so the list should cyclic and we should calculate an index that
-   doesn't go through the complete cycle not even once */
-int32_t ksmallest_index(klisp_State *K, char *name, TValue obj, 
-		      TValue tk)
-{
-    int32_t apairs, cpairs;
-    get_list_metrics_aux(K, obj, NULL, NULL, &apairs, &cpairs);
-    if (cpairs == 0) {
-	klispE_throw_simple(K, "non pair found while traversing "
-			   "object");
-	return 0;
-    }
-    TValue tv_apairs = i2tv(apairs);
-    TValue tv_cpairs = i2tv(cpairs);
-	
-    /* all calculations will be done with bigints */
-    kensure_bigint(tv_apairs);
-    kensure_bigint(tv_cpairs);
-	
-    TValue idx = kbigint_minus(K, tk, tv_apairs);
-    krooted_tvs_push(K, idx); /* root idx if it is a bigint */
-    /* idx may have become a fixint */
-    kensure_bigint(idx);
-    UNUSED(kbigint_div_mod(K, idx, tv_cpairs, &idx));
-    krooted_tvs_pop(K);
-    /* now idx is less than cpairs so it fits in a fixint */
-    assert(ttisfixint(idx));
-    return ivalue(idx) + apairs; 
-}
-
 
 /* 5.7.2 list-tail */
 void list_tail(klisp_State *K)
@@ -1166,6 +1170,12 @@ void kinit_pairs_lists_ground_env(klisp_State *K)
 		    C_AD_R_PARAM(4, 0x1110));
     add_applicative(K, ground_env, "cddddr", c_ad_r, 2, symbol,
 		    C_AD_R_PARAM(4, 0x1111));
+    /* 5.?.? make-list */
+    add_applicative(K, ground_env, "make-list", make_list, 0);
+    /* 5.?.? list-copy */
+    add_applicative(K, ground_env, "list-copy", list_copy, 0);
+    /* 5.?.? reverse */
+    add_applicative(K, ground_env, "reverse", reverse, 0);
     /* 5.7.1 get-list-metrics */
     add_applicative(K, ground_env, "get-list-metrics", get_list_metrics, 0);
     /* 5.7.2 list-tail */
