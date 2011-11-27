@@ -21,6 +21,7 @@
 #include "ksymbol.h"
 #include "kchar.h"
 #include "kstring.h"
+#include "kvector.h"
 
 #include "kghelpers.h"
 #include "kgstrings.h"
@@ -458,6 +459,65 @@ void list_to_string(klisp_State *K)
     kapply_cc(K, new_str);
 }
 
+/* 13.? string->vector, vector->string */
+void string_to_vector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    TValue res;
+
+    if (kstring_emptyp(str)) {
+	res = K->empty_vector;
+    } else {
+	uint32_t size = kstring_size(str);
+
+	/* MAYBE add vector constructor without fill */
+	/* no need to root this */
+	res = kvector_new_sf(K, size, KINERT);
+	char *src = kstring_buf(str);
+	TValue *dst = kvector_buf(res);
+	while(size--) {
+	    char ch = *src++; /* not needed but just in case */
+	    *dst++ = ch2tv(ch); 
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* TEMP Only ASCII for now */
+void vector_to_string(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "vector", ttisvector, vec);
+    uint32_t size = kvector_size(vec);
+
+    TValue res = kstring_new_s(K, size); /* no need to root this */
+    TValue *src = kvector_buf(vec);
+    char *dst = kstring_buf(res);
+    while(size--) {
+	TValue tv = *src++;
+	if (!ttischar(tv)) {
+	    klispE_throw_simple_with_irritants(K, "Non char object found", 
+					       1, tv);
+	    return;
+	}
+	*dst++ = chvalue(tv);
+    }
+    kapply_cc(K, res);
+}
+
 /* 13.2.8? string-copy */
 /* TEMP: at least for now this always returns mutable strings */
 void string_copy(klisp_State *K)
@@ -591,6 +651,9 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.2.7? string->list, list->string */
     add_applicative(K, ground_env, "string->list", string_to_list, 0);
     add_applicative(K, ground_env, "list->string", list_to_string, 0);
+    /* 13.?? string->vector, vector->string */
+    add_applicative(K, ground_env, "string->vector", string_to_vector, 0);
+    add_applicative(K, ground_env, "vector->string", vector_to_string, 0);
     /* 13.2.8? string-copy */
     add_applicative(K, ground_env, "string-copy", string_copy, 0);
     /* 13.2.9? string->immutable-string */

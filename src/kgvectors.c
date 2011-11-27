@@ -61,7 +61,7 @@ void vector_length(klisp_State *K)
 
     bind_1tp(K, ptree, "vector", ttisvector, vector);
 
-    TValue res = i2tv(kvector_length(vector));
+    TValue res = i2tv(kvector_size(vector));
     kapply_cc(K, res);
 }
 
@@ -80,12 +80,12 @@ void vector_ref(klisp_State *K)
         return;
     }
     int32_t i = ivalue(tv_i);
-    if (i < 0 || i >= kvector_length(vector)) {
+    if (i < 0 || i >= kvector_size(vector)) {
         klispE_throw_simple_with_irritants(K, "vector index out of bounds",
                                            1, tv_i);
         return;
     }
-    kapply_cc(K, kvector_array(vector)[i]);
+    kapply_cc(K, kvector_buf(vector)[i]);
 }
 
 /* (R7RS 3rd draft 6.3.6) vector-set! */
@@ -104,7 +104,7 @@ void vector_setB(klisp_State *K)
     }
 
     int32_t i = ivalue(tv_i);
-    if (i < 0 || i >= kvector_length(vector)) {
+    if (i < 0 || i >= kvector_size(vector)) {
         klispE_throw_simple_with_irritants(K, "vector index out of bounds",
                                            1, tv_i);
         return;
@@ -113,7 +113,7 @@ void vector_setB(klisp_State *K)
         return;
     }
 
-    kvector_array(vector)[i] = tv_new_value;
+    kvector_buf(vector)[i] = tv_new_value;
     kapply_cc(K, KINERT);
 }
 
@@ -128,7 +128,7 @@ void vector_copy(klisp_State *K)
 
     TValue new_vector = kvector_emptyp(v)? 
 	v
-        : kvector_new_bs_g(K, true, kvector_array(v), kvector_length(v));
+        : kvector_new_bs_g(K, true, kvector_buf(v), kvector_size(v));
     kapply_cc(K, new_vector);
 }
 
@@ -142,7 +142,7 @@ static TValue list_to_vector_h(klisp_State *K, const char *name, TValue ls)
     } else {
         TValue res = kvector_new_sf(K, pairs, KINERT);
         for (int i = 0; i < pairs; i++) {
-            kvector_array(res)[i] = kcar(ls);
+            kvector_buf(res)[i] = kcar(ls);
             ls = kcdr(ls);
         }
         return res;
@@ -180,9 +180,9 @@ void vector_to_list(klisp_State *K)
 
     TValue tail = KNIL;
     krooted_vars_push(K, &tail);
-    size_t i = kvector_length(v);
+    size_t i = kvector_size(v);
     while (i-- > 0)
-        tail = kcons(K, kvector_array(v)[i], tail);
+        tail = kcons(K, kvector_buf(v)[i], tail);
     krooted_vars_pop(K);
     kapply_cc(K, tail);
 }
@@ -204,8 +204,8 @@ void vector_fillB(klisp_State *K)
 	return;
     } 
 
-    uint32_t size = kvector_length(vector);
-    TValue *buf = kvector_array(vector);
+    uint32_t size = kvector_size(vector);
+    TValue *buf = kvector_buf(vector);
     while(size-- > 0) {
 	*buf++ = fill;
     }
@@ -222,7 +222,7 @@ void vector_to_immutable_vector(klisp_State *K)
 
     TValue res = kvector_immutablep(v)? 
 	v
-	: kvector_new_bs_g(K, false, kvector_array(v), kvector_length(v));
+	: kvector_new_bs_g(K, false, kvector_buf(v), kvector_size(v));
     kapply_cc(K, res);
 }
 

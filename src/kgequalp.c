@@ -204,14 +204,14 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 		    }
 		    break;
 		case K_TVECTOR:
-		    if (kvector_length(obj1) == kvector_length(obj2)) {
+		    if (kvector_size(obj1) == kvector_size(obj2)) {
 			/* if they were already compaired, consider equal for 
 			   now otherwise they are equal if all their elements
 			   are equal pairwise */
 			if (!equal_find2_mergep(K, obj1, obj2)) {
-			    uint32_t i = kvector_length(obj1);
-			    TValue *array1 = kvector_array(obj1);
-			    TValue *array2 = kvector_array(obj1);
+			    uint32_t i = kvector_size(obj1);
+			    TValue *array1 = kvector_buf(obj1);
+			    TValue *array2 = kvector_buf(obj1);
 			    while(i-- > 0) {
 				ks_spush(K, array1[i]);
 				ks_spush(K, array2[i]);

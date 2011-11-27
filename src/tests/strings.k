@@ -226,6 +226,34 @@
 
 ($check-error (list->string ($quote (#\a #0=(#\a . #0#)))))
 
+;; XXX string->vector
+
+($check equal? (string->vector "") (vector))
+($check equal? (string->vector "abc") (vector #\a #\B #\c))
+
+($check-not-predicate
+  ($let*
+    ( (str "abc")
+      (x (string->vector str))
+      (y (string->vector str)))
+  (eq? x y)))
+
+($check-predicate (mutable-vector? (string->vector "abc")))
+
+;; XXX vector->string
+
+($check equal? (vector->string (vector)) "")
+($check equal? (vector->string (vector #\a #\b #\c)) "abc")
+
+($check-not-predicate
+  ($let*
+    ( (cs (vector #\a #\b #\c))
+      (x (vector->string cs))
+      (y (vector->string cs)))
+  (eq? x y)))
+
+($check-predicate (mutable-string? (vector->string (vector #\a #\b))))
+
 ;; 13.1.1 string->symbol
 ;; XXX symbol->string
 ;;

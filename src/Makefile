@@ -233,7 +233,7 @@ kground.o: kground.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kgerrors.h kgffi.h ktable.h keval.h krepl.h
 kgstrings.o: kgstrings.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
- kpair.h kgc.h ksymbol.h kstring.h kghelpers.h kenvironment.h \
+ kpair.h kgc.h ksymbol.h kstring.h kghelpers.h kenvironment.h kvector.h \
  kgstrings.h kgnumbers.h
 kgsymbols.o: kgsymbols.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kcontinuation.h kpair.h kgc.h kstring.h ksymbol.h \
