@@ -16,8 +16,14 @@
    functions in kghelpers
 ** check if all inline functions need to be inline
 * fix:
+** fix some inconsistencies between the man page and the interpreter
+   behaviour.
+** fix/test the tty detection in the interpreter
 ** current-jiffy (r7rs)
 ** jiffies-per-second (r7rs)
+* documentation
+** update the manual with the current features
+** add a section to the manual with the interpreter usaged
 * operatives: 
 ** $when (r7rs)
 ** $unless (r7rs)
@@ -34,9 +40,6 @@
 ** vector-map (r7rs)
 ** bytevector-map (r7rs)
 ** string-map (r7rs)
-** vector-copy! (r7rs)
-** vector-copy-partial (r7rs)
-** vector-copy-partial! (r7rs)
 ** read-line (r7rs)
 ** number->string (r7rs)
 ** string->number (r7rs)

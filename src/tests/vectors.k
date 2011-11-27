@@ -123,10 +123,53 @@
 
 ($check-predicate (mutable-bytevector? (vector->bytevector (vector 0 1))))
 
+
 ;; errors
 ($check-error (vector->bytevector (vector -1)))
 ($check-error (vector->bytevector (vector 256)))
 ($check-error (vector->bytevector (vector (integer->char 41))))
+
+;; XXX vector-copy!
+;; additional property: returns #inert
+;; additional property: destination must be mutable
+;;
+($let ((v (make-vector 5 0)))
+  ($check equal? (vector-copy! (vector 1 2 3 4 5) v) #inert)
+  ($check equal? v (vector 1 2 3 4 5))
+  ($check-no-error (vector-copy! (vector->immutable-vector (vector 9 9)) v))
+  ($check equal? v (vector 9 9 3 4 5))
+  ($check-error (vector-copy! (vector 1 2 3 4 5 6) v))
+  ($check-error
+    (vector-copy!
+      (vector 1)
+      (vector->immutable-vector (vector 1)))))
+
+;; (R7RS 3rd draft, ) vector-copy-partial
+
+($check equal? (vector-copy-partial (vector 1 2 3) 0 0) (vector))
+($check equal? (vector-copy-partial (vector 1 2 3) 0 2) (vector 1 2))
+($check equal? (vector-copy-partial (vector 1 2 3) 2 3) (vector 3))
+($check equal? (vector-copy-partial (vector 1 2 3) 3 3) (vector))
+($check-error (vector-copy-partial (vector 1 2 3) 2 4))
+($check-error (vector-copy-partial (vector 1 2 3) -1 0))
+
+;; R7RS 3rd draft, vector-copy-partial!
+;; additional property: returns #inert
+;; additional property: destination must be mutable
+;;
+($let*
+  ((v (make-vector 5 9))
+   (w (vector->immutable-vector v)))
+  ($check equal? (vector-copy-partial! (vector 1 2) 0 2 v 0) #inert)
+  ($check equal? v (vector 1 2 9 9 9))
+  ($check equal? (vector-copy-partial! (vector 5 6) 1 2 v 4) #inert)
+  ($check equal? v (vector 1 2 9 9 6))
+  ($check-error (vector-copy-partial! (vector 1 2) 0 2 v -1))
+  ($check-error (vector-copy-partial! (vector 1 2) 0 2 v 4))
+  ($check-error (vector-copy-partial! (vector 1 2) 2 3 v 0))
+  ($check-error (vector-copy-partial! (vector 1 2) -1 0 v 0))
+  ($check-error (vector-copy-partial! (vector 1 2) 0 2 w 0)))
+
 
 ;; XXX vector-fill!
 ($check-predicate (inert? (vector-fill! (vector 1 2) 0)))

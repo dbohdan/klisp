@@ -253,6 +253,156 @@ void vector_to_bytevector(klisp_State *K)
     kapply_cc(K, res);
 }
 
+/* 13.2.9? vector-copy! */
+void vector_copyB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "vector", ttisvector, vector1, 
+	"vector", ttisvector, vector2);
+
+    if (kvector_immutablep(vector2)) {
+	klispE_throw_simple(K, "immutable destination vector");
+	return;
+    } else if (kvector_size(vector1) > kvector_size(vector2)) {
+	klispE_throw_simple(K, "destination vector is too small");
+	return;
+    }
+
+    if (!tv_equal(vector1, vector2) && 
+	  !tv_equal(vector1, K->empty_vector)) {
+	memcpy(kvector_buf(vector2),
+	       kvector_buf(vector1),
+	       kvector_size(vector1) * sizeof(TValue));
+    }
+    kapply_cc(K, KINERT);
+}
+
+/* ?.? vector-copy-partial */
+/* TEMP: at least for now this always returns mutable vectors */
+void vector_copy_partial(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_3tp(K, ptree, "vector", ttisvector, vector,
+	     "exact integer", keintegerp, tv_start,
+	     "exact integer", keintegerp, tv_end);
+
+    if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
+	  ivalue(tv_start) > kvector_size(vector)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "start index out of bounds");
+	return;
+    } 
+
+    int32_t start = ivalue(tv_start);
+
+    if (!ttisfixint(tv_end) || ivalue(tv_end) < 0 || 
+	  ivalue(tv_end) > kvector_size(vector)) {
+	klispE_throw_simple(K, "end index out of bounds");
+	return;
+    }
+
+    int32_t end = ivalue(tv_end);
+
+    if (start > end) {
+	/* TODO show indexes */
+	klispE_throw_simple(K, "end index is smaller than start index");
+	return;
+    }
+
+    int32_t size = end - start;
+    TValue new_vector;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (size == 0) {
+	new_vector = K->empty_vector;
+    } else {
+	new_vector = kvector_new_bs_g(K, true, kvector_buf(vector) 
+				      + start, size);
+    }
+    kapply_cc(K, new_vector);
+}
+
+/* ?.? vector-copy-partial! */
+void vector_copy_partialB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_al3tp(K, ptree, "vector", ttisvector, vector1, 
+	       "exact integer", keintegerp, tv_start,
+	       "exact integer", keintegerp, tv_end,
+	       rest);
+
+    /* XXX: this will send wrong error msgs (bad number of arg) */
+    bind_2tp(K, rest, 
+	     "vector", ttisvector, vector2, 
+	     "exact integer", keintegerp, tv_start2);
+
+    if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
+	  ivalue(tv_start) > kvector_size(vector1)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "start index out of bounds");
+	return;
+    } 
+
+    int32_t start = ivalue(tv_start);
+
+    if (!ttisfixint(tv_end) || ivalue(tv_end) < 0 || 
+	  ivalue(tv_end) > kvector_size(vector1)) {
+	klispE_throw_simple(K, "end index out of bounds");
+	return;
+    }
+
+    int32_t end = ivalue(tv_end);
+
+    if (start > end) {
+	/* TODO show indexes */
+	klispE_throw_simple(K, "end index is smaller than start index");
+	return;
+    }
+
+    int32_t size = end - start;
+
+    if (kvector_immutablep(vector2)) {
+	klispE_throw_simple(K, "immutable destination vector");
+	return;
+    }
+
+    if (!ttisfixint(tv_start2) || ivalue(tv_start2) < 0 || 
+	  ivalue(tv_start2) > kvector_size(vector2)) {
+	klispE_throw_simple(K, "to index out of bounds");
+	return;
+    }
+
+    int32_t start2 = ivalue(tv_start2);
+    int64_t end2 = (int64_t) start2 + size;
+
+    if ((end2 > INT32_MAX) || 
+	(((int32_t) end2) > kvector_size(vector2))) {
+	klispE_throw_simple(K, "not enough space in destination");
+	return;
+    }
+
+    if (size > 0) {
+	memcpy(kvector_buf(vector2) + start2,
+	       kvector_buf(vector1) + start,
+	       size * sizeof(TValue));
+    }
+    kapply_cc(K, KINERT);
+}
+
 /* ?.? vector-fill! */
 void vector_fillB(klisp_State *K)
 {
@@ -326,23 +476,32 @@ void kinit_vectors_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "vector->list", vector_to_list, 0);
     add_applicative(K, ground_env, "list->vector", list_to_vector, 0);
 
-    /* ??.1.?? vector-copy */
+    /* ?.? vector-copy */
     add_applicative(K, ground_env, "vector-copy", vector_copy, 0);
 
-    /* 13.?? vector->bytevector, bytevector->vector */
+    /* ?.? vector->bytevector, bytevector->vector */
     add_applicative(K, ground_env, "vector->bytevector", 
 		    vector_to_bytevector, 0);
     add_applicative(K, ground_env, "bytevector->vector", 
 		    bytevector_to_vector, 0);
 
-    /* vector->string, string->vector */
+    /* ?.? vector->string, string->vector */
     /* in kgstrings.c */
 
-    /* TODO: vector-copy! vector-copy-partial vector-copy-partial! */
+    /* ?.? vector-copy! */
+    add_applicative(K, ground_env, "vector-copy!", vector_copyB, 0);
 
+    /* ?.? vector-copy-partial */
+    add_applicative(K, ground_env, "vector-copy-partial", 
+		    vector_copy_partial, 0);
+    /* ?.? vector-copy-partial! */
+    add_applicative(K, ground_env, "vector-copy-partial!", 
+		    vector_copy_partialB, 0);
+
+    /* ?.? vector-fill! */
     add_applicative(K, ground_env, "vector-fill!", vector_fillB, 0);
 
-    /* ??.1.?? vector->immutable-vector */
+    /* ?.? vector->immutable-vector */
     add_applicative(K, ground_env, "vector->immutable-vector",
 		    vector_to_immutable_vector, 0);
 }
