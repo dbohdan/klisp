@@ -244,9 +244,14 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
 #define ttiseinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+/* for items in bytevectors */
 #define ttisu8(o) ({							\
 	TValue o__ = (o);						\
 	(ttisfixint(o__) && ivalue(o__) >= 0 && ivalue(o__) < 256); })		
+/* for bases in char->digit and related functions */
+#define ttisbase(o) ({							\
+	TValue o__ = (o);						\
+	(ttisfixint(o__) && ivalue(o__) >= 2 && ivalue(o__) <= 36); })		
 #define ttisinteger(o) ({ TValue o__ = (o);				\
 	    (ttiseinteger(o__) ||					\
 	     (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})

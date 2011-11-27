@@ -105,3 +105,59 @@
 ($check equal? (integer->char #x30) #\0)
 ($check equal? (integer->char #x41) #\A)
 ($check equal? (integer->char #x61) #\a)
+
+;; XXX char-digit?
+($check-predicate (char-digit? #\0))
+($check-predicate (char-digit? #\9))
+($check-not-predicate (char-digit? #\a))
+($check-not-predicate (char-digit? #\2 2))
+($check-predicate (char-digit? #\f 16))
+($check-predicate (char-digit? #\F 16))
+($check-not-predicate (char-digit? #\!))
+
+;; errors
+
+($check-error (char-digit?))
+($check-error (char-digit? 12))
+($check-error (char-digit? #\9 10 #\a))
+($check-error (char-digit? #\9 10 10))
+($check-error (char-digit? #\0 1))
+($check-error (char-digit? #\0 0))
+($check-error (char-digit? #\0 -1))
+($check-error (char-digit? #\0 37))
+
+;; XXX char->digit
+($check =? (char->digit #\0) 0)
+($check =? (char->digit #\9) 9)
+($check =? (char->digit #\f 16) 15)
+($check =? (char->digit #\F 16) 15)
+($check =? (char->digit #\z 36) 35)
+($check =? (char->digit #\Z 36) 35)
+
+;; errors
+($check-error (char->digit))
+($check-error (char->digit 0))
+($check-error (char->digit #\0 10 10))
+($check-error (char->digit #\0 1))
+($check-error (char->digit #\0 37))
+($check-error (char->digit #\0 0))
+($check-error (char->digit #\0 -1))
+($check-error (char->digit #\a 10))
+($check-error (char->digit #\2 2))
+
+;; XXX digit->char
+($check char=? (digit->char 0) #\0)
+($check char=? (digit->char 9) #\9)
+($check char=? (char-downcase (digit->char 15 16)) #\f)
+($check char=? (char-downcase (digit->char 35 36)) #\z)
+
+;; errors
+($check-error (digit->char))
+($check-error (digit->char #\0))
+($check-error (digit->char 0 10 10))
+($check-error (digit->char 0 1))
+($check-error (digit->char 0 37))
+($check-error (digit->char 0 0))
+($check-error (digit->char 0 -1))
+($check-error (digit->char 10 10))
+($check-error (digit->char 2 2))
