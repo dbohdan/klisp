@@ -246,7 +246,7 @@ kgsystem.o: kgsystem.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
 kgvectors.o: kgvectors.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  kpair.h kgc.h kvector.h kghelpers.h kenvironment.h ksymbol.h kstring.h \
- kgvectors.h kgnumbers.h
+ kgvectors.h kgnumbers.h kbytevector.h
 kinteger.o: kinteger.c kinteger.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h imath.h kgc.h
 klisp.o: klisp.c klimits.h klisp.h kobject.h klispconf.h kstate.h \

@@ -34,8 +34,6 @@
 ** vector-map (r7rs)
 ** bytevector-map (r7rs)
 ** string-map (r7rs)
-** vector->bytevector
-** bytevector->vector
 ** vector-copy! (r7rs)
 ** vector-copy-partial (r7rs)
 ** vector-copy-partial! (r7rs)

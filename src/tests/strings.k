@@ -254,6 +254,10 @@
 
 ($check-predicate (mutable-string? (vector->string (vector #\a #\b))))
 
+;; errors
+($check-error (vector->string (vector 41)))
+($check-error (vector->string (vector "a")))
+
 ;; XXX string->bytevector
 
 ($check equal? (string->bytevector "") (bytevector))
@@ -291,6 +295,10 @@
 ($check-predicate (mutable-string? 
 		   (bytevector->string (bytevector (char->integer #\a)
 						   (char->integer #\b)))))
+
+;; errors
+($check-error (bytevector->string (bytevector 128))) ;; only ASCII
+
 
 ;; 13.1.1 string->symbol
 ;; XXX symbol->string

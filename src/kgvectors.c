@@ -19,6 +19,7 @@
 #include "kerror.h"
 #include "kvector.h"
 #include "kpair.h"
+#include "kbytevector.h"
 
 #include "kghelpers.h"
 #include "kgvectors.h"
@@ -187,6 +188,71 @@ void vector_to_list(klisp_State *K)
     kapply_cc(K, tail);
 }
 
+/* 13.? bytevector->vector, vector->bytevector */
+void bytevector_to_vector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, str);
+    TValue res;
+
+    if (kbytevector_emptyp(str)) {
+	res = K->empty_vector;
+    } else {
+	uint32_t size = kbytevector_size(str);
+
+	/* MAYBE add vector constructor without fill */
+	/* no need to root this */
+	res = kvector_new_sf(K, size, KINERT);
+	uint8_t  *src = kbytevector_buf(str);
+	TValue *dst = kvector_buf(res);
+	while(size--) {
+	    uint8_t u8 = *src++; /* not needed but just in case */
+	    *dst++ = i2tv(u8);
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* TEMP Only ASCII for now */
+void vector_to_bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "vector", ttisvector, vec);
+    TValue res;
+
+    if (kvector_emptyp(vec)) {
+	res = K->empty_bytevector;
+    } else {
+	uint32_t size = kvector_size(vec);
+
+	res = kbytevector_new_s(K, size); /* no need to root this */
+	TValue *src = kvector_buf(vec);
+	uint8_t *dst = kbytevector_buf(res);
+	while(size--) {
+	    TValue tv = *src++;
+	    if (!ttisu8(tv)) {
+		klispE_throw_simple_with_irritants(K, "Non u8 object found", 
+						   1, tv);
+		return;
+	    }
+	    *dst++ = (uint8_t) ivalue(tv);
+	}
+    }
+    kapply_cc(K, res);
+}
+
 /* ?.? vector-fill! */
 void vector_fillB(klisp_State *K)
 {
@@ -263,7 +329,15 @@ void kinit_vectors_ground_env(klisp_State *K)
     /* ??.1.?? vector-copy */
     add_applicative(K, ground_env, "vector-copy", vector_copy, 0);
 
-    /* TODO: vector->string, string->vector */
+    /* 13.?? vector->bytevector, bytevector->vector */
+    add_applicative(K, ground_env, "vector->bytevector", 
+		    vector_to_bytevector, 0);
+    add_applicative(K, ground_env, "bytevector->vector", 
+		    bytevector_to_vector, 0);
+
+    /* vector->string, string->vector */
+    /* in kgstrings.c */
+
     /* TODO: vector-copy! vector-copy-partial vector-copy-partial! */
 
     add_applicative(K, ground_env, "vector-fill!", vector_fillB, 0);

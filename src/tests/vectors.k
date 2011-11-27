@@ -95,6 +95,39 @@
   (mutable-vector?
     (vector-copy (vector->immutable-vector (vector 1 2 3)))))
 
+;; XXX bytevector->vector
+
+($check equal? (bytevector->vector (u8)) (vector))
+($check equal? (bytevector->vector (u8 0 1 2)) (vector 0 1 2))
+
+($check-not-predicate
+  ($let*
+      ((bb (u8 0 1 2))
+       (x (bytevector->vector bb))
+       (y (bytevector->vector bb)))
+  (eq? x y)))
+
+($check-predicate (mutable-vector? (bytevector->vector (u8 0 1 2))))
+
+;; XXX vector->bytevector
+
+($check equal? (vector->bytevector (vector)) (u8))
+($check equal? (vector->bytevector (vector 0 1 2)) (u8 0 1 2))
+
+($check-not-predicate
+  ($let*
+    ((cs (vector 0 1 2))
+     (x (vector->bytevector cs))
+     (y (vector->bytevector cs)))
+  (eq? x y)))
+
+($check-predicate (mutable-bytevector? (vector->bytevector (vector 0 1))))
+
+;; errors
+($check-error (vector->bytevector (vector -1)))
+($check-error (vector->bytevector (vector 256)))
+($check-error (vector->bytevector (vector (integer->char 41))))
+
 ;; XXX vector-fill!
 ($check-predicate (inert? (vector-fill! (vector 1 2) 0)))
 ($check equal? ($let ((v (vector 1 2 3)))
