@@ -22,6 +22,7 @@
 #include "kchar.h"
 #include "kstring.h"
 #include "kvector.h"
+#include "kbytevector.h"
 
 #include "kghelpers.h"
 #include "kgstrings.h"
@@ -501,19 +502,89 @@ void vector_to_string(klisp_State *K)
     UNUSED(denv);
     
     bind_1tp(K, ptree, "vector", ttisvector, vec);
-    uint32_t size = kvector_size(vec);
+    TValue res;
 
-    TValue res = kstring_new_s(K, size); /* no need to root this */
-    TValue *src = kvector_buf(vec);
-    char *dst = kstring_buf(res);
-    while(size--) {
-	TValue tv = *src++;
-	if (!ttischar(tv)) {
-	    klispE_throw_simple_with_irritants(K, "Non char object found", 
-					       1, tv);
-	    return;
+    if (kvector_emptyp(vec)) {
+	res = K->empty_string;
+    } else {
+	uint32_t size = kvector_size(vec);
+
+	res = kstring_new_s(K, size); /* no need to root this */
+	TValue *src = kvector_buf(vec);
+	char *dst = kstring_buf(res);
+	while(size--) {
+	    TValue tv = *src++;
+	    if (!ttischar(tv)) {
+		klispE_throw_simple_with_irritants(K, "Non char object found", 
+						   1, tv);
+		return;
+	    }
+	    *dst++ = chvalue(tv);
 	}
-	*dst++ = chvalue(tv);
+    }
+    kapply_cc(K, res);
+}
+
+/* 13.? string->bytevector, bytevector->string */
+void string_to_bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    TValue res;
+
+    if (kstring_emptyp(str)) {
+	res = K->empty_bytevector;
+    } else {
+	uint32_t size = kstring_size(str);
+
+	/* MAYBE add bytevector constructor without fill */
+	/* no need to root this */
+	res = kbytevector_new_s(K, size);
+	char *src = kstring_buf(str);
+	uint8_t *dst = kbytevector_buf(res);
+	
+	while(size--) {
+	    *dst++ = (uint8_t)*src++; 
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* TEMP Only ASCII for now */
+void bytevector_to_string(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
+    TValue res;
+
+    if (kbytevector_emptyp(bb)) {
+	res = K->empty_string;
+    } else {
+	uint32_t size = kbytevector_size(bb);
+	res = kstring_new_s(K, size); /* no need to root this */
+	uint8_t *src = kbytevector_buf(bb);
+	char *dst = kstring_buf(res);
+	while(size--) {
+	    uint8_t u8 = *src++;
+	    if (u8 >= 128) {
+		klispE_throw_simple_with_irritants(K, "Char out of range", 
+						   1, i2tv(u8));
+		return;
+	    }
+	    *dst++ = (char) u8;
+	}
     }
     kapply_cc(K, res);
 }
@@ -654,6 +725,11 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.?? string->vector, vector->string */
     add_applicative(K, ground_env, "string->vector", string_to_vector, 0);
     add_applicative(K, ground_env, "vector->string", vector_to_string, 0);
+    /* 13.?? string->bytevector, bytevector->string */
+    add_applicative(K, ground_env, "string->bytevector", 
+		    string_to_bytevector, 0);
+    add_applicative(K, ground_env, "bytevector->string", 
+		    bytevector_to_string, 0);
     /* 13.2.8? string-copy */
     add_applicative(K, ground_env, "string-copy", string_copy, 0);
     /* 13.2.9? string->immutable-string */

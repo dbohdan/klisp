@@ -254,6 +254,44 @@
 
 ($check-predicate (mutable-string? (vector->string (vector #\a #\b))))
 
+;; XXX string->bytevector
+
+($check equal? (string->bytevector "") (bytevector))
+($check equal? (string->bytevector "aBc") 
+	(bytevector (char->integer #\a)
+		    (char->integer #\B) 
+		    (char->integer #\c)))
+
+($check-not-predicate
+  ($let*
+    ( (str "abc")
+      (x (string->bytevector str))
+      (y (string->bytevector str)))
+  (eq? x y)))
+
+($check-predicate (mutable-bytevector? (string->bytevector "abc")))
+
+;; XXX bytevector->string
+
+($check equal? (bytevector->string (bytevector)) "")
+($check equal? (bytevector->string (bytevector (char->integer #\a) 
+					       (char->integer #\b) 
+					       (char->integer #\c))) 
+	"abc")
+
+($check-not-predicate
+  ($let*
+      ((cs (bytevector (char->integer #\a) 
+		       (char->integer #\b)
+		       (char->integer #\c)))
+      (x (bytevector->string cs))
+      (y (bytevector->string cs)))
+  (eq? x y)))
+
+($check-predicate (mutable-string? 
+		   (bytevector->string (bytevector (char->integer #\a)
+						   (char->integer #\b)))))
+
 ;; 13.1.1 string->symbol
 ;; XXX symbol->string
 ;;
