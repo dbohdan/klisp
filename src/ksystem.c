@@ -35,34 +35,22 @@
 
 #include <time.h>
 
+/* TEMP for now the best we can do is return the current second */
 TValue ksystem_current_jiffy(klisp_State *K)
 {
-    /* N.B. clock() returns an approximation of processor time
-     * used by the program. We want wall clock time here. */
+    time_t now = time(NULL);
 
-    clock_t now = clock();
     if (now == -1) {
         klispE_throw_simple(K, "couldn't get time");
         return KFALSE;
     } else {
-        if (now > INT32_MAX) {
-            klispE_throw_simple(K, "integer too big");
-            return KFALSE;
-        } else {
-            return i2tv((int32_t) now);
-        }
+	return kinteger_new_uint64(K, (uint64_t) now);
     }
 }
 
 TValue ksystem_jiffies_per_second(klisp_State *K)
 {
-    if (CLOCKS_PER_SEC > INT32_MAX) {
-        /* XXX/TODO create bigint */
-        klispE_throw_simple(K, "integer too big");
-        return KFALSE;
-    } else {
-        return i2tv((int32_t) CLOCKS_PER_SEC);
-    }
+    return i2tv(1);
 }
 
 #endif

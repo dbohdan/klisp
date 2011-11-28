@@ -20,13 +20,11 @@
    typedef like lua)
 * fix:
 ** fix/test the tty detection in the interpreter
-** current-jiffy (r7rs)
-** jiffies-per-second (r7rs)
 * documentation
 ** fix some inconsistencies between the man page and the interpreter
    behaviour.
 ** update the manual with the current features
-** add a section to the manual with the interpreter usaged
+** add a section to the manual with the interpreter usage
 * operatives: 
 ** $when (r7rs)
 ** $unless (r7rs)

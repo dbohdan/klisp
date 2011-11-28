@@ -32,7 +32,7 @@ TValue ksystem_current_jiffy(klisp_State *K)
     mp_int_add_value(K, tv2bigint(res), tv.tv_usec, tv2bigint(res));
     krooted_vars_pop(K);
 
-    return res;
+    return kbigint_try_fixint(K, res);
 }
 
 TValue ksystem_jiffies_per_second(klisp_State *K)

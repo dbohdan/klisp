@@ -240,7 +240,7 @@ kgsymbols.o: kgsymbols.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
 kgsystem.o: kgsystem.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kpair.h kgc.h kerror.h ksystem.h kghelpers.h \
  kapplicative.h koperative.h kcontinuation.h kenvironment.h ksymbol.h \
- kstring.h ktable.h kgsystem.h
+ kstring.h ktable.h kgsystem.h kinteger.h kmem.h imath.h kgc.h
 kgvectors.o: kgvectors.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  kpair.h kgc.h kvector.h kbytevector.h kghelpers.h kenvironment.h \

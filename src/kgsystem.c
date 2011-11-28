@@ -17,6 +17,7 @@
 #include "kpair.h"
 #include "kerror.h"
 #include "ksystem.h"
+#include "kinteger.h"
 
 #include "kghelpers.h"
 #include "kgsystem.h"
@@ -26,6 +27,9 @@
 */
 
 /* ??.?.?  current-second */
+/* XXX current revision of the r7rs draft asks for tai seconds,
+   I am sticking with UTC seconds for now, at least till the report is 
+   ratified */
 void current_second(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -41,14 +45,8 @@ void current_second(klisp_State *K)
 	klispE_throw_simple(K, "couldn't get time");
 	return;
     } else {
-	if (now > INT32_MAX) {
-	    /* XXX/TODO create bigint */
-	    klispE_throw_simple(K, "integer too big");
-	    return;
-	} else {
-	    kapply_cc(K, i2tv((int32_t) now));
-	    return;
-	}
+	TValue res = kinteger_new_uint64(K, (uint64_t) now);
+	kapply_cc(K, res);
     }
 }
 
