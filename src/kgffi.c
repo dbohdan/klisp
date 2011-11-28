@@ -76,6 +76,10 @@ typedef struct {
 #define CB_INDEX_STACK  1
 #define CB_INDEX_FIRST_CALLBACK  2
 
+/* Continuations */
+void do_ffi_callback_encode_result(klisp_State *K);
+void do_ffi_callback_return(klisp_State *K);
+
 static TValue ffi_decode_void(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
     UNUSED(self);
@@ -1177,4 +1181,15 @@ void kinit_ffi_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "ffi-klisp-state", ffi_klisp_state, 0);
     add_applicative(K, ground_env, "ffi-library?", enc_typep, 1, dll_key);
     add_applicative(K, ground_env, "ffi-call-interface?", enc_typep, 1, cif_key);
+}
+
+/* init continuation names */
+void kinit_ffi_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_ffi_callback_encode_result, 
+		  "ffi-callback-encode-result");
+    add_cont_name(K, t, do_ffi_callback_return, 
+		  "ffi-callback-ret");
 }

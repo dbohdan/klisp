@@ -30,6 +30,9 @@
 #include "kghelpers.h"
 #include "kgports.h"
 
+/* Continuations */
+void do_close_file_ret(klisp_State *K);
+
 /* 15.1.1 port? */
 /* uses typep */
 
@@ -1014,4 +1017,12 @@ void kinit_ports_ground_env(klisp_State *K)
      * methods of opening. Also some directory checking, traversing, etc,
      * would be nice
      */
+}
+
+/* init continuation names */
+void kinit_ports_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_close_file_ret, "close-file-and-ret");
 }

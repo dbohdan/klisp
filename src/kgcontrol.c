@@ -19,13 +19,15 @@
 #include "kghelpers.h"
 #include "kgcontrol.h"
 
+/* Continuations */
+void do_select_clause(klisp_State *K);
+void do_cond(klisp_State *K);
+void do_for_each(klisp_State *K);
+
 /* 4.5.1 inert? */
 /* uses typep */
 
 /* 4.5.2 $if */
-
-/* helpers */
-void do_select_clause(klisp_State *K);
 
 /*  ASK JOHN: both clauses should probably be copied (copy-es-immutable) */
 void Sif(klisp_State *K)
@@ -383,4 +385,14 @@ void kinit_control_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$cond", Scond, 0);
     /* 6.9.1 for-each */
     add_applicative(K, ground_env, "for-each", for_each, 0);
+}
+
+/* init continuation names */
+void kinit_control_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_select_clause, "select-clause");
+    add_cont_name(K, t, do_cond, "eval-cond-list");
+    add_cont_name(K, t, do_for_each, "for-each");
 }

@@ -26,6 +26,19 @@
 #include "kcontinuation.h"
 #include "kencapsulation.h"
 
+/* Initialization of continuation names */
+void kinit_kghelpers_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    add_cont_name(K, t, do_seq, "eval-sequence");
+    add_cont_name(K, t, do_pass_value, "pass-value");
+    add_cont_name(K, t, do_return_value, "return-value");
+    add_cont_name(K, t, do_bind, "dynamic-bind");
+    add_cont_name(K, t, do_bind, "dynamic-access");
+    add_cont_name(K, t, do_bind, "dynamic-unbind");
+    add_cont_name(K, t, do_bind, "dynamic-set!-pass");
+}
+
 /* Type predicates */
 /* TODO these should be moved to either kobject.h or the corresponding
    files (e.g. kbooleanp to kboolean.h */

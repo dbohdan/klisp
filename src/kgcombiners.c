@@ -556,3 +556,15 @@ void kinit_combiners_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "combiner?", ftypep, 2, symbol, 
 		    p2tv(kcombinerp));
 }
+
+/* init continuation names */
+void kinit_combiners_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    
+    add_cont_name(K, t, do_map, "map-acyclic-part");
+    add_cont_name(K, t, do_map_encycle, "map-encycle!");
+    add_cont_name(K, t, do_map_ret, "map-ret");
+    add_cont_name(K, t, do_map_cycle, "map-cyclic-part");
+    add_cont_name(K, t, do_vau, "$vau-bind!-eval");
+}

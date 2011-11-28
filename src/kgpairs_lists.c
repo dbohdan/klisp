@@ -22,6 +22,19 @@
 #include "kghelpers.h"
 #include "kgpairs_lists.h"
 
+/* Continuations */
+void do_ret_cdr(klisp_State *K);
+
+void do_filter_encycle(klisp_State *K);
+void do_filter(klisp_State *K);
+void do_filter_cycle(klisp_State *K);
+
+void do_reduce(klisp_State *K);
+void do_reduce_prec(klisp_State *K);
+void do_reduce_postc(klisp_State *K);
+void do_reduce_combine(klisp_State *K);
+void do_reduce_cycle(klisp_State *K);
+
 /* 4.6.1 pair? */
 /* uses typep */
 
@@ -819,9 +832,6 @@ void countable_listp(klisp_State *K)
 
 /* Helpers for reduce */
 
-/* NOTE: This is used from both do_reduce_cycle and reduce */
-void do_reduce(klisp_State *K);
-
 void do_reduce_prec(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -1201,4 +1211,22 @@ void kinit_pairs_lists_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "reduce", reduce, 0);
 
     /* TODO add make-list, list-copy and reverse (from r7rs) */
+}
+
+/* init continuation names */
+void kinit_pairs_lists_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    
+    add_cont_name(K, t, do_ret_cdr, "return-cdr");
+
+    add_cont_name(K, t, do_filter, "filter-acyclic-part");
+    add_cont_name(K, t, do_filter_encycle, "filter-encycle!");
+    add_cont_name(K, t, do_filter_cycle, "filter-cyclic-part");
+
+    add_cont_name(K, t, do_reduce, "reduce-acyclic-part");
+    add_cont_name(K, t, do_reduce_prec, "reduce-precycle");
+    add_cont_name(K, t, do_reduce_combine, "reduce-combine");
+    add_cont_name(K, t, do_reduce_postc, "reduce-postcycle");
+    add_cont_name(K, t, do_reduce_cycle, "reduce-cyclic-part");
 }

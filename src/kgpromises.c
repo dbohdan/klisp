@@ -21,7 +21,7 @@
 #include "kghelpers.h"
 #include "kgpromises.h"
 
-/* continuations */
+/* Continuations */
 void do_handle_result(klisp_State *K);
 
 
@@ -140,4 +140,12 @@ void kinit_promises_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$lazy", Slazy, 0); 
     /* 9.1.4 memoize */
     add_applicative(K, ground_env, "memoize", memoize, 0); 
+}
+
+/* init continuation names */
+void kinit_promises_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_handle_result, "promise-handle-result");
 }

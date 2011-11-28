@@ -11,5 +11,8 @@
 
 /* init ground */
 void kinit_env_mut_ground_env(klisp_State *K);
+/* init continuation names */
+void kinit_env_mut_cont_names(klisp_State *K);
+
 
 #endif

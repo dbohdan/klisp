@@ -23,6 +23,18 @@
 #include "kcontinuation.h"
 #include "kenvironment.h"
 #include "ksymbol.h"
+#include "kstring.h"
+#include "ktable.h"
+
+/* 
+** REFACTOR split this file into several.
+** Some should have their own files (like knumber, kbool, etc)
+** Others are simply helpers that should be split into modules
+** (like continuation helpers, list helpers, environment helpers)
+*/
+   
+/* Initialization of continuation names */
+void kinit_kghelpers_cont_names(klisp_State *K);
 
 /* to use in type checking binds when no check is needed */
 #define anytype(obj_) (true)
@@ -481,6 +493,7 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 			      int32_t app_apairs, int32_t app_cpairs, 
 			      int32_t res_apairs, int32_t res_cpairs);
 
+
 /*
 ** Macros for ground environment initialization
 */
@@ -489,7 +502,7 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 ** BEWARE: this is highly unhygienic, it assumes variables "symbol" and
 ** "value", both of type TValue. symbol will be bound to a symbol named by
 ** "n_" and can be referrenced in the var_args
-** GC: All of these should be called when GC is deactivated on startup
+** GC: All of these should be called when GC is deactivated
 */
 
 /* TODO add si to the symbols */
@@ -530,3 +543,11 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 	kadd_binding(K_, env_, symbol, v_); }
 
 #endif
+
+/* for initiliazing continuation names */
+#define add_cont_name(K_, t_, c_, n_)					\
+    { TValue str = kstring_new_b_imm(K_, n_);				\
+    TValue *node = klispH_set(K_, t_, p2tv(c_));			\
+    *node = str;							\
+    }
+

@@ -12,6 +12,14 @@
 #include "kcontinuation.h"
 #include "kerror.h"
 
+/* for continuation name setting */
+#include "kghelpers.h"
+
+/* Continuations */
+void do_eval_ls(klisp_State *K);
+void do_combine(klisp_State *K);
+
+
 /*
 ** Eval helpers 
 */
@@ -173,4 +181,11 @@ void keval_ofn(klisp_State *K)
     }
 }
 
+/* init continuation names */
+void kinit_eval_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    add_cont_name(K, t, do_eval_ls, "eval-list");
+    add_cont_name(K, t, do_combine, "eval-combine");
+}
 

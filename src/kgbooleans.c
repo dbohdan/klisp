@@ -21,6 +21,9 @@
 #include "kghelpers.h"
 #include "kgbooleans.h"
 
+/* Continuations */
+void do_Sandp_Sorp(klisp_State *K);
+
 /* 4.1.1 boolean? */
 /* uses typep */
 
@@ -206,4 +209,11 @@ void kinit_booleans_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$and?", Sandp_Sorp, 2, symbol, KFALSE);
     /* 6.1.5 $or? */
     add_operative(K, ground_env, "$or?", Sandp_Sorp, 2, symbol, KTRUE);
+}
+
+/* init continuation names */
+void kinit_booleans_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    add_cont_name(K, t, do_Sandp_Sorp, "eval-booleans");
 }

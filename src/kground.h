@@ -10,5 +10,6 @@
 #include "kstate.h"
 
 void kinit_ground_env(klisp_State *K);
+void kinit_cont_names(klisp_State *K);
 
 #endif

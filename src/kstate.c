@@ -263,8 +263,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* this must be done before calling kinit_ground_env */
     kinit_error_hierarchy(K); 
-
     kinit_ground_env(K);
+    kinit_cont_names(K);
 
     /* create a std environment and leave it in K->next_env */
     K->next_env = kmake_table_environment(K, K->ground_env);

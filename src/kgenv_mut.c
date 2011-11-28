@@ -21,9 +21,10 @@
 #include "kghelpers.h"
 #include "kgenv_mut.h"
 
-/* continuations */
+/* Continuations */
 void do_match(klisp_State *K);
 void do_set_eval_obj(klisp_State *K);
+void do_import(klisp_State *K);
 
 /* 4.9.1 $define! */
 void SdefineB(klisp_State *K)
@@ -327,3 +328,14 @@ void kinit_env_mut_ground_env(klisp_State *K)
     /* 6.8.3 $import! */
     add_operative(K, ground_env, "$import!", SimportB, 1, symbol);
 }
+
+/* init continuation names */
+void kinit_env_mut_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_match, "match-ptree");
+    add_cont_name(K, t, do_set_eval_obj, "set-eval-obj");
+    add_cont_name(K, t, do_import, "import-bindings");
+}
+

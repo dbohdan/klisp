@@ -50,13 +50,6 @@
 #include "keval.h"
 #include "krepl.h"
 
-/* for init_cont_names */
-#define add_cont_name(K_, t_, c_, n_)					\
-    { TValue str = kstring_new_b_imm(K_, n_);				\
-    TValue *node = klispH_set(K_, t_, p2tv(c_));			\
-    *node = str;							\
-    }
-
 /*
 ** This is called once to save the names of the types of continuations
 ** used in the ground environment & repl
@@ -64,52 +57,31 @@
 */
 void kinit_cont_names(klisp_State *K)
 {
+    /* TEMP root and error continuations are set here (they are in kstate) */
     Table *t = tv2table(K->cont_name_table);
-/* XXX this should be handled like the init_ground_env */
-#if 0
-    /* REPL, root-continuation & error-continuation */
     add_cont_name(K, t, do_root_exit, "exit");
     add_cont_name(K, t, do_error_exit, "error");
-    add_cont_name(K, t, do_repl_read, "repl-read");
-    add_cont_name(K, t, do_repl_eval, "repl-eval");
-    add_cont_name(K, t, do_repl_loop, "repl-loop");
-
-    /* GROUND ENV */
-    add_cont_name(K, t, do_eval_ls, "eval-list");
-    add_cont_name(K, t, do_combine, "eval-combine");
-    add_cont_name(K, t, do_Sandp_Sorp, "eval-booleans");
-    add_cont_name(K, t, do_seq, "eval-sequence");
-    add_cont_name(K, t, do_map, "map-acyclic-part");
-    add_cont_name(K, t, do_map_encycle, "map-encycle!");
-    add_cont_name(K, t, do_map_ret, "map-ret");
-    add_cont_name(K, t, do_map_cycle, "map-cyclic-part");
-    add_cont_name(K, t, do_extended_cont, "extended-cont");
-    add_cont_name(K, t, do_pass_value, "pass-value");
-    add_cont_name(K, t, do_select_clause, "select-clause");
-    add_cont_name(K, t, do_cond, "eval-cond-list");
-    add_cont_name(K, t, do_for_each, "for-each");
-    add_cont_name(K, t, do_let, "eval-let");
-    add_cont_name(K, t, do_bindsp, "eval-$binds?-env");
-    add_cont_name(K, t, do_let_redirect, "eval-let-redirect");
-    add_cont_name(K, t, do_remote_eval, "eval-remote-eval-env");
-    add_cont_name(K, t, do_b_to_env, "bindings-to-env");
-    add_cont_name(K, t, do_match, "match-ptree");
-    add_cont_name(K, t, do_set_eval_obj, "set-eval-obj");
-    add_cont_name(K, t, do_import, "import-bindings");
-    add_cont_name(K, t, do_return_value, "return-value");
-    add_cont_name(K, t, do_unbind, "unbind-dynamic-var");
-    add_cont_name(K, t, do_filter, "filter-acyclic-part");
-    add_cont_name(K, t, do_filter_encycle, "filter-encycle!");
-    add_cont_name(K, t, do_ret_cdr, "return-cdr");
-    add_cont_name(K, t, do_filter_cycle, "filter-cyclic-part");
-    add_cont_name(K, t, do_reduce_prec, "reduce-precycle");
-    add_cont_name(K, t, do_reduce_combine, "reduce-combine");
-    add_cont_name(K, t, do_reduce_postc, "reduce-postcycle");
-    add_cont_name(K, t, do_reduce, "reduce-acyclic-part");
-    add_cont_name(K, t, do_reduce_cycle, "reduce-cyclic-part");
-    add_cont_name(K, t, do_close_file_ret, "close-file-and-ret");
-    add_cont_name(K, t, do_handle_result, "handle-result");
+    /* TEMP this is also in kstate */
     add_cont_name(K, t, do_interception, "do-interception");
+
+    /* TEMP repl ones should be done in the interpreter, and not in
+       the init state */
+    kinit_repl_cont_names(K); 
+
+    kinit_eval_cont_names(K);
+    kinit_kghelpers_cont_names(K);
+
+    kinit_booleans_cont_names(K);
+    kinit_combiners_cont_names(K);
+    kinit_environments_cont_names(K);
+    kinit_env_mut_cont_names(K);
+    kinit_pairs_lists_cont_names(K);
+    kinit_continuations_cont_names(K);
+    kinit_control_cont_names(K);
+    kinit_promises_cont_names(K);
+    kinit_ports_cont_names(K);
+#if KUSE_LIBFFI
+    kinit_ffi_cont_names(K);
 #endif
 }
 
@@ -147,11 +119,4 @@ void kinit_ground_env(klisp_State *K)
 #if KUSE_LIBFFI
     kinit_ffi_ground_env(K);
 #endif
-
-    /*
-    ** Initialize the names of the continuation used in
-    ** the supported modules to aid in debugging/error msgs
-    */
-    /* MAYBE some/most/all of these could be done in each module */
-    kinit_cont_names(K);
 }

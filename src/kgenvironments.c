@@ -21,8 +21,12 @@
 #include "kghelpers.h"
 #include "kgenvironments.h"
 
-/* continuations */
+/* Continuations */
+void do_let(klisp_State *K);
+void do_let_redirect(klisp_State *K);
+void do_bindsp(klisp_State *K);
 void do_remote_eval(klisp_State *K);
+void do_b_to_env(klisp_State *K);
 
 /* 4.8.1 environment? */
 /* uses typep */
@@ -722,4 +726,16 @@ void kinit_environments_ground_env(klisp_State *K)
     /* 6.7.10 $bindings->environment */
     add_operative(K, ground_env, "$bindings->environment", 
 		  Sbindings_to_environment, 1, symbol);
+}
+
+/* init continuation names */
+void kinit_environments_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    
+    add_cont_name(K, t, do_let, "eval-let");
+    add_cont_name(K, t, do_let_redirect, "eval-let-redirect");
+    add_cont_name(K, t, do_bindsp, "eval-$binds?-env");
+    add_cont_name(K, t, do_remote_eval, "eval-remote-eval-env");
+    add_cont_name(K, t, do_b_to_env, "bindings-to-env");
 }

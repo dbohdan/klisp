@@ -11,5 +11,7 @@
     
 /* init ground */
 void kinit_pairs_lists_ground_env(klisp_State *K);
+/* init continuation names */
+void kinit_pairs_lists_cont_names(klisp_State *K);
 
 #endif

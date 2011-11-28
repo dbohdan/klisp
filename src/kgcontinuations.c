@@ -23,6 +23,9 @@
 #include "kghelpers.h"
 #include "kgcontinuations.h"
 
+/* Continuations */
+void do_extended_cont(klisp_State *K);
+
 /* 7.1.1 continuation? */
 /* uses typep */
 
@@ -276,4 +279,12 @@ void kinit_continuations_ground_env(klisp_State *K)
     /* 7.3.4 exit */    
     add_applicative(K, ground_env, "exit", kgexit, 
 		    0);
+}
+
+/* init continuation names */
+void kinit_continuations_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    
+    add_cont_name(K, t, do_extended_cont, "extended-cont");
 }

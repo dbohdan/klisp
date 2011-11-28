@@ -15,5 +15,7 @@
 
 /* init ground */
 void kinit_ffi_ground_env(klisp_State *K);
+/* init continuation names */
+void kinit_ffi_cont_names(klisp_State *K);
 
 #endif
