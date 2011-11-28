@@ -368,6 +368,79 @@ void for_each(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* 6.9.? string-for-each, vector-for-each, bytevector-for-each */
+void array_for_each(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    /*
+    ** xparams[1]: array->list fn (with type check and size ret)
+    */
+
+    TValue (*array_to_list)(klisp_State *K, TValue array, int32_t *size) = 
+	pvalue(xparams[0]);
+
+    bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);
+    
+    /* check that lss is a non empty list, and copy it */
+    if (ttisnil(lss)) {
+	klispE_throw_simple(K, "no arguments after applicative");
+	return;
+    }
+
+    int32_t app_pairs, app_apairs, app_cpairs;
+    /* the copied list should be protected from gc, and will host
+       the lists resulting from the conversion */
+    lss = check_copy_list(K, lss, true, &app_pairs, &app_cpairs);
+    app_apairs = app_pairs - app_cpairs;
+    krooted_tvs_push(K, lss);
+
+    /* check that all elements have the correct type and same size,
+       and convert them to lists */
+    int32_t res_pairs;
+    TValue head = kcar(lss);
+    TValue tail = kcdr(lss);
+    TValue ls = array_to_list(K, head, &res_pairs);
+    kset_car(lss, ls); /* save the first */
+    /* all array will produce acyclic lists */
+    for(int32_t i = 1 /* jump over first */; i < app_pairs; ++i) {
+	head = kcar(tail);
+	int32_t pairs;
+	ls = array_to_list(K, head, &pairs);
+	/* in klisp all arrays should have the same length */
+	if (pairs != res_pairs) {
+	    klispE_throw_simple(K, "arguments of different length");
+	    return;
+	}
+	kset_car(tail, ls);
+	tail = kcdr(tail);
+    }
+    
+    /* create the list of parameters to app */
+    lss = map_for_each_transpose(K, lss, app_apairs, app_cpairs, 
+				 res_pairs, 0); /* cycle pairs is always 0 */
+
+    /* ASK John: the semantics when this is mixed with continuations,
+       isn't all that great..., but what are the expectations considering
+       there is no prescribed order? */
+
+    krooted_tvs_pop(K);
+    krooted_tvs_push(K, lss);
+
+    /* schedule all elements at once, this will also return #inert once 
+       done. */
+    TValue new_cont = 
+	kmake_continuation(K, kget_cc(K), do_for_each, 4, app, lss,
+			   i2tv(res_pairs), denv);
+    kset_cc(K, new_cont);
+    krooted_tvs_pop(K);
+    /* this will be a nop */
+    kapply_cc(K, KINERT);
+}
+
 /* init ground */
 void kinit_control_ground_env(klisp_State *K)
 {
@@ -385,6 +458,13 @@ void kinit_control_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$cond", Scond, 0);
     /* 6.9.1 for-each */
     add_applicative(K, ground_env, "for-each", for_each, 0);
+    /* 6.9.? string-for-each, vector-for-each, bytevector-for-each */
+    add_applicative(K, ground_env, "string-for-each", array_for_each, 1, 
+		    p2tv(string_to_list_h));
+    add_applicative(K, ground_env, "vector-for-each", array_for_each, 1, 
+		    p2tv(vector_to_list_h));
+    add_applicative(K, ground_env, "bytevector-for-each", array_for_each, 1, 
+		    p2tv(bytevector_to_list_h));
 }
 
 /* init continuation names */

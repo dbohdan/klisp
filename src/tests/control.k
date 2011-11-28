@@ -146,6 +146,128 @@
 	  #f))
 
 
+;; string-for-each
+($check-predicate (applicative? string-for-each))
+($check eq? (string-for-each char-upcase "abcd") #inert)
+($check eq? (string-for-each char<? "abcd" "efgh") #inert)
+
+($let ((p (cons () ())))
+  ($check eq?
+	  ($sequence (string-for-each (wrap ($vau #ignore env
+				       (set-car! p env)))
+			       "a")
+		     (car p))
+	  (get-current-environment)))
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (string-for-each ($lambda (x)
+					(set-car! p (+ (car p) 
+						       (char->integer x))))
+			       "abcd")
+		     (car p))
+	  (apply + (map char->integer (string->list "abcd")))))
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (string-for-each ($lambda (x y )
+				 (set-car! p (+ (car p) 
+						 (char->integer x) 
+						 (char->integer y))))
+			       "abc"
+			       "def")
+		     (car p))
+	  (apply + (map char->integer (string->list "abcdef")))))
+
+
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (string-for-each ($lambda ls
+				 (set-car! p (finite-list? ls)))
+		     . #0=("abc"
+			   "def"
+			   . #0#))
+		     (car p))
+	  #f))
+
+
+;; vector-for-each
+($check-predicate (applicative? vector-for-each))
+($check eq? (vector-for-each + (vector 1 2 3)) #inert)
+($check eq? (vector-for-each <? (vector 1 2) (vector 3 4)) 
+	#inert)
+
+($let ((p (cons () ())))
+  ($check eq?
+	  ($sequence (vector-for-each (wrap ($vau #ignore env
+				       (set-car! p env)))
+			       (vector 1))
+		     (car p))
+	  (get-current-environment)))
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (vector-for-each ($lambda (x)
+					(set-car! p (+ (car p) x)))
+			       (vector 1 2 3 4))
+		     (car p))
+	  10))
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (vector-for-each ($lambda (x y )
+				 (set-car! p (+ (car p) x y)))
+			       (vector 1 2 3 4)
+			       (vector 10 20 30 40))
+		     (car p))
+	  110))
+
+
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (vector-for-each ($lambda ls
+				 (set-car! p (finite-list? ls)))
+		     . #0=((vector 1 2)
+			   (vector 3 4)
+			   . #0#))
+		     (car p))
+	  #f))
+
+;; bytevector-for-each
+($check-predicate (applicative? bytevector-for-each))
+($check eq? (bytevector-for-each + (bytevector 1 2 3)) #inert)
+($check eq? (bytevector-for-each <? (bytevector 1 2) (bytevector 3 4)) 
+	#inert)
+
+($let ((p (cons () ())))
+  ($check eq?
+	  ($sequence (bytevector-for-each (wrap ($vau #ignore env
+				       (set-car! p env)))
+			       (bytevector 1))
+		     (car p))
+	  (get-current-environment)))
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (bytevector-for-each ($lambda (x)
+					(set-car! p (+ (car p) x)))
+			       (bytevector 1 2 3 4))
+		     (car p))
+	  10))
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (bytevector-for-each ($lambda (x y )
+				 (set-car! p (+ (car p) x y)))
+			       (bytevector 1 2 3 4)
+			       (bytevector 10 20 30 40))
+		     (car p))
+	  110))
+
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (bytevector-for-each ($lambda ls
+				 (set-car! p (finite-list? ls)))
+		     . #0=((bytevector 1 2)
+			   (bytevector 3 4)
+			   . #0#))
+		     (car p))
+	  #f))
+
 ;;;
 ;;; Error Checking and Robustness
 ;;;
@@ -185,8 +307,7 @@
 ;; for-each
 
 ($check-error (for-each))
-;; the list can't be empty
-($check-error (for-each list))
+($check-error (for-each list)) ; the list can't be empty
 
 ($check-error (for-each list (list 1 2) (list 1 2 3)))
 ($check-error (for-each list (list . #0=(1 2 . #0#)) (list 1 2 3)))
@@ -197,3 +318,46 @@
 
 ($check-error (for-each list (list 1 2) #inert))
 ($check-error (for-each cons (list 1 2)))
+
+
+;; string-for-each
+($check-error (string-for-each))
+($check-error (string-for-each char-upcase)) ; the list can't be empty
+
+($check-error (string-for-each char<? "ab" "abc"))
+
+($check-error (string-for-each char-upcase #inert))
+($check-error (string-for-each #inert "abc"))
+($check-error (string-for-each (unwrap char-upcase) "abc"))
+
+($check-error (string-for-each char<? "abc" #inert))
+($check-error (string-for-each cons "abc"))
+
+;; vector-for-each
+($check-error (vector-for-each))
+($check-error (vector-for-each char-upcase)) ; the list can't be empty
+
+($check-error (vector-for-each <? (vector 1 2) (vector 1 2 3)))
+
+($check-error (vector-for-each char-upcase #inert))
+($check-error (vector-for-each #inert (vector 1 2)))
+($check-error (vector-for-each (unwrap char-upcase) (vector 1)))
+
+($check-error (vector-for-each <? (vector 1 2) #inert))
+($check-error (vector-for-each cons (vector 1 2 3)))
+
+;; bytevector-for-each
+($check-error (bytevector-for-each))
+($check-error (bytevector-for-each +)) ; the list can't be empty
+
+($check-error (bytevector-for-each <? (bytevector 1 2) 
+				   (bytevector 1 2 3)))
+
+($check-error (bytevector-for-each + #inert))
+($check-error (bytevector-for-each #inert (bytevector 1 2 3)))
+($check-error (bytevector-for-each (unwrap char-upcase) 
+				   (bytevector 1 2)))
+
+($check-error (bytevector-for-each <? (bytevector 1 2) #inert))
+($check-error (bytevector-for-each cons
+			       (bytevector 1 2 3)))
