@@ -138,30 +138,6 @@ void string_setB(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* Helper for string and list->string */
-/* GC: Assumes ls is rooted */
-TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
-{
-    /* don't allow cycles */
-    int32_t pairs;
-    check_typed_list(K, kcharp, false, ls, &pairs, NULL);
-
-    TValue new_str;
-    /* the if isn't strictly necessary but it's clearer this way */
-    if (pairs == 0) {
-	return K->empty_string; 
-    } else {
-	new_str = kstring_new_s(K, pairs);
-	char *buf = kstring_buf(new_str);
-	TValue tail = ls;
-	while(pairs--) {
-	    *buf++ = chvalue(kcar(tail));
-	    tail = kcdr(tail);
-	}
-	return new_str;
-    }
-}
-
 /* 13.2.1? string */
 void string(klisp_State *K)
 {
@@ -172,7 +148,10 @@ void string(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     
-    TValue new_str = list_to_string_h(K, "string", ptree);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_typed_list(K, kcharp, false, ptree, &pairs, NULL);
+    TValue new_str = list_to_string_h(K, ptree, pairs);
     kapply_cc(K, new_str);
 }
 
@@ -427,18 +406,8 @@ void string_to_list(klisp_State *K)
     UNUSED(denv);
     
     bind_1tp(K, ptree, "string", ttisstring, str);
-    int32_t pairs = kstring_size(str);
-    char *buf = kstring_buf(str);
-
-    TValue tail = kget_dummy1(K);
-
-    while(pairs--) {
-	TValue new_pair = kcons(K, ch2tv(*buf), KNIL);
-	buf++;
-	kset_cdr(tail, new_pair);
-	tail = new_pair;
-    }
-    kapply_cc(K, kcutoff_dummy1(K));
+    TValue res = string_to_list_h(K, str, NULL);
+    kapply_cc(K, res);
 }
 
 void list_to_string(klisp_State *K)
@@ -450,10 +419,12 @@ void list_to_string(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     
-    /* check later in list_to_string_h */
+    /* check later */
     bind_1p(K, ptree, ls);
-
-    TValue new_str = list_to_string_h(K, "list->string", ls);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_typed_list(K, kcharp, false, ls, &pairs, NULL);
+    TValue new_str = list_to_string_h(K, ls, pairs);
     kapply_cc(K, new_str);
 }
 

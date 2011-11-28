@@ -15,6 +15,9 @@
 ** eliminate char * arguments where not needed (like list check/copy
    functions in kghelpers
 ** check if all inline functions need to be inline
+** standarize either int32_t (now used in lists) or uint32_t (now used
+   in strings, vectors and bytevectors) for sizes (and maybe use a 
+   typedef like lua)
 * fix:
 ** fix/test the tty detection in the interpreter
 ** current-jiffy (r7rs)

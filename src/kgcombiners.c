@@ -25,10 +25,13 @@
 
 /* continuations */
 void do_vau(klisp_State *K);
+
+void do_map(klisp_State *K);
 void do_map_ret(klisp_State *K);
 void do_map_encycle(klisp_State *K);
-void do_map(klisp_State *K);
 void do_map_cycle(klisp_State *K);
+
+void do_array_map_ret(klisp_State *K);
 
 /* 4.10.1 operative? */
 /* uses typep */
@@ -449,6 +452,36 @@ void map(klisp_State *K)
 ** an open issue (see comment in map).
 */
 
+/* NOTE: the type error on the result of app are only checked after
+   all values are collected. This could be changed if necessary, by
+   having map continuations take an additional typecheck param */
+/* Helpers for array_map */
+
+/* copy the resulting list to a new vector */
+void do_array_map_ret(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    /*
+    ** xparams[0]: (dummy . complete-ls)
+    ** xparams[1]: list->array
+    ** xparams[2]: length
+    */
+    UNUSED(obj);
+
+    TValue ls = kcdr(xparams[0]);
+    TValue (*list_to_array)(klisp_State *K, TValue array, int32_t size) = 
+	pvalue(xparams[1]);
+    int32_t length = ivalue(xparams[2]);
+
+    /* This will also avoid some problems with continuations
+       captured from within the dynamic extent to map
+       and later mutation of the result */
+    TValue copy = list_to_array(K, ls, length);
+    kapply_cc(K, copy);
+}
+
 /* 5.9.? string-map */
 /* 5.9.? vector-map */
 /* 5.9.? bytevector-map */
@@ -460,51 +493,71 @@ void array_map(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
 
     /*
-    ** xparams[0]: array->list fn
-    ** xparams[1]: list->array fn
-    ** xparams[2]: type name
+    ** xparams[0]: list->array fn 
+    ** xparams[1]: array->list fn (with type check and size ret)
     */
 
-    UNUSED(xparams);
+    TValue list_to_array_tv = xparams[0];
+    TValue (*array_to_list)(klisp_State *K, TValue array, int32_t *size) = 
+	pvalue(xparams[1]);
 
-/* TODO */
     bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);
     
+    /* check that lss is a non empty list, and copy it */
     if (ttisnil(lss)) {
-	klispE_throw_simple(K, "no lists");
+	klispE_throw_simple(K, "no arguments after applicative");
 	return;
     }
 
-    /* get the metrics of the ptree of each call to app and
-       of the result list */
     int32_t app_pairs, app_apairs, app_cpairs;
-    int32_t res_pairs, res_apairs, res_cpairs;
+    /* the copied list should be protected from gc, and will host
+       the lists resulting from the conversion */
+    lss = check_copy_list(K, lss, true, &app_pairs, &app_cpairs);
+    app_apairs = app_pairs - app_cpairs;
+    krooted_tvs_push(K, lss);
 
-    map_for_each_get_metrics(K, lss, &app_apairs, &app_cpairs,
-			     &res_apairs, &res_cpairs);
-    app_pairs = app_apairs + app_cpairs;
-    res_pairs = res_apairs + res_cpairs;
+    /* check that all elements have the correct type and same size,
+       and convert them to lists */
+    int32_t res_pairs;
+    TValue head = kcar(lss);
+    TValue tail = kcdr(lss);
+    TValue ls = array_to_list(K, head, &res_pairs);
+    kset_car(lss, ls); /* save the first */
+    /* all array will produce acyclic lists */
 
+    for(int32_t i = 1 /* jump over first */; i < app_pairs; ++i) {
+	head = kcar(tail);
+	int32_t pairs;
+	ls = array_to_list(K, head, &pairs);
+	/* in klisp all arrays should have the same length */
+	if (pairs != res_pairs) {
+	    klispE_throw_simple(K, "arguments of different length");
+	    return;
+	}
+	kset_car(tail, ls);
+	tail = kcdr(tail);
+    }
+    
     /* create the list of parameters to app */
     lss = map_for_each_transpose(K, lss, app_apairs, app_cpairs, 
-				 res_apairs, res_cpairs);
+				 res_pairs, 0); /* cycle pairs is always 0 */
 
     /* ASK John: the semantics when this is mixed with continuations,
        isn't all that great..., but what are the expectations considering
        there is no prescribed order? */
 
+    krooted_tvs_pop(K);
     krooted_tvs_push(K, lss);
-    /* This will be the list to be returned, but it will be copied
-       before to play a little nicer with continuations */
+    /* This will be the list to be returned, but it will be transformed
+       to an array before returning (making it also play a little nicer 
+       with continuations) */
     TValue dummy = kcons(K, KINERT, KNIL);
     
     krooted_tvs_push(K, dummy);
 
-    TValue ret_cont = (res_cpairs == 0)?
-	kmake_continuation(K, kget_cc(K), do_map_ret, 1, dummy)
-	: kmake_continuation(K, kget_cc(K), do_map_cycle, 4, 
-			     app, dummy, i2tv(res_cpairs), denv);
-
+    TValue ret_cont = 
+	kmake_continuation(K, kget_cc(K), do_array_map_ret, 3, dummy, 
+			   list_to_array_tv, i2tv(res_pairs));
     krooted_tvs_push(K, ret_cont);
 
     /* schedule the mapping of the elements of the acyclic part.
@@ -512,7 +565,7 @@ void array_map(klisp_State *K)
        the inert value passed to the first continuation */
     TValue new_cont = 
 	kmake_continuation(K, ret_cont, do_map, 6, app, lss, dummy,
-			   i2tv(res_apairs), denv, KTRUE);
+			   i2tv(res_pairs), denv, KTRUE);
 
     krooted_tvs_pop(K); 
     krooted_tvs_pop(K); 
@@ -552,6 +605,13 @@ void kinit_combiners_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "apply", apply, 0);
     /* 5.9.1 map */
     add_applicative(K, ground_env, "map", map, 0);
+    /* 5.9.? string-map, vector-map, bytevector-map */
+    add_applicative(K, ground_env, "string-map", array_map, 2, 
+		    p2tv(list_to_string_h), p2tv(string_to_list_h));
+    add_applicative(K, ground_env, "vector-map", array_map, 2, 
+		    p2tv(list_to_vector_h), p2tv(vector_to_list_h));
+    add_applicative(K, ground_env, "bytevector-map", array_map, 2, 
+		    p2tv(list_to_bytevector_h), p2tv(bytevector_to_list_h));
     /* 6.2.1 combiner? */
     add_applicative(K, ground_env, "combiner?", ftypep, 2, symbol, 
 		    p2tv(kcombinerp));
@@ -562,9 +622,12 @@ void kinit_combiners_cont_names(klisp_State *K)
 {
     Table *t = tv2table(K->cont_name_table);
     
+    add_cont_name(K, t, do_vau, "$vau-bind!-eval");
+
     add_cont_name(K, t, do_map, "map-acyclic-part");
     add_cont_name(K, t, do_map_encycle, "map-encycle!");
     add_cont_name(K, t, do_map_ret, "map-ret");
     add_cont_name(K, t, do_map_cycle, "map-cyclic-part");
-    add_cont_name(K, t, do_vau, "$vau-bind!-eval");
+
+    add_cont_name(K, t, do_array_map_ret, "array-map-ret");
 }

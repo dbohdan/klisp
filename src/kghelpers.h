@@ -360,6 +360,19 @@ TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy,
 /* GC: assume obj is rooted, uses dummy3 */
 TValue check_copy_env_list(klisp_State *K, TValue obj);
 
+/* The assimetry in error checking in the following functions
+   is a product of the contexts in which they are used, see the
+   .c for an enumeration of such contexts */
+/* list->? conversion functions, only type errors of elems checked */
+TValue list_to_string_h(klisp_State *K, TValue ls, int32_t length);
+TValue list_to_vector_h(klisp_State *K, TValue ls, int32_t length);
+TValue list_to_bytevector_h(klisp_State *K, TValue ls, int32_t length);
+
+/* ?->list conversion functions, type checked */
+TValue string_to_list_h(klisp_State *K, TValue obj, int32_t *length);
+TValue vector_to_list_h(klisp_State *K, TValue obj, int32_t *length);
+TValue bytevector_to_list_h(klisp_State *K, TValue obj, int32_t *length);
+
 /*
 ** Generic function for type predicates
 ** It can only be used by types that have a unique tag

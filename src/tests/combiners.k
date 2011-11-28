@@ -223,6 +223,91 @@
 		   . #0#))
 	(list #f #f #f #f))
 
+;; string-map
+($check-predicate (applicative? string-map))
+($check equal? (string-map char-downcase "") "")
+($check equal? (string-map char-upcase "abc") "ABC")
+($let ((char-max ($lambda chars 
+		   (integer->char 
+		    (apply max
+			   (map char->integer chars))))))
+  ($check equal? (string-map char-max "abc" "ABC" "xyz" "XYZ")
+	  "xyz")
+  ($check equal? (string-map char-max "abc" "ABC" . #0=("xyz" "XYZ". #0#))
+	  "xyz"))
+
+($let ((p (cons () ())))
+  ($check eq?
+	  ($sequence (string-map (wrap ($vau #ignore env
+					 (set-car! p env)
+					 #\a))
+			       "a")
+		     (car p))
+	  (get-current-environment)))
+
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (string-map ($lambda (x)
+				   (set-car! p (+ (car p) (char->integer x)))
+				   #\a)
+				 "abcd")
+		     (car p))
+	  (apply + (map char->integer (string->list "abcd")))))
+
+;; vector-map
+($check-predicate (applicative? vector-map))
+($check equal? (vector-map inert? (vector #inert #ignore #inert))
+	(vector #t #f #t))
+($check equal? (vector-map inert? (vector)) (vector))
+($check equal? (vector-map max (vector 1 2) . 
+			   #0=((vector 3 4) (vector 5 6). #0#))
+	  (vector 5 6))
+
+($let ((p (cons () ())))
+  ($check eq?
+	  ($sequence (vector-map (wrap ($vau #ignore env
+					 (set-car! p env)))
+			       (vector 1))
+		     (car p))
+	  (get-current-environment)))
+
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (vector-map ($lambda (x)
+				   (set-car! p (+ (car p) x)))
+				 (vector 1 2 3 4))
+		     (car p))
+	  10))
+
+;; bytevector-map
+($check-predicate (applicative? bytevector-map))
+($check equal? (bytevector-map + (bytevector)) (bytevector))
+($check equal? (bytevector-map ($lambda (x) (+ x 1)) (bytevector 1 2 3)) 
+	(bytevector 2 3 4))
+($check equal? (bytevector-map max (bytevector 1 2) (bytevector 3 4) 
+			       (bytevector 5 6))
+	(bytevector 5 6))
+($check equal? (bytevector-map max (bytevector 1 2) . #0=((bytevector 3 4) 
+			       (bytevector 5 6) . #0#))
+	(bytevector 5 6))
+
+($let ((p (cons () ())))
+  ($check eq?
+	  ($sequence (bytevector-map (wrap ($vau #ignore env
+					 (set-car! p env)
+					 1))
+			       (bytevector 1))
+		     (car p))
+	  (get-current-environment)))
+
+($let ((p (cons 0 ())))
+  ($check eq?
+	  ($sequence (bytevector-map ($lambda (x)
+				       (set-car! p (+ (car p) x))
+				       1)
+				     (bytevector 1 2 3 4))
+		     (car p))
+	  10))
 
 ;;;
 ;;; Error Checking and Robustness
@@ -318,3 +403,55 @@
 
 ($check-error (map list (list 1 2) #inert))
 ($check-error (map cons (list 1 2)))
+
+;; string-map
+($check-error (string-map)) 
+($check-error (string-map char-upcase)) ; the list can't be empty
+($check-error (string-map ($lambda ls #\a) "abc" "ab"))
+($check-error (string-map ($lambda ls #\a) "abc" . #0=("ab" . #0#)))
+
+($check-error (string-map char->number "abc"))
+($check-error (string-map char>=? "abc" "def"))
+
+($check-error (string-map char-upcase #\a))
+($check-error (string-map char-upcase (list #\a)))
+($check-error (string-map #inert "abc"))
+($check-error (string-map (unwrap char-upcase) "abc"))
+($check-error (string-map char-upcase "abc" "def"))
+($check-error (string-map char-upcase . #0=("abc". #0#)))
+
+;; vector-map
+($check-error (vector-map)) 
+($check-error (vector-map char-upcase)) ; the list can't be empty
+($check-error (vector-map + (vector 1 2 3) (vector 1 2)))
+($check-error (vector-map + (vector 1 2 3) . #0=((vector 1 2) . #0#)))
+
+($check-error (vector-map char-upcase #\a))
+($check-error (vector-map char-upcase (list #\a)))
+($check-error (vector-map + (bytevector 1)))
+($check-error (vector-map #inert (vector)))
+($check-error (vector-map (unwrap +) (vector 1 2 3)))
+($check-error (vector-map ($lambda (x) (+ x 1)) 
+			  (vector 1 2) (vector 1 2)))
+($check-error (vector-map ($lambda (x) (+ x 1)) . 
+			  #0=((vector 1 2) . #0#)))
+
+;; bytevector-map
+($check-error (bytevector-map)) 
+($check-error (bytevector-map +)) ; the list can't be empty
+($check-error (bytevector-map + (bytevector 1 2) (bytevector 1 2 3)))
+($check-error (bytevector-map + (bytevector 1 2) . 
+			      #0=((bytevector 1 2 3) . #0#)))
+
+($check-error (bytevector-map number->char (bytevector 41 42 43)))
+($check-error (bytevector-map + (bytevector 100 200) (bytevector 300 400)))
+
+($check-error (bytevector-map + 1))
+($check-error (bytevector-map + (list 1)))
+($check-error (bytevector-map + (vector 1)))
+($check-error (bytevector-map #inert (bytevector 1 2 3)))
+($check-error (bytevector-map (unwrap char-upcase) (bytevector 1 2 3)))
+($check-error (bytevector-map ($lambda (x) (+ x 1)) 
+			      (bytevector 1 2 3) (bytevector 1 2 3)))
+($check-error (bytevector-map ($lambda (x) (+ x 1)) . 
+			      #0=((bytevector 1 2 3) . #0#)))

@@ -28,30 +28,6 @@
 /* ?.? immutable-bytevector?, mutable-bytevector? */
 /* use ftypep */
 
-/* Helper for bytevector and list->bytevector */
-/* GC: Assumes ls is rooted */
-TValue list_to_bytevector_h(klisp_State *K, char *name, TValue ls)
-{
-    /* don't allow cycles */
-    int32_t pairs;
-    check_typed_list(K, ku8p, false, ls, &pairs, NULL);
-
-    TValue new_bb;
-    /* the if isn't strictly necessary but it's clearer this way */
-    if (pairs == 0) {
-	return K->empty_bytevector; 
-    } else {
-	new_bb = kbytevector_new_s(K, pairs);
-	uint8_t *buf = kbytevector_buf(new_bb);
-	TValue tail = ls;
-	while(pairs--) {
-	    *buf++ = ivalue(kcar(tail));
-	    tail = kcdr(tail);
-	}
-	return new_bb;
-    }
-}
-
 /* ?.? bytevector */
 void bytevector(klisp_State *K)
 {
@@ -62,7 +38,10 @@ void bytevector(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     
-    TValue new_bb = list_to_bytevector_h(K, "bytevector", ptree);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_typed_list(K, ku8p, false, ptree, &pairs, NULL);
+    TValue new_bb = list_to_bytevector_h(K, ptree, pairs);
     kapply_cc(K, new_bb);
 }
 
@@ -77,18 +56,9 @@ void bytevector_to_list(klisp_State *K)
     UNUSED(denv);
     
     bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
-    int32_t pairs = kbytevector_size(bb);
-    uint8_t *buf = kbytevector_buf(bb);
 
-    TValue tail = kget_dummy1(K);
-
-    while(pairs--) {
-	TValue new_pair = kcons(K, i2tv(*buf), KNIL);
-	buf++;
-	kset_cdr(tail, new_pair);
-	tail = new_pair;
-    }
-    kapply_cc(K, kcutoff_dummy1(K));
+    TValue res = bytevector_to_list_h(K, bb, NULL);
+    kapply_cc(K, res);
 }
 
 /* ?.? list->bytevector */
@@ -104,7 +74,10 @@ void list_to_bytevector(klisp_State *K)
     /* check later in list_to_bytevector_h */
     bind_1p(K, ptree, ls);
 
-    TValue new_bb = list_to_bytevector_h(K, "list->bytevector", ls);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_typed_list(K, ku8p, false, ls, &pairs, NULL);
+    TValue new_bb = list_to_bytevector_h(K, ls, pairs);
     kapply_cc(K, new_bb);
 }
 

@@ -132,31 +132,16 @@ void vector_copy(klisp_State *K)
     kapply_cc(K, new_vector);
 }
 
-static TValue list_to_vector_h(klisp_State *K, const char *name, TValue ls)
-{
-    /* don't allow cycles */
-    int32_t pairs;
-    check_list(K, false, ls, &pairs, NULL);
-
-    if (pairs == 0) {
-        return K->empty_vector;
-    } else {
-        TValue res = kvector_new_sf(K, pairs, KINERT);
-        for (int i = 0; i < pairs; i++) {
-            kvector_buf(res)[i] = kcar(ls);
-            ls = kcdr(ls);
-        }
-        return res;
-    }
-}
-
 /* (R7RS 3rd draft 6.3.6) vector */
 void vector(klisp_State *K)
 {
     klisp_assert(ttisenvironment(K->next_env));
 
     TValue ptree = K->next_value;
-    TValue res = list_to_vector_h(K, "vector", ptree);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_list(K, false, ptree, &pairs, NULL);
+    TValue res = list_to_vector_h(K, ptree, pairs);
     kapply_cc(K, res);
 }
 
@@ -167,7 +152,10 @@ void list_to_vector(klisp_State *K)
 
     TValue ptree = K->next_value;
     bind_1p(K, ptree, ls);
-    TValue res = list_to_vector_h(K, "list->vector", ls);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_list(K, false, ls, &pairs, NULL);
+    TValue res = list_to_vector_h(K, ls, pairs);
     kapply_cc(K, res);
 }
 
@@ -179,13 +167,8 @@ void vector_to_list(klisp_State *K)
     TValue ptree = K->next_value;
     bind_1tp(K, ptree, "vector", ttisvector, v);
 
-    TValue tail = KNIL;
-    krooted_vars_push(K, &tail);
-    size_t i = kvector_size(v);
-    while (i-- > 0)
-        tail = kcons(K, kvector_buf(v)[i], tail);
-    krooted_vars_pop(K);
-    kapply_cc(K, tail);
+    TValue res = vector_to_list_h(K, v, NULL);
+    kapply_cc(K, res);
 }
 
 /* 13.? bytevector->vector, vector->bytevector */

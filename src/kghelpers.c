@@ -534,6 +534,146 @@ TValue check_copy_env_list(klisp_State *K, TValue obj)
     return kcutoff_dummy3(K);
 }
 
+/* Helpers for string, list->string, and string-map,
+ bytevector, list->bytevector, bytevector-map, 
+ vector, list->vector, and vector-map */
+/* GC: Assume ls is rooted */
+/* ls should a list of length 'length' of the correct type 
+   (chars for string, u8 for bytevector, any for vector) */
+/* these type checks each element */
+
+TValue list_to_string_h(klisp_State *K, TValue ls, int32_t length)
+{
+    TValue new_str;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (length == 0) {
+	return K->empty_string; 
+    } else {
+	new_str = kstring_new_s(K, length);
+	char *buf = kstring_buf(new_str);
+	while(length-- > 0) {
+	    TValue head = kcar(ls);
+	    if (!ttischar(head)) {
+		klispE_throw_simple_with_irritants(K, "Bad type (expected "
+						   "char)", 1, head);
+		return KINERT;
+	    }
+	    *buf++ = chvalue(head);
+	    ls = kcdr(ls);
+	}
+	return new_str;
+    }
+}
+
+TValue list_to_vector_h(klisp_State *K, TValue ls, int32_t length)
+{
+
+    if (length == 0) {
+        return K->empty_vector;
+    } else {
+        TValue new_vec = kvector_new_sf(K, length, KINERT);
+	TValue *buf = kvector_buf(new_vec);
+        while(length-- > 0) {
+            *buf++ = kcar(ls);
+            ls = kcdr(ls);
+        }
+        return new_vec;
+    }
+}
+
+TValue list_to_bytevector_h(klisp_State *K, TValue ls, int32_t length)
+{
+    TValue new_bb;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (length == 0) {
+	return K->empty_bytevector; 
+    } else {
+	new_bb = kbytevector_new_s(K, length);
+	uint8_t *buf = kbytevector_buf(new_bb);
+	while(length-- > 0) {
+	    TValue head = kcar(ls);
+	    if (!ttisu8(head)) {
+		klispE_throw_simple_with_irritants(K, "Bad type (expected "
+						   "u8)", 1, head);
+		return KINERT;
+	    }
+	    *buf++ = ivalue(head);
+	    ls = kcdr(ls);
+	}
+	return new_bb;
+    }
+}
+
+/* Helpers for string->list, string-map, string-foreach,
+   bytevector->list, bytevector-map, bytevector-foreach,
+   vector->list, vector-map, and vector-foreach */
+/* GC: Assume array is rooted */
+TValue string_to_list_h(klisp_State *K, TValue obj, int32_t *length)
+{
+    if (!ttisstring(obj)) {
+	klispE_throw_simple_with_irritants(K, "Bad type (expected string)",
+					   1, obj);
+	return KINERT;
+    }
+
+    int32_t pairs = kstring_size(obj);
+    if (length != NULL)	*length = pairs;
+
+    char *buf = kstring_buf(obj) + pairs - 1;
+    TValue tail = KNIL;
+    krooted_vars_push(K, &tail);
+    while(pairs-- > 0) {
+	tail = kcons(K, ch2tv(*buf), tail);
+	--buf;
+    }
+    krooted_vars_pop(K);
+    return tail;
+}
+
+TValue vector_to_list_h(klisp_State *K, TValue obj, int32_t *length)
+{
+    if (!ttisvector(obj)) {
+	klispE_throw_simple_with_irritants(K, "Bad type (expected vector)",
+					   1, obj);
+	return KINERT;
+    }
+
+    int32_t pairs = kvector_size(obj);
+    if (length != NULL)	*length = pairs;
+
+    TValue *buf = kvector_buf(obj) + pairs - 1;
+    TValue tail = KNIL;
+    krooted_vars_push(K, &tail);
+    while(pairs-- > 0) {
+	tail = kcons(K, *buf, tail);
+	--buf;
+    }
+    krooted_vars_pop(K);
+    return tail;
+}
+
+TValue bytevector_to_list_h(klisp_State *K, TValue obj, int32_t *length)
+{
+    if (!ttisbytevector(obj)) {
+	klispE_throw_simple_with_irritants(K, "Bad type (expected bytevector)",
+					   1, obj);
+	return KINERT;
+    }
+
+    int32_t pairs = kbytevector_size(obj);
+    if (length != NULL)	*length = pairs;
+
+    uint8_t *buf = kbytevector_buf(obj) + pairs - 1;
+    TValue tail = KNIL;
+    krooted_vars_push(K, &tail);
+    while(pairs-- > 0) {
+	tail = kcons(K, i2tv(*buf), tail);
+	--buf;
+    }
+    krooted_vars_pop(K);
+    return tail;
+}
+
 /* Some helpers for working with fixints (signed 32 bits) */
 int64_t kgcd32_64(int32_t a_, int32_t b_)
 {
