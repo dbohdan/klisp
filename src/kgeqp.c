@@ -31,7 +31,8 @@ void eqp(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
 
-    int32_t pairs = check_list(K, "eq?", true, ptree, NULL);
+    int32_t pairs;
+    check_list(K, true, ptree, &pairs, NULL);
 
     /* In this case we can get away without comparing the
        first and last element on a cycle because eq? is

@@ -17,7 +17,9 @@
 #include "ksymbol.h"
 #include "kcontinuation.h"
 #include "kerror.h"
+
 #include "kghelpers.h"
+#include "kgbooleans.h"
 
 /* 4.1.1 boolean? */
 /* uses typep */
@@ -38,9 +40,6 @@ void notp(klisp_State *K)
     kapply_cc(K, res);
 }
 
-/* Helper for type checking booleans */
-bool kbooleanp(TValue obj) { return ttisboolean(obj); }
-
 /* 6.1.2 and? */
 void andp(klisp_State *K)
 {
@@ -50,9 +49,9 @@ void andp(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
+    int32_t pairs;
     /* don't care about cycle pairs */
-    int32_t pairs = check_typed_list(K, "and?", "boolean", kbooleanp,
-				     true, ptree, NULL);
+    check_typed_list(K, kbooleanp, true, ptree, &pairs, NULL);
     TValue res = KTRUE;
     TValue tail = ptree;
     while(pairs--) {
@@ -75,9 +74,9 @@ void orp(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
+    int32_t pairs; 
     /* don't care about cycle pairs */
-    int32_t pairs = check_typed_list(K, "or?", "boolean", kbooleanp,
-				     true, ptree, NULL);
+    check_typed_list(K, kbooleanp,true, ptree, &pairs, NULL);
     TValue res = KFALSE;
     TValue tail = ptree;
     while(pairs--) {
@@ -169,7 +168,7 @@ void Sandp_Sorp(klisp_State *K)
     TValue sname = xparams[0];
     TValue term_bool = xparams[1];
     
-    TValue ls = check_copy_list(K, ksymbol_buf(sname), ptree, false);
+    TValue ls = check_copy_list(K, ptree, false, NULL, NULL);
     /* This will work even if ls is empty */
     krooted_tvs_push(K, ls);
     TValue new_cont = kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 4, 

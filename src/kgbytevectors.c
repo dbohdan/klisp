@@ -21,7 +21,6 @@
 
 #include "kghelpers.h"
 #include "kgbytevectors.h"
-#include "kgnumbers.h" /* for keintegerp & knegativep */
 
 /* ?.? bytevector? */
 /* uses typep */
@@ -33,10 +32,9 @@
 /* GC: Assumes ls is rooted */
 TValue list_to_bytevector_h(klisp_State *K, char *name, TValue ls)
 {
-    int32_t dummy;
     /* don't allow cycles */
-    int32_t pairs = check_typed_list(K, name, "u8", ku8p, false,
-				     ls, &dummy);
+    int32_t pairs;
+    check_typed_list(K, ku8p, false, ls, &pairs, NULL);
 
     TValue new_bb;
     /* the if isn't strictly necessary but it's clearer this way */

@@ -32,12 +32,8 @@
 #include "kread.h"
 #include "kwrite.h"
 #include "kerror.h"
-#include "kghelpers.h" /* for do_return_value */
-#include "kgcontinuations.h" /* for do_pass_value */
-#include "kgcontrol.h" /* for do_seq */
 #include "krepl.h"
-
-/* TODO update dependencies in makefile */
+#include "kghelpers.h" /* for do_return_value, do_pass_value and do_seq */
 
 static const char *progname = KLISP_PROGNAME;
 

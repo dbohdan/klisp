@@ -36,7 +36,7 @@
 #include "kstate.h"
 #include "ktable.h"
 #include "kapplicative.h"
-#include "kgeqp.h"
+#include "kghelpers.h" /* for eq2p */
 #include "kstring.h"
 
 /*

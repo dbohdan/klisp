@@ -28,41 +28,9 @@
 
 #include "kghelpers.h"
 #include "kgnumbers.h"
-#include "kgkd_vars.h" /* for strict arith flag */
 
 /* 15.5.1? number?, finite?, integer? */
 /* use ftypep & ftypep_predp */
-
-/* Helpers for typed predicates */
-bool knumberp(TValue obj) { return ttisnumber(obj); }
-/* TEMP used (as a type predicate) in all predicates that need a primary value
-   (XXX it's not actually a type error, but it's close enough and otherwise 
-   should define new predp & bpredp for numeric predicates...) */
-bool knumber_wpvp(TValue obj) 
-{ 
-    return ttisnumber(obj) && !ttisrwnpv(obj) && !ttisundef(obj); 
-}
-/* This is used in gcd & lcm */
-bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttisinf(obj); }
-/* obj is known to be a number */
-bool kfinitep(TValue obj) { return !ttisinf(obj); }
-/* fixint, bigints & inexact integers */
-bool kintegerp(TValue obj) { return ttisinteger(obj); }
-/* only exact integers (like for indices), bigints & fixints */
-bool keintegerp(TValue obj) { return ttiseinteger(obj); }
-/* exact integers between 0 and 255 inclusive */
-bool ku8p(TValue obj) { return ttisu8(obj); }
-bool krationalp(TValue obj) { return ttisrational(obj); }
-bool krealp(TValue obj) { return ttisreal(obj); }
-/* TEMP used (as a type predicate) in all predicates that need a real with 
-   primary value (XXX it's not actually a type error, but it's close enough 
-   and otherwise should define new predp & bpredp for numeric predicates...) */
-bool kreal_wpvp(TValue obj) { return ttisreal(obj) && !ttisrwnpv(obj); }
-
-bool kexactp(TValue obj) { return ttisexact(obj); }
-bool kinexactp(TValue obj) { return ttisinexact(obj); }
-bool kundefinedp(TValue obj) { return ttisundef(obj); }
-bool krobustp(TValue obj) { return ttisrobust(obj); }
 
 /* 12.5.2 =? */
 /* uses typed_bpredp */
@@ -907,9 +875,8 @@ void kplus(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs; 
-    int32_t pairs = check_typed_list(K, "+", "number", knumberp, 
-				     true, ptree, &cpairs);
+    int32_t pairs, cpairs; 
+    check_typed_list(K, knumberp, true, ptree, &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -978,9 +945,8 @@ void ktimes(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs; 
-    int32_t pairs = check_typed_list(K, "*", "number", knumberp, true,
-				     ptree, &cpairs);
+    int32_t pairs, cpairs; 
+    check_typed_list(K, knumberp, true, ptree, &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -1060,7 +1026,7 @@ void kminus(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs;
+    int32_t pairs, cpairs;
     
     /* - in kernel (and unlike in scheme) requires at least 2 arguments */
     if (!ttispair(ptree) || !ttispair(kcdr(ptree))) {
@@ -1071,8 +1037,7 @@ void kminus(klisp_State *K)
 	return;
     }
     TValue first_val = kcar(ptree);
-    int32_t pairs = check_typed_list(K, "-", "number", knumberp, true,
-				     kcdr(ptree), &cpairs);
+    check_typed_list(K, knumberp, true, kcdr(ptree), &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -1205,6 +1170,11 @@ int32_t kfixint_div0_mod0(int32_t n, int32_t d, int32_t *res_mod)
     *res_mod = mod;
     return div;
 }
+
+/* Helper for div and mod */
+#define FDIV_DIV 1
+#define FDIV_MOD 2
+#define FDIV_ZERO 4
 
 /* flags are FDIV_DIV, FDIV_MOD, FDIV_ZERO */
 void kdiv_mod(klisp_State *K)
@@ -1374,48 +1344,7 @@ void kdiv_mod(klisp_State *K)
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(TValue n) 
-{ 
-    switch (ttype(n)) {
-    case K_TFIXINT:
-    case K_TEINF:
-    case K_TIINF:
-	return ivalue(n) > 0;
-    case K_TBIGINT:
-	return kbigint_positivep(n);
-    case K_TBIGRAT:
-	return kbigrat_positivep(n);
-    case K_TDOUBLE:
-	return dvalue(n) > 0.0;
-    /* real with no prim value, complex and undefined should be captured by 
-       type predicate */
-    default:
-	klisp_assert(0);
-	return false;
-    }
-}
-
-bool knegativep(TValue n) 
-{ 
-    switch (ttype(n)) {
-    case K_TFIXINT:
-    case K_TEINF:
-    case K_TIINF:
-	return ivalue(n) < 0;
-    case K_TBIGINT:
-	return kbigint_negativep(n);
-    case K_TBIGRAT:
-	return kbigrat_negativep(n);
-    case K_TDOUBLE:
-	return dvalue(n) < 0.0;
-    /* real with no prim value, complex and undefined should be captured by 
-       type predicate */
-    default:
-	klisp_assert(0);
-	return false;
-    }
-}
-
+/* positive and negative, in kghelpers */
 /* n is finite, integer */
 bool koddp(TValue n) 
 { 
@@ -1467,6 +1396,9 @@ void kabs(klisp_State *K)
     kapply_cc(K, res);
 }
 
+#define FMIN (true)
+#define FMAX (false)
+
 /* 12.5.13 min, max */
 /* NOTE: this does two passes, one for error checking and one for doing
    the actual work */
@@ -1482,21 +1414,15 @@ void kmin_max(klisp_State *K)
     */
     UNUSED(denv);
     
-    char *name = ksymbol_buf(xparams[0]);
     bool minp = bvalue(xparams[1]);
 
     /* cycles are allowed, loop counting pairs */
-    int32_t dummy; /* don't care about count of cycle pairs */
-    int32_t pairs = check_typed_list(K, name, "number", knumberp, true, ptree,
-				     &dummy);
+    int32_t pairs;
+    check_typed_list(K, knumberp, true, ptree, &pairs, NULL);
     
     TValue res;
 
-    if (minp) {
-	res = KEPINF;
-    } else {
-	res = KEMINF;
-    }
+    res = minp? KEPINF : KEMINF;
 
     TValue tail = ptree;
     bool (*cmp)(klisp_State *K, TValue, TValue) = minp? knum_ltp : knum_gtp;
@@ -1521,8 +1447,8 @@ void kgcd(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
-    int32_t pairs = check_typed_list(K, "gcd", "improper integer", kimp_intp, 
-				     true, ptree, NULL);
+    int32_t pairs;
+    check_typed_list(K, kimp_intp, true, ptree, &pairs, NULL);
 
     TValue res = i2tv(0);
     krooted_vars_push(K, &res);
@@ -1559,8 +1485,8 @@ void klcm(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
-    int32_t pairs = check_typed_list(K, "lcm", "improper integer", kimp_intp, 
-				     true, ptree, NULL);
+    int32_t pairs;
+    check_typed_list(K, kimp_intp, true, ptree, &pairs, NULL);
 
     /* report: this will cover the case of (lcm) = 1 */
     TValue res = i2tv(1);
@@ -1775,7 +1701,7 @@ void kdivided(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs;
+    int32_t pairs, cpairs;
     
     /* / in kernel (and unlike in scheme) requires at least 2 arguments */
     if (!ttispair(ptree) || !ttispair(kcdr(ptree))) {
@@ -1786,8 +1712,7 @@ void kdivided(klisp_State *K)
 	return;
     }
     TValue first_val = kcar(ptree);
-    int32_t pairs = check_typed_list(K, "/", "number", knumberp, true,
-				     kcdr(ptree), &cpairs);
+    check_typed_list(K, knumberp, true, kcdr(ptree), &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;

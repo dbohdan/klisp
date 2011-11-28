@@ -26,7 +26,6 @@
 
 #include "kghelpers.h"
 #include "kgstrings.h"
-#include "kgnumbers.h" /* for keintegerp & knegativep */
 
 /* 13.1.1? string? */
 /* uses typep */
@@ -143,10 +142,9 @@ void string_setB(klisp_State *K)
 /* GC: Assumes ls is rooted */
 TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
 {
-    int32_t dummy;
     /* don't allow cycles */
-    int32_t pairs = check_typed_list(K, name, "char", kcharp, false,
-				     ls, &dummy);
+    int32_t pairs;
+    check_typed_list(K, kcharp, false, ls, &pairs, NULL);
 
     TValue new_str;
     /* the if isn't strictly necessary but it's clearer this way */
@@ -376,10 +374,9 @@ void string_append(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t dummy;
     /* don't allow cycles */
-    int32_t pairs = check_typed_list(K, "string-append", "string", kstringp, 
-				     false, ptree, &dummy);
+    int32_t pairs;
+    check_typed_list(K, kstringp, false, ptree, &pairs, NULL);
 
     TValue new_str;
     int64_t total_size = 0; /* use int64 to check for overflow */

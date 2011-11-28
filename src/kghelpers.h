@@ -27,6 +27,67 @@
 /* to use in type checking binds when no check is needed */
 #define anytype(obj_) (true)
 
+/* Type predicates */
+/* TODO these should be moved to either kobject.h or the corresponding
+   files (e.g. kbooleanp to kboolean.h */
+bool kbooleanp(TValue obj);
+bool kcombinerp(TValue obj);
+bool knumberp(TValue obj);
+bool knumber_wpvp(TValue obj);
+bool kfinitep(TValue obj);
+bool kintegerp(TValue obj);
+bool keintegerp(TValue obj);
+bool krationalp(TValue obj);
+bool krealp(TValue obj);
+bool kreal_wpvp(TValue obj);
+bool kexactp(TValue obj);
+bool kinexactp(TValue obj);
+bool kundefinedp(TValue obj);
+bool krobustp(TValue obj);
+bool ku8p(TValue obj);
+/* This is used in gcd & lcm */
+bool kimp_intp(TValue obj);
+
+/* needed by kgffi.c and encapsulations */
+void enc_typep(klisp_State *K);
+
+/* /Type predicates */
+
+/* some number predicates */
+/* REFACTOR: These should be in a knumber.h header */
+
+/* Misc Helpers */
+/* TEMP: only reals (no complex numbers) */
+bool kpositivep(TValue n);
+bool knegativep(TValue n);
+
+inline bool kfast_zerop(TValue n) 
+{ 
+    return (ttisfixint(n) && ivalue(n) == 0) ||
+	(ttisdouble(n) && dvalue(n) == 0.0); 
+}
+
+inline bool kfast_onep(TValue n) 
+{ 
+    return (ttisfixint(n) && ivalue(n) == 1) ||
+	(ttisdouble(n) && dvalue(n) == 1.0); 
+}
+
+inline TValue kneg_inf(TValue i) 
+{ 
+    if (ttiseinf(i))
+	return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
+    else /* ttisiinf(i) */
+	return tv_equal(i, KIPINF)? KIMINF : KIPINF; 
+}
+
+inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2) 
+{ 
+    return kpositivep(n1) == kpositivep(n2); 
+}
+
+/* /some number predicates */
+
 /*
 ** NOTE: these are intended to be used at the beginning of a function
 **   they expand to more than one statement and may evaluate some of
@@ -265,102 +326,27 @@ inline void unmark_tree(klisp_State *K, TValue obj)
 
 /* TODO: move all bools to a flag parameter (with constants like
    KCHK_LS_FORCE_COPY, KCHK_ALLOW_CYCLE, KCHK_AVOID_ENCYCLE, etc) */
-/* REFACTOR: remove the name argument */
+/* typed finite list. Structure error are thrown before type errors */
+void check_typed_list(klisp_State *K, bool (*typep)(TValue), bool allow_infp, 
+		      TValue obj, int32_t *pairs, int32_t *cpairs);
 
-/* typed finite list. Structure error should be throw before type errors */
-int32_t check_typed_list(klisp_State *K, char *name, char *typename,
-			 bool (*typep)(TValue), bool allow_infp, TValue obj,
-			 int32_t *cpairs);
-
-/* REFACTOR: remove the name argument */
 /* check that obj is a list, returns the number of pairs */
 /* TODO change the return to void and add int32_t pairs obj */
-int32_t check_list(klisp_State *K, const char *name, bool allow_infp,
-			  TValue obj, int32_t *cpairs);
+void check_list(klisp_State *K, bool allow_infp, TValue obj, 
+		int32_t *pairs, int32_t *cpairs);
 
-/*
-** MAYBE: These shouldn't be inline really.
-*/
-
-/* REFACTOR: remove the name argument */
-/* REFACTOR: return the number of pairs and cycle pairs in two extra params */
+/* TODO: add unchecked_copy_list */
 /* TODO: add check_copy_typed_list */
-/* TODO: remove inline */
 /* check that obj is a list and make a copy if it is not immutable or
  force_copy is true */
 /* GC: assumes obj is rooted, use dummy3 */
-inline TValue check_copy_list(klisp_State *K, char *name, TValue obj, 
-			      bool force_copy)
-{
-    if (ttisnil(obj))
-	return obj;
+TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy, 
+		       int32_t *pairs, int32_t *cpairs);
 
-    if (ttispair(obj) && kis_immutable(obj) && !force_copy) {
-	UNUSED(check_list(K, name, true, obj, NULL));
-	return obj;
-    } else {
-	TValue last_pair = kget_dummy3(K);
-	TValue tail = obj;
-    
-	while(ttispair(tail) && !kis_marked(tail)) {
-	    TValue new_pair = kcons(K, kcar(tail), KNIL);
-	    /* record the corresponding pair to simplify cycle handling */
-	    kset_mark(tail, new_pair);
-	    /* copy the source code info */
-	    TValue si = ktry_get_si(K, tail);
-	    if (!ttisnil(si))
-		kset_source_info(K, new_pair, si);
-	    kset_cdr(last_pair, new_pair);
-	    last_pair = new_pair;
-	    tail = kcdr(tail);
-	}
-
-	if (ttispair(tail)) {
-	    /* complete the cycle */
-	    kset_cdr(last_pair, kget_mark(tail));
-	}
-
-	unmark_list(K, obj);
-
-	if (!ttispair(tail) && !ttisnil(tail)) {
-	    klispE_throw_simple(K, "expected list"); 
-	    return KINERT;
-	} 
-	return kcutoff_dummy3(K);
-    }
-}
-
-/* REFACTOR: remove the name argument */
 /* check that obj is a list of environments and make a copy but don't keep 
    the cycles */
 /* GC: assume obj is rooted, uses dummy3 */
-inline TValue check_copy_env_list(klisp_State *K, char *name, TValue obj)
-{
-    TValue last_pair = kget_dummy3(K);
-    TValue tail = obj;
-    
-    while(ttispair(tail) && !kis_marked(tail)) {
-	TValue first = kcar(tail);
-	if (!ttisenvironment(first)) {
-	    klispE_throw_simple(K, "not an environment in parent list");
-	    return KINERT;
-	}
-	TValue new_pair = kcons(K, first, KNIL);
-	kmark(tail);
-	kset_cdr(last_pair, new_pair);
-	last_pair = new_pair;
-	tail = kcdr(tail);
-    }
-
-    /* even if there was a cycle, the copy ends with nil */
-    unmark_list(K, obj);
-
-    if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_simple(K, "expected list"); 
-	return KINERT;
-    } 
-    return kcutoff_dummy3(K);
-}
+TValue check_copy_env_list(klisp_State *K, TValue obj);
 
 /*
 ** Generic function for type predicates
@@ -397,12 +383,23 @@ void ftyped_bpredp(klisp_State *K);
 /* TODO unify them */
 void ftyped_kbpredp(klisp_State *K);
 
-
-/* 
-** Continuation that ignores the value received and instead returns
-** a previously computed value.
-*/
+/* Continuations that are used in more than one file */
+void do_seq(klisp_State *K);
+void do_pass_value(klisp_State *K);
 void do_return_value(klisp_State *K);
+void do_bind(klisp_State *K);
+void do_access(klisp_State *K);
+void do_unbind(klisp_State *K);
+void do_set_pass(klisp_State *K);
+/* /Continuations that are used in more than one file */
+
+/* dynamic var */
+TValue make_bind_continuation(klisp_State *K, TValue key,
+			      TValue old_flag, TValue old_value, 
+			      TValue new_flag, TValue new_value);
+
+TValue check_copy_guards(klisp_State *K, char *name, TValue obj);
+void guard_dynamic_extent(klisp_State *K);
 
 /* GC: assumes parent & obj are rooted */
 inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
@@ -434,14 +431,55 @@ int64_t klcm32_64(int32_t a, int32_t b);
 ** Other
 */
 
+/* list applicative (used in kstate and kgpairs_lists) */
+void list(klisp_State *K);
+
 /* Helper for list-tail, list-ref and list-set! */
-int32_t ksmallest_index(klisp_State *K, char *name, TValue obj, 
-			TValue tk);
+int32_t ksmallest_index(klisp_State *K, TValue obj, TValue tk);
 
 /* Helper for get-list-metrics, and list-tail, list-ref and list-set! 
    when receiving bigint indexes */
 void get_list_metrics_aux(klisp_State *K, TValue obj, int32_t *p, int32_t *n, 
 			  int32_t *a, int32_t *c);
+
+/* Helper for eq? and equal? */
+bool eq2p(klisp_State *K, TValue obj1, TValue obj2);
+
+/* Helper for equal?, assoc and member */
+/* compare two objects and check to see if they are "equal?". */
+bool equal2p(klisp_State *K, TValue obj1, TValue obj2);
+
+/* Helper (also used by $vau, $lambda, etc) */
+TValue copy_es_immutable_h(klisp_State *K, TValue ptree, bool mut_flag);
+
+/* ptree handling */
+void match(klisp_State *K, TValue env, TValue ptree, TValue obj);
+TValue check_copy_ptree(klisp_State *K, TValue ptree, TValue penv);
+
+/* map/$for-each */
+/* Helpers for map (also used by for-each) */
+
+/* Calculate the metrics for both the result list and the ptree
+   passed to the applicative */
+void map_for_each_get_metrics(
+    klisp_State *K, TValue lss, int32_t *app_apairs_out, 
+    int32_t *app_cpairs_out, int32_t *res_apairs_out, int32_t *res_cpairs_out);
+
+/* Return two lists, isomorphic to lss: one list of cars and one list
+   of cdrs (replacing the value of lss) */
+/* GC: Assumes lss is rooted, uses dummys 2 & 3 */
+TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
+				  int32_t apairs, int32_t cpairs);
+
+/* Transpose lss so that the result is a list of lists, each one having
+   metrics (app_apairs, app_cpairs). The metrics of the returned list
+   should be (res_apairs, res_cpairs) */
+
+/* GC: Assumes lss is rooted, uses dummys 1, & 
+   (through get_cars_cdrs, 2, 3) */
+TValue map_for_each_transpose(klisp_State *K, TValue lss, 
+			      int32_t app_apairs, int32_t app_cpairs, 
+			      int32_t res_apairs, int32_t res_cpairs);
 
 /*
 ** Macros for ground environment initialization

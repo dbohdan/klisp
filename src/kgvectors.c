@@ -23,7 +23,6 @@
 
 #include "kghelpers.h"
 #include "kgvectors.h"
-#include "kgnumbers.h" /* for keintegerp & knegativep */
 
 /* (R7RS 3rd draft 6.3.6) vector? */
 /* uses typep */
@@ -135,8 +134,9 @@ void vector_copy(klisp_State *K)
 
 static TValue list_to_vector_h(klisp_State *K, const char *name, TValue ls)
 {
-    int32_t dummy;
-    int32_t pairs = check_list(K, name, false, ls, &dummy);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_list(K, false, ls, &pairs, NULL);
 
     if (pairs == 0) {
         return K->empty_vector;

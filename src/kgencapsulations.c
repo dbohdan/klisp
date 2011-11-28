@@ -23,39 +23,7 @@
 /* Helpers for make-encapsulation-type */
 
 /* Type predicate for encapsulations */
-void enc_typep(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(denv);
-    /*
-    ** xparams[0]: encapsulation key
-    */
-    TValue key = xparams[0];
-
-    /* check the ptree is a list while checking the predicate.
-       Keep going even if the result is false to catch errors in 
-       ptree structure */
-    bool res = true;
-
-    TValue tail = ptree;
-    while(ttispair(tail) && kis_unmarked(tail)) {
-	kmark(tail);
-	res &= kis_encapsulation_type(kcar(tail), key);
-	tail = kcdr(tail);
-    }
-    unmark_list(K, ptree);
-
-    if (ttispair(tail) || ttisnil(tail)) {
-	kapply_cc(K, b2tv(res));
-    } else {
-	/* try to get name from encapsulation */
-	klispE_throw_simple(K, "expected list");
-	return;
-    }
-}
+/* enc_typep(klisp_State *K), in kghelpers */
 
 /* Constructor for encapsulations */
 void enc_wrap(klisp_State *K)

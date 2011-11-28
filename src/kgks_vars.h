@@ -7,19 +7,7 @@
 #ifndef kgks_vars_h
 #define kgks_vars_h
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "kobject.h"
-#include "klisp.h"
 #include "kstate.h"
-#include "kghelpers.h"
-
-/* 11.1.1 make-static-dynamic-variable */
-void make_keyed_static_variable(klisp_State *K);
 
 /* init ground */
 void kinit_kgks_vars_ground_env(klisp_State *K);

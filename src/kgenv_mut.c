@@ -20,7 +20,10 @@
 
 #include "kghelpers.h"
 #include "kgenv_mut.h"
-#include "kgcontrol.h" /* for do_seq */
+
+/* continuations */
+void do_match(klisp_State *K);
+void do_set_eval_obj(klisp_State *K);
 
 /* 4.9.1 $define! */
 void SdefineB(klisp_State *K)
@@ -36,7 +39,7 @@ void SdefineB(klisp_State *K)
     
     TValue def_sym = xparams[0];
 
-    dptree = check_copy_ptree(K, "$define!", dptree, KIGNORE);
+    dptree = check_copy_ptree(K, dptree, KIGNORE);
 
     krooted_tvs_push(K, dptree);
 	
@@ -61,9 +64,8 @@ void do_match(klisp_State *K)
     */
     TValue ptree = xparams[0];
     TValue env = xparams[1];
-    char *name = ksymbol_buf(xparams[2]);
 
-    match(K, name, env, ptree, obj);
+    match(K, env, ptree, obj);
     kapply_cc(K, KINERT);
 }
 
@@ -80,7 +82,7 @@ void SsetB(klisp_State *K)
 
     bind_3p(K, ptree, env_exp, raw_formals, eval_exp);
 
-    TValue formals = check_copy_ptree(K, "$set!", raw_formals, KIGNORE);
+    TValue formals = check_copy_ptree(K, raw_formals, KIGNORE);
     krooted_tvs_push(K, formals);
 
     TValue new_cont = 
@@ -143,7 +145,7 @@ inline void unmark_maybe_symbol_list(klisp_State *K, TValue ls)
 ** returns a copy of the list (cf. check_copy_ptree)
 */
 /* GC: Assumes obj is rooted, uses dummy1 */
-TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
+TValue check_copy_symbol_list(klisp_State *K, TValue obj)
 {
     TValue tail = obj;
     bool type_errorp = false;
@@ -173,7 +175,6 @@ TValue check_copy_symbol_list(klisp_State *K, char *name, TValue obj)
 	klispE_throw_simple(K, "expected finite list"); 
 	return KNIL;
     } else if (type_errorp) {
-	/* TODO put type name too */
 	klispE_throw_simple(K, "bad operand type (expected list of "
 			   "symbols)"); 
 	return KNIL;
@@ -222,13 +223,12 @@ void SprovideB(klisp_State *K)
     ** xparams[0]: name as symbol
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
 
     bind_al1p(K, ptree, symbols, body);
 
-    symbols = check_copy_symbol_list(K, name, symbols);
+    symbols = check_copy_symbol_list(K, symbols);
     krooted_tvs_push(K, symbols);
-    body = check_copy_list(K, name, body, false);
+    body = check_copy_list(K, body, false, NULL, NULL);
     krooted_tvs_push(K, body);
     
     TValue new_env = kmake_environment(K, denv);
@@ -293,11 +293,10 @@ void SimportB(klisp_State *K)
     ** xparams[0]: name as symbol
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
 
     bind_al1p(K, ptree, env_expr, symbols);
 
-    symbols = check_copy_symbol_list(K, name, symbols);
+    symbols = check_copy_symbol_list(K, symbols);
     
     /* REFACTOR/ASK John: another way for this kind of operative would be
        to first eval the env expression and only then check the type

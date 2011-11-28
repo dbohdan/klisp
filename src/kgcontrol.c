@@ -18,7 +18,6 @@
 
 #include "kghelpers.h"
 #include "kgcontrol.h"
-#include "kgcombiners.h" /* for map/for-each helpers */
 
 /* 4.5.1 inert? */
 /* uses typep */
@@ -86,7 +85,7 @@ void Ssequence(klisp_State *K)
     } else {
 	/* the list of instructions is copied to avoid mutation */
 	/* MAYBE: copy the evaluation structure, ASK John */
-	TValue ls = check_copy_list(K, "$sequence", ptree, false);
+	TValue ls = check_copy_list(K, ptree, false, NULL, NULL);
 	/* this is needed because seq continuation doesn't check for 
 	   nil sequence */
 	/* TODO this could be at least in an inlineable function to
@@ -108,37 +107,6 @@ void Ssequence(klisp_State *K)
     }
 }
 
-/* Helper (also used by $vau and $lambda) */
-/* the remaining list can't be null, that case is managed before */
-void do_seq(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue obj = K->next_value;
-    klisp_assert(ttisnil(K->next_env));
-
-    UNUSED(obj);
-
-    /* 
-    ** xparams[0]: remaining list
-    ** xparams[1]: dynamic environment
-    */
-    TValue ls = xparams[0];
-    TValue first = kcar(ls);
-    TValue tail = kcdr(ls);
-    TValue denv = xparams[1];
-
-    if (ttispair(tail)) {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, tail, 
-					     denv);
-	kset_cc(K, new_cont);
-#if KTRACK_SI
-	/* put the source info of the list including the element
-	   that we are about to evaluate */
-	kset_source_info(K, new_cont, ktry_get_si(K, ls));
-#endif
-    }
-    ktail_eval(K, first, denv);
-}
 
 /* Helpers for cond */
 
@@ -204,7 +172,7 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
 	while(count--) {
 	    TValue first = kcar(tail);
 	    /* this uses dummy3 */
-	    TValue copy = check_copy_list(K, "$cond", first, false);
+	    TValue copy = check_copy_list(K, first, false, NULL, NULL);
 	    kset_car(tail, copy);
 	    tail = kcdr(tail);
 	}
@@ -339,7 +307,7 @@ void do_for_each(klisp_State *K)
 	/* copy the ptree to avoid problems with mutation */
 	/* XXX: no check necessary, could just use copy_list if there
 	 was such a procedure */
-	TValue first_ptree = check_copy_list(K, "for-each", kcar(ls), false);
+	TValue first_ptree = check_copy_list(K, kcar(ls), false, NULL, NULL);
 	krooted_tvs_push(K, first_ptree);
 	ls = kcdr(ls);
 	n = n-1;
@@ -376,7 +344,7 @@ void for_each(klisp_State *K)
     int32_t app_pairs, app_apairs, app_cpairs;
     int32_t res_pairs, res_apairs, res_cpairs;
 
-    map_for_each_get_metrics(K, "for-each", lss, &app_apairs, &app_cpairs,
+    map_for_each_get_metrics(K, lss, &app_apairs, &app_cpairs,
 			     &res_apairs, &res_cpairs);
     app_pairs = app_apairs + app_cpairs;
     res_pairs = res_apairs + res_cpairs;

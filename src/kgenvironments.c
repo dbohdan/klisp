@@ -20,10 +20,9 @@
 
 #include "kghelpers.h"
 #include "kgenvironments.h"
-#include "kgenv_mut.h" /* for check_ptree */ 
-#include "kgpair_mut.h" /* for copy_es_immutable_h */
-#include "kgcontrol.h" /* for do_seq */
-/* MAYBE: move the above to kghelpers.h */
+
+/* continuations */
+void do_remote_eval(klisp_State *K);
 
 /* 4.8.1 environment? */
 /* uses typep */
@@ -75,7 +74,7 @@ void make_environment(klisp_State *K)
     } else {
 	/* this is the general case, copy the list but without the
 	   cycle if there is any */
-	TValue parents = check_copy_env_list(K, "make-environment", ptree);
+	TValue parents = check_copy_env_list(K, ptree);
 	krooted_tvs_push(K, parents);
 	new_env = kmake_environment(K, parents);
 	krooted_tvs_pop(K);
@@ -98,7 +97,7 @@ void make_environment(klisp_State *K)
 */
 
 /* GC: assume bindings is rooted, uses dummys 1 & 2 */
-TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings, 
+TValue split_check_let_bindings(klisp_State *K, TValue bindings, 
 				TValue *exprs, bool starp)
 {
     TValue last_car_pair = kget_dummy1(K);
@@ -142,14 +141,14 @@ TValue split_check_let_bindings(klisp_State *K, char *name, TValue bindings,
 	    tail = kget_dummy1_tail(K);
 	    while(!ttisnil(tail)) {
 		TValue first = kcar(tail);
-		TValue copy = check_copy_ptree(K, name, first, KIGNORE);
+		TValue copy = check_copy_ptree(K, first, KIGNORE);
 		kset_car(tail, copy);
 		tail = kcdr(tail);
 	    }
 	    res = kget_dummy1_tail(K);
 	} else {
 	    /* all bindings are consider one ptree in these 'let's */
-	    res = check_copy_ptree(K, name, kget_dummy1_tail(K), KIGNORE);
+	    res = check_copy_ptree(K, kget_dummy1_tail(K), KIGNORE);
 	}
 	*exprs = kcutoff_dummy2(K);
 	UNUSED(kcutoff_dummy1(K));
@@ -177,7 +176,6 @@ void do_let(klisp_State *K)
     ** xparams[6]: body
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     TValue ptree = xparams[1];
     TValue bindings = xparams[2];
     TValue exprs = xparams[3];
@@ -185,7 +183,7 @@ void do_let(klisp_State *K)
     bool recp = bvalue(xparams[5]);
     TValue body = xparams[6];
     
-    match(K, name, env, ptree, obj);
+    match(K, env, ptree, obj);
     
     if (ttisnil(bindings)) {
 	if (ttisnil(body)) {
@@ -231,16 +229,15 @@ void Slet(klisp_State *K)
     ** xparams[0]: symbol name
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    TValue bptree = split_check_let_bindings(K, bindings, &exprs, false);
     krooted_tvs_push(K, bptree);
     krooted_tvs_push(K, exprs);
 
-    UNUSED(check_list(K, name, true, body, NULL));
-    body = copy_es_immutable_h(K, name, body, false);
+    check_list(K, true, body, NULL, NULL);
+    body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
     TValue new_env = kmake_environment(K, denv);
@@ -304,9 +301,9 @@ void Sbindsp(klisp_State *K)
     bind_al1p(K, ptree, env_expr, symbols);
 
     /* REFACTOR replace with single function check_copy_typed_list */
-    int32_t count = check_typed_list(K, "$binds?", "symbol", ksymbolp, 
-				     true, symbols, NULL);
-    symbols = check_copy_list(K, "$binds?", symbols, false);
+    int32_t count;
+    check_typed_list(K, ksymbolp, true, symbols, &count, NULL);
+    symbols = check_copy_list(K, symbols, false, NULL, NULL);
 
     krooted_tvs_push(K, symbols);
     TValue new_cont = kmake_continuation(K, kget_cc(K), do_bindsp, 
@@ -356,15 +353,14 @@ void SletS(klisp_State *K)
     ** xparams[0]: symbol name
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, true);
+    TValue bptree = split_check_let_bindings(K, bindings, &exprs, true);
     krooted_tvs_push(K, exprs);
     krooted_tvs_push(K, bptree);
-    UNUSED(check_list(K, name, true, body, NULL));
-    body = copy_es_immutable_h(K, name, body, false);
+    check_list(K, true, body, NULL, NULL);
+    body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
     TValue new_env = kmake_environment(K, denv);
@@ -409,16 +405,15 @@ void Sletrec(klisp_State *K)
     ** xparams[0]: symbol name
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    TValue bptree = split_check_let_bindings(K, bindings, &exprs, false);
     krooted_tvs_push(K, exprs);
     krooted_tvs_push(K, bptree);
 
-    UNUSED(check_list(K, name, true, body, NULL));
-    body = copy_es_immutable_h(K, name, body, false);
+    check_list(K, true, body, NULL, NULL);
+    body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
     TValue new_env = kmake_environment(K, denv);
@@ -450,15 +445,14 @@ void SletrecS(klisp_State *K)
     ** xparams[0]: symbol name
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, true);
+    TValue bptree = split_check_let_bindings(K, bindings, &exprs, true);
     krooted_tvs_push(K, exprs);
     krooted_tvs_push(K, bptree);
-    UNUSED(check_list(K, name, true, body, NULL));
-    body = copy_es_immutable_h(K, name, body, false);
+    check_list(K, true, body, NULL, NULL);
+    body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
     TValue new_env = kmake_environment(K, denv);
@@ -538,16 +532,15 @@ void Slet_redirect(klisp_State *K)
     ** xparams[0]: symbol name
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     bind_al2p(K, ptree, env_exp, bindings, body);
 
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    TValue bptree = split_check_let_bindings(K, bindings, &exprs, false);
     krooted_tvs_push(K, exprs);
     krooted_tvs_push(K, bptree);
 
-    UNUSED(check_list(K, name, true, body, NULL));
-    body = copy_es_immutable_h(K, name, body, false);
+    check_list(K, true, body, NULL, NULL);
+    body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
     TValue eexpr = kcons(K, K->list_app, exprs);
@@ -577,17 +570,16 @@ void Slet_safe(klisp_State *K)
     ** xparams[0]: symbol name
     */
     TValue sname = xparams[0];
-    char *name = ksymbol_buf(sname);
     bind_al1p(K, ptree, bindings, body);
 
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, name, bindings, &exprs, false);
+    TValue bptree = split_check_let_bindings(K, bindings, &exprs, false);
     krooted_tvs_push(K, exprs);
     krooted_tvs_push(K, bptree);
 
-    UNUSED(check_list(K, name, true, body, NULL));
+    check_list(K, true, body, NULL, NULL);
 
-    body = copy_es_immutable_h(K, name, body, false);
+    body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
 /* according to the definition of the report it should be a child
@@ -657,7 +649,7 @@ void do_b_to_env(klisp_State *K)
     TValue ptree = xparams[0];
     TValue env = xparams[1];
     
-    match(K, "$bindings->environment", env, ptree, obj);
+    match(K, env, ptree, obj);
     kapply_cc(K, env);
 }
 
@@ -670,8 +662,7 @@ void Sbindings_to_environment(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     TValue exprs;
-    TValue bptree = split_check_let_bindings(K, "$bindings->environment", 
-					     ptree, &exprs, false);
+    TValue bptree = split_check_let_bindings(K, ptree, &exprs, false);
     krooted_tvs_push(K, exprs);
     krooted_tvs_push(K, bptree);
 

@@ -65,7 +65,8 @@
 void kinit_cont_names(klisp_State *K)
 {
     Table *t = tv2table(K->cont_name_table);
-
+/* XXX this should be handled like the init_ground_env */
+#if 0
     /* REPL, root-continuation & error-continuation */
     add_cont_name(K, t, do_root_exit, "exit");
     add_cont_name(K, t, do_error_exit, "error");
@@ -109,6 +110,7 @@ void kinit_cont_names(klisp_State *K)
     add_cont_name(K, t, do_close_file_ret, "close-file-and-ret");
     add_cont_name(K, t, do_handle_result, "handle-result");
     add_cont_name(K, t, do_interception, "do-interception");
+#endif
 }
 
 /*

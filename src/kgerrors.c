@@ -28,7 +28,7 @@ void kgerror(klisp_State *K)
     bind_al1tp(K, ptree, "string", ttisstring, str, rest);
     /* copy the list of irritants, to avoid modification later */
     /* also check that is a list! */
-    TValue irritants = check_copy_list(K, "error", rest, false);
+    TValue irritants = check_copy_list(K, rest, false, NULL, NULL);
     krooted_tvs_push(K, irritants);
     /* the msg is implicitly copied here */
     klispE_throw_with_irritants(K, kstring_buf(str), irritants);

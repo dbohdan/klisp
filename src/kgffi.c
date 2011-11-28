@@ -41,9 +41,6 @@
 #include "ktable.h"
 
 #include "kghelpers.h"
-#include "kgencapsulations.h"
-#include "kgcombiners.h"
-#include "kgcontinuations.h"
 #include "kgffi.h"
 
 /* Set to 0 to ignore aligment errors during direct
@@ -482,8 +479,9 @@ void ffi_make_call_interface(klisp_State *K)
             "argtypes string list", ttislist, argtypes_tv);
 #undef ttislist
 
-    size_t nargs = check_typed_list(K, "ffi-make-call-interface", "argtype string",
-                                    kstringp, false, argtypes_tv, NULL);
+    size_t nargs;
+    check_typed_list(K, kstringp, false, argtypes_tv, (int32_t *) &nargs, 
+		     NULL);
 
     /* Allocate C structure ffi_call_interface_t inside
      a mutable bytevector. The structure contains C pointers

@@ -43,9 +43,6 @@
 ** read-line (r7rs)
 ** number->string (r7rs)
 ** string->number (r7rs)
-** char-digit?
-** digit->char
-** char->digit
 * reader
 ** symbol escapes (r7rs)
 ** string escapes (r7rs)

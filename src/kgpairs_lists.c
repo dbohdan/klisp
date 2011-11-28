@@ -20,9 +20,7 @@
 #include "kerror.h"
 
 #include "kghelpers.h"
-#include "kgequalp.h"
 #include "kgpairs_lists.h"
-#include "kgnumbers.h"
 
 /* 4.6.1 pair? */
 /* uses typep */
@@ -46,18 +44,7 @@ void cons(klisp_State *K)
 }
 
 /* 5.2.1 list */
-void list(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-/* the underlying combiner of list return the complete ptree, the only list
-   checking is implicit in the applicative evaluation */
-    UNUSED(xparams);
-    UNUSED(denv);
-    kapply_cc(K, ptree);
-}
+/* defined in kghelpers.h (for use in kstate) */
 
 /* 5.2.2 list* */
 void listS(klisp_State *K)
@@ -109,6 +96,16 @@ void listS(klisp_State *K)
 	return;
     }
 }
+
+/* Helper macros to construct xparams[1] for c[ad]{1,4}r */
+#define C_AD_R_PARAM(len_, br_) \
+    (i2tv((C_AD_R_LEN(len_) | (C_AD_R_BRANCH(br_)))))
+#define C_AD_R_LEN(len_) ((len_) << 4)
+#define C_AD_R_BRANCH(br_) \
+    ((br_ & 0x0001? 0x1 : 0) | \
+     (br_ & 0x0010? 0x2 : 0) | \
+     (br_ & 0x0100? 0x4 : 0) | \
+     (br_ & 0x1000? 0x8 : 0))
 
 /* 5.4.1 car, cdr */
 /* 5.4.2 caar, cadr, ... cddddr */
@@ -198,7 +195,7 @@ void list_copy(klisp_State *K)
     UNUSED(denv);
     
     bind_1p(K, ptree, ls);
-    TValue copy = check_copy_list(K, "list-copy", ls, true);
+    TValue copy = check_copy_list(K, ls, true, NULL, NULL);
     kapply_cc(K, copy);
 }
 
@@ -275,7 +272,7 @@ void list_tail(klisp_State *K)
     }
 
     int32_t k = (ttisfixint(tk))? ivalue(tk)
-	: ksmallest_index(K, "list-tail", obj, tk);
+	: ksmallest_index(K, obj, tk);
 
     while(k) {
 	if (!ttispair(obj)) {
@@ -336,7 +333,7 @@ void list_ref(klisp_State *K)
     }
 
     int32_t k = (ttisfixint(tk))? ivalue(tk)
-	: ksmallest_index(K, "list-tail", obj, tk);
+	: ksmallest_index(K, obj, tk);
 
     while(k) {
 	if (!ttispair(obj)) {
@@ -403,8 +400,8 @@ void append(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     
-    int32_t cpairs;
-    int32_t pairs = check_list(K, "append", true, ptree, &cpairs);
+    int32_t pairs, cpairs;
+    check_list(K, true, ptree, &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     /* use dummy2, append_check_copy uses dummy1 */
@@ -471,8 +468,8 @@ void list_neighbors(klisp_State *K)
 
     bind_1p(K, ptree, ls);
 
-    int32_t cpairs;
-    int32_t pairs = check_list(K, "list_neighbors", true, ls, &cpairs);
+    int32_t pairs, cpairs;
+    check_list(K, true, ls, &pairs, &cpairs);
 
     TValue tail = ls;
     int32_t count = cpairs? pairs - cpairs : pairs - 1;
@@ -527,7 +524,7 @@ void do_ret_cdr(klisp_State *K)
     /* XXX: the check isn't necessary really, but there is
        no list_copy (and if there was it would take apairs and
        cpairs, which we don't have here */
-    TValue copy = check_copy_list(K, "filter", kcdr(xparams[0]), true);
+    TValue copy = check_copy_list(K, kcdr(xparams[0]), true, NULL, NULL);
     kapply_cc(K, copy);
 }
 
@@ -563,7 +560,7 @@ void do_filter_encycle(klisp_State *K)
     /* XXX: the check isn't necessary really, but there is
        no list_copy (and if there was it would take apairs and
        cpairs, which we don't have here */
-    TValue copy = check_copy_list(K, "filter", kcdr(xparams[0]), true);
+    TValue copy = check_copy_list(K, kcdr(xparams[0]), true, NULL, NULL);
     kapply_cc(K, copy);
 }
 
@@ -669,12 +666,12 @@ void filter(klisp_State *K)
     /* ASK John: the semantics when this is mixed with continuations,
        isn't all that great..., but what are the expectations considering
        there is no prescribed order? */
-    int32_t cpairs;
-    int32_t pairs = check_list(K, "filter", true, ls, &cpairs);
+    int32_t pairs, cpairs;
+    check_list(K, true, ls, &pairs, &cpairs);
     /* XXX: This was the paradigmatic use case of the force copy flag
        in the old implementation, but it caused problems with continuations
        Is there any other use case for force copy flag?? */
-    ls = check_copy_list(K, "filter", ls, false);
+    ls = check_copy_list(K, ls, false, NULL, NULL);
     /* This will be the list to be returned, but it will be copied
        before to play a little nicer with continuations */
     TValue dummy = kcons(K, KINERT, KNIL);
@@ -710,8 +707,8 @@ void assoc(klisp_State *K)
 
     bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
-    int32_t pairs = check_typed_list(K, "assoc", "pair", kpairp,
-				     true, ls, NULL);
+    int32_t pairs;
+    check_typed_list(K, kpairp, true, ls, &pairs, NULL);
     TValue tail = ls;
     TValue res = KNIL;
     while(pairs--) {
@@ -738,7 +735,8 @@ void memberp(klisp_State *K)
 
     bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
-    int32_t pairs = check_list(K, "member?", true, ls, NULL);
+    int32_t pairs;
+    check_list(K, true, ls, &pairs, NULL);
     TValue tail = ls;
     TValue res = KFALSE;
     while(pairs--) {
@@ -763,7 +761,8 @@ void finite_listp(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t pairs = check_list(K, "finite-list?", true, ptree, NULL);
+    int32_t pairs;
+    check_list(K, true, ptree, &pairs, NULL);
 
     TValue res = KTRUE;
     TValue tail = ptree;
@@ -795,7 +794,8 @@ void countable_listp(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t pairs = check_list(K, "countable-list?", true, ptree, NULL);
+    int32_t pairs;
+    check_list(K, true, ptree, &pairs, NULL);
 
     TValue res = KTRUE;
     TValue tail = ptree;
@@ -1044,12 +1044,11 @@ void reduce(klisp_State *K)
     } 
 
     /* TODO all of these in one procedure */
-    int32_t cpairs;
-    int32_t pairs = check_list(K, "reduce", true, ls, &cpairs);
-    int32_t apairs = pairs - cpairs;
+    int32_t pairs, cpairs;
     /* force copy to be able to do all precycles and replace
        the corresponding objs in ls */
-    ls = check_copy_list(K, "reduce", ls, true);
+    ls = check_copy_list(K, ls, true, &pairs, &cpairs);
+    int32_t apairs = pairs - cpairs;
     TValue first_cycle_pair = ls;
     int32_t dapairs = apairs;
     /* REFACTOR: add an extra return value to check_copy_list to output

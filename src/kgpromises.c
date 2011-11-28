@@ -21,6 +21,10 @@
 #include "kghelpers.h"
 #include "kgpromises.h"
 
+/* continuations */
+void do_handle_result(klisp_State *K);
+
+
 /* SOURCE_NOTE: this is mostly an adaptation of the library derivation
    in the report */
 

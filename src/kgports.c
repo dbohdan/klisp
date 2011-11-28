@@ -29,9 +29,6 @@
 
 #include "kghelpers.h"
 #include "kgports.h"
-#include "kgcontinuations.h" /* for guards */
-#include "kgcontrol.h" /* for evaling in sequence */
-#include "kgkd_vars.h" /* for dynamic input/output port */
 
 /* 15.1.1 port? */
 /* uses typep */

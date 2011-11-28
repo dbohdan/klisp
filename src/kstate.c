@@ -37,7 +37,7 @@
 #include "kbytevector.h"
 #include "kvector.h"
 
-#include "kgpairs_lists.h" /* for creating list_app */
+#include "kghelpers.h" /* for creating list_app */
 #include "kgerrors.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */

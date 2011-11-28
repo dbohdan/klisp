@@ -19,8 +19,6 @@
 
 #include "kghelpers.h"
 #include "kgpair_mut.h"
-#include "kgeqp.h" /* eq? checking in memq and assq */
-#include "kgnumbers.h" /* for kpositivep and keintegerp */
 
 /* 4.7.1 set-car!, set-cdr! */
 void set_carB(klisp_State *K)
@@ -75,97 +73,15 @@ void copy_es(klisp_State *K)
     ** xparams[0]: copy-es-immutable symbol
     ** xparams[1]: boolean (#t: use mutable pairs, #f: use immutable pairs)
     */
-    char *name = ksymbol_buf(xparams[0]);
     bool mut_flag = bvalue(xparams[1]);
     bind_1p(K, ptree, obj);
 
-    TValue copy = copy_es_immutable_h(K, name, obj, mut_flag);
+    TValue copy = copy_es_immutable_h(K, obj, mut_flag);
     kapply_cc(K, copy);
 }
 
 /* 4.7.2 copy-es-immutable */
 /* uses copy_es */
-
-/*
-** This is in a helper method to use it from $lambda, $vau, etc
-**
-** We mark each seen mutable pair with the corresponding copied 
-** immutable pair to construct a structure that is isomorphic to 
-** the original.
-** All objects that aren't mutable pairs are retained without 
-** copying
-** sstack is used to keep track of pairs and tbstack is used
-** to keep track of which of car or cdr we were copying,
-** 0 means just pushed, 1 means return from car, 2 means return from cdr
-**
-** This also copies source code info
-**
-*/
-
-/* GC: assumes obj is rooted */
-TValue copy_es_immutable_h(klisp_State *K, char *name, TValue obj, 
-			   bool mut_flag)
-{
-    TValue copy = obj;
-    krooted_vars_push(K, &copy);
-
-    assert(ks_sisempty(K));
-    assert(ks_tbisempty(K));
-
-    ks_spush(K, obj);
-    ks_tbpush(K, ST_PUSH);
-
-    while(!ks_sisempty(K)) {
-	char state = ks_tbpop(K);
-	TValue top = ks_spop(K);
-
-	if (state == ST_PUSH) {
-	    /* if the pair is immutable & we are constructing immutable
-	       pairs there is no need to copy */
-	    if (ttispair(top) && (mut_flag || kis_mutable(top))) {
-		if (kis_marked(top)) {
-		    /* this pair was already seen, use the same */
-		    copy = kget_mark(top);
-		} else {
-		    TValue new_pair = kcons_g(K, mut_flag, KINERT, KINERT);
-		    kset_mark(top, new_pair);
-		    /* save the source code info on the new pair */
-		    /* MAYBE: only do it if mutable */
-		    TValue si = ktry_get_si(K, top);
-		    if (!ttisnil(si))
-			kset_source_info(K, new_pair, si);
-		    /* leave the pair in the stack, continue with the car */
-		    ks_spush(K, top);
-		    ks_tbpush(K, ST_CAR);
-		    
-		    ks_spush(K, kcar(top));
-		    ks_tbpush(K, ST_PUSH);
-		}
-	    } else {
-		copy = top;
-	    }
-	} else { /* last action was a pop */
-	    TValue new_pair = kget_mark(top);
-	    if (state == ST_CAR) {
-		/* new_pair may be immutable */
-		kset_car_unsafe(K, new_pair, copy);
-		/* leave the pair on the stack, continue with the cdr */
-		ks_spush(K, top);
-		ks_tbpush(K, ST_CDR);
-
-		ks_spush(K, kcdr(top));
-		ks_tbpush(K, ST_PUSH);
-	    } else {
-		/* new_pair may be immutable */
-		kset_cdr_unsafe(K, new_pair, copy);
-		copy = new_pair;
-	    }
-	}
-    }
-    unmark_tree(K, obj);
-    krooted_vars_pop(K);
-    return copy;
-}
 
 /* 5.8.1 encycle! */
 void encycleB(klisp_State *K)
@@ -286,7 +202,7 @@ void list_setB(klisp_State *K)
     }
 
     int32_t k = (ttisfixint(tk))? ivalue(tk)
-	: ksmallest_index(K, "list-set!", obj, tk);
+	: ksmallest_index(K, obj, tk);
 
     while(k) {
 	if (!ttispair(obj)) {
@@ -481,12 +397,11 @@ void appendB(klisp_State *K)
     }
     TValue lss = ptree;
     TValue first_ls = kcar(lss);
-    int32_t cpairs;
+    int32_t pairs, cpairs;
     /* ASK John: if encycle! has only one argument, can't it be cyclic? 
      the report says no, but the wording is poor */
-    int32_t pairs = check_list(K, "append!", false, first_ls, &cpairs);
-    
-    pairs = check_list(K, "append!", true, lss, &cpairs);
+    check_list(K, false, first_ls, NULL, NULL);
+    check_list(K, true, lss, &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue endpoints = 
@@ -519,8 +434,8 @@ void assq(klisp_State *K)
 
     bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
-    int32_t pairs = check_typed_list(K, "assq", "pair", kpairp,
-				     true, ls, NULL);
+    int32_t pairs;
+    check_typed_list(K, kpairp, true, ls, &pairs, NULL);
     TValue tail = ls;
     TValue res = KNIL;
     while(pairs--) {
@@ -548,7 +463,8 @@ void memqp(klisp_State *K)
 
     bind_2p(K, ptree, obj, ls);
     /* first pass, check structure */
-    int32_t pairs = check_list(K, "memq?", true, ls, NULL);
+    int32_t pairs;
+    check_list(K, true, ls, &pairs, NULL);
     TValue tail = ls;
     TValue res = KFALSE;
     while(pairs--) {
