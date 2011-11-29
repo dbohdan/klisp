@@ -327,13 +327,12 @@ void kw_print_cont_type(klisp_State *K, TValue obj)
 /*
 ** Writes all values except strings and pairs
 */
-
-void kwrite_simple(klisp_State *K, TValue obj)
+void kwrite_scalar(klisp_State *K, TValue obj)
 {
     switch(ttype(obj)) {
     case K_TSTRING:
 	/* shouldn't happen */
-	kwrite_error(K, "string type found in kwrite-simple");
+	klisp_assert(0);
 	/* avoid warning */
 	return;
     case K_TFIXINT:
@@ -607,7 +606,7 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 		break;
 	    }
 	    default:
-		kwrite_simple(K, obj);
+		kwrite_scalar(K, obj);
 		middle_list = true;
 	    }
 	}
@@ -633,6 +632,19 @@ void kwrite(klisp_State *K, TValue obj)
 }
 
 /*
+** This is the same as above but will not display
+** shared tags (and will hang if there are cycles)
+*/
+void kwrite_simple(klisp_State *K, TValue obj)
+{
+    /* GC: root obj */
+    krooted_tvs_push(K, obj);
+    kwrite_fsm(K, obj);
+    kw_flush(K);
+    krooted_tvs_pop(K);
+}
+
+/*
 ** Interface
 */
 void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj, 
@@ -641,6 +653,13 @@ void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj,
     K->curr_port = port;
     K->write_displayp = displayp;
     kwrite(K, obj);
+}
+
+void kwrite_simple_to_port(klisp_State *K, TValue port, TValue obj)
+{
+    K->curr_port = port;
+    K->write_displayp = false;
+    kwrite_simple(K, obj);
 }
 
 void kwrite_newline_to_port(klisp_State *K, TValue port)

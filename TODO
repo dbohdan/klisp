@@ -1,19 +1,17 @@
 * refactor:
 ** double check combiner names to be verbs 
    (e.g. add get- where appropriate)
-** remove function prototypes from kg*.h, move the
-   ones that are used in more than one place to kghelpers.h
-** create knumber.h knumber.c and move there kfinitep, kintegerp, etc
-   from kgnumbers.
+** split kghelpers in appropriate parts
+  (e.g. create knumber.h knumber.c and move there kfinitep, kintegerp, etc
+  from kgnumbers)
 ** use some convention for ground operative underlaying function names
    maybe add "kgop_"
 ** use a better convention for continuation underlaying function names
 ** try to use krooted_vars_push more to save some lines and avoid
    clutter (e.g. when creating continuations)
 ** Study differrent c interfaces (maybe a stack like in lua would be
-   better than dealing with gc push/pop
-** eliminate char * arguments where not needed (like list check/copy
-   functions in kghelpers
+   better than dealing with gc push/pop)
+** eliminate all remaining char * arguments where not needed
 ** check if all inline functions need to be inline
 ** standarize either int32_t (now used in lists) or uint32_t (now used
    in strings, vectors and bytevectors) for sizes (and maybe use a 
@@ -37,7 +35,6 @@
 ** number->string (r7rs)
 ** string->number (r7rs)
 ** read-line (r7rs)
-** write-simple (r7rs)
 * reader
 ** symbol escapes (r7rs)
 ** string escapes (r7rs)

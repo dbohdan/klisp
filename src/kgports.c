@@ -336,6 +336,38 @@ void gwrite(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* 15.1.? write-simple */
+void gwrite_simple(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, ptree, "any", anytype, obj,
+	       port);
+
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } 
+
+    if (!kport_is_output(port)) {
+	klispE_throw_simple(K, "the port should be an output port");
+	return;
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    kwrite_simple_to_port(K, port, obj); 
+    kapply_cc(K, KINERT);
+}
+
 /* 15.1.? eof-object? */
 /* uses typep */
 
@@ -963,6 +995,8 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "read", gread, 0);
     /* 15.1.8 write */
     add_applicative(K, ground_env, "write", gwrite, 0);
+    /* 15.1.? write-simple */
+    add_applicative(K, ground_env, "write-simple", gwrite_simple, 0);
 
     /* 15.1.? eof-object? */
     add_applicative(K, ground_env, "eof-object?", typep, 2, symbol, 
