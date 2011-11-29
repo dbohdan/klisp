@@ -41,7 +41,6 @@
 * reader
 ** symbol escapes (r7rs)
 ** string escapes (r7rs)
-** char escapes (r7rs)
 ** syntax support for complex numbers (Kernel report)
 * other
 ** optional argument to member? (r7rs)

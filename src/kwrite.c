@@ -368,7 +368,7 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 	if (K->write_displayp) {
 	    kw_printf(K, "%c", chvalue(obj));
 	} else {
-	    char ch_buf[4];
+	    char ch_buf[16]; /* should be able to contain hex escapes */
 	    char ch = chvalue(obj);
 	    char *ch_ptr;
 
@@ -403,10 +403,34 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 	    case '\v':
 		ch_ptr = "vtab";
 		break;
-	    default:
-		ch_buf[0] = ch;
-		ch_buf[1] = '\0';
+	    default: {
+		int i = 0;
+		if (ch >= 32 && ch < 127) {
+		    /* printable ASCII range */
+		    /* (del(127) and space(32) were already considered, 
+		       but it's clearer this way) */
+		    ch_buf[i++] = ch;
+		} else {
+		    /* use an hex escape for non printing, unnamed chars */
+		    ch_buf[i++] = 'x';
+		    int res = snprintf(ch_buf+i, sizeof(ch_buf) - i, 
+				       "%x", ch);
+		    if (res < 0) {
+			/* shouldn't happen, but for the sake of
+			   completeness... */
+			TValue port = K->curr_port;
+			if (ttisfport(port)) {
+			    FILE *file = kfport_file(port);
+			    clearerr(file); /* clear error for next time */
+			}
+			kwrite_error(K, "error writing");
+			return;
+		    } 
+		    i += res; /* res doesn't include the '\0' */
+		}
+		ch_buf[i++] = '\0';
 		ch_ptr = ch_buf;
+	    }
 	    }
 	    kw_printf(K, "#\\%s", ch_ptr);
 	}

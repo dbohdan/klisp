@@ -740,7 +740,7 @@ struct kspecial_token {
 			{ "#\\nul", KNULL_ } /* same as r7rs \NULL */
  }; 
 
-#define MAX_EXT_REP_SIZE 64  /* all special tokens have much than 64 chars */
+#define MAX_EXT_REP_SIZE 64  /* all special tokens have less than 64 chars */
 
 TValue ktok_read_special(klisp_State *K)
 {
@@ -812,7 +812,7 @@ TValue ktok_read_special(klisp_State *K)
 	*str2 = tolower(*str2);
 
     /* REFACTOR: move this to a new function */
-    /* then check the known constants */
+    /* then check the known constants (including named characters) */
     size_t stok_size = sizeof(kspecial_tokens) / 
 	sizeof(struct kspecial_token);
     size_t i;
@@ -826,15 +826,41 @@ TValue ktok_read_special(klisp_State *K)
 	}
     }
 
+    /* It wasn't a special token or named char, but it can still be a srfi-38
+       token or a character escape */
+
     if (buf[1] == '\\') { /* this is to have a meaningful error msg */
-	ktok_error(K, "Unrecognized character name");
-	/* avoid warning */
-	return KINERT;
+	if (buf[2] != 'x') {/* this will also accept 'X' */
+	    ktok_error(K, "Unrecognized character name");
+	    return KINERT;
+	}
+	/* We already checked that length != 3, so there's at least on
+	   more char */
+	TValue n;
+	char *end;
+
+	/* test for - and + explicitly, becayse kinteger read would parse them
+	   without complaining (it will also parse spaces, but we read until 
+	   delimiter so... */
+	if (buf[3] == '-' || buf[3] == '+' ||
+	    !kinteger_read(K, buf+3, 16, &n, &end) || 
+	      end - buf != buf_len) {
+	    ktok_error(K, "Bad char in hex escaped character constant");
+	    return KINERT;
+	} else if (!ttisfixint(n) || ivalue(n) > 127) {
+	    ktok_error(K, "Non ASCII char found in hex escaped character constant");
+	    /* avoid warning */
+	    return KINERT;
+	} else {
+	    /* all ok, we just clean up and return the char */
+	    ks_tbclear(K);
+	    return ch2tv(ivalue(n));
+	}
     }
 
     /* REFACTOR: move this to a new function */
     /* It was not a special token so it must be either a srfi-38 style
-       token, or a char constant or a number. srfi-38 tokens are a '#' a 
+       token, or a number. srfi-38 tokens are a '#' a 
        decimal number and end with a '=' or a '#' */
     if (buf_len > 2 && ktok_is_numeric(buf[1])) {
 	/* NOTE: it's important to check is_numeric to avoid problems with 
@@ -853,6 +879,7 @@ TValue ktok_read_special(klisp_State *K)
 	char *end;
 	/* 10 is the radix for srfi-38 tokens, buf+1 to jump over the '#',
 	 end+1 to count the last char */
+	/* N.B. buf+1 can't be + or -, we already tested numeric before */
 	if (!kinteger_read(K, buf+1, 10, &n, &end) || end+1 - buf != buf_len) {
 	    ktok_error(K, "Bad char in srfi-38 token");
 	    return KINERT;
