@@ -19,7 +19,7 @@
 * fix:
 ** fix/test the tty detection in the interpreter
 ** fix char-ready? and u8-ready? (r7rs)
-** eliminate kread_ignore_whitespace_and_commonts_from_port,
+** eliminate kread_ignore_whitespace_and_comments_from_port,
   replace for a boolean flag to tell read to reset source info
   after first token read.
 * documentation
@@ -28,6 +28,7 @@
 ** update the manual with the current features
 ** add a section to the manual with the interpreter usage
 * operatives: 
+** $delay (r7rs)
 ** $case (r7rs)
 ** $case-lambda (r7rs)
 ** $case-vau (r7rs)
@@ -41,15 +42,16 @@
 ** symbol escapes (r7rs)
 ** string escapes (r7rs)
 ** char escapes (r7rs)
+** syntax support for complex numbers (Kernel report)
 * other
 ** optional argument to member? (r7rs)
 ** optional argument to assoc (r7rs)
 ** some simplified error guarding (r7rs)
-** restarts (r7rs)
+** restarts (r7rs/common lisp)
 ** add restart support to the repl/interpreter (r7rs)
 ** simple modules (something inspired in r7rs) (r7rs)
 ** add modules support to the interpreter (r7rs)
 ** eager comprehensions (at least for check.k) see SRFIs 42 and 78
    (srfi)
-
-
+** complex numbers
+** interval arithmetic
