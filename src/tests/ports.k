@@ -158,7 +158,6 @@
 ($check-error (call-with-closed-input-port close-output-file))
 
 ;; 15.1.7 read
-
 ($check-predicate (eof-object? ($input-test #inert (read))))
 ($check-predicate (eof-object? ($input-test "" (read))))
 

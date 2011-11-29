@@ -610,9 +610,19 @@ union GCObject {
 #define KIMINF_ {.tv = {.t = K_TAG_IINF, .v = { .i = -1 }}}
 #define KRWNPV_ {.tv = {.t = K_TAG_RWNPV, .v = { .i = 0 }}}
 #define KUNDEF_ {.tv = {.t = K_TAG_UNDEFINED, .v = { .i = 0 }}}
-#define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
-#define KNEWLINE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\n' }}}
 #define KFREE_ {.tv = {.t = K_TAG_FREE, .v = { .i = 0 }}}
+/* named character */
+/* N.B. don't confuse with KNULL_ with KNIL!!! */
+#define KNULL_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\0' }}}
+#define KALARM_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\a' }}}
+#define KBACKSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\b' }}}
+#define KTAB_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\t' }}}
+#define KNEWLINE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\n' }}}
+#define KRETURN_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\r' }}}
+#define KESCAPE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\x1b' }}}
+#define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
+#define KDELETE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\x7f' }}}
+#define KVTAB_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\v' }}}
 
 
 /* RATIONALE: the ones above can be used in initializers */

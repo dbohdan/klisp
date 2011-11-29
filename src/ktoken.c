@@ -720,8 +720,24 @@ struct kspecial_token {
 			{ "#i-infinity", KIMINF_ },
 			{ "#real", KRWNPV_ },
 			{ "#undefined", KUNDEF_ },
-			{ "#\\space", KSPACE_ },
-			{ "#\\newline", KNEWLINE_ }
+			/* 
+			** Character names 
+			** (r7rs + vtab and linefeed from r6rs) 
+			*/
+			{ "#\\null", KNULL_ },
+			{ "#\\alarm", KALARM_ },
+			{ "#\\backspace", KBACKSPACE_ },
+			{ "#\\tab", KTAB_ },
+			{ "#\\newline", KNEWLINE_ }, /* kernel */
+			{ "#\\return", KRETURN_ },
+			{ "#\\escape", KESCAPE_ },
+			{ "#\\space", KSPACE_ }, /* kernel */
+			{ "#\\delete", KDELETE_ },
+			/* r6rs, only */
+			{ "#\\vtab", KVTAB_ }, 
+			{ "#\\linefeed", KNEWLINE_ }, /* same as \newline */
+			{ "#\\esc", KESCAPE_ }, /* same as r7rs \escape */
+			{ "#\\nul", KNULL_ } /* same as r7rs \NULL */
  }; 
 
 #define MAX_EXT_REP_SIZE 64  /* all special tokens have much than 64 chars */

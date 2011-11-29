@@ -1,5 +1,5 @@
 /*
-** kobject.h
+** kobject.c
 ** Type definitions for Kernel Objects
 ** See Copyright Notice in klisp.h
 */
@@ -24,9 +24,18 @@ const TValue kipinf = KIPINF_;
 const TValue kiminf = KIMINF_;
 const TValue krwnpv = KRWNPV_;
 const TValue kundef = KUNDEF_;
-const TValue kspace = KSPACE_;
-const TValue knewline = KNEWLINE_;
 const TValue kfree = KFREE_;
+
+const TValue knull = KNULL_;
+const TValue kalarm = KALARM_;
+const TValue kbackspace = KBACKSPACE_;
+const TValue ktab = KTAB_;
+const TValue knewline = KNEWLINE_;
+const TValue kreturn = KRETURN_;
+const TValue kescape = KESCAPE_;
+const TValue kspace = KSPACE_;
+const TValue kdelete = KDELETE_;
+const TValue kvtab = KVTAB_;
 
 /*
 ** The name strings for all TValue types

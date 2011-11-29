@@ -372,11 +372,38 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 	    char ch = chvalue(obj);
 	    char *ch_ptr;
 
-	    if (ch == '\n') {
+	    switch (ch) {
+	    case '\0':
+		ch_ptr = "null";
+		break;
+	    case '\a':
+		ch_ptr = "alarm";
+		break;
+	    case '\b':
+		ch_ptr = "backspace";
+		break;
+	    case '\t':
+		ch_ptr = "tab";
+		break;
+	    case '\n':
 		ch_ptr = "newline";
-	    } else if (ch == ' ') {
+		break;
+	    case '\r':
+		ch_ptr = "return";
+		break;
+	    case '\x1b':
+		ch_ptr = "escape";
+		break;
+	    case ' ':
 		ch_ptr = "space";
-	    } else {
+		break;
+	    case '\x7f':
+		ch_ptr = "delete";
+		break;
+	    case '\v':
+		ch_ptr = "vtab";
+		break;
+	    default:
 		ch_buf[0] = ch;
 		ch_buf[1] = '\0';
 		ch_ptr = ch_buf;
