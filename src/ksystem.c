@@ -7,6 +7,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kerror.h"
+#include "kinteger.h"
 #include "ksystem.h"
 
 /* detect platform
@@ -35,6 +36,7 @@
 
 #include <time.h>
 
+/* TEMP for now the best we can do is return the current second */
 TValue ksystem_current_jiffy(klisp_State *K)
 {
     time_t now = time(NULL);
@@ -44,7 +46,6 @@ TValue ksystem_current_jiffy(klisp_State *K)
         return KFALSE;
     } else {
 	return kinteger_new_uint64(K, (uint64_t) now);
-        }
     }
 }
 
