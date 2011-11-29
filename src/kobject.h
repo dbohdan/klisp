@@ -822,17 +822,22 @@ int32_t kmark_count;
 #define K_FLAG_INNER 0x02
 #define K_FLAG_DYNAMIC 0x04
 #define K_FLAG_BOOL_CHECK 0x08
+/* this is the same as immutable, but there is no problem
+   with continuations */
+#define K_FLAG_INERT_RET 0x10
 
 /* evaluate c_ more than once */
 #define kset_inner_cont(c_) (tv_get_kflags(c_) |= K_FLAG_INNER)
 #define kset_outer_cont(c_) (tv_get_kflags(c_) |= K_FLAG_OUTER)
 #define kset_dyn_cont(c_) (tv_get_kflags(c_) |= K_FLAG_DYNAMIC)
 #define kset_bool_check_cont(c_) (tv_get_kflags(c_) |= K_FLAG_BOOL_CHECK)
+#define kset_inert_ret_cont(c_) (tv_get_kflags(c_) |= K_FLAG_INERT_RET)
 
 #define kis_inner_cont(c_) ((tv_get_kflags(c_) & K_FLAG_INNER) != 0)
 #define kis_outer_cont(c_) ((tv_get_kflags(c_) & K_FLAG_OUTER) != 0)
 #define kis_dyn_cont(c_) ((tv_get_kflags(c_) & K_FLAG_DYNAMIC) != 0)
 #define kis_bool_check_cont(c_) ((tv_get_kflags(c_) & K_FLAG_BOOL_CHECK) != 0)
+#define kis_inert_ret_cont(c_) ((tv_get_kflags(c_) & K_FLAG_INERT_RET) != 0)
 
 #define K_FLAG_OUTPUT_PORT 0x01
 #define K_FLAG_INPUT_PORT 0x02

@@ -23,6 +23,7 @@
 void do_select_clause(klisp_State *K);
 void do_cond(klisp_State *K);
 void do_for_each(klisp_State *K);
+void do_Swhen_Sunless(klisp_State *K);
 
 /* 4.5.1 inert? */
 /* uses typep */
@@ -36,8 +37,8 @@ void Sif(klisp_State *K)
     TValue ptree = K->next_value;
     TValue denv = K->next_env;
     klisp_assert(ttisenvironment(K->next_env));
-    (void) denv;
-    (void) xparams;
+    UNUSED(denv);
+    UNUSED(xparams);
 
     bind_3p(K, ptree, test, cons_c, alt_c);
 
@@ -441,6 +442,105 @@ void array_for_each(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* Helper for $when and $unless */
+void do_Swhen_Sunless(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+
+    /*
+    ** xparams[0]: bool condition
+    ** xparams[1]: body
+    ** xparams[2]: denv
+    ** xparams[3]: si for whole form
+    */
+    bool cond = bvalue(xparams[0]);
+    TValue ls = xparams[1];
+    TValue denv = xparams[2];
+#if KTRACK_SI
+    TValue si = xparams[3];
+#endif
+
+    if (!ttisboolean(obj)) {
+	klispE_throw_simple(K, "test is not a boolean");
+	return;
+    }
+    
+    if (bvalue(obj) == cond && !ttisnil(ls)) {
+	/* only contruct the #inert returning continuation if the
+	   current continuation is not of the same type */
+	if (!kis_inert_ret_cont(kget_cc(K))) {
+	    TValue new_cont = 
+		kmake_continuation(K, kget_cc(K), do_return_value, 1, KINERT);
+	    /* mark it, so that it can be detected as inert throwing cont */
+	    kset_inert_ret_cont(new_cont);
+	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the whole form */
+	    kset_source_info(K, new_cont, si);
+#endif
+	}
+	/* this is needed because seq continuation doesn't check for 
+	   nil sequence */
+	/* TODO this could be at least in an inlineable function to
+	   allow used from $lambda, $vau, $let family, load, etc */
+	TValue tail = kcdr(ls);
+	if (ttispair(tail)) {
+	    krooted_tvs_push(K, ls);
+	    TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
+						 tail, denv);
+	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
+	    krooted_tvs_pop(K);
+	} 
+	ktail_eval(K, kcar(ls), denv);
+    } else {
+	/* either the test failed or the body was nil */
+	kapply_cc(K, KINERT);
+    }
+}
+
+/*  ASK JOHN: list is copied here (like in $sequence) */
+void Swhen_Sunless(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    bind_al1p(K, ptree, test, body);
+
+    /*
+    ** xparams[0]: bool condition
+    */
+    TValue tv_cond = xparams[0];
+    
+    /* the list of instructions is copied to avoid mutation */
+    /* MAYBE: copy the evaluation structure, ASK John */
+    TValue ls = check_copy_list(K, body, false, NULL, NULL);
+    krooted_tvs_push(K, ls);
+    /* prepare the continuation that will check the test result
+       and do the evaluation */
+    TValue si = K->next_si; /* this is the source info of the whole
+			       $when/$unless form */
+    TValue new_cont = kmake_continuation(K, kget_cc(K), do_Swhen_Sunless,
+					 4, tv_cond, ls, denv, si);
+    krooted_tvs_pop(K);
+    /* 
+    ** Mark as a bool checking cont, not necessary but avoids a continuation
+    ** in the last evaluation in the common use of 
+    ** ($when/$unless ($or?/$and? ...) ...)
+    */
+    kset_bool_check_cont(new_cont);
+    kset_cc(K, new_cont);
+    ktail_eval(K, test, denv);
+}
+
 /* init ground */
 void kinit_control_ground_env(klisp_State *K)
 {
@@ -465,6 +565,11 @@ void kinit_control_ground_env(klisp_State *K)
 		    p2tv(vector_to_list_h));
     add_applicative(K, ground_env, "bytevector-for-each", array_for_each, 1, 
 		    p2tv(bytevector_to_list_h));
+    /* ?.? */
+    add_operative(K, ground_env, "$when", Swhen_Sunless, 1, 
+		    b2tv(true));
+    add_operative(K, ground_env, "$unless", Swhen_Sunless, 1, 
+		    b2tv(false));
 }
 
 /* init continuation names */
@@ -473,6 +578,8 @@ void kinit_control_cont_names(klisp_State *K)
     Table *t = tv2table(K->cont_name_table);
 
     add_cont_name(K, t, do_select_clause, "select-clause");
+    add_cont_name(K, t, do_Swhen_Sunless, "conditional-eval-sequence");
+
     add_cont_name(K, t, do_cond, "eval-cond-list");
     add_cont_name(K, t, do_for_each, "for-each");
 }

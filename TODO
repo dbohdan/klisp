@@ -20,14 +20,13 @@
    typedef like lua)
 * fix:
 ** fix/test the tty detection in the interpreter
+** fix char-ready? and u8-ready? (r7rs)
 * documentation
 ** fix some inconsistencies between the man page and the interpreter
    behaviour.
 ** update the manual with the current features
 ** add a section to the manual with the interpreter usage
 * operatives: 
-** $when (r7rs)
-** $unless (r7rs)
 ** $case (r7rs)
 ** $case-lambda (r7rs)
 ** $case-vau (r7rs)
@@ -35,9 +34,10 @@
 ** $do (r7rs)
 ** $define-record-type (r7rs)
 * applicatives: 
-** read-line (r7rs)
 ** number->string (r7rs)
 ** string->number (r7rs)
+** read-line (r7rs)
+** write-simple (r7rs)
 * reader
 ** symbol escapes (r7rs)
 ** string escapes (r7rs)

@@ -426,12 +426,6 @@ TValue make_bind_continuation(klisp_State *K, TValue key,
 TValue check_copy_guards(klisp_State *K, char *name, TValue obj);
 void guard_dynamic_extent(klisp_State *K);
 
-/* GC: assumes parent & obj are rooted */
-inline TValue make_return_value_cont(klisp_State *K, TValue parent, TValue obj)
-{
-    return kmake_continuation(K, parent, do_return_value, 1, obj);
-}
-
 /* Some helpers for working with fixints (signed 32 bits) */
 inline int32_t kabs32(int32_t a) { return a < 0? -a : a; }
 inline int64_t kabs64(int64_t a) { return a < 0? -a : a; }

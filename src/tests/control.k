@@ -268,6 +268,76 @@
 		     (car p))
 	  #f))
 
+;; $when
+($check-predicate (operative? $when))
+($check-predicate (inert? ($when #t)))
+($check-predicate (inert? ($when #f)))
+($check-predicate (inert? ($when #t 1)))
+($check-predicate (inert? ($when #f 1)))
+($check-predicate (inert? ($when #t 1 2)))
+($check-predicate (inert? ($when #f 1 2)))
+
+($let ((p (cons () ())))
+  ($check equal? ($sequence ($when #f (set-car! p 1))
+			    (car p))
+	  ()))
+
+($let ((p (cons () ())))
+  ($check eq? ($sequence ($when ($sequence 
+				  (set-car! p (get-current-environment)) 
+				  #f))
+			(car p))
+	 (get-current-environment)))
+
+($let ((p (cons () ())))
+  ($check eq? ($sequence ($when #t (set-car! p (get-current-environment)))
+			 (car p))
+	  (get-current-environment)))
+
+;; check tail recursiveness
+($let ((p (cons 1 2)))
+  ($check-predicate ($sequence ($when #t ($let/cc cont1
+					   (set-car! p cont1)
+					   ($when #t
+						  ($let/cc cont2
+						    (set-cdr! p cont2)))))
+			       (eq? (car p) (cdr p)))))
+
+;; $unless
+($check-predicate (operative? $unless))
+($check-predicate (inert? ($unless #t)))
+($check-predicate (inert? ($unless #f)))
+($check-predicate (inert? ($unless #t 1)))
+($check-predicate (inert? ($unless #f 1)))
+($check-predicate (inert? ($unless #t 1 2)))
+($check-predicate (inert? ($unless #f 1 2)))
+
+($let ((p (cons () ())))
+  ($check equal? ($sequence ($unless #t (set-car! p 1))
+			    (car p))
+	  ()))
+
+($let ((p (cons () ())))
+  ($check eq? ($sequence ($unless ($sequence 
+				  (set-car! p (get-current-environment)) 
+				  #t))
+			(car p))
+	 (get-current-environment)))
+
+($let ((p (cons () ())))
+  ($check eq? ($sequence ($unless #f (set-car! p (get-current-environment)))
+			 (car p))
+	  (get-current-environment)))
+
+;; check tail recursiveness
+($let ((p (cons 1 2)))
+  ($check-predicate ($sequence ($unless #f ($let/cc cont1
+					   (set-car! p cont1)
+					   ($unless #f
+						  ($let/cc cont2
+						    (set-cdr! p cont2)))))
+			       (eq? (car p) (cdr p)))))
+
 ;;;
 ;;; Error Checking and Robustness
 ;;;
@@ -361,3 +431,19 @@
 ($check-error (bytevector-for-each <? (bytevector 1 2) #inert))
 ($check-error (bytevector-for-each cons
 			       (bytevector 1 2 3)))
+
+
+;; $when
+($check-error ($when))
+($check-error ($when #t . 3))
+($check-error ($when #f . 3))
+($check-error ($when #inert 1))
+
+;; $unless
+($check-error ($unless))
+($check-error ($unless #t . 3))
+($check-error ($unless #f . 3))
+($check-error ($unless #inert 1))
+
+
+

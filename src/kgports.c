@@ -697,7 +697,9 @@ void load(klisp_State *K)
     TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
 
-    TValue inert_cont = make_return_value_cont(K, kget_cc(K), KINERT);
+    TValue inert_cont = kmake_continuation(K, kget_cc(K), do_return_value, 1, 
+					   KINERT);
+    
     krooted_tvs_push(K, inert_cont);
 
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
@@ -760,7 +762,8 @@ void get_module(klisp_State *K)
 	kadd_binding(K, env, K->module_params_sym, maybe_env);
     }
 
-    TValue ret_env_cont = make_return_value_cont(K, kget_cc(K), env);
+    TValue ret_env_cont = kmake_continuation(K, kget_cc(K), do_return_value, 
+					     1, env);
     krooted_tvs_pop(K); /* env alread in cont */
     krooted_tvs_push(K, ret_env_cont);
 
