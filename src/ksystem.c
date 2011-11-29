@@ -35,7 +35,6 @@
 
 #include <time.h>
 
-/* TEMP for now the best we can do is return the current second */
 TValue ksystem_current_jiffy(klisp_State *K)
 {
     time_t now = time(NULL);
@@ -45,6 +44,7 @@ TValue ksystem_current_jiffy(klisp_State *K)
         return KFALSE;
     } else {
 	return kinteger_new_uint64(K, (uint64_t) now);
+        }
     }
 }
 
@@ -53,4 +53,15 @@ TValue ksystem_jiffies_per_second(klisp_State *K)
     return i2tv(1);
 }
 
-#endif
+#endif /* HAVE_PLATFORM_JIFFIES */
+
+#ifndef HAVE_PLATFORM_ISATTY
+
+bool ksystem_isatty(klisp_State *K, TValue port)
+{
+    UNUSED(K);
+    UNUSED(port);
+    return false;
+}
+
+#endif /* HAVE_PLATFORM_ISATTY */

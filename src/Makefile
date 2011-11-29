@@ -104,10 +104,9 @@ mingw:
 	"MINGW_LDFLAGS=$(if $(USE_LIBFFI), $(MINGW_LIBFFI_LDFLAGS) -lffi.dll)" \
 	"MYLDFLAGS=-s" klisp.exe
 #lisp_use_posix isn't used right now...
-# TEMP: rename read() and write() here to avoid name conflicts with foreign code
 posix:
 	$(MAKE) all \
-		"MYCFLAGS=-DKLISP_USE_POSIX $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1 -Dread=klisp_read -Dwrite=klisp_write)" \
+		"MYCFLAGS=-DKLISP_USE_POSIX -D_POSIX_SOURCE $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1)" \
 		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi)"
 
 # list targets that do not create files (but not all makes understand .PHONY)

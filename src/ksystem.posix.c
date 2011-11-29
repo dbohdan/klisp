@@ -4,15 +4,18 @@
 ** See Copyright Notice in klisp.h
 */
 
+#include <stdio.h>
 #include <sys/time.h>
 #include "kobject.h"
 #include "kstate.h"
 #include "kinteger.h"
+#include "kport.h"
 #include "ksystem.h"
 
 /* declare implemented functionality */
 
 #define HAVE_PLATFORM_JIFFIES
+#define HAVE_PLATFORM_ISATTY
 
 /* jiffies */
 
@@ -39,4 +42,12 @@ TValue ksystem_jiffies_per_second(klisp_State *K)
 {
     UNUSED(K);
     return i2tv(1000000);
+}
+
+/* isatty */
+
+bool ksystem_isatty(klisp_State *K, TValue port)
+{
+    return ttisfport(port) && kport_is_open(port)
+           && isatty(fileno(kfport_file(port)));
 }

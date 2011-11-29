@@ -33,6 +33,7 @@
 #include "kwrite.h"
 #include "kerror.h"
 #include "krepl.h"
+#include "ksystem.h"
 #include "kghelpers.h" /* for do_return_value, do_pass_value and do_seq */
 
 static const char *progname = KLISP_PROGNAME;
@@ -612,7 +613,7 @@ static void pmain(klisp_State *K)
     if (has_i) { 
 	dotty(K);
     } else if (script == 0 && !has_e && !has_v) {
-	if (true) {
+	if (ksystem_isatty(K, kcurr_input_port(K))) {
 	    print_version();
 	    dotty(K);
 	} else {
