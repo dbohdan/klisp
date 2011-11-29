@@ -869,6 +869,36 @@ void display(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+void read_line(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue port = ptree;
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
+	port = kcdr(K->kd_in_port_key); /* access directly */
+    }
+
+    if (!kport_is_input(port)) {
+	klispE_throw_simple(K, "the port should be an input port");
+	return;
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    TValue obj = kread_line_from_port(K, port);
+    kapply_cc(K, obj);
+}
+
 /* 15.1.? flush-output-port */
 void flush(klisp_State *K)
 {
@@ -1043,6 +1073,8 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.2.? display */
     add_applicative(K, ground_env, "display", display, 0);
 
+    /* 15.1.? read-line */
+    add_applicative(K, ground_env, "read-line", read_line, 0);
     /* 15.1.? flush-output-port */
     add_applicative(K, ground_env, "flush-output-port", flush, 0);
 

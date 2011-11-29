@@ -19,6 +19,9 @@
 * fix:
 ** fix/test the tty detection in the interpreter
 ** fix char-ready? and u8-ready? (r7rs)
+** eliminate kread_ignore_whitespace_and_commonts_from_port,
+  replace for a boolean flag to tell read to reset source info
+  after first token read.
 * documentation
 ** fix some inconsistencies between the man page and the interpreter
    behaviour.
@@ -34,7 +37,6 @@
 * applicatives: 
 ** number->string (r7rs)
 ** string->number (r7rs)
-** read-line (r7rs)
 * reader
 ** symbol escapes (r7rs)
 ** string escapes (r7rs)

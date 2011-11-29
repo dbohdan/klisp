@@ -207,6 +207,7 @@
 ($check-error (call-with-closed-output-port ($lambda (p) (write 0 p))))
 
 ;; write-simple
+;; read-line
 ;; 15.2.1 call-with-input-file call-with-output-file
 ;; 15.2.2 load
 ;; 15.2.3 get-module

@@ -265,7 +265,7 @@ kpromise.o: kpromise.c kobject.h klimits.h klisp.h klispconf.h kstate.h \
 krational.o: krational.c krational.h kobject.h klimits.h klisp.h \
  klispconf.h kstate.h ktoken.h kmem.h kinteger.h imath.h imrat.h kgc.h
 kread.o: kread.c kread.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
- ktoken.h kmem.h kpair.h kgc.h kerror.h ktable.h kport.h
+ ktoken.h kmem.h kpair.h kgc.h kerror.h ktable.h kport.h kstring.h
 kreal.o: kreal.c kreal.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kinteger.h imath.h krational.h imrat.h kgc.h kpair.h \
  kerror.h

@@ -5,6 +5,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "kread.h"
@@ -15,6 +16,7 @@
 #include "kerror.h"
 #include "ktable.h"
 #include "kport.h"
+#include "kstring.h"
 
 
 /*
@@ -704,22 +706,38 @@ TValue kread_from_port_g(klisp_State *K, TValue port, bool mut, bool listp)
     return obj;
 }
 
+/*
+** Reader Interface
+*/
+
 TValue kread_from_port(klisp_State *K, TValue port, bool mut)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_input(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
     return kread_from_port_g(K, port, mut, false);
 }
 
 TValue kread_list_from_port(klisp_State *K, TValue port, bool mut)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_input(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
     return kread_from_port_g(K, port, mut, true);
 }
 
 TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_input(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
+
     /* Reset the EOF flag in the tokenizer. The flag is shared,
        by operations on all ports. */
     K->ktok_seen_eof = false;
-
     K->curr_port = port;
     int ch;
     if (peek) {
@@ -736,6 +754,11 @@ TValue kread_peek_char_from_port(klisp_State *K, TValue port, bool peek)
 
 TValue kread_peek_u8_from_port(klisp_State *K, TValue port, bool peek)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_input(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_binary(port));
+
     /* Reset the EOF flag in the tokenizer. The flag is shared,
        by operations on all ports. */
     K->ktok_seen_eof = false;
@@ -751,6 +774,59 @@ TValue kread_peek_u8_from_port(klisp_State *K, TValue port, bool peek)
 				 K->ktok_source_info.col);    
     }
     return u8 == EOF? KEOF : i2tv(u8 & 0xff);
+}
+
+TValue kread_line_from_port(klisp_State *K, TValue port)
+{
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_input(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
+
+    /* Reset the EOF flag in the tokenizer. The flag is shared,
+       by operations on all ports. */
+    K->ktok_seen_eof = false;
+    K->curr_port = port;
+
+    uint32_t size = MINREADLINEBUFFER; 
+    uint32_t i = 0;
+    int ch;
+    TValue new_str = kstring_new_s(K, size);
+    krooted_vars_push(K, &new_str);
+
+    char *buf = kstring_buf(new_str);
+    ktok_set_source_info(K, kport_filename(port), 
+			 kport_line(port), kport_col(port));
+    bool found_newline = false;
+    while(true) {
+	ch = ktok_getc(K);
+	if (ch == EOF) {
+	    break;
+	} else if (ch == '\n') {
+	    /* adjust string to the right size if necessary */
+	    if (i < size) {
+		new_str = kstring_new_bs(K, kstring_buf(new_str), i);
+	    }
+	    found_newline = true;
+	    break;
+	} else {
+	    if (i == size) {
+		size *= 2;
+		char *old_buf = kstring_buf(new_str);
+		new_str = kstring_new_s(K, size);
+		buf = kstring_buf(new_str);
+		/* copy the data we have */
+		memcpy(buf, old_buf, i);
+		buf += i;
+	    }
+	    *buf++ = (char) ch;
+	    ++i;
+	}
+    }
+    kport_update_source_info(port, K->ktok_source_info.line, 
+			     K->ktok_source_info.col);    
+    krooted_vars_pop(K);
+    return found_newline? new_str : KEOF;
 }
 
 /* This is needed by the repl to ignore trailing spaces (especially newlines)

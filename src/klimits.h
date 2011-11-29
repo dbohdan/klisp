@@ -77,4 +77,9 @@
 #define MINBYTEVECTORPORTBUFFER	256
 #endif
 
+/* starting size for readline buffer */
+#ifndef MINREADLINEBUFFER
+#define MINREADLINEBUFFER	80
+#endif
+
 #endif

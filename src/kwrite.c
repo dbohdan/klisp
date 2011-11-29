@@ -645,11 +645,16 @@ void kwrite_simple(klisp_State *K, TValue obj)
 }
 
 /*
-** Interface
+** Writer Interface
 */
 void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj, 
 			    bool displayp)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
+
     K->curr_port = port;
     K->write_displayp = displayp;
     kwrite(K, obj);
@@ -657,6 +662,11 @@ void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj,
 
 void kwrite_simple_to_port(klisp_State *K, TValue port, TValue obj)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
+
     K->curr_port = port;
     K->write_displayp = false;
     kwrite_simple(K, obj);
@@ -664,6 +674,10 @@ void kwrite_simple_to_port(klisp_State *K, TValue port, TValue obj)
 
 void kwrite_newline_to_port(klisp_State *K, TValue port)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
     kwrite_char_to_port(K, port, ch2tv('\n'));
@@ -671,6 +685,10 @@ void kwrite_newline_to_port(klisp_State *K, TValue port)
 
 void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
 
@@ -706,6 +724,10 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 
 void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_binary(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
     if (ttisfport(port)) {
@@ -742,6 +764,9 @@ void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
 
 void kwrite_flush_port(klisp_State *K, TValue port) 
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
     if (ttisfport(port)) { /* only necessary for file ports */
