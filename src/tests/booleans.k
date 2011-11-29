@@ -74,7 +74,6 @@
 ($check-not-predicate (or? #f #f #f))
 
 ;; $and? & $or?
-;; TODO check tail call
 ($check-predicate (operative? $and?))
 ($check-predicate ($and?))
 ($check-predicate ($and? #t))
@@ -85,6 +84,15 @@
 ($check-not-predicate ($and? #t #t #f))
 ($check-not-predicate ($and? #f (/ 1 0))) ;; test conditional evaluation
 
+;; check tail recursiveness
+($let ((p (cons 1 2)))
+  ($check-predicate ($sequence ($and? ($let/cc cont1
+					(set-car! p cont1)
+					($and? ($let/cc cont2
+						(set-cdr! p cont2)
+						#t))))
+			       (eq? (car p) (cdr p)))))
+
 ($check-predicate (operative? $or?))
 ($check-predicate ($or? #t))
 ($check-predicate ($or? #f (eq? #t #t) #t)) ;; test some evaluation too!
@@ -94,6 +102,29 @@
 ($check-not-predicate ($or? #f))
 ($check-not-predicate ($or?))
 
+($let ((p (cons 1 2)))
+  ($check-predicate ($sequence ($or? ($let/cc cont1
+					(set-car! p cont1)
+					($or? ($let/cc cont2
+						(set-cdr! p cont2)
+						#t))))
+			       (eq? (car p) (cdr p)))))
+
+($let ((p (cons 1 2)))
+  ($check-predicate ($sequence ($and? ($let/cc cont1
+					(set-car! p cont1)
+					($or? ($let/cc cont2
+						(set-cdr! p cont2)
+						#t))))
+			       (eq? (car p) (cdr p)))))
+
+($let ((p (cons 1 2)))
+  ($check-predicate ($sequence ($or? ($let/cc cont1
+					(set-car! p cont1)
+					($and? ($let/cc cont2
+						(set-cdr! p cont2)
+						#t))))
+			       (eq? (car p) (cdr p)))))
 
 ;;;
 ;;; Error Checking and Robustness
