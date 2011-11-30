@@ -17,7 +17,6 @@
    in strings, vectors and bytevectors) for sizes (and maybe use a 
    typedef like lua)
 * fix:
-** fix/test the tty detection in the interpreter
 ** fix char-ready? and u8-ready? (r7rs)
 ** eliminate kread_ignore_whitespace_and_comments_from_port,
   replace for a boolean flag to tell read to reset source info
@@ -51,5 +50,5 @@
 ** add modules support to the interpreter (r7rs)
 ** eager comprehensions (at least for check.k) see SRFIs 42 and 78
    (srfi)
-** complex numbers
-** interval arithmetic
+** complex numbers (Kernel report)
+** interval arithmetic (Kernel report)

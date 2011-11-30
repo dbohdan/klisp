@@ -7,6 +7,7 @@
 #include "kobject.h"
 #include "kstate.h"
 #include "kerror.h"
+#include "kinteger.h"
 #include "ksystem.h"
 
 /* detect platform
@@ -53,4 +54,15 @@ TValue ksystem_jiffies_per_second(klisp_State *K)
     return i2tv(1);
 }
 
-#endif
+#endif /* HAVE_PLATFORM_JIFFIES */
+
+#ifndef HAVE_PLATFORM_ISATTY
+
+bool ksystem_isatty(klisp_State *K, TValue port)
+{
+    UNUSED(K);
+    UNUSED(port);
+    return false;
+}
+
+#endif /* HAVE_PLATFORM_ISATTY */

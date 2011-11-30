@@ -2,6 +2,10 @@
 #
 # Test of the stand-alone interpreter.
 #
+# Does not work in MSYS shell on Windows because
+# of different handling of command line arguments.
+# TODO: Write similar test script for Windows cmd.exe or PowerShell.
+#
 
 if [ $# -ne 1 ] ; then
     echo "usage: test-interpreter.sh KLISP-EXECUTABLE" 1>&2
@@ -25,8 +29,7 @@ check_match()
     expected="$1"
     actual="$2"
 
-    if expr match "$expected" '^/.*/$' >/dev/null ; then
-        regexp=`expr substr "$expected" 2 $((${#expected} - 2))`
+    if regexp=`expr match "$expected" '/\(.*\)/$'` ; then
         expr match "$actual" "$regexp" >/dev/null
     else
         test "$actual" = "$expected"
@@ -147,7 +150,7 @@ check_oi 'klisp> ' '' $KLISP -i
 
 # option: -v
 
-check_o '/^klisp [0-9.]+ .*/' $KLISP -v
+check_o '/klisp [0-9.]+ .*/' $KLISP -v
 
 # '--' on the command line
 

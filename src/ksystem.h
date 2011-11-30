@@ -11,6 +11,7 @@
 
 TValue ksystem_current_jiffy(klisp_State *K);
 TValue ksystem_jiffies_per_second(klisp_State *K);
+bool ksystem_isatty(klisp_State *K, TValue port);
 
 #endif
 
