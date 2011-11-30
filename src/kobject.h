@@ -623,7 +623,7 @@ union GCObject {
 #define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
 #define KDELETE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\x7f' }}}
 #define KVTAB_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\v' }}}
-
+#define KFORMFEED_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\f' }}}
 
 /* RATIONALE: the ones above can be used in initializers */
 #define KNIL ((TValue) KNIL_)

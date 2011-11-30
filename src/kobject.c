@@ -36,6 +36,7 @@ const TValue kescape = KESCAPE_;
 const TValue kspace = KSPACE_;
 const TValue kdelete = KDELETE_;
 const TValue kvtab = KVTAB_;
+const TValue kformfeed = KFORMFEED_;
 
 /*
 ** The name strings for all TValue types

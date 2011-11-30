@@ -156,9 +156,12 @@ void kw_print_double(klisp_State *K, TValue tv_double)
 }
 
 /*
-** Helper for printing strings (correcly escapes backslashes and
-** double quotes & prints embedded '\0's). It includes the surrounding
-** double quotes.
+** Helper for printing strings.
+** If !displayp it prints the surrounding double quotes
+** and escapes backslashes, double quotes,
+** and non printable chars (including NULL). 
+** if displayp it doesn't include surrounding quotes and just
+** converts non-printable characters to spaces
 */
 void kw_print_string(klisp_State *K, TValue str)
 {
@@ -175,6 +178,7 @@ void kw_print_string(klisp_State *K, TValue str)
 	 for every char */
 	for (ptr = buf; 
 	     i < size && *ptr != '\0' &&
+		 (*ptr >= 32 && *ptr < 127) &&
 		 (K->write_displayp || (*ptr != '\\' && *ptr != '"')); 
 	     i++, ptr++)
 	    ;
@@ -186,15 +190,42 @@ void kw_print_string(klisp_State *K, TValue str)
 	kw_printf(K, "%s", buf);
 	*ptr = ch;
 
-	while(i < size && (*ptr == '\0' || 
-        	(!K->write_displayp && (*ptr == '\\' || *ptr == '"')))) {
-	    if (*ptr == '\0') {
-		kw_printf(K, "%c", '\0'); /* this may not show in the terminal */
+	for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
+			   (!K->write_displayp && 
+			    (*ptr == '\\' || *ptr == '"')));
+    	      ++i, ptr++) {
+	    /* This are all ASCII printable characters + space, except \ and
+	       " if !displayp */
+	    char *fmt;
+	    /* must be uint32_t to support all unicode chars
+	     in the future */
+	    uint32_t arg;
+	    ch = *ptr;
+	    if (K->write_displayp) {
+		fmt = "%c";
+		/* in display only show tabs and newlines, 
+		 all other non printables are shown as spaces */
+		arg = (uint32_t) ((ch == '\r' || ch == '\n' || ch == '\t')? 
+				  ch : ' ');
 	    } else {
-		kw_printf(K, "\\%c", *ptr);
+		switch(*ptr) {
+		    /* regular \ escapes */
+		case '\"': fmt = "\\%c"; arg = (uint32_t) '"'; break;
+		case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
+		case '\0': fmt = "\\%c"; arg = (uint32_t) '0'; break;
+		case '\a': fmt = "\\%c"; arg = (uint32_t) 'a'; break;
+		case '\b': fmt = "\\%c"; arg = (uint32_t) 'b'; break;
+		case '\t': fmt = "\\%c"; arg = (uint32_t) 't'; break;
+		case '\n': fmt = "\\%c"; arg = (uint32_t) 'n'; break;
+		case '\r': fmt = "\\%c"; arg = (uint32_t) 'r'; break;
+		case '\v': fmt = "\\%c"; arg = (uint32_t) 'v'; break;
+		case '\f': fmt = "\\%c"; arg = (uint32_t) 'f'; break;
+		    /* for the rest of the non printable chars, 
+		       use hex escape */
+		default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
+		}
 	    }
-	    i++;
-	    ptr++;
+	    kw_printf(K, fmt, arg);
 	}
 	buf = ptr;
     }

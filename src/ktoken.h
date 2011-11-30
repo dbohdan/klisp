@@ -7,10 +7,11 @@
 #ifndef ktoken_h
 #define ktoken_h
 
+#include <stdio.h>
+#include <ctype.h>
+
 #include "kobject.h"
 #include "kstate.h"
-
-#include <stdio.h>
 
 /*
 ** Tokenizer interface
@@ -63,25 +64,17 @@ extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
 
-/* NOTE: only lowercase chars for hexa */
 inline bool ktok_is_digit(char ch, int32_t radix)
 {
+    ch = tolower(ch);
     return (ktok_is_numeric(ch) && (ch - '0') < radix) ||
 	(ktok_is_alphabetic(ch) && (10 + (ch - 'a')) < radix);
 }
 
 inline int32_t ktok_digit_value(char ch)
 {
+    ch = tolower(ch);
     return (ch <= '9')? ch - '0' : 10 + (ch - 'a');
-}
-
-/* This takes the args in sign magnitude form (sign & res),
-   but must work for any representation of negative numbers */
-inline bool can_add_digit(uint32_t res, bool sign, uint32_t new_digit, 
-			  int32_t radix)
-{
-    return (sign)? res <= -(INT32_MIN + new_digit) / radix :
-	res <= (INT32_MAX - new_digit) / radix;
 }
 
 #endif

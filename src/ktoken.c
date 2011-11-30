@@ -112,6 +112,7 @@ void ktok_init(klisp_State *K)
     kcharset_fill(ktok_alphabetic, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		  "abcdefghijklmnopqrstuvwxyz");
     kcharset_fill(ktok_numeric, "0123456789");
+    /* keep synchronized with cases in main tokenizer switch */
     kcharset_fill(ktok_whitespace, " \t\v\r\n\f");
 
     kcharset_fill(ktok_delimiter, "()\";");
@@ -330,8 +331,6 @@ TValue ktok_read_token(klisp_State *K)
     klisp_assert(ks_tbisempty(K));
 
     while(true) {
-	ktok_ignore_whitespace(K);
-
 	/* save the source info in case a token starts here */
 	ktok_save_source_info(K);
 
@@ -341,6 +340,14 @@ TValue ktok_read_token(klisp_State *K)
 	case EOF:
 	    ktok_getc(K);
 	    return KEOF;
+	case ' ':
+	case '\n':
+	case '\r':
+	case '\t':
+	case '\v': 
+	case '\f': /* Keep synchronized with whitespace chars */
+	    ktok_ignore_whitespace(K);
+	    continue;
 	case ';':
 	    ktok_ignore_single_line_comment(K);
 	    continue;
@@ -365,7 +372,6 @@ TValue ktok_read_token(klisp_State *K)
 	case '#': {
 	    ktok_getc(K);
 	    chi = ktok_peekc(K);
-
 	    switch(chi) {
 	    case EOF:
 		ktok_error(K, "# constant is too short");
@@ -431,7 +437,8 @@ TValue ktok_read_token(klisp_State *K)
 	    chi = ktok_getc(K);
 	    /* TODO add char to error */
 	unrecognized_error:
-	    ktok_error_extra(K, "unrecognized token starting char", ch2tv((char) chi));
+	    ktok_error_extra(K, "unrecognized token starting char", 
+			     ch2tv((char) chi));
 	    /* avoid warning */
 	    return KINERT;
 	}
@@ -653,42 +660,151 @@ TValue ktok_read_string(klisp_State *K)
     int i = 0;
 
     while(!done) {
-	int chi = ktok_getc(K);
-	char ch = (char) chi;
-
-	if (chi == EOF) {
+	int ch = ktok_getc(K);
+    just_read: /* this comes from escaped newline */
+	if (ch == EOF) {
 	    ktok_error(K, "EOF found while reading a string");
-	    /* avoid warning */
-	    return KINERT;
-	}
-	if (ch < 0 || ch > 127) {
+	    return KINERT; /* avoid warning */
+	} else 	if (ch < 0 || ch > 127) {
 	    ktok_error(K, "Non ASCII char found while reading a string");
-	    /* avoid warning */
-	    return KINERT;
-	} else if (ch == '"') {
+	    return KINERT; /* avoid warning */
+	}
+
+
+	if (ch == '"') {
 	    ks_tbadd(K, '\0');
 	    done = true;
-	} else {
-	    if (ch == '\\') {
-		chi = ktok_getc(K);
+	} else if (ch == '\\') {
+	    ch = ktok_getc(K);
 	
-		if (chi == EOF) {
+	    if (ch == EOF) {
+		ktok_error(K, "EOF found while reading a string");
+		return KINERT; /* avoid warning */
+	    }
+
+	    switch(ch) {
+		/* These two will self insert */
+	    case '"':
+	    case '\\':
+		break;
+		/* These are naming chars (like in c, mostly) */
+	    case '0':
+		ch = '\0';
+		break;
+	    case 'a':
+		ch = '\a';
+		break;
+	    case 'b':
+		ch = '\b';
+		break;
+	    case 't':
+		ch = '\t';
+		break;
+	    case 'n':
+		ch = '\n';
+		break;
+	    case 'r':
+		ch = '\r';
+		break;
+	    case 'v':
+		ch = '\v';
+		break;
+	    case 'f':
+		ch = '\f';
+		break;
+		/* 
+		** These signal an escaped newline (not included in string)
+		*/
+	    case ' ':
+	    case '\t':
+		/* eat up all intraline spacing */
+		while((ch = ktok_getc(K)) != EOF &&
+		      (ch == ' ' || ch == '\t'))
+		    ;
+		if (ch == EOF) {
 		    ktok_error(K, "EOF found while reading a string");
-		    /* avoid warning */
-		    return KINERT;
+		    return KINERT; /* avoid warning */
+		} else if (ch != '\n' && ch != '\r') {
+		    ktok_error(K, "Invalid char found after \\ while "
+			       "reading a string");
+		    return KINERT; /* avoid warning */
 		}
-
-		ch = (char) chi;
-
-		if (ch != '\\' && ch != '"') {
-		    ktok_error(K, "Invalid char after '\\' " 
+		/* fall through */
+	    case '\n': 
+	    case '\r':
+		/* use the r6rs definition for line end */
+		if (ch == 'r') {
+		    ch = ktok_peekc(K);
+		    if (ch != EOF && ch == '\n')
+			ktok_getc(K);
+		}
+		/* eat up all intraline spacing */
+		while((ch = ktok_getc(K)) != EOF &&
+		      (ch == ' ' || ch == '\t'))
+		    ;
+		/* this will check for EOF and continue reading the 
+		   string at the top of the loop */
+		goto just_read;
+		/* This is an hex escaped char */
+	    case 'x': {	   
+		/* enough space for any unicode char + 2 */
+		char buf[10];
+		int c = 0;
+		bool at_least_onep = false;
+		for(ch = ktok_getc(K); ch != EOF && ch != ';'; 
+		      ch = ktok_getc(K)) {
+		    if (!ktok_is_digit(ch, 16)) {
+			ktok_error_extra(K, "Invalid char found in string "
+					 "hex escape", ch2tv(ch));
+			return KINERT; /* avoid warning */
+		    } 
+		    /* 
+		    ** This will allow one space for '\0' and one extra
+		    ** char in case the value is too big, and so will 
+		    ** naturally result in a value outside the unicode
+		    ** range without the need to record any extra 
+		    ** characters other than the first 8 (without 
+		    ** leading zeroes).
+		    */
+		    at_least_onep = true;
+		    if (c < sizeof(buf) - 1 && (c > 0 || ch != '0')) 
+			buf[c++] = ch;
+		}
+		if (ch == EOF) {
+		    ktok_error(K, "EOF found while reading a string");
+		    return KINERT; /* avoid warning */
+		} else if (!at_least_onep) {
+		    ktok_error(K, "Empty hex escape found while reading "
+			       "a string");
+		    return KINERT; /* avoid warning */
+		} else if (c == 0) { /* this is the case of a NULL char */
+		    buf[c++] = '0'; 
+		}
+		buf[c++] = '\0';
+		/* buf now contains the hex value of the char */
+		TValue n;
+		int res = kinteger_read(K, buf, 16, &n, NULL);
+		/* can't fail, all digits were checked already */
+		klisp_assert(res == true);
+		if (!ttisfixint(n) || ivalue(n) > 127) {
+		    ktok_error(K, "hex escaped char out of ASCII range "
 			       "while reading a string");
-		    /* avoid warning */
-		    return KINERT;
+		    return KINERT; /* avoid warning */
 		}
-	    } 
+		/* all ok, we pass the char */
+		ch = (char) ivalue(n);
+		break;
+	    }
+	    default:
+		ktok_error_extra(K, "Invalid char after '\\' " 
+				 "while reading a string", ch2tv(ch));
+		return KINERT; /* avoid warning */
+	    }
 	    ks_tbadd(K, ch);
-	    i++;
+	    ++i;
+	} else { 
+	    ks_tbadd(K, ch);
+	    ++i;
 	}
     }
     /* TEMP: for now strings "read" are mutable but strings "loaded" are
@@ -722,7 +838,7 @@ struct kspecial_token {
 			{ "#undefined", KUNDEF_ },
 			/* 
 			** Character names 
-			** (r7rs + vtab and linefeed from r6rs) 
+			** (r7rs + vtab from r6rs) 
 			*/
 			{ "#\\null", KNULL_ },
 			{ "#\\alarm", KALARM_ },
@@ -733,11 +849,8 @@ struct kspecial_token {
 			{ "#\\escape", KESCAPE_ },
 			{ "#\\space", KSPACE_ }, /* kernel */
 			{ "#\\delete", KDELETE_ },
-			/* r6rs, only */
-			{ "#\\vtab", KVTAB_ }, 
-			{ "#\\linefeed", KNEWLINE_ }, /* same as \newline */
-			{ "#\\esc", KESCAPE_ }, /* same as r7rs \escape */
-			{ "#\\nul", KNULL_ } /* same as r7rs \NULL */
+			{ "#\\vtab", KVTAB_ }, /* r6rs, only */
+			{ "#\\formfeed", KFORMFEED_ } /* r6rs in strings */
  }; 
 
 #define MAX_EXT_REP_SIZE 64  /* all special tokens have less than 64 chars */
