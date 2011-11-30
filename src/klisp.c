@@ -148,7 +148,7 @@ static int report (klisp_State *K, int status)
 
 static void print_version(void) 
 {
-    k_message(NULL, KLISP_RELEASE "  " KLISP_COPYRIGHT);
+    printf("%s\n", KLISP_RELEASE "  " KLISP_COPYRIGHT);
 }
 
 /* REFACTOR maybe these should be moved to a general place to be used
@@ -541,11 +541,14 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
 
 static int handle_klispinit(klisp_State *K) 
 {
-  const char *init = getenv(KLISP_INIT);
-  if (init == NULL) 
-      return EXIT_SUCCESS;
-  else 
-      return dostring(K, init, "=" KLISP_INIT);
+    const char *init = getenv(KLISP_INIT);
+    int res;
+    if (init == NULL) 
+	res = EXIT_SUCCESS;
+    else 
+	res = dostring(K, init, "=" KLISP_INIT);
+
+    return res;
 }
 
 /* This is weird but was done to follow lua scheme */

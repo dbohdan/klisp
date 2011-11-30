@@ -61,6 +61,12 @@ bool ksystem_isatty(klisp_State *K, TValue port)
      *
      * TEMP: use GetConsoleMode()
      */
+/* 
+** Lua uses _isatty in Windows, shouldn't that work?
+** e.g. _isatty(_fileno(kport_file(port)))
+** I'll try to test it when I have access to a Windows box
+** Andres Navarro
+*/
 
     DWORD mode;
     return GetConsoleMode(h, &mode);

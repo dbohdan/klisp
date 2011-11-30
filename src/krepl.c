@@ -45,13 +45,10 @@ void do_repl_read(klisp_State *K)
 
     TValue port = kcdr(K->kd_in_port_key);
     klisp_assert(kfport_file(port) == stdin);
-#if 0 /* Let's disable this for now */
-    /* workaround to the problem of the dangling '\n' in repl 
+    /* Workaround to the problem of the dangling '\n' in repl 
        (from previous line) */
-    kread_ignore_whitespace_and_comments_from_port(K, port);
-    
-    kport_reset_source_info(port);
-#endif
+    kread_clear_leading_whitespace_from_port(K, port);
+    kport_reset_source_info(port); /* always start with a clean source info */
     obj = kread_from_port(K, port, true); /* read mutable pairs */
     kapply_cc(K, obj);
 }

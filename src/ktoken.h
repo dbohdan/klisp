@@ -33,7 +33,7 @@ inline int ktok_getc(klisp_State *K) { return ktok_peekc_getc(K, false); }
 inline int ktok_peekc(klisp_State *K) { return ktok_peekc_getc(K, true); }
 
 /* needed by the repl */
-void ktok_ignore_whitespace_and_comments(klisp_State *K);
+void ktok_ignore_whitespace(klisp_State *K);
 
 /* This is needed for string->symbol to check if a symbol has external
    representation as an identifier */

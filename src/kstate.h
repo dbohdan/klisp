@@ -50,12 +50,14 @@ typedef struct stringtable {
 
 /* NOTE: when adding TValues here, remember to add them to
    markroot in kgc.c!! */
+/* TODO split this struct in substructs (e.g. run_context, tokenizer, 
+   gc, etc) */
 struct klisp_State {
     stringtable strt;  /* hash table for immutable strings & symbols */
     TValue name_table; /* hash tables for naming objects */
     TValue cont_name_table; /* hash tables for naming continuation functions*/
-    TValue curr_cont;
 
+    TValue curr_cont;
     /*
     ** If next_env is NIL, then the next_func from a continuation
     ** and otherwise next_func is from an operative
@@ -134,9 +136,10 @@ struct klisp_State {
     TValue ktok_sexp_comment;
 
     /* WORKAROUND for repl */
-    bool ktok_seen_eof;
+    bool ktok_seen_eof; /* to keep track of eofs that later dissapear */
+    /* source info tracking */
     ksource_info_t ktok_source_info;
-    /* tokenizer buffer */
+    /* tokenizer buffer (XXX this could be done with a string) */
     int32_t ktok_buffer_size;
     int32_t ktok_buffer_idx;
     char *ktok_buffer;
@@ -151,11 +154,13 @@ struct klisp_State {
     /* writer */
     bool write_displayp;
 
-    /* auxiliary stack */
+    /* auxiliary stack (XXX this could be a vector) */
     int32_t ssize; /* total size of array */
     int32_t stop; /* top of the stack (all elements are below this index) */
     TValue *sbuf;
 
+    /* These could be eliminated if a stack was adopted for the c interface */
+    /* (like in lua) */
     /* TValue stack to protect values from gc, must not grow, otherwise 
        it may call the gc */
     int32_t rooted_tvs_top;
@@ -166,6 +171,7 @@ struct klisp_State {
     int32_t rooted_vars_top;
     TValue *rooted_vars_buf[GC_PROTECT_SIZE];
 
+    /* XXX These should be replaced with calls to krooted_vars_push */
     /* These three are useful for constructing lists by means of set-car &
        set-cdr. The idea is that these dummy pairs start as the head of 
        the list (protecting the entire chain from GC) and at the end of the

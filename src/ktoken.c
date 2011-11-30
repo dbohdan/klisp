@@ -532,29 +532,6 @@ void ktok_ignore_whitespace(klisp_State *K)
     }
 }
 
-/* XXX temp for repl */
-void ktok_ignore_whitespace_and_comments(klisp_State *K)
-{
-    /* NOTE: if it's not whitespace do nothing (even on eof) */
-    while(true) {
-	int chi = ktok_peekc(K);
-
-	if (chi == EOF) {
-	    return;
-	} else {
-	    char ch = (char) chi;
-	    if (ktok_is_whitespace(ch)) {
-		ktok_getc(K);
-	    } else if (ch == ';') {
-		ktok_ignore_single_line_comment(K);
-	    } else {
-		return;
-	    }
-	}
-    }
-}
-
-
 /*
 ** Delimiter checking
 */

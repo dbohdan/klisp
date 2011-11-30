@@ -145,12 +145,14 @@ check_oi '2' '(display (+ 1 1))' $KLISP -
 check_o 'abcdef' $KLISP '-e (display "abc")' '-e' '(display "def")'
 
 # option: -i
+# The interpreter always show name and version
+# WAS check_oi 'klisp> ' '' $KLISP -i
 
-check_oi 'klisp> ' '' $KLISP -i
+check_oi '/klisp [0-9.][0-9.]* .*\n.*klisp> /' '' $KLISP -i
 
 # option: -v
 
-check_o '/klisp [0-9.]+ .*/' $KLISP -v
+check_o '/klisp [0-9.][0-9.]* .*/' $KLISP -v
 
 # '--' on the command line
 
@@ -168,6 +170,11 @@ check_os '' 1 $KLISP -e '(exit ())'
 check_os '' 0 $KLISP -e '(exit)'
 check_os '' 0 $KLISP -e '1'
 check_os '' 3 $KLISP -e '(apply-continuation root-continuation 3)'
+
+## FIX the root continuation should exit without running any more 
+## arguments, but it doesn't...
+check_os '' 0 $KLISP -e '(exit 0)' -e '(exit 1)'
+check_os '' 1 $KLISP -e '(exit 1)' -e '(exit 0)'
 
 # KLISP_INIT environment variable
 
@@ -192,10 +199,7 @@ check_o '("/dev/null")' $KLISP -e '(write(get-script-arguments))' -- /dev/null
 # interpreter arguments
 #  (get-interpreter-arguments) returns all command line
 #  arguments.
-#
-#  TODO: The man page says that (interpreter-arguments)
-# returns the arguments _before_ the script name.
-#
+
 
 check_o "(\"$KLISP\" \"-e\" \"(write(get-interpreter-arguments))\")" \
     $KLISP -e '(write(get-interpreter-arguments))'

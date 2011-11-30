@@ -30,7 +30,12 @@ the klisp program in file
 is loaded and evaluated.
 All evaluations, including the initialization 
 that is described below, take place in the same
-(initially) standard environment.
+(initially) standard environment. All values that
+result from these evaluation are discarded, but
+if the root continuation or error continuation
+are passed value, the interpretation of arguments
+is interrupted and the EXIT_STATUS is as described 
+in the corresponding section.
 The given
 .I args
 are available to
@@ -42,9 +47,10 @@ then they should be quoted
 (but note that the quotes will be removed by the shell).
 The arguments in the returned string start with the string
 .RI ' script '.
-The arguments given in the command line before
+All the arguments given in the command line
 .IR script ,
-including the name of the interpreter,
+including the name of the interpreter, options,
+, the script, and its arguments
 are available via the applicative 
 .RI ' get-interpreter-arguments '.
 .LP
@@ -119,8 +125,8 @@ or
 reach EOF or if there is no script,
 .B EXIT_SUCCESS 
 is returned.
-If there is an error during the evaluation of
-the options, 
+If the root continuation is passed an object during
+init, arguments or script evaluation 
 .B EXIT_FAILURE
 is returned.
 If the 
