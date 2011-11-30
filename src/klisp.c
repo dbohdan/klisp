@@ -34,9 +34,19 @@
 #include "kerror.h"
 #include "krepl.h"
 #include "ksystem.h"
-#include "kghelpers.h" /* for do_return_value, do_pass_value and do_seq */
+#include "kghelpers.h" /* for do_pass_value and do_seq */
 
 static const char *progname = KLISP_PROGNAME;
+
+/* 
+** Three possible status after an evaluation:
+** error: the error continuation was passed a value -> EXIT_FAILURE
+** root: the root continuation was passed a value -> status depends on value
+** continue: normally completed evaluation, continue with next argument 
+*/
+#define STATUS_ERROR -1
+#define STATUS_CONTINUE 0
+#define STATUS_ROOT 1
 
 static void print_usage (void) 
 {
@@ -138,7 +148,7 @@ static void show_error(klisp_State *K, TValue obj) {
 
 static int report (klisp_State *K, int status) 
 {
-    if (status != EXIT_SUCCESS) {
+    if (status == STATUS_ERROR) {
 	const char *msg = "Error!";
 	k_message(progname, msg);
 	show_error(K, K->next_value);
@@ -212,9 +222,25 @@ void do_int_mark_error(klisp_State *K)
     kapply_cc(K, error_obj);
 }
 
+void do_int_mark_root(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    /*
+    ** xparams[0]: rootp pointer
+    */
+    UNUSED(obj); /* ignore obj */
+    bool *rootp = (bool *) pvalue(xparams[0]);
+    *rootp = false; /* mark that we didn't explicitly call the root cont */
+    /* pass #INERT to the root continuation */
+    kapply_cc(K, KINERT);
+}
+
 static int dostring (klisp_State *K, const char *s, const char *name) 
 {
     bool errorp = false; /* may be set to true in error handler */
+    bool rootp = true; /* may be set to false in continuation */
 
     UNUSED(name); /* could use as filename?? */
     /* create a string input port */
@@ -253,11 +279,11 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     krooted_tvs_push(K, inner_cont);
 
     /* This continuation will discard the result of the evaluation
-       and pass the root continuation #inert instead. This has to do with
-       the way the exit value of the interpreter is calculated (see man page)
+       and return #inert instead, it will also signal via rootp = false
+       that the evaluation didn't explicitly invoke the root continuation
     */
-    TValue discard_cont = kmake_continuation(K, inner_cont, do_return_value,
-					     1, KINERT);
+    TValue discard_cont = kmake_continuation(K, inner_cont, do_int_mark_root,
+					     1, p2tv(&rootp));
 
     krooted_tvs_pop(K); /* pop inner cont */
     krooted_tvs_push(K, discard_cont);
@@ -278,7 +304,8 @@ static int dostring (klisp_State *K, const char *s, const char *name)
 
     klispS_run(K);
 
-    int status = errorp? EXIT_FAILURE : EXIT_SUCCESS;
+    int status = errorp? STATUS_ERROR : 
+	(rootp? STATUS_ROOT : STATUS_CONTINUE);
     /* get the standard environment again in K->next_env */
     K->next_env = env;
     return report(K, status);
@@ -319,6 +346,7 @@ void do_file_read(klisp_State *K)
 static int dofile(klisp_State *K, const char *name) 
 {
     bool errorp = false; /* may be set to true in error handler */
+    bool rootp = true; /* may be set to false in continuation */
 
     /* create a file input port (unless it's stdin, then just use) */
     TValue port;
@@ -379,11 +407,11 @@ static int dofile(klisp_State *K, const char *name)
 
 
     /* This continuation will discard the result of the evaluation
-       and pass the root continuation #inert instead. This has to do with
-       the way the exit value of the interpreter is calculated (see man page)
+       and return #inert instead, it will also signal via rootp = false
+       that the evaluation didn't explicitly invoke the root continuation
     */
-    TValue discard_cont = kmake_continuation(K, inner_cont, do_return_value,
-					     1, KINERT);
+    TValue discard_cont = kmake_continuation(K, inner_cont, do_int_mark_root,
+					     1, p2tv(&rootp));
 
     krooted_tvs_pop(K); /* pop inner cont */
     krooted_tvs_push(K, discard_cont);
@@ -404,7 +432,8 @@ static int dofile(klisp_State *K, const char *name)
 
     klispS_run(K);
 
-    int status = errorp? EXIT_FAILURE : EXIT_SUCCESS;
+    int status = errorp? STATUS_ERROR : 
+	(rootp? STATUS_ROOT : STATUS_CONTINUE);
 
     /* get the standard environment again in K->next_env */
     K->next_env = env;
@@ -544,7 +573,7 @@ static int handle_klispinit(klisp_State *K)
     const char *init = getenv(KLISP_INIT);
     int res;
     if (init == NULL) 
-	res = EXIT_SUCCESS;
+	res = STATUS_CONTINUE;
     else 
 	res = dostring(K, init, "=" KLISP_INIT);
 
@@ -555,7 +584,7 @@ static int handle_klispinit(klisp_State *K)
 struct Smain {
     int argc;
     char **argv;
-    int status;
+    int status; /* STATUS_ROOT, STATUS_ERROR, STATUS_CONTINUE */
 };
 
 static void pmain(klisp_State *K) 
@@ -563,7 +592,10 @@ static void pmain(klisp_State *K)
     /* This is weird but was done to follow lua scheme */
     struct Smain *s = (struct Smain *) pvalue(K->next_value);
     char **argv = s->argv;
-    s->status = EXIT_SUCCESS;
+    s->status = STATUS_CONTINUE;
+    /* this is needed in case there are no arguments and no init */
+    K->next_value = KINERT;
+
 
     /* There is a standard env in K->next_env, a common one is used for all 
        evaluations (init, expression args, script/repl) */
@@ -582,7 +614,7 @@ static void pmain(klisp_State *K)
 
     /* init (eval KLISP_INIT env variable contents) */
     s->status = handle_klispinit(K);
-    if (s->status != EXIT_SUCCESS)
+    if (s->status != STATUS_CONTINUE)
 	return;
 
     bool has_i = false, has_v = false, has_e = false;
@@ -603,14 +635,14 @@ static void pmain(klisp_State *K)
     
     s->status = runargs(K, argv, (script > 0) ? script : s->argc);
 
-    if (s->status != EXIT_SUCCESS)
+    if (s->status != STATUS_CONTINUE)
 	return;
 
     if (script > 0) {
 	s->status = handle_script(K, argv, script);
     }
 
-    if (s->status != EXIT_SUCCESS)
+    if (s->status != STATUS_CONTINUE)
 	return;
 
     if (has_i) { 
@@ -642,7 +674,8 @@ int main(int argc, char *argv[])
 
     pmain(K);
 
-    if (s.status == EXIT_SUCCESS) {
+    /* convert s.status to either EXIT_SUCCESS or EXIT_FAILURE */
+    if (s.status == STATUS_CONTINUE || s.status == STATUS_ROOT) {
 	/* must check value passed to the root continuation to
 	   return proper exit status */
 	if (ttisinert(K->next_value)) {
@@ -654,6 +687,8 @@ int main(int argc, char *argv[])
 	} else {
 	    s.status = EXIT_FAILURE;
 	}
+    } else { /* s.status == STATUS_ERROR */
+	s.status = EXIT_FAILURE;
     }
 
     klisp_close(K);
