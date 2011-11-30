@@ -548,7 +548,7 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
 	tail = kimm_cons(K, obj, tail);
     }
     /* Store the script argument list */
-    obj = ksymbol_new(K, "get-script-arguments", KNIL);
+    obj = ksymbol_new_b(K, "get-script-arguments", KNIL);
     klisp_assert(kbinds(K, K->ground_env, obj));
     obj = kunwrap(kget_binding(K, K->ground_env, obj));
     tv2op(obj)->extra[0] = tail;
@@ -559,7 +559,7 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
 	tail = kimm_cons(K, obj, tail);
     }
     /* Store the interpreter argument list */
-    obj = ksymbol_new(K, "get-interpreter-arguments", KNIL);
+    obj = ksymbol_new_b(K, "get-interpreter-arguments", KNIL);
     klisp_assert(kbinds(K, K->ground_env, obj));
     obj = kunwrap(kget_binding(K, K->ground_env, obj));
     tv2op(obj)->extra[0] = tail;

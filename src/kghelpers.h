@@ -515,7 +515,7 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 /* TODO add si to the symbols */
 #if KTRACK_SI
 #define add_operative(K_, env_, n_, fn_, ...)		\
-    { symbol = ksymbol_new(K_, n_, KNIL);		\
+    { symbol = ksymbol_new_b(K_, n_, KNIL);		\
     value = kmake_operative(K_, fn_, __VA_ARGS__);	\
     TValue str = kstring_new_b_imm(K_, __FILE__);	\
     TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),	\
@@ -524,7 +524,7 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
     kadd_binding(K_, env_, symbol, value); }
 
 #define add_applicative(K_, env_, n_, fn_, ...)				\
-    { symbol = ksymbol_new(K_, n_, KNIL);				\
+    { symbol = ksymbol_new_b(K_, n_, KNIL);				\
 	value = kmake_applicative(K_, fn_, __VA_ARGS__);		\
 	TValue str = kstring_new_b_imm(K_, __FILE__);			\
 	TValue si = kcons(K, str, kcons(K_, i2tv(__LINE__),		\
@@ -534,19 +534,19 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 	kadd_binding(K_, env_, symbol, value); }
 #else /* KTRACK_SI */
 #define add_operative(K_, env_, n_, fn_, ...)		\
-    { symbol = ksymbol_new(K_, n_, KNIL);		\
+    { symbol = ksymbol_new_b(K_, n_, KNIL);		\
 	value = kmake_operative(K_, fn_, __VA_ARGS__);	\
 	kadd_binding(K_, env_, symbol, value); }
 
 #define add_applicative(K_, env_, n_, fn_, ...)			\
-    { symbol = ksymbol_new(K_, n_);				\
+    { symbol = ksymbol_new_b(K_, n_, KNIL);				\
 	value = kmake_applicative(K_, fn_, __VA_ARGS__);	\
 	kadd_binding(K_, env_, symbol, value); }
 #endif /* KTRACK_SI */
 
 #define add_value(K_, env_, n_, v_)			\
     { value = v_;					\
-	symbol = ksymbol_new(K_, n_, KNIL);		\
+	symbol = ksymbol_new_b(K_, n_, KNIL);		\
 	kadd_binding(K_, env_, symbol, v_); }
 
 #endif

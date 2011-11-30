@@ -34,8 +34,7 @@
 * applicatives: 
 ** number->string (r7rs)
 ** string->number (r7rs)
-* reader
-** symbol escapes (r7rs)
+* reader/writer
 ** syntax support for complex numbers (Kernel report)
 * other
 ** optional argument to member? (r7rs)

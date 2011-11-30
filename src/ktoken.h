@@ -35,10 +35,9 @@ inline int ktok_peekc(klisp_State *K) { return ktok_peekc_getc(K, true); }
 /* needed by the repl */
 void ktok_ignore_whitespace(klisp_State *K);
 
-/* This is needed for string->symbol to check if a symbol has external
+/* This is needed for kwrite to check if a symbol has external
    representation as an identifier */
 /* REFACTOR: think out a better interface to all this */
-
 /*
 ** Char set contains macro interface
 */
@@ -49,7 +48,8 @@ void ktok_ignore_whitespace(klisp_State *K);
 typedef uint32_t kcharset[8];
 
 extern kcharset ktok_alphabetic, ktok_numeric, ktok_whitespace;
-extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
+extern kcharset ktok_delimiter, ktok_extended;
+extern kcharset ktok_subsequent, ktok_initial;
 
 #define ktok_is_alphabetic(chi_) kcharset_contains(ktok_alphabetic, chi_)
 #define ktok_is_numeric(chi_) kcharset_contains(ktok_numeric, chi_)
@@ -57,6 +57,7 @@ extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 #define ktok_is_whitespace(chi_) kcharset_contains(ktok_whitespace, chi_)
 #define ktok_is_delimiter(chi_) ((chi_) == EOF ||			\
 				 kcharset_contains(ktok_delimiter, chi_))
+#define ktok_is_initial(chi_) kcharset_contains(ktok_initial, chi_)
 #define ktok_is_subsequent(chi_) kcharset_contains(ktok_subsequent, chi_)
 
 #define kcharset_contains(kch_, ch_) \

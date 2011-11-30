@@ -822,11 +822,6 @@ int32_t kmark_count;
 #define kis_mutable(o_) ((tv_get_kflags(o_) & K_FLAG_IMMUTABLE) == 0)
 #define kis_immutable(o_) (!kis_mutable(o_))
 
-/* KFlags for symbols */
-/* has external representation (identifiers) */
-#define K_FLAG_EXT_REP 0x01
-#define khas_ext_rep(s_) ((tv_get_kflags(s_) & K_FLAG_EXT_REP) != 0)
-
 /* KFlags for marking continuations */
 #define K_FLAG_OUTER 0x01
 #define K_FLAG_INNER 0x02

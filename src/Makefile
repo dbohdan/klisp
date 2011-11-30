@@ -280,7 +280,7 @@ kstate.o: kstate.c klisp.h kobject.h klimits.h klispconf.h kstate.h \
 kstring.o: kstring.c kstring.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kgc.h
 ksymbol.o: ksymbol.c ksymbol.h kobject.h klimits.h klisp.h klispconf.h \
- kstate.h ktoken.h kmem.h kstring.h kgc.h
+ kstate.h kmem.h kstring.h kgc.h
 ksystem.o: ksystem.c kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kerror.h kpair.h kgc.h ksystem.h
 ksystem.posix.o: ksystem.posix.c kobject.h klimits.h klisp.h klispconf.h \
@@ -298,7 +298,7 @@ kvector.o: kvector.c kvector.h kobject.h klimits.h klisp.h klispconf.h \
 kwrite.o: kwrite.c kwrite.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kinteger.h imath.h krational.h imrat.h kreal.h \
  kpair.h kgc.h kstring.h ksymbol.h kerror.h ktable.h kport.h \
- kenvironment.h kbytevector.h kvector.h
+ kenvironment.h kbytevector.h kvector.h ktoken.h
 imath.o: imath.c imath.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kerror.h kpair.h kgc.h
 imrat.o: imrat.c imrat.h imath.h kobject.h klimits.h klisp.h klispconf.h \

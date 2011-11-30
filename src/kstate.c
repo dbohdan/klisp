@@ -223,7 +223,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     kset_source_info(K, K->eval_op, si);
 
     /* TODO: si */
-    TValue eval_name = ksymbol_new(K, "eval", KNIL);
+    TValue eval_name = ksymbol_new_b(K, "eval", KNIL);
     ktry_set_name(K, K->eval_op, eval_name);
     
     K->list_app = kmake_applicative(K, list, 0), line_number = __LINE__;
@@ -238,7 +238,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* MAYBE: fix it so we can remove module_params_sym from roots */
     /* TODO si */
-    K->module_params_sym = ksymbol_new(K, "module-parameters", KNIL);
+    K->module_params_sym = ksymbol_new_b(K, "module-parameters", KNIL);
 
     /* Create the root and error continuation (will be added to the 
      environment in kinit_ground_env) */

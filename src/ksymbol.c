@@ -8,8 +8,6 @@
 
 #include "ksymbol.h"
 #include "kobject.h"
-/* for identifier checking */
-#include "ktoken.h"
 #include "kstate.h"
 #include "kmem.h"
 #include "kgc.h"
@@ -19,10 +17,13 @@
 /* NOTE: symbols can have source info, they should be compared with
    tv_sym_equal, NOT tv_equal */
 
-/* TEMP: for now only interned symbols are the ones that don't 
-   have source info (like those created with string->symbol) */
-TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size, 
-		     TValue si, bool identifierp)
+/* No case folding is performed by these constructors */
+
+/* 
+** Interned symbols are only the ones that don't have source info 
+** (like those created with string->symbol) 
+*/
+TValue ksymbol_new_bs(klisp_State *K, const char *buf, int32_t size, TValue si)
 {
     /* First calculate the hash */
     uint32_t h = size; /* seed */
@@ -71,7 +72,7 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
 	   differently */
 	new_sym->gct = klispC_white(K);
 	new_sym->tt = K_TSYMBOL;
-	new_sym->kflags = identifierp? K_FLAG_EXT_REP : 0;
+	new_sym->kflags = 0;
 	new_sym->si = NULL;
 
 	/* symbol specific fields */
@@ -93,8 +94,7 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     } else { /* non nil source info */
 	/* link it with regular objects and save source info */
 	/* header + gc_fields */
-	klispC_link(K, (GCObject *) new_sym, K_TSYMBOL,
-	    identifierp? K_FLAG_EXT_REP : 0);
+	klispC_link(K, (GCObject *) new_sym, K_TSYMBOL, 0);
 	
 	/* symbol specific fields */
 	new_sym->str = new_str;
@@ -107,59 +107,18 @@ TValue ksymbol_new_g(klisp_State *K, const char *buf, int32_t size,
     return ret_tv;
 }
 
-/* for indentifiers */
-TValue ksymbol_new_i(klisp_State *K, const char *buf, int32_t size, TValue si)
-{
-    return ksymbol_new_g(K, buf, size, si, true);
-}
-
-/* for indentifiers with no size */
-TValue ksymbol_new(klisp_State *K, const char *buf, TValue si)
+/* for c strings with unknown size */
+TValue ksymbol_new_b(klisp_State *K, const char *buf, TValue si)
 {
     int32_t size = (int32_t) strlen(buf);
-    return ksymbol_new_g(K, buf, size, si, true);
+    return ksymbol_new_bs(K, buf, size, si);
 }
 
 /* for string->symbol */
 /* GC: assumes str is rooted */
-TValue ksymbol_new_check_i(klisp_State *K, TValue str, TValue si)
+TValue ksymbol_new_str(klisp_State *K, TValue str, TValue si)
 {
-    int32_t size = kstring_size(str);
-    char *buf = kstring_buf(str);
-    bool identifierp;
-    
-    /* this is necessary because the empty symbol isn't an identifier */
-    /* MAYBE it should throw an error if the string is empty */
-    /* XXX: The exact syntax for identifiers isn't there in the report
-       yet, here we use something like scheme, and the same as in ktoken.h
-       (details, leading numbers '.', '+' and '-' are a no go, but '+' and
-       '-' are an exception.
-    */
-    identifierp = (size > 0);
-    if (identifierp) {
-	char first = *buf;
-	buf++;
-	size--;
-	if (first == '+' || first == '-')
-	    identifierp = (size == 0);
-	else if (first == '.' || ktok_is_numeric(first))
-	    identifierp = false;
-	else 
-	    identifierp = ktok_is_subsequent(first);
-
-	while(identifierp && size--) {
-	    if (!ktok_is_subsequent(*buf))
-		identifierp = false;
-	    else
-		buf++;
-	}
-    }
-    /* recover size & buf*/
-    size = kstring_size(str);
-    buf = kstring_buf(str);
-
-    TValue new_sym = ksymbol_new_g(K, buf, size, si, identifierp);
-    return new_sym;
+    return ksymbol_new_bs(K, kstring_buf(str), kstring_size(str), si);
 }
 
 bool ksymbolp(TValue obj) { return ttissymbol(obj); }

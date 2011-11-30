@@ -5,23 +5,10 @@
 */
 
 /*
-** Symbols should be converted to some standard case before interning
-** (in this case downcase)
-*/
-
-/*
 ** TODO:
 **
-** From the Report:
-**
-** - Support for complete number syntax (complex)
-** 
-** NOT from the Report:
+** - Support for complete number syntax (complex) (report)
 ** - Support for unicode (strings, char and symbols).
-** - srfi-30 stype #| ... |# nested comments and srfi-62 style #;
-**    sexp comments.
-** - more named chars (like #\tab and in strings "\t")
-** - numeric escaped chars (like #\u0020)
 **
 */
 #include <stdio.h>
@@ -86,7 +73,8 @@ void kcharset_union(kcharset chs, kcharset chs2)
 ** Character sets for classification
 */
 kcharset ktok_alphabetic, ktok_numeric, ktok_whitespace;
-kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
+kcharset ktok_delimiter, ktok_extended;
+kcharset ktok_initial, ktok_subsequent;
 
 /*
 ** Special Tokens 
@@ -101,7 +89,9 @@ kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 ** char in the car and nil in the cdr.
 ** srfi-38 tokens are also represented with a char in the car indicating if 
 ** it's a defining token ('=') or a referring token ('#') and the number in 
-** the cdr. This way a special token can be easily tested for (with ttispair)
+** the cdr. 
+** The sexp comment token with a ';' in the car.
+** This way a special token can be easily tested for (with ttispair)
 ** and easily classified (with switch(chvalue(kcar(tok)))).
 **
 */
@@ -118,10 +108,18 @@ void ktok_init(klisp_State *K)
     kcharset_fill(ktok_delimiter, "()\";");
     kcharset_union(ktok_delimiter, ktok_whitespace);
 
-    kcharset_fill(ktok_extended, "!$%&*+-./:<=>?@^_~");
+    kcharset_fill(ktok_initial, "!$%&*./:<=>?@^_~");
+    kcharset_union(ktok_initial, ktok_alphabetic);
+
+    /* N.B. Unlike in scheme, kernel admits both '.' and 
+       '@' as initial chars in identifiers, but doesn't allow
+       '+' or '-'. There are 3 exceptions:
+       both '+' and '-' alone are identifiers and '.' alone is
+       not an identifier */
+    kcharset_fill(ktok_extended, "+-");
 
     kcharset_empty(ktok_subsequent);
-    kcharset_union(ktok_subsequent, ktok_alphabetic);
+    kcharset_union(ktok_subsequent, ktok_initial);
     kcharset_union(ktok_subsequent, ktok_numeric);
     kcharset_union(ktok_subsequent, ktok_extended);
 }
@@ -314,13 +312,15 @@ void ktok_ignore_whitespace(klisp_State *K);
 void ktok_ignore_single_line_comment(klisp_State *K);
 void ktok_ignore_multi_line_comment(klisp_State *K);
 bool ktok_check_delimiter(klisp_State *K);
+char ktok_read_hex_escape(klisp_State *K);
 TValue ktok_read_string(klisp_State *K);
 TValue ktok_read_special(klisp_State *K);
 TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
 			bool has_exactp, bool exactp, bool has_radixp, 
 			int32_t radix);
 TValue ktok_read_maybe_signed_numeric(klisp_State *K);
-TValue ktok_read_identifier(klisp_State *K);
+TValue ktok_read_identifier_or_dot(klisp_State *K);
+TValue ktok_read_bar_identifier(klisp_State *K);
 int ktok_read_until_delimiter(klisp_State *K);
 
 /*
@@ -357,17 +357,10 @@ TValue ktok_read_token(klisp_State *K)
 	case ')':
 	    ktok_getc(K);
 	    return K->ktok_rparen;
-	case '.':
-	    ktok_getc(K);
-	    if (ktok_check_delimiter(K))
-		return K->ktok_dot;
-	    else {
-		ktok_error(K, "no delimiter found after dot");
-		/* avoid warning */
-		return KINERT;
-	    }
 	case '"':
 	    return ktok_read_string(K);
+	case '|':
+	    return ktok_read_bar_identifier(K);
 /* TODO use read_until_delimiter in all these cases */
 	case '#': {
 	    ktok_getc(K);
@@ -405,6 +398,8 @@ TValue ktok_read_token(klisp_State *K)
 	case '+': case '-':
 	    /* signed number, no exactness or radix indicator */
 	    return ktok_read_maybe_signed_numeric(K);
+	case '\\': /* this is a symbol that starts with an hex escape */
+	    /* These should be kept synchronized with initial */
 	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': 
 	case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': 
 	case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': 
@@ -416,27 +411,14 @@ TValue ktok_read_token(klisp_State *K)
 	case '!': case '$': case '%': case '&': case '*': case '/': case ':': 
 	case '<': case '=': case '>': case '?': case '@': case '^': case '_': 
 	case '~': 
+	case '.': /* this is either a symbol or a dot token */
 	    /*
-	    ** NOTE: the cases for '+', '-', '.' and numbers were already 
-	    ** considered so identifier-subsequent is used instead of 
-	    ** identifier-first-char (in the cases above)
+	    ** N.B.: the cases for '+', and '-', were already 
+	    ** considered 
 	    */
-	    return ktok_read_identifier(K);
-	case '|':
-	    ktok_getc(K);
-	    chi = ktok_peekc(K);
-	    if (chi == EOF || chi != '#') {
-		chi = '|';
-		goto unrecognized_error;
-	    }
-	    ktok_getc(K);
- 	    ktok_error(K, "unmatched multiline comment close (\"|#\")");
-	    /* avoid warning */
-	    return KINERT;
+	    return ktok_read_identifier_or_dot(K);
 	default:
 	    chi = ktok_getc(K);
-	    /* TODO add char to error */
-	unrecognized_error:
 	    ktok_error_extra(K, "unrecognized token starting char", 
 			     ch2tv((char) chi));
 	    /* avoid warning */
@@ -610,7 +592,7 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
 	/* save the source info in the symbol */
 	TValue si = ktok_get_source_info(K);
 	krooted_tvs_push(K, si); /* will be popped by throw */
-	TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), 1, si);
+	TValue new_sym = ksymbol_new_bs(K, ks_tbget_buffer(K), 1, si);
 	krooted_tvs_pop(K); /* already in symbol */
 	krooted_tvs_push(K, new_sym);
 	ks_tbclear(K); /* this shouldn't cause gc, but just in case */
@@ -623,6 +605,62 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
 	/* no exactness or radix prefix, default radix: 10 */
 	return ktok_read_number(K, buf, buf_len, false, false, false, 10);
     }
+}
+
+/*
+** Hex escapes for strings and symbols
+** "#\xXXXXXX;"
+** "#\x" already read
+*/
+
+char ktok_read_hex_escape(klisp_State *K)
+{
+    /* enough space for any unicode char + 2 */
+    int ch;
+    char buf[10];
+    int c = 0;
+    bool at_least_onep = false;
+    for(ch = ktok_getc(K); ch != EOF && ch != ';'; 
+	ch = ktok_getc(K)) {
+	if (!ktok_is_digit(ch, 16)) {
+	    ktok_error_extra(K, "Invalid char found in hex escape", 
+			     ch2tv(ch));
+	    return '\0'; /* avoid warning */
+	} 
+	/* 
+	** This will allow one space for '\0' and one extra
+	** char in case the value is too big, and so will 
+	** naturally result in a value outside the unicode
+	** range without the need to record any extra 
+	** characters other than the first 8 (without 
+	** leading zeroes).
+	*/
+	at_least_onep = true;
+	if (c < sizeof(buf) - 1 && (c > 0 || ch != '0')) 
+	    buf[c++] = ch;
+    }
+    if (ch == EOF) {
+	ktok_error(K, "EOF found while reading hex escape");
+	return '\0'; /* avoid warning */
+    } else if (!at_least_onep) {
+	ktok_error(K, "Empty hex escape found");
+	return '\0'; /* avoid warning */
+    } else if (c == 0) { /* this is the case of a NULL char */
+	buf[c++] = '0'; 
+    }
+    buf[c++] = '\0';
+    /* buf now contains the hex value of the char */
+    TValue n;
+    int res = kinteger_read(K, buf, 16, &n, NULL);
+    /* can't fail, all digits were checked already */
+    klisp_assert(res == true);
+    if (!ttisfixint(n) || ivalue(n) > 127) {
+	krooted_tvs_push(K, n);
+	ktok_error_extra(K, "hex escaped char out of ASCII range", n);
+	return '\0'; /* avoid warning */
+    }
+    /* all ok, we pass the char */
+    return (char) ivalue(n);
 }
 
 /*
@@ -723,55 +761,9 @@ TValue ktok_read_string(klisp_State *K)
 		   string at the top of the loop */
 		goto just_read;
 		/* This is an hex escaped char */
-	    case 'x': {	   
-		/* enough space for any unicode char + 2 */
-		char buf[10];
-		int c = 0;
-		bool at_least_onep = false;
-		for(ch = ktok_getc(K); ch != EOF && ch != ';'; 
-		      ch = ktok_getc(K)) {
-		    if (!ktok_is_digit(ch, 16)) {
-			ktok_error_extra(K, "Invalid char found in string "
-					 "hex escape", ch2tv(ch));
-			return KINERT; /* avoid warning */
-		    } 
-		    /* 
-		    ** This will allow one space for '\0' and one extra
-		    ** char in case the value is too big, and so will 
-		    ** naturally result in a value outside the unicode
-		    ** range without the need to record any extra 
-		    ** characters other than the first 8 (without 
-		    ** leading zeroes).
-		    */
-		    at_least_onep = true;
-		    if (c < sizeof(buf) - 1 && (c > 0 || ch != '0')) 
-			buf[c++] = ch;
-		}
-		if (ch == EOF) {
-		    ktok_error(K, "EOF found while reading a string");
-		    return KINERT; /* avoid warning */
-		} else if (!at_least_onep) {
-		    ktok_error(K, "Empty hex escape found while reading "
-			       "a string");
-		    return KINERT; /* avoid warning */
-		} else if (c == 0) { /* this is the case of a NULL char */
-		    buf[c++] = '0'; 
-		}
-		buf[c++] = '\0';
-		/* buf now contains the hex value of the char */
-		TValue n;
-		int res = kinteger_read(K, buf, 16, &n, NULL);
-		/* can't fail, all digits were checked already */
-		klisp_assert(res == true);
-		if (!ttisfixint(n) || ivalue(n) > 127) {
-		    ktok_error(K, "hex escaped char out of ASCII range "
-			       "while reading a string");
-		    return KINERT; /* avoid warning */
-		}
-		/* all ok, we pass the char */
-		ch = (char) ivalue(n);
+	    case 'x': 
+		ch = ktok_read_hex_escape(K);
 		break;
-	    }
 	    default:
 		ktok_error_extra(K, "Invalid char after '\\' " 
 				 "while reading a string", ch2tv(ch));
@@ -856,7 +848,8 @@ TValue ktok_read_special(klisp_State *K)
     }
 
     /* Then check for simple chars, this is the only thing
-       that is case dependant, so after this we downcase buf */
+       that is case dependant, so after this we downcase buf
+       (except that an escaped char needs a small 'x' */
     /* REFACTOR: move this to a new function */
     /* char constant, needs at least 3 chars unless it's a delimiter
      * char! */
@@ -865,8 +858,7 @@ TValue ktok_read_special(klisp_State *K)
 	int ch_i = ktok_getc(K);
 	if (ch_i == EOF) {
 	    ktok_error(K, "EOF found while reading character name");
-	    /* avoid warning */
-	    return KINERT;
+	    return KINERT; /* avoid warning */
 	}
 	ks_tbclear(K);
 	return ch2tv((char)ch_i);
@@ -879,7 +871,7 @@ TValue ktok_read_special(klisp_State *K)
 	** Kernel report (R-1RK))
 	** For now we follow the scheme report 
 	*/
-	char ch = buf[2];
+	char ch = buf[2]; /* we know buf_len > 2 */
 
 	if (ch < 0 || ch > 127) {
 	    ktok_error(K, "Non ASCII char found as character constant");
@@ -897,15 +889,20 @@ TValue ktok_read_special(klisp_State *K)
 	/* fall through */
     }
 
-    /* we ignore case in all remaining comparisons */
-    for(char *str2 = buf; *str2 != '\0'; str2++)
+    /* first save the third char, in case it's an hex escaped char
+       (that should be a lowercase x)  */
+    char saved_third = buf[2]; /* there's at least 2 chars, so in the worst
+				  case buf[2] is just '\0' */
+
+    /* now, we ignore case in all remaining comparisons */
+    size_t i = 0;
+    for(char *str2 = buf; i < buf_len; ++str2, ++i)
 	*str2 = tolower(*str2);
 
     /* REFACTOR: move this to a new function */
     /* then check the known constants (including named characters) */
     size_t stok_size = sizeof(kspecial_tokens) / 
 	sizeof(struct kspecial_token);
-    size_t i;
     for (i = 0; i < stok_size; i++) {
 	struct kspecial_token token = kspecial_tokens[i];
 	/* NOTE: must check type because buf may contain embedded '\0's */
@@ -920,12 +917,13 @@ TValue ktok_read_special(klisp_State *K)
        token or a character escape */
 
     if (buf[1] == '\\') { /* this is to have a meaningful error msg */
-	if (buf[2] != 'x') {/* this will also accept 'X' */
+	if (saved_third != 'x') { /* case is significant here, so
+				   we use the saved char */
 	    ktok_error(K, "Unrecognized character name");
 	    return KINERT;
 	}
-	/* We already checked that length != 3, so there's at least on
-	   more char */
+	/* We already checked that length != 3 (x is alphabetic), 
+	   so there's at least on more char */
 	TValue n;
 	char *end;
 
@@ -1057,26 +1055,50 @@ TValue ktok_read_special(klisp_State *K)
 }
 
 /*
-** Identifiers
+** Identifiers (and dot token)
 */
-TValue ktok_read_identifier(klisp_State *K)
+TValue ktok_read_identifier_or_dot(klisp_State *K)
 {
-    int32_t i = 1;
+    bool seen_dot = false;
+    int32_t i = 0;
     while (!ktok_check_delimiter(K)) {
 	/* NOTE: can't be eof, because eof is a delimiter */
 	char ch = (char) ktok_getc(K);
-
+	/* this is needed to differentiate a dot from an equivalent escape */
+	seen_dot |= ch == '.';
 	/* NOTE: is_subsequent of '\0' is false, so no embedded '\0' */
 	if (ktok_is_subsequent(ch)) {
+	    /* downcase all non-escaped chars */
+	    ks_tbadd(K, tolower(ch));
+	    ++i;
+	} else if (ch == '\\') {
+	    /* should be inline hex escape */
+	    ch = ktok_getc(K);
+	    if (ch == EOF) {
+		ktok_error(K, "EOF found while reading character name");
+	    } else if (ch != 'x') {
+		ktok_error_extra(K, "Invalid char in identifier after \\", 
+				 ch2tv((char)ch));
+	    }
+	    ch = ktok_read_hex_escape(K);
+	    /* don't downcase escaped chars */
 	    ks_tbadd(K, ch);
-	    i++;
-	} else
-	    ktok_error(K, "Invalid char in identifier");	    
+	    ++i;
+	} else {
+	    ktok_error_extra(K, "Invalid char in identifier", 
+			     ch2tv((char)ch));
+	}
     }
+
+    if (i == 1 && seen_dot) {
+	ks_tbclear(K);
+	return K->ktok_dot;
+    }
+
     ks_tbadd(K, '\0');
     TValue si = ktok_get_source_info(K);
     krooted_tvs_push(K, si); /* will be popped by throw */
-    TValue new_sym = ksymbol_new_i(K, ks_tbget_buffer(K), i-1, si);
+    TValue new_sym = ksymbol_new_bs(K, ks_tbget_buffer(K), i, si);
     krooted_tvs_pop(K); /* already in symbol */
     krooted_tvs_push(K, new_sym);
     ks_tbclear(K); /* this shouldn't cause gc, but just in case */
@@ -1084,4 +1106,63 @@ TValue ktok_read_identifier(klisp_State *K)
     return new_sym;
 }
 
+TValue ktok_read_bar_identifier(klisp_State *K)
+{
+    /* discard opening bar */
+    ktok_getc(K);
+
+    bool done = false;
+    int i = 0;
+
+    /* Never downcase chars in |...| escaped symbols */
+    while(!done) {
+	int ch = ktok_getc(K);
+	if (ch == EOF) {
+	    ktok_error(K, "EOF found while reading an |identifier|");
+	    return KINERT; /* avoid warning */
+	} else 	if (ch < 0 || ch > 127) {
+	    ktok_error(K, "Non ASCII char found while reading an identifier");
+	    return KINERT; /* avoid warning */
+	}
+
+	if (ch == '|') {
+	    ks_tbadd(K, '\0');
+	    done = true;
+	} else if (ch == '\\') {
+	    ch = ktok_getc(K);
+	
+	    if (ch == EOF) {
+		ktok_error(K, "EOF found while reading an |identifier|");
+		return KINERT; /* avoid warning */
+	    }
+
+	    switch(ch) {
+		/* These two will self insert */
+	    case '|':
+	    case '\\':
+		break;
+	    case 'x':
+		ch = ktok_read_hex_escape(K);
+		break;
+	    default:
+		ktok_error_extra(K, "Invalid char after '\\' " 
+				 "while reading a symbol", ch2tv(ch));
+		return KINERT; /* avoid warning */
+	    }
+	    ks_tbadd(K, ch);
+	    ++i;
+	} else { 
+	    ks_tbadd(K, ch);
+	    ++i;
+	}
+    }
+    TValue si = ktok_get_source_info(K);
+    krooted_tvs_push(K, si); /* will be popped by throw */
+    TValue new_sym = ksymbol_new_bs(K, ks_tbget_buffer(K), i, si);
+    krooted_tvs_pop(K); /* already in symbol */
+    krooted_tvs_push(K, new_sym);
+    ks_tbclear(K); /* this shouldn't cause gc, but just in case */
+    krooted_tvs_pop(K);
+    return new_sym;
+}
 

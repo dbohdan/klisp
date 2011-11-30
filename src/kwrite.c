@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "kwrite.h"
 #include "kobject.h"
@@ -26,6 +27,7 @@
 #include "kenvironment.h"
 #include "kbytevector.h"
 #include "kvector.h"
+#include "ktoken.h" /* for identifier checking */
 
 /*
 ** Stack for the write FSM
@@ -194,8 +196,8 @@ void kw_print_string(klisp_State *K, TValue str)
 			   (!K->write_displayp && 
 			    (*ptr == '\\' || *ptr == '"')));
     	      ++i, ptr++) {
-	    /* This are all ASCII printable characters + space, except \ and
-	       " if !displayp */
+	    /* This are all ASCII printable characters (including space,
+	       and exceptuating '\' and '"' if !displayp) */
 	    char *fmt;
 	    /* must be uint32_t to support all unicode chars
 	     in the future */
@@ -232,6 +234,95 @@ void kw_print_string(klisp_State *K, TValue str)
 			
     if (!K->write_displayp)
 	kw_printf(K, "\"");
+}
+
+/*
+** Helper for printing symbols.
+** If symbol is not a regular identifier it
+** uses the "|...|" syntax, escaping '|', '\' and 
+** non printing characters.
+*/
+void kw_print_symbol(klisp_State *K, TValue sym)
+{
+    uint32_t size = ksymbol_size(sym);
+    char *buf = ksymbol_buf(sym);
+
+    /* first determine if it's a simple identifier */
+    bool identifierp;
+    if (size == 0)
+	identifierp = false;
+    else if (size == 1 && *buf == '.')
+	identifierp = false;
+    else if (size == 1 && (*buf == '+' || *buf == '-'))
+	identifierp = true;
+    else if (*buf == tolower(*buf) && ktok_is_initial(*buf)) {
+	char *ptr = buf;
+	uint32_t i = 0;
+	identifierp = true;
+	while (identifierp && i < size) {
+	    char ch = *ptr++;
+	    ++i;
+	    if (tolower(ch) != ch || !ktok_is_subsequent(ch))
+		identifierp = false;
+	}
+    } else
+	identifierp = false;
+
+    if (identifierp) {
+	/* no problem, just a simple string */
+	kw_printf(K, "%s", buf);
+	return;
+    } 
+
+    /*
+    ** In case we get here, we'll have to use the "|...|" syntax
+    */
+    char *ptr = buf;
+    int i = 0;
+
+    kw_printf(K, "|");
+
+    while (i < size) {
+	/* find the longest printf-able substring to avoid calling printf
+	 for every char */
+	for (ptr = buf; 
+	     i < size && *ptr != '\0' &&
+		 (*ptr >= 32 && *ptr < 127) &&
+		 (*ptr != '\\' && *ptr != '|'); 
+	     i++, ptr++)
+	    ;
+
+	/* NOTE: this work even if ptr == buf (which can only happen the 
+	 first or last time) */
+	char ch = *ptr;
+	*ptr = '\0';
+	kw_printf(K, "%s", buf);
+	*ptr = ch;
+
+	for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
+			   (*ptr == '\\' || *ptr == '|'));
+	      ++i, ptr++) {
+	    /* This are all ASCII printable characters (including space,
+	       and exceptuating '\' and '|') */
+	    char *fmt;
+	    /* must be uint32_t to support all unicode chars
+	     in the future */
+	    uint32_t arg;
+	    ch = *ptr;
+	    switch(*ptr) {
+		/* regular \ escapes */
+	    case '|': fmt = "\\%c"; arg = (uint32_t) '|'; break;
+	    case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
+		/* for the rest of the non printable chars, 
+		   use hex escape */
+	    default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
+	    }
+	    kw_printf(K, fmt, arg);
+	}
+	buf = ptr;
+    }
+			
+    kw_printf(K, "|");
 }
 
 /*
@@ -305,7 +396,8 @@ void kw_set_initial_marks(klisp_State *K, TValue root)
 #if KTRACK_NAMES
 void kw_print_name(klisp_State *K, TValue obj)
 {
-    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+    kw_printf(K, ": ");
+    kw_print_symbol(K, kget_name(K, obj));
 }
 #endif /* KTRACK_NAMES */
 
@@ -471,12 +563,7 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 	kw_printf(K, "#%c", bvalue(obj)? 't' : 'f');
 	break;
     case K_TSYMBOL:
-	if (khas_ext_rep(obj)) {
-	    /* TEMP: access symbol structure directly */
-	    kw_printf(K, "%s", ksymbol_buf(obj));
-	} else {
-	    kw_printf(K, "#[symbol]");
-	}
+	kw_print_symbol(K, obj);
 	break;
     case K_TINERT:
 	kw_printf(K, "#inert");
