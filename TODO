@@ -18,12 +18,9 @@
    typedef like lua)
 * fix:
 ** fix char-ready? and u8-ready? (r7rs)
-** eliminate kread_ignore_whitespace_and_comments_from_port,
-  replace for a boolean flag to tell read to reset source info
-  after first token read.
-* documentation
 ** fix some inconsistencies between the man page and the interpreter
-   behaviour.
+   behaviour (especially in the displaying of the message).
+* documentation
 ** update the manual with the current features
 ** add a section to the manual with the interpreter usage
 * operatives: 
