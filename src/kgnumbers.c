@@ -2393,6 +2393,9 @@ struct kspecial_number {
 			 { "#undefined", KUNDEF_ }
 };
 
+/* N.B. If case insignificance is removed, check here too!
+ This will happily accept exactness and radix arguments in both cases
+ (but not the names of special numbers) */
 void string_to_number(klisp_State *K)
 {
     /* MAYBE try to unify with ktoken */

@@ -28,30 +28,29 @@ are evaluated and then
 the klisp program in file
 .I script
 is loaded and evaluated.
-All evaluations, including the initialization 
+All evaluations mentioned, including the initialization 
 that is described below, take place in the same
 (initially) standard environment. All values that
 result from these evaluation are discarded, but
 if the root continuation or error continuation
-are passed value, the interpretation of arguments
+are passed a value, the evaluation of options
 is interrupted and the EXIT_STATUS is as described 
 in the corresponding section.
-The given
-.I args
-are available to
+The string
 .I script
-as a list of strings via the applicative
+together with all
+.I args
+are available as a list of strings
+via the applicative
 .RI ' get-script-arguments '.
 If these arguments contain spaces or other characters special to the shell,
 then they should be quoted
 (but note that the quotes will be removed by the shell).
-The arguments in the returned string start with the string
-.RI ' script '.
-All the arguments given in the command line
-.IR script ,
+The complete command line
 including the name of the interpreter, options,
-, the script, and its arguments
-are available via the applicative 
+the script, and its arguments
+are available as a list of strings
+via the applicative
 .RI ' get-interpreter-arguments '.
 .LP
 At the very beginning,
@@ -108,13 +107,22 @@ enter interactive mode after
 .I script
 is executed.
 .TP
-.\" .BI \-l " name"
-.\" call
-.\" .BI require(' name ')
-.\" before executing
-.\" .IR script .
-.\" Typically used to load libraries.
-.\" .TP
+.BI \-l " name"
+evaluate
+.BI (load " name")
+before
+.I script
+is executed.
+Typically used to do environment initialization.
+.TP
+.BI \-r " name"
+evaluate
+.BI (require " name")
+before
+.I script
+is executed.
+Typically used to load libraries.
+.TP
 .B \-v
 show version information.
 .SH EXIT STATUS
