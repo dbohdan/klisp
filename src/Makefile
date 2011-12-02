@@ -190,7 +190,7 @@ kghelpers.o: kghelpers.c kghelpers.h kstate.h klimits.h klisp.h kobject.h \
  klispconf.h ktoken.h kmem.h kerror.h kpair.h kgc.h kapplicative.h \
  koperative.h kcontinuation.h kenvironment.h ksymbol.h kstring.h ktable.h \
  kinteger.h imath.h krational.h imrat.h kbytevector.h kvector.h \
- kencapsulation.h
+ kencapsulation.h kpromise.h
 kgkd_vars.o: kgkd_vars.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kpair.h kgc.h kcontinuation.h koperative.h \
  kapplicative.h kenvironment.h kerror.h kghelpers.h ksymbol.h kstring.h \

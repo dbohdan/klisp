@@ -18,33 +18,28 @@
    typedef like lua)
 * fix:
 ** fix char-ready? and u8-ready? (r7rs)
-** fix some inconsistencies between the man page and the interpreter
-   behaviour (especially in the displaying of the message).
 * documentation
 ** update the manual with the current features
 ** add a section to the manual with the interpreter usage
-* operatives: 
-** $delay (r7rs)
-** $case (r7rs)
-** $case-lambda (r7rs)
-** $case-vau (r7rs)
-** $named-let (r7rs)
-** $do (r7rs)
-** $define-record-type (r7rs)
 * applicatives: 
+** optional argument to member? (r7rs)
+** optional argument to assoc (r7rs)
 ** number->string (r7rs)
 ** string->number (r7rs)
 * reader/writer
 ** syntax support for complex numbers (Kernel report)
-* other
-** optional argument to member? (r7rs)
-** optional argument to assoc (r7rs)
+* library
 ** some simplified error guarding (r7rs)
+** $case (r7rs)
+** $case-lambda + $case-vau (r7rs)
+** $named-let + $do (r7rs)
+** $define-record-type (r7rs)
+** eager comprehensions (at least for check.k) see SRFIs 42 and 78
+   (srfi)
+* other
 ** restarts (r7rs/common lisp)
 ** add restart support to the repl/interpreter (r7rs)
 ** simple modules (something inspired in r7rs) (r7rs)
 ** add modules support to the interpreter (r7rs)
-** eager comprehensions (at least for check.k) see SRFIs 42 and 78
-   (srfi)
 ** complex numbers (Kernel report)
 ** interval arithmetic (Kernel report)

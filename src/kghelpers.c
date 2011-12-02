@@ -25,6 +25,7 @@
 #include "kpair.h"
 #include "kcontinuation.h"
 #include "kencapsulation.h"
+#include "kpromise.h"
 
 /* Initialization of continuation names */
 void kinit_kghelpers_cont_names(klisp_State *K)
@@ -728,6 +729,21 @@ int64_t klcm32_64(int32_t a_, int32_t b_)
     int64_t b = kabs64(b_);
     /* divide first to avoid possible overflow */
     return (a / gcd) * b;
+}
+
+/* This is needed in kstate & promises */
+void memoize(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1p(K, ptree, exp);
+    TValue new_prom = kmake_promise(K, exp, KNIL);
+    kapply_cc(K, new_prom);
 }
 
 /* list applicative (used in kstate and kgpairs_lists) */

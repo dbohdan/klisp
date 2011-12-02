@@ -450,6 +450,8 @@ int64_t klcm32_64(int32_t a, int32_t b);
 ** Other
 */
 
+/* memoize applicative (used in kstate & promises) */
+void memoize(klisp_State *K);
 /* list applicative (used in kstate and kgpairs_lists) */
 void list(klisp_State *K);
 

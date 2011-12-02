@@ -37,7 +37,7 @@
 #include "kbytevector.h"
 #include "kvector.h"
 
-#include "kghelpers.h" /* for creating list_app */
+#include "kghelpers.h" /* for creating list_app & memoize_app */
 #include "kgerrors.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */
@@ -214,20 +214,30 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     int32_t line_number; 
     TValue si;
     K->eval_op = kmake_operative(K, keval_ofn, 0), line_number = __LINE__;
+#if KTRACK_SI
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
 		      kcons(K, i2tv(line_number), i2tv(0)));
     kset_source_info(K, K->eval_op, si);
-
+#endif
     /* TODO: si */
     TValue eval_name = ksymbol_new_b(K, "eval", KNIL);
     ktry_set_name(K, K->eval_op, eval_name);
     
     K->list_app = kmake_applicative(K, list, 0), line_number = __LINE__;
+#if KTRACK_SI
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
 		      kcons(K, i2tv(__LINE__), i2tv(0)));
     kset_source_info(K, K->list_app, si);
     kset_source_info(K, kunwrap(K->list_app), si);
+#endif
 
+    K->memoize_app = kmake_applicative(K, memoize, 0), line_number = __LINE__;
+#if KTRACK_SI
+    si = kcons(K, kstring_new_b_imm(K, __FILE__), 
+		      kcons(K, i2tv(__LINE__), i2tv(0)));
+    kset_source_info(K, K->memoize_app, si);
+    kset_source_info(K, kunwrap(K->memoize_app), si);
+#endif
     /* ground environment has a hashtable for bindings */
     K->ground_env = kmake_table_environment(K, KNIL);
 //    K->ground_env = kmake_empty_environment(K);

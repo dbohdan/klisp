@@ -74,6 +74,7 @@ struct klisp_State {
 
     TValue eval_op; /* the operative for evaluation */
     TValue list_app; /* the applicative for list evaluation */
+    TValue memoize_app; /* the applicative for promise memoize */
     TValue ground_env;  /* the environment with all the ground definitions */
     /* standard environments are environments with no bindings and ground_env
        as parent */

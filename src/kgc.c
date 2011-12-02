@@ -604,6 +604,7 @@ static void markroot (klisp_State *K) {
     /* NOTE: next_x_params is protected by next_obj */
     markvalue(K, K->eval_op);
     markvalue(K, K->list_app);
+    markvalue(K, K->memoize_app);
     markvalue(K, K->ground_env);
     markvalue(K, K->module_params_sym);
     markvalue(K, K->root_cont);
