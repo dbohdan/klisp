@@ -259,6 +259,10 @@
 ($check-not-predicate
 	(member? 4 (list . #0=(1 2 1 . #0#))))
 
+($check-predicate (member? -1 (list 1 2) ($lambda (x y) (=? x (- 0 y)))))
+($check-not-predicate (member? 1 (list 1 2 . #0=(3 4 . #0#)) 
+			       ($lambda (x y) (=? x (- 0 y)))))
+
 ;; finite-list?
 ($check-predicate (finite-list? ()))
 ($check-predicate (finite-list? (list 1)))
@@ -460,11 +464,13 @@
 ;; member?
 ($check-error (member?))
 ($check-error (member? 2))
-($check-error (member? 2 (list 1 2) ()))
+($check-error (member? 2 (list 1 2) () ()))
 ($check-error (member? . #0=(2 (list 1 2) . #0#)))
+($check-error (member? 2 (list 1 2) (unwrap equal?)))
 
 ($check-error (member? 2 (list* 1 2)))
 ($check-error (member? 2 (list* 1 2 3)))
+($check-error (member? 2 (list* 1 2) equal?))
 
 ;; finite-list?
 ($check-error (countable-list? (cons () ()) . #inert))

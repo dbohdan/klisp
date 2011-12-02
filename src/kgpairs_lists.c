@@ -748,6 +748,48 @@ void assoc(klisp_State *K)
 }
 
 /* 6.3.7 member? */
+/* helper if third optional argument is used */
+void do_memberp(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    /*
+    ** xparams[0]: app
+    ** xparams[1]: obj to be compared
+    ** xparams[2]: rem ls
+    ** xparams[3]: rem pairs
+    */ 
+
+    TValue pred = xparams[0];
+    TValue cmp_obj = xparams[1];
+    TValue ls = xparams[2];
+    int32_t pairs = ivalue(xparams[3]);
+
+    if (!ttisboolean(obj)) {
+	klispE_throw_simple_with_irritants(K, "expected boolean", 1, obj);
+	return;
+    } else if (kis_true(obj) || pairs == 0) {
+	/* object found if obj is true and not found if obj is false */
+	kapply_cc(K, obj);
+    } else {
+	/* object not YET found */
+	TValue cont = kmake_continuation(K, kget_cc(K), do_memberp, 4, pred, 
+					 cmp_obj, kcdr(ls), i2tv(pairs-1));
+	/* not necessary but may save a continuation in some cases */
+	kset_bool_check_cont(cont);
+	kset_cc(K, cont);
+	TValue exp = kcons(K, kcar(ls), KNIL);
+	krooted_vars_push(K, &exp);
+	exp = kcons(K, cmp_obj, exp);
+	exp = kcons(K, pred, exp);
+	/* TEMP for now use an empty environment for dynamic env */
+	TValue env = kmake_empty_environment(K);
+	krooted_vars_pop(K);
+	ktail_eval(K, exp, env);
+    }
+}
+
 void memberp(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -757,21 +799,39 @@ void memberp(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, ptree, obj, ls);
+    bind_al2p(K, ptree, obj, ls, maybe_pred);
+    bool predp = get_opt_tpar(K, maybe_pred, "applicative", ttisapplicative);
+    
     /* first pass, check structure */
     int32_t pairs;
-    check_list(K, true, ls, &pairs, NULL);
-    TValue tail = ls;
-    TValue res = KFALSE;
-    while(pairs--) {
-	TValue first = kcar(tail);
-	if (equal2p(K, first, obj)) {
-	    res = KTRUE;
-	    break;
-	}
-	tail = kcdr(tail);
+    if (predp) { /* copy if a custom predicate is used */
+	ls = check_copy_list(K, ls, false, &pairs, NULL);
+    } else { 
+	check_list(K, true, ls, &pairs, NULL);
     }
 
+    TValue res;
+    if (predp) {
+	/* we'll need use continuations */
+	TValue cont = kmake_continuation(K, kget_cc(K), do_memberp, 4,
+					 maybe_pred, obj, ls, i2tv(pairs));
+	kset_cc(K, cont);
+	/* pass false to have it keep looking (in the whole list) */
+	res = KFALSE;
+    } else {
+	/* if using equal? we need no continuation, we can 
+	   do it all here */
+	TValue tail = ls;
+	res = KFALSE;
+	while(pairs--) {
+	    TValue first = kcar(tail);
+	    if (equal2p(K, first, obj)) {
+		res = KTRUE;
+		break;
+	    }
+	    tail = kcdr(tail);
+	}
+    }
     kapply_cc(K, res);
 }
 

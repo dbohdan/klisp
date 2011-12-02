@@ -121,7 +121,8 @@ void do_Sandp_Sorp(klisp_State *K)
     TValue denv = xparams[3];
 
     if (!ttisboolean(obj)) {
-	klispE_throw_simple(K, "expected boolean");
+	klispE_throw_simple_with_irritants(K, "expected boolean", 1, 
+	    obj);
 	return;
     } else if (ttisnil(ls) || tv_equal(obj, term_bool)) {
 	/* in both cases the value to be returned is obj:
