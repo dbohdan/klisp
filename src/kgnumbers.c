@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <inttypes.h> /* for string conversion */
 
 #include "kstate.h"
 #include "kobject.h"
@@ -2268,6 +2269,120 @@ void kexpt(klisp_State *K)
     arith_kapply_cc(K, res);
 }
 
+/* Number<->String conversion */
+void number_to_string(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_al1tp(K, ptree, "number", knumberp, obj, maybe_radix);
+    int radix = 10;
+    if (get_opt_tpar(K, maybe_radix, "radix (2, 8, 10, or 16)", ttisradix))
+	radix = ivalue(maybe_radix); 
+
+    char small_buf[64]; /* for fixints */
+    TValue buf_str = K->empty_string; /* for bigrats, bigints and doubles */
+    krooted_vars_push(K, &buf_str);
+    char *buf;
+
+    switch(ttype(obj)) {
+    case K_TFIXINT: {
+	/* can't use snprintf here... there's no support for binary,
+	   so just do by hand */
+	uint32_t value;
+	/* convert to unsigned to write */
+	value = (uint32_t) ((ivalue(obj) < 0)? 
+			    -((int64_t) ivalue(obj)) :
+			    ivalue(obj));
+	char *digits = "0123456789abcdef";
+	/* write backwards so we don't have to reverse the buffer */
+	buf = small_buf + sizeof(small_buf) - 1;
+	*buf-- = '\0';
+	do {
+	    *buf-- = digits[value % radix];
+	    value /= radix;
+	} while(value > 0); /* with the guard down it works for zero too */
+
+	/* only put the sign if negative, 
+	   then correct the pointer to the first char */
+	if (ivalue(obj) < 0)
+	    *buf = '-';
+	else 
+	    ++buf;
+	break;
+    }
+    case K_TBIGINT: {
+	int32_t size = kbigint_print_size(obj, radix); 
+	/* here we are using 1 byte extra, because size already includes
+	   1 for the terminator, but better be safe than sorry */
+	buf_str = kstring_new_s(K, size);
+	buf = kstring_buf(buf_str);
+	kbigint_print_string(K, obj, radix, buf, size);
+	/* the string will be copied and trimmed later, 
+	   because print_size may overestimate */
+	break;
+    }
+    case K_TBIGRAT: {
+	int32_t size = kbigrat_print_size(obj, radix); 
+	/* here we are using 1 byte extra, because size already includes
+	   1 for the terminator, but better be safe than sorry */
+	buf_str = kstring_new_s(K, size);
+	buf = kstring_buf(buf_str);
+	kbigrat_print_string(K, obj, radix, buf, size);
+	/* the string will be copied and trimmed later, 
+	   because print_size may overestimate */
+	break;
+    }
+    case K_TEINF:
+	buf = tv_equal(obj, KEPINF)? "#e+infinity" : "#e-infinity";
+	break;
+    case K_TIINF:
+	buf = tv_equal(obj, KIPINF)? "#i+infinity" : "#i-infinity";
+	break;
+    case K_TDOUBLE: {
+	if (radix != 10) {
+	    /* only radix 10 is supported for inexact numbers 
+	     see rationale in the report (technically they could be 
+	     printed without a decimal point, like fractions, but...*/
+	    klispE_throw_simple_with_irritants(K, "radix != 10 with inexact "
+					      "number", 2, obj,maybe_radix);
+	    return;
+	}
+        /* radix is always 10 */
+	int32_t size = kdouble_print_size(obj); 
+	/* here we are using 1 byte extra, because size already includes
+	   1 for the terminator, but better be safe than sorry */
+	buf_str = kstring_new_s(K, size);
+	buf = kstring_buf(buf_str);
+	kdouble_print_string(K, obj, buf, size);
+	/* the string will be copied and trimmed later, 
+	   because print_size may overestimate */
+	break;
+    }
+    case K_TRWNPV:
+	buf = "#real";
+	break;
+    case K_TUNDEFINED:
+	buf = "#undefined";
+	break;
+    default:
+	/* shouldn't happen */
+	klisp_assert(0);
+    }
+
+    TValue str = kstring_new_b(K, buf);
+    krooted_vars_pop(K);
+    kapply_cc(K, str);
+}
+
+/* TODO */
+void string_to_number(klisp_State *K)
+{
+}
 
 /* init ground */
 void kinit_numbers_ground_env(klisp_State *K)
@@ -2407,5 +2522,7 @@ void kinit_numbers_ground_env(klisp_State *K)
     /* 12.9.6 expt */
     add_applicative(K, ground_env, "expt", kexpt, 0);
 
-    /* TODO add some conversion like number->string, string->number */
+    /* 12.? string->number, number->string */
+    add_applicative(K, ground_env, "string->number", string_to_number, 0);
+    add_applicative(K, ground_env, "number->string", number_to_string, 0);
 }

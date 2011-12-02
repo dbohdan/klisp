@@ -423,3 +423,46 @@
 
 ;; 12.10 Complex features
 ;; not implemented
+
+;; String conversion
+($check string-ci=? (number->string 0) "0")
+($check string-ci=? (number->string 1) "1")
+($check string-ci=? (number->string -1) "-1")
+($check string-ci=? (number->string 2 2) "10")
+($check string-ci=? (number->string -2 2) "-10")
+($check string-ci=? (number->string 8 8) "10")
+($check string-ci=? (number->string -8 8) "-10")
+($check string-ci=? (number->string 10 10) "10")
+($check string-ci=? (number->string -10 10) "-10")
+($check string-ci=? (number->string 16 16) "10")
+($check string-ci=? (number->string -16 16) "-10")
+; default base
+($check string-ci=? (number->string 10) (number->string 10 10))
+;; infinities, undefined and reals with no primary value
+($check string-ci=? (number->string #undefined) "#undefined")
+($check string-ci=? (number->string #real) "#real")
+($check string-ci=? (number->string #e+infinity) "#e+infinity")
+($check string-ci=? (number->string #e-infinity) "#e-infinity")
+($check string-ci=? (number->string #i+infinity) "#i+infinity")
+($check string-ci=? (number->string #i-infinity) "#i-infinity")
+;; rationals
+($check string-ci=? (number->string 13/17) "13/17")
+($check string-ci=? (number->string -17/13) "-17/13")
+($check string-ci=? (number->string #o-21/15 8) "-21/15")
+;; bigints
+($check string-ci=? (number->string #x1234567890abcdef 16) 
+	"1234567890abcdef")
+
+; only bases 2, 8, 10, 16
+($check-error (number->string 10 3))
+($check-error (number->string #inert ()))
+; only numbers
+($check-error (number->string #inert))
+($check-error (number->string #inert 2))
+; only numbers
+($check-error (number->string "2"))
+($check-error (number->string "2" 8))
+; only base 10 with inexact numbers
+($check-error (number->string -1.0 2))
+($check-error (number->string 1.25 8))
+($check-error (number->string 3.0 16))

@@ -68,6 +68,7 @@ bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out,
    print the number */
 int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
 {
+    klisp_assert(ttisbigint(tv_bigint));
     return mp_int_string_len(tv2bigint(tv_bigint), base);
 }
 
@@ -75,6 +76,7 @@ int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
 void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
 			   char *buf, int32_t limit)
 {
+    klisp_assert(ttisbigint(tv_bigint));
     mp_result res = mp_int_to_string(K, tv2bigint(tv_bigint), base, buf, 
 				     limit);
     /* only possible error is truncation */

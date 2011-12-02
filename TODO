@@ -22,7 +22,6 @@
 ** update the manual with the current features
 ** add a section to the manual with the interpreter usage
 * applicatives: 
-** number->string (r7rs)
 ** string->number (r7rs)
 * reader/writer
 ** syntax support for complex numbers (Kernel report)

@@ -562,6 +562,7 @@ bool dtoa(klisp_State *K, double d, char *buf, int32_t upoint, int32_t *out_h,
    number */
 int32_t kdouble_print_size(TValue tv_double)
 {
+    klisp_assert(ttisdouble(tv_double));
     UNUSED(tv_double);
     return 1024;
 }
@@ -569,6 +570,7 @@ int32_t kdouble_print_size(TValue tv_double)
 void kdouble_print_string(klisp_State *K, TValue tv_double,
 			   char *buf, int32_t limit)
 {
+    klisp_assert(ttisdouble(tv_double));
     /* TODO: add exponent to values too large or too small */
     /* TEMP */
     int32_t h = 0;

@@ -1866,7 +1866,7 @@ mp_result mp_int_to_string(klisp_State *K, mp_int z, mp_size radix,
     return MP_RANGE;
 
   if(CMPZ(z) == 0) {
-    *str++ = s_val2ch(0, 1);
+      *str++ = s_val2ch(0, 0); /* changed to lowercase, Andres Navarro */
   } 
   else {
     mpz_t tmp;
@@ -1889,7 +1889,7 @@ mp_result mp_int_to_string(klisp_State *K, mp_int z, mp_size radix,
 	break;
 
       d = s_ddiv(&tmp, (mp_digit)radix);
-      *str++ = s_val2ch(d, 1);
+      *str++ = s_val2ch(d, 0); /* changed to lowercase, Andres Navarro */
     }
     t = str - 1;
 

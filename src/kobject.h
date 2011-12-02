@@ -248,6 +248,12 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisu8(o) ({							\
 	TValue o__ = (o);						\
 	(ttisfixint(o__) && ivalue(o__) >= 0 && ivalue(o__) < 256); })		
+/* for radixes in string<->number */
+#define ttisradix(o) ({							\
+	TValue o__ = (o);						\
+	(ttisfixint(o__) &&						\
+	 (ivalue(o__) == 2 || ivalue(o__) == 8 ||			\
+	  ivalue(o__) == 10 || ivalue(o__) == 16)); })
 /* for bases in char->digit and related functions */
 #define ttisbase(o) ({							\
 	TValue o__ = (o);						\

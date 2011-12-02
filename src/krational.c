@@ -190,15 +190,17 @@ bool krational_read_decimal(klisp_State *K, char *buf, int32_t base, TValue *out
 
 /* this is used by write to estimate the number of chars necessary to
    print the number */
-int32_t kbigrat_print_size(TValue tv_bigint, int32_t base)
+int32_t kbigrat_print_size(TValue tv_bigrat, int32_t base)
 {
-    return mp_rat_string_len(tv2bigrat(tv_bigint), base);
+    klisp_assert(ttisbigrat(tv_bigrat));
+    return mp_rat_string_len(tv2bigrat(tv_bigrat), base);
 }
 
 /* this is used by write */
 void  kbigrat_print_string(klisp_State *K, TValue tv_bigrat, int32_t base, 
 			   char *buf, int32_t limit)
 {
+    klisp_assert(ttisbigrat(tv_bigrat));
     mp_result res = mp_rat_to_string(K, tv2bigrat(tv_bigrat), base, buf, 
 				     limit);
     /* only possible error is truncation */
