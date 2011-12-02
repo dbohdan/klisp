@@ -22,8 +22,6 @@
 ** update the manual with the current features
 ** add a section to the manual with the interpreter usage
 * applicatives: 
-** optional argument to member? (r7rs)
-** optional argument to assoc (r7rs)
 ** number->string (r7rs)
 ** string->number (r7rs)
 * reader/writer

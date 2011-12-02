@@ -25,6 +25,9 @@
 /* Continuations */
 void do_ret_cdr(klisp_State *K);
 
+void do_memberp(klisp_State *K);
+void do_assoc(klisp_State *K);
+
 void do_filter_encycle(klisp_State *K);
 void do_filter(klisp_State *K);
 void do_filter_cycle(klisp_State *K);
@@ -720,6 +723,48 @@ void filter(klisp_State *K)
 }
 
 /* 6.3.6 assoc */
+/* helper if third optional argument is used */
+void do_assoc(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    /*
+    ** xparams[0]: pred
+    ** xparams[1]: obj to be compared
+    ** xparams[2]: last-pair + rem ls
+    ** xparams[3]: rem pairs
+    */ 
+
+    TValue pred = xparams[0];
+    TValue cmp_obj = xparams[1];
+    TValue ls = xparams[2];
+    int32_t pairs = ivalue(xparams[3]);
+
+    if (!ttisboolean(obj)) {
+	klispE_throw_simple_with_irritants(K, "expected boolean", 1, obj);
+	return;
+    } else if (kis_true(obj) || pairs == 0) {
+	TValue res = kis_true(obj)? kcar(ls) : KNIL;
+	kapply_cc(K, res);
+    } else {
+	/* object not YET found */
+	TValue cont = kmake_continuation(K, kget_cc(K), do_assoc, 4, pred, 
+					 cmp_obj, kcdr(ls), i2tv(pairs-1));
+	/* not necessary but may save a continuation in some cases */
+	kset_bool_check_cont(cont);
+	kset_cc(K, cont);
+	TValue exp = kcons(K, kcar(kcar(kcdr(ls))), KNIL);
+	krooted_vars_push(K, &exp);
+	exp = kcons(K, cmp_obj, exp);
+	exp = kcons(K, pred, exp);
+	/* TEMP for now use an empty environment for dynamic env */
+	TValue env = kmake_empty_environment(K);
+	krooted_vars_pop(K);
+	ktail_eval(K, exp, env);
+    }
+}
+
 void assoc(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -729,21 +774,39 @@ void assoc(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
 
-    bind_2p(K, ptree, obj, ls);
+    bind_al2p(K, ptree, obj, ls, maybe_pred);
+    bool predp = get_opt_tpar(K, maybe_pred, "applicative", ttisapplicative);
     /* first pass, check structure */
     int32_t pairs;
     check_typed_list(K, kpairp, true, ls, &pairs, NULL);
-    TValue tail = ls;
-    TValue res = KNIL;
-    while(pairs--) {
-	TValue first = kcar(tail);
-	if (equal2p(K, kcar(first), obj)) {
-	    res = first;
-	    break;
+	
+    TValue res;
+    if (predp) {
+	/* we'll need use continuations, copy list first to
+	   avoid troubles with mutation */
+	ls = check_copy_list(K, ls, false, NULL, NULL);
+	krooted_vars_push(K, &ls);
+	ls = kcons(K, KINERT, ls); /* add dummy obj to stand as last 
+				      compared obj */
+	TValue cont = kmake_continuation(K, kget_cc(K), do_assoc, 4,
+					 maybe_pred, obj, ls, i2tv(pairs));
+	krooted_vars_pop(K);
+	kset_cc(K, cont);
+	/* pass false to have it keep looking (in the whole list) */
+	res = KFALSE;
+    } else {   
+	/* use equal?, no continuation needed */
+	TValue tail = ls;
+	res = KNIL;
+	while(pairs--) {
+	    TValue first = kcar(tail);
+	    if (equal2p(K, kcar(first), obj)) {
+		res = first;
+		break;
+	    }
+	    tail = kcdr(tail);
 	}
-	tail = kcdr(tail);
     }
-
     kapply_cc(K, res);
 }
 
@@ -755,7 +818,7 @@ void do_memberp(klisp_State *K)
     TValue obj = K->next_value;
     klisp_assert(ttisnil(K->next_env));
     /*
-    ** xparams[0]: app
+    ** xparams[0]: pred
     ** xparams[1]: obj to be compared
     ** xparams[2]: rem ls
     ** xparams[3]: rem pairs
@@ -813,8 +876,10 @@ void memberp(klisp_State *K)
     TValue res;
     if (predp) {
 	/* we'll need use continuations */
+	krooted_tvs_push(K, ls);
 	TValue cont = kmake_continuation(K, kget_cc(K), do_memberp, 4,
 					 maybe_pred, obj, ls, i2tv(pairs));
+	krooted_tvs_pop(K);
 	kset_cc(K, cont);
 	/* pass false to have it keep looking (in the whole list) */
 	res = KFALSE;
@@ -1290,6 +1355,9 @@ void kinit_pairs_lists_cont_names(klisp_State *K)
     Table *t = tv2table(K->cont_name_table);
     
     add_cont_name(K, t, do_ret_cdr, "return-cdr");
+
+    add_cont_name(K, t, do_memberp, "member?-search");
+    add_cont_name(K, t, do_assoc, "assoc-search");
 
     add_cont_name(K, t, do_filter, "filter-acyclic-part");
     add_cont_name(K, t, do_filter_encycle, "filter-encycle!");

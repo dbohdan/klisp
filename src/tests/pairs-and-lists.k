@@ -237,6 +237,7 @@
 ($check equal? (assoc #inert ()) ())
 ($check equal? (assoc 3 (list (list 1 10) (list 2 20))) ())
 ($check equal? (assoc 1 (list (list 1 10) (list 2 20))) (list 1 10))
+($check equal? (assoc 1 (list (list 1 10) (list 2 20)) =?) (list 1 10))
 ($check equal?
 	(assoc 1 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
 	(list 1 10))
@@ -247,6 +248,10 @@
 	(assoc (list 1) (list (list (list 1) 1) (list (list 2) 2)))
 	(list (list 1) 1))
 
+($check equal?
+	(assoc 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#))
+	       =?)
+	())
 ;; member?
 ($check-predicate (member? 1 (list 1 2)))
 ($check-predicate (member? 2 (list 1 2)))
@@ -453,13 +458,17 @@
 ;; asooc
 ($check-error (assoc))
 ($check-error (assoc 2))
-($check-error (assoc 2 (list (list 1 1) (list 2 2)) ()))
+($check-error (assoc 2 (list (list 1 1) (list 2 2)) () ()))
 ($check-error (assoc . #0=(2 (list (list 1 1) (list 2 2)) . #0#)))
+($check-error (assoc 2 (list (list 1 1) (list 2 2)) () (unwrap equal?)))
 
 ($check-error (assoc 2 (list* (list 1 1) 2)))
 ($check-error (assoc 2 (list* (list 1 1) (list 2 2) #inert)))
+($check-error (assoc 2 (list* 1 2) equal?))
 ($check-error (assoc 4 (list (list 1 1) (list 2 2) #inert (list 4 4))))
 ($check-error (assoc 2 (list (list 1 1) (list 2 2) #inert (list 4 4))))
+($check-error (assoc 2 (list (list 1 1) (list 2 2) #inert (list 4 4)) 
+		     equal?))
 
 ;; member?
 ($check-error (member?))
