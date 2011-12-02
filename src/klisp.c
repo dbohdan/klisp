@@ -54,7 +54,8 @@ static void print_usage (void)
 	    "usage: %s [options] [script [args]].\n"
 	    "Available options are:\n"
 	    "  -e exp  eval string " KLISP_QL("exp") "\n"
-//	    "  -l name  require library " KLISP_QL("name") "\n"
+	    "  -l name  load file " KLISP_QL("name") "\n"
+	    "  -r name  require file " KLISP_QL("name") "\n"
 	    "  -i       enter interactive mode after executing " 
 	                KLISP_QL("script") "\n"
 	    "  -v       show version information\n"
@@ -366,7 +367,7 @@ static int dofile(klisp_State *K, const char *name)
 	    krooted_tvs_pop(K);
 	    krooted_tvs_pop(K);
 	    K->next_value = error_obj;
-	    return report(K, EXIT_FAILURE);
+	    return report(K, STATUS_ERROR);
 	}
 	    
 	TValue name_str = kstring_new_b(K, name);
@@ -465,7 +466,7 @@ static int handle_script(klisp_State *K, char **argv, int n)
 /* check that argument has no extra characters at the end */
 #define notail(x)	{if ((x)[2] != '\0') return -1;}
 
-static int collectargs (char **argv, bool *pi, bool *pv, bool *pe) 
+static int collectargs (char **argv, bool *pi, bool *pv, bool *pe, bool *pl)
 {
     int i;
     for (i = 1; argv[i] != NULL; i++) {
@@ -485,8 +486,13 @@ static int collectargs (char **argv, bool *pi, bool *pv, bool *pe)
 	    *pv = true;
 	    break;
 	case 'e':
-	    *pe = true;  /* go through */
-//	case 'l': /* No library for now */
+	    *pe = true;  
+	    goto select_arg;
+	case 'l': 
+	    *pl = true;
+	    goto select_arg;
+	case 'r': klisp_assert(0);
+	select_arg:
 	    if (argv[i][2] == '\0') {
 		i++;
 		if (argv[i] == NULL)
@@ -516,14 +522,25 @@ static int runargs (klisp_State *K, char **argv, int n)
 	klisp_assert(argv[i][0] == '-');
 
 	switch (argv[i][1]) {  /* option */
-	case 'e': {
+	case 'e': { /* eval expr */
 	    const char *chunk = argv[i] + 2;
 	    if (*chunk == '\0') 
 		chunk = argv[++i];
 	    klisp_assert(chunk != NULL);
 
-	    if (dostring(K, chunk, "=(command line)") != 0)
-		return EXIT_FAILURE;
+	    int res = dostring(K, chunk, "=(command line)");
+	    if (res != STATUS_CONTINUE)
+		return res; /* stop if eval fails/exit */
+	    break;
+	}
+	case 'l': { /* load file */
+	    const char *filename = argv[i] + 2;
+	    if (*filename == '\0') filename = argv[++i];
+	    klisp_assert(filename != NULL);
+	    
+	    int res = dofile(K, filename);
+	    if (res != STATUS_CONTINUE)
+		return res; /* stop if file fails/exit */
 	    break;
 	}
 //	case 'l':  /* no libraries for now */
@@ -531,7 +548,7 @@ static int runargs (klisp_State *K, char **argv, int n)
 	    break;
 	}
     }
-    return EXIT_SUCCESS;
+    return STATUS_CONTINUE;
 }
 
 static void populate_argument_lists(klisp_State *K, char **argv, int argc, 
@@ -617,12 +634,12 @@ static void pmain(klisp_State *K)
     if (s->status != STATUS_CONTINUE)
 	return;
 
-    bool has_i = false, has_v = false, has_e = false;
-    int script = collectargs(argv, &has_i, &has_v, &has_e);
+    bool has_i = false, has_v = false, has_e = false, has_l = false;
+    int script = collectargs(argv, &has_i, &has_v, &has_e, &has_l);
 
     if (script < 0) { /* invalid args? */
 	print_usage();
-	s->status = EXIT_FAILURE;
+	s->status = STATUS_ERROR;
 	return;
     }
 
@@ -647,7 +664,7 @@ static void pmain(klisp_State *K)
 
     if (has_i) { 
 	dotty(K);
-    } else if (script == 0 && !has_e && !has_v) {
+    } else if (script == 0 && !has_e && !has_l && !has_v) {
 	if (ksystem_isatty(K, kcurr_input_port(K))) {
 	    print_version();
 	    dotty(K);
