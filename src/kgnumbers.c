@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -2272,6 +2273,8 @@ void kexpt(klisp_State *K)
 /* Number<->String conversion */
 void number_to_string(klisp_State *K)
 {
+    /* MAYBE this code could be factored out and used in kwrite too, 
+       but maybe it's too much allocation for kwrite in the simpler cases */
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
     TValue denv = K->next_env;
@@ -2379,9 +2382,116 @@ void number_to_string(klisp_State *K)
     kapply_cc(K, str);
 }
 
-/* TODO */
+struct kspecial_number {
+    const char *ext_rep; /* downcase external representation */
+    TValue obj;
+} kspecial_numbers[] = { { "#e+infinity", KEPINF_ },
+			 { "#e-infinity", KEMINF_ },
+			 { "#i+infinity", KIPINF_ },
+			 { "#i-infinity", KIMINF_ },
+			 { "#real", KRWNPV_ },
+			 { "#undefined", KUNDEF_ }
+};
+
 void string_to_number(klisp_State *K)
 {
+    /* MAYBE try to unify with ktoken */
+
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_al1tp(K, ptree, "string", ttisstring, str, maybe_radix);
+    int radix = 10;
+    if (get_opt_tpar(K, maybe_radix, "radix (2, 8, 10, or 16)", ttisradix))
+	radix = ivalue(maybe_radix); 
+
+    /* track length to throw better error msgs */
+    char *buf = kstring_buf(str);
+    int32_t len = kstring_size(str);
+
+    /* if at some point we reach the end of the string
+       the char will be '\0' and will fail all tests,
+       so there is no need to test the length explicitly */
+    bool has_exactp = false;
+    bool exactp = false; /* the default exactness will depend on the format */
+    bool has_radixp = false;
+
+    TValue res = KINERT;
+    size_t snum_size = sizeof(kspecial_numbers) / 
+	sizeof(struct kspecial_number);
+    for (int i = 0; i < snum_size; i++) {
+	struct kspecial_number number = kspecial_numbers[i];
+	/* NOTE: must check type because buf may contain embedded '\0's */
+	if (len == strlen(number.ext_rep) &&
+	       strcmp(number.ext_rep, buf) == 0) {
+	    res = number.obj; 
+	    break;
+	}
+    }
+    if (ttisinert(res)) {
+	/* number wasn't a special number */
+	   while (*buf == '#') {
+	       switch(*++buf) {
+	       case 'e': case 'E': case 'i': case 'I':
+		   if (has_exactp) {
+		       klispE_throw_simple_with_irritants(
+			   K, "two exactness prefixes", 1, str);
+		       return;
+		   }
+		   has_exactp = true;
+		   exactp = (*buf == 'e');
+		   ++buf;
+		   break;
+	       case 'b': case 'B': radix = 2; goto RADIX;
+	       case 'o': case 'O': radix = 8; goto RADIX;
+	       case 'd': case 'D': radix = 10; goto RADIX;
+	       case 'x': case 'X': radix = 16; goto RADIX;
+	       RADIX: 
+		   if (has_radixp) {
+		       klispE_throw_simple_with_irritants(
+			   K, "two radix prefixes", 1, str);
+		       return;
+		   }
+		   has_radixp = true;
+		   ++buf;
+		   break;
+	       default:
+		   klispE_throw_simple_with_irritants(K, "unexpected char "
+						      "after #", 1, str);
+		   return;
+	       }
+	   }
+
+	   if (radix == 10) {
+	       /* only allow decimals with radix 10 */
+	       bool decimalp = false;
+	       if (!krational_read_decimal(K, buf, radix, &res, NULL, &decimalp)) {
+		   klispE_throw_simple_with_irritants(K, "Bad format", 1, str);
+		   return;
+	       }
+	       if (decimalp && !has_exactp) {
+		   /* handle decimal format as an explicit #i */
+		   has_exactp = true;
+		   exactp = false;
+	       }
+	   } else {
+	       if (!krational_read(K, buf, radix, &res, NULL)) {
+		   klispE_throw_simple_with_irritants(K, "Bad format", 1, str);
+		   return;
+	       }
+	   }
+    
+	   if (has_exactp && !exactp) {
+	       krooted_tvs_push(K, res);
+	       res = kexact_to_inexact(K, res);
+	       krooted_tvs_pop(K);
+	   }
+    }
+    kapply_cc(K, res);
 }
 
 /* init ground */
