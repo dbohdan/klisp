@@ -465,7 +465,9 @@ TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy,
 	check_list(K, true, obj, pairs, cpairs);
 	return obj;
     } else {
-	TValue last_pair = kget_dummy3(K);
+	TValue copy = kcons(K, KNIL, KNIL);
+	krooted_vars_push(K, &copy);
+	TValue last_pair = copy;
 	TValue tail = obj;
     
 	while(ttispair(tail) && !kis_marked(tail)) {
@@ -496,19 +498,22 @@ TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy,
 	}
 
 	unmark_list(K, obj);
-	unmark_list(K, kget_dummy3_tail(K));
+	unmark_list(K, kcdr(copy));
 
 	if (!ttispair(tail) && !ttisnil(tail)) {
 	    klispE_throw_simple(K, "expected list"); 
 	    return KINERT;
 	} 
-	return kcutoff_dummy3(K);
+	krooted_vars_pop(K);
+	return kcdr(copy);
     }
 }
 
 TValue check_copy_env_list(klisp_State *K, TValue obj)
 {
-    TValue last_pair = kget_dummy3(K);
+    TValue copy = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &copy);
+    TValue last_pair = copy;
     TValue tail = obj;
     
     while(ttispair(tail) && !kis_marked(tail)) {
@@ -531,7 +536,8 @@ TValue check_copy_env_list(klisp_State *K, TValue obj)
 	klispE_throw_simple(K, "expected list"); 
 	return KINERT;
     } 
-    return kcutoff_dummy3(K);
+    krooted_vars_pop(K);
+    return kcdr(copy);
 }
 
 /* Helpers for string, list->string, and string-map,
@@ -1398,16 +1404,20 @@ void map_for_each_get_metrics(klisp_State *K, TValue lss,
 /* Return two lists, isomorphic to lss: one list of cars and one list
    of cdrs (replacing the value of lss) */
 
-/* GC: assumes lss is rooted, and dummy1 & 2 are free in K */
+/* GC: assumes lss is rooted */
 TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
 				  int32_t apairs, int32_t cpairs)
 {
     TValue tail = *lss;
 
-    TValue lp_cars = kget_dummy1(K);
+    TValue cars = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &cars);
+    TValue lp_cars = cars;
     TValue lap_cars = lp_cars;
 
-    TValue lp_cdrs = kget_dummy2(K);
+    TValue cdrs = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &cdrs);
+    TValue lp_cdrs = cdrs;
     TValue lap_cdrs = lp_cdrs;
     
     while(apairs != 0 || cpairs != 0) {
@@ -1452,8 +1462,10 @@ TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss,
 	}
     }
 
-    *lss = kcutoff_dummy2(K);
-    return kcutoff_dummy1(K);
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
+    *lss = kcdr(cdrs);
+    return kcdr(cars);
 }
 
 /* Transpose lss so that the result is a list of lists, each one having
@@ -1465,8 +1477,9 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 			      int32_t app_apairs, int32_t app_cpairs, 
 			      int32_t res_apairs, int32_t res_cpairs)
 {
-    /* reserve dummy1 & 2 to get_cars_cdrs */
-    TValue lp = kget_dummy3(K);
+    TValue tlist = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &tlist);    
+    TValue lp = tlist;
     TValue lap = lp;
 
     TValue cars = KNIL; /* put something for GC */
@@ -1512,7 +1525,8 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
 
     krooted_vars_pop(K);
     krooted_vars_pop(K);
-    return kcutoff_dummy3(K);
+    krooted_vars_pop(K);
+    return kcdr(tlist);
 }
 
 /* Continuations that are used in more than one file */
@@ -1756,7 +1770,7 @@ TValue make_bind_continuation(klisp_State *K, TValue key,
 /* this unmarks root before throwing any error */
 /* TODO: this isn't very clean, refactor */
 
-/* GC: assumes obj & root are rooted, dummy1 is in use */
+/* GC: assumes obj & root are rooted */
 inline TValue check_copy_single_entry(klisp_State *K, char *name,
 				      TValue obj, TValue root)
 {
@@ -1794,7 +1808,9 @@ TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
     if (ttisnil(obj)) {
 	return obj;
     } else {
-	TValue last_pair = kget_dummy1(K);
+	TValue copy = kcons(K, KNIL, KNIL);
+	krooted_vars_push(K, &copy);
+	TValue last_pair = copy;
 	TValue tail = obj;
     
 	while(ttispair(tail) && !kis_marked(tail)) {
@@ -1812,12 +1828,12 @@ TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
 
 	/* dont close the cycle (if there is one) */
 	unmark_list(K, obj);
-	TValue ret = kcutoff_dummy1(K);
 	if (!ttispair(tail) && !ttisnil(tail)) {
 	    klispE_throw_simple(K, "expected list"); 
 	    return KINERT;
 	} 
-	return ret;
+	krooted_vars_pop(K);
+	return kcdr(copy);
     }
 }
 

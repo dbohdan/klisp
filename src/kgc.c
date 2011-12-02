@@ -627,8 +627,8 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->curr_port);
 
     /* Mark all objects in the auxiliary stack,
-       (all valid indexes are below top), all the objects in
-       the two protected areas, and the three dummy pairs */
+       (all valid indexes are below top) and all the objects in
+       the two protected areas */
     markvaluearray(K, K->sbuf, K->stop);
     markvaluearray(K, K->rooted_tvs_buf, K->rooted_tvs_top);
     /* the area protecting variables is an array of type TValue *[] */
@@ -637,9 +637,6 @@ static void markroot (klisp_State *K) {
 	markvalue(K, **ptr);
     }
     
-    markvalue(K, K->dummy_pair1);
-    markvalue(K, K->dummy_pair2);
-    markvalue(K, K->dummy_pair3);
     K->gcstate = GCSpropagate;
 }
 

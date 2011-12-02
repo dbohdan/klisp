@@ -127,10 +127,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->rooted_tvs_top = 0;
     K->rooted_vars_top = 0;
 
-    K->dummy_pair1 = kcons(K, KINERT, KNIL);
-    K->dummy_pair2 = kcons(K, KINERT, KNIL);
-    K->dummy_pair3 = kcons(K, KINERT, KNIL);
-
     /* initialize strings */
 
     /* initial size of string/symbol table */
@@ -425,12 +421,14 @@ TValue select_interceptor(TValue guard_ls)
 ** (interceptor-op outer_cont . denv)
 */
 
-/* GC: assume src_cont & dst_cont are rooted, uses dummy1 */
+/* GC: assume src_cont & dst_cont are rooted */
 inline TValue create_interception_list(klisp_State *K, TValue src_cont, 
 				       TValue dst_cont)
 {
     mark_iancestors(dst_cont);
-    TValue tail = kget_dummy1(K);
+    TValue ilist = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &ilist);
+    TValue tail = ilist;
     TValue cont = src_cont;
 
     /* exit guards are from the inside to the outside, and
@@ -501,7 +499,8 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
     /* all interceptions collected, append the two lists and return */
     kset_cdr(tail, entry_int);
     krooted_vars_pop(K);
-    return kcutoff_dummy1(K);
+    krooted_vars_pop(K);
+    return kcdr(ilist);
 }
 
 /* this passes the operand tree to the continuation */

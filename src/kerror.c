@@ -63,10 +63,6 @@ void clear_buffers(klisp_State *K)
     ks_tbclear(K);
     K->shared_dict = KNIL;
 
-    UNUSED(kcutoff_dummy1(K));
-    UNUSED(kcutoff_dummy2(K));
-    UNUSED(kcutoff_dummy3(K));
-
     krooted_tvs_clear(K);
     krooted_vars_clear(K);
 }

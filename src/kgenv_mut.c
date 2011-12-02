@@ -145,13 +145,15 @@ inline void unmark_maybe_symbol_list(klisp_State *K, TValue ls)
 ** Check that obj is a finite list of symbols with no duplicates and
 ** returns a copy of the list (cf. check_copy_ptree)
 */
-/* GC: Assumes obj is rooted, uses dummy1 */
+/* GC: Assumes obj is rooted */
 TValue check_copy_symbol_list(klisp_State *K, TValue obj)
 {
     TValue tail = obj;
     bool type_errorp = false;
     bool repeated_errorp = false;
-    TValue last_pair = kget_dummy1(K);
+    TValue slist = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &slist);
+    TValue last_pair = slist;
 
     while(ttispair(tail) && !kis_marked(tail)) {
 	/* even if there is a type error continue checking the structure */
@@ -182,7 +184,8 @@ TValue check_copy_symbol_list(klisp_State *K, TValue obj)
     } else if (repeated_errorp) {
 	klispE_throw_simple(K, "repeated symbols");
     }
-    return kcutoff_dummy1(K);
+    krooted_vars_pop(K);
+    return kcdr(slist);
 }
 
 void do_import(klisp_State *K)

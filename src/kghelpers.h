@@ -351,13 +351,13 @@ void check_list(klisp_State *K, bool allow_infp, TValue obj,
 /* TODO: add check_copy_typed_list */
 /* check that obj is a list and make a copy if it is not immutable or
  force_copy is true */
-/* GC: assumes obj is rooted, use dummy3 */
+/* GC: assumes obj is rooted */
 TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy, 
 		       int32_t *pairs, int32_t *cpairs);
 
 /* check that obj is a list of environments and make a copy but don't keep 
    the cycles */
-/* GC: assume obj is rooted, uses dummy3 */
+/* GC: assume obj is rooted */
 TValue check_copy_env_list(klisp_State *K, TValue obj);
 
 /* The assimetry in error checking in the following functions
@@ -486,7 +486,7 @@ void map_for_each_get_metrics(
 
 /* Return two lists, isomorphic to lss: one list of cars and one list
    of cdrs (replacing the value of lss) */
-/* GC: Assumes lss is rooted, uses dummys 2 & 3 */
+/* GC: Assumes lss is rooted */
 TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
 				  int32_t apairs, int32_t cpairs);
 
@@ -494,8 +494,7 @@ TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss,
    metrics (app_apairs, app_cpairs). The metrics of the returned list
    should be (res_apairs, res_cpairs) */
 
-/* GC: Assumes lss is rooted, uses dummys 1, & 
-   (through get_cars_cdrs, 2, 3) */
+/* GC: Assumes lss is rooted */
 TValue map_for_each_transpose(klisp_State *K, TValue lss, 
 			      int32_t app_apairs, int32_t app_cpairs, 
 			      int32_t res_apairs, int32_t res_cpairs);

@@ -170,15 +170,6 @@ struct klisp_State {
        object pointed to by a variable may change */
     int32_t rooted_vars_top;
     TValue *rooted_vars_buf[GC_PROTECT_SIZE];
-
-    /* XXX These should be replaced with calls to krooted_vars_push */
-    /* These three are useful for constructing lists by means of set-car &
-       set-cdr. The idea is that these dummy pairs start as the head of 
-       the list (protecting the entire chain from GC) and at the end of the
-       construction, the list is cut off from the cdr of the dummy */
-    TValue dummy_pair1;
-    TValue dummy_pair2;
-    TValue dummy_pair3;
  };
 
 /* some size related macros */
@@ -357,15 +348,6 @@ inline void krooted_vars_pop(klisp_State *K)
 
 inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
 
-/* dummy functions will be in kpair.h, because we can't include
-   it from here */
-
-/* XXX: this is ugly but we can't include kpair.h here so... */
-/* MAYBE: move car & cdr to kobject.h */
-#define kstate_car(p_) (tv2pair(p_)->car)
-#define kstate_cdr(p_) (tv2pair(p_)->cdr)
-
-
 /*
 ** Source code tracking
 ** MAYBE: add source code tracking to symbols
@@ -418,12 +400,6 @@ inline void klispS_apply_cc(klisp_State *K, TValue val)
     /* TODO add marks assertions */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
-    klisp_assert(ttispair(K->dummy_pair1) && 
-		 ttisnil(kstate_cdr(K->dummy_pair1)));
-    klisp_assert(ttispair(K->dummy_pair2) && 
-		 ttisnil(kstate_cdr(K->dummy_pair2)));
-    klisp_assert(ttispair(K->dummy_pair3) && 
-		 ttisnil(kstate_cdr(K->dummy_pair3)));
 
     K->next_obj = K->curr_cont; /* save it from GC */
     Continuation *cont = tv2cont(K->curr_cont);
@@ -460,12 +436,6 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
     /* various assert to check the freeing of gc protection methods */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
-    klisp_assert(ttispair(K->dummy_pair1) && 
-		 ttisnil(kstate_cdr(K->dummy_pair1)));
-    klisp_assert(ttispair(K->dummy_pair2) && 
-		 ttisnil(kstate_cdr(K->dummy_pair2)));
-    klisp_assert(ttispair(K->dummy_pair3) && 
-		 ttisnil(kstate_cdr(K->dummy_pair3)));
 
     K->next_obj = top;
     Operative *op = tv2op(top);

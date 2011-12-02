@@ -125,14 +125,19 @@ void Ssequence(klisp_State *K)
 TValue split_check_cond_clauses(klisp_State *K, TValue clauses, 
 				TValue *bodies)
 {
-    TValue last_car_pair = kget_dummy1(K);
-    TValue last_cdr_pair = kget_dummy2(K);
+    TValue cars = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &cars);
+    TValue last_car_pair = cars;
+
+    TValue cdrs = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &cdrs);
+    TValue last_cdr_pair = cdrs;
 
     TValue tail = clauses;
     int32_t count = 0;
 
     while(ttispair(tail) && !kis_marked(tail)) {
-	count++;
+	++count;
 	TValue first = kcar(tail);
 	if (!ttispair(first)) {
 	    unmark_list(K, clauses);
@@ -164,25 +169,26 @@ TValue split_check_cond_clauses(klisp_State *K, TValue clauses,
     if (!ttispair(tail) && !ttisnil(tail)) {
 	klispE_throw_simple(K, "expected list (clauses)");
 	return KNIL;
-    } else {
-	/* 
-	   check all the bodies (should be lists), and
-	   make a copy of the list structure.
-	   couldn't be done before because this uses
-	   marks, count is used because it may be a cyclic list
-	*/
-	tail = kget_dummy2_tail(K);
-	while(count--) {
-	    TValue first = kcar(tail);
-	    /* this uses dummy3 */
-	    TValue copy = check_copy_list(K, first, false, NULL, NULL);
-	    kset_car(tail, copy);
-	    tail = kcdr(tail);
-	}
-
-	*bodies = kcutoff_dummy2(K);
-	return  kcutoff_dummy1(K);
     }
+
+    /* 
+       check all the bodies (should be lists), and
+       make a copy of the list structure.
+       couldn't be done before because this uses
+       marks, count is used because it may be a cyclic list
+    */
+    tail = kcdr(cdrs);
+    while(count--) {
+	TValue first = kcar(tail);
+	TValue copy = check_copy_list(K, first, false, NULL, NULL);
+	kset_car(tail, copy);
+	tail = kcdr(tail);
+    }
+
+    *bodies = kcdr(cdrs);
+    krooted_vars_pop(K);
+    krooted_vars_pop(K);
+    return kcdr(cars);
 }
 
 /* Helper for the $cond continuation */

@@ -79,7 +79,9 @@ void listS(klisp_State *K)
 	klispE_throw_simple(K, "empty argument list"); 
 	return;
     }
-    TValue last_pair = kget_dummy1(K);
+    TValue res_obj = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &res_obj);
+    TValue last_pair = res_obj;
     TValue tail = ptree;
     
     /* First copy the list, but remembering the next to last pair */
@@ -100,7 +102,8 @@ void listS(klisp_State *K)
 	   we need at least one pair for this to work. */
 	TValue next_to_last_pair = kcdr(last_pair);
 	kset_cdr(next_to_last_pair, kcar(last_pair));
-	kapply_cc(K, kcutoff_dummy1(K));
+	krooted_vars_pop(K);
+	kapply_cc(K, kcdr(res_obj));
     } else if (ttispair(tail)) { /* cyclic argument list */
 	klispE_throw_simple(K, "cyclic argument list"); 
 	return;
@@ -372,7 +375,7 @@ void list_ref(klisp_State *K)
    (as the ret value) and the last_pair. If obj is nil, *last_pair remains
    unmodified (this avoids having to check ttisnil before calling this) */
 
-/* GC: Assumes obj is rooted, uses dummy1 */
+/* GC: Assumes obj is rooted */
 TValue append_check_copy_list(klisp_State *K, char *name, TValue obj, 
 			      TValue *last_pair_ptr)
 {
@@ -380,7 +383,9 @@ TValue append_check_copy_list(klisp_State *K, char *name, TValue obj,
     if (ttisnil(obj))
 	return obj;
 
-    TValue last_pair = kget_dummy1(K);
+    TValue copy = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &copy);
+    TValue last_pair = copy;
     TValue tail = obj;
     
     while(ttispair(tail) && !kis_marked(tail)) {
@@ -400,7 +405,8 @@ TValue append_check_copy_list(klisp_State *K, char *name, TValue obj,
 	return KINERT;
     }
     *last_pair_ptr = last_pair;
-    return kcutoff_dummy1(K);
+    krooted_vars_pop(K);
+    return (kcdr(copy));
 }
 
 /* 6.3.3 append */
@@ -417,8 +423,9 @@ void append(klisp_State *K)
     check_list(K, true, ptree, &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
-    /* use dummy2, append_check_copy uses dummy1 */
-    TValue last_pair = kget_dummy2(K);
+    TValue res_list = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &res_list);
+    TValue last_pair = res_list;
     TValue lss = ptree;
     TValue last_apair;
 
@@ -466,7 +473,8 @@ void append(klisp_State *K)
 	    kset_cdr(last_cpair, first_cpair); /* encycle! */
 	}
     }
-    kapply_cc(K, kcutoff_dummy2(K));
+    krooted_vars_pop(K);
+    kapply_cc(K, kcdr(res_list));
 }
 
 /* 6.3.4 list-neighbors */
@@ -486,7 +494,9 @@ void list_neighbors(klisp_State *K)
 
     TValue tail = ls;
     int32_t count = cpairs? pairs - cpairs : pairs - 1;
-    TValue last_pair = kget_dummy1(K);
+    TValue neighbors = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &neighbors);
+    TValue last_pair = neighbors;
     TValue last_apair = last_pair; /* set after first loop */
     bool doing_cycle = false;
 
@@ -516,7 +526,8 @@ void list_neighbors(klisp_State *K)
 	    /* this will loop once more */
 	}
     }
-    kapply_cc(K, kcutoff_dummy1(K));
+    krooted_vars_pop(K);
+    kapply_cc(K, kcdr(neighbors));
 }
 
 /* Helpers for filter */

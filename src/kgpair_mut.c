@@ -242,11 +242,13 @@ inline void appendB_clear_last_pairs(klisp_State *K, TValue ls)
    objects (1 based) should be set to the next object in the list (this will
    encycle! the result if necessary) */
 
-/* GC: Assumes lss is rooted, uses dummy1 */
+/* GC: Assumes lss is rooted */
 TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs, 
 				 int32_t cpairs)
 {
-    TValue last_pair = kget_dummy1(K);
+    TValue elist = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &elist);
+    TValue last_pair = elist;
     TValue tail = lss;
     /* this is a list of last pairs using the marks to link the pairs) */
     TValue last_pairs = KNIL;
@@ -373,7 +375,8 @@ TValue appendB_get_lss_endpoints(klisp_State *K, TValue lss, int32_t apairs,
     /* discard the first element (there is always one) because it
      isn't necessary, the list is used to set the last pairs of
      the objects to the correspoding next first pair */
-    return kcdr(kcutoff_dummy1(K));
+    krooted_vars_pop(K);
+    return kcdr(kcdr(elist));
 }
 
 /* 6.4.1 append! */

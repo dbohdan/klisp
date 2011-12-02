@@ -100,12 +100,16 @@ void make_environment(klisp_State *K)
 ** If bindings is not finite (or not a list) an error is signaled.
 */
 
-/* GC: assume bindings is rooted, uses dummys 1 & 2 */
+/* GC: assume bindings is rooted */
 TValue split_check_let_bindings(klisp_State *K, TValue bindings, 
 				TValue *exprs, bool starp)
 {
-    TValue last_car_pair = kget_dummy1(K);
-    TValue last_cadr_pair = kget_dummy2(K);
+    TValue cars = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &cars);
+    TValue last_car_pair = cars;
+    TValue cadrs = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &cadrs);
+    TValue last_cadr_pair = cadrs;
 
     TValue tail = bindings;
 
@@ -142,20 +146,21 @@ TValue split_check_let_bindings(klisp_State *K, TValue bindings,
 	if (starp) {
 	    /* all bindings are consider individual ptrees in these 'let's,
 	       replace each ptree with its copy (after checking of course) */
-	    tail = kget_dummy1_tail(K);
+	    tail = kcdr(cars);
 	    while(!ttisnil(tail)) {
 		TValue first = kcar(tail);
 		TValue copy = check_copy_ptree(K, first, KIGNORE);
 		kset_car(tail, copy);
 		tail = kcdr(tail);
 	    }
-	    res = kget_dummy1_tail(K);
+	    res = kcdr(cars);
 	} else {
 	    /* all bindings are consider one ptree in these 'let's */
-	    res = check_copy_ptree(K, kget_dummy1_tail(K), KIGNORE);
+	    res = check_copy_ptree(K, kcdr(cars), KIGNORE);
 	}
-	*exprs = kcutoff_dummy2(K);
-	UNUSED(kcutoff_dummy1(K));
+	*exprs = kcdr(cadrs);
+	krooted_vars_pop(K);
+	krooted_vars_pop(K);
 	return res;
     }
 }
