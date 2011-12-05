@@ -12,7 +12,8 @@
 ** Study differrent c interfaces (maybe a stack like in lua would be
    better than dealing with gc push/pop)
 ** eliminate all remaining char * arguments where not needed
-** check if all inline functions need to be inline
+** remove most of inline declarations, we may then add some
+   back after proper profiling
 ** standarize either int32_t (now used in lists) or uint32_t (now used
    in strings, vectors and bytevectors) for sizes (and maybe use a 
    typedef like lua)
@@ -38,3 +39,5 @@
 ** add modules support to the interpreter (r7rs)
 ** complex numbers (Kernel report)
 ** interval arithmetic (Kernel report)
+** reduce binary size! 5/12 is 3megs... most of it from kg*.o
+  (try converting inlines and macros to regular functions)

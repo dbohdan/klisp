@@ -7,6 +7,14 @@
 /*
 ** TODO This needs a serious clean up, I hacked it together during
 ** an all nighter...
+**
+** For starters:
+** - Split dofile in dofile & dostdin
+** - Merge dofile and dorfile with a boolean flat (load/require)
+**   (use dorfile as a model)
+** - Add string-eval to the ground environment and use that
+**   in dostring (use dorfile as a model)
+** - Add get_ground_binding somewhere (probably kstate) and use it.
 */
 
 #include <stdio.h>
@@ -450,6 +458,82 @@ static void dotty(klisp_State *K)
     K->next_env = env;
 }
 
+/* name != NULL */
+static int dorfile(klisp_State *K, const char *name) 
+{
+    bool errorp = false; /* may be set to true in error handler */
+    bool rootp = true; /* may be set to false in continuation */
+
+    klisp_assert(name != NULL);
+
+    TValue name_str = kstring_new_b(K, name);
+    krooted_tvs_push(K, name_str);
+    /* TODO this is exactly the same as in string, factor the code out */
+    /* create the guard set error flag after errors */
+    TValue exit_int = kmake_operative(K, do_int_mark_error, 
+				      1, p2tv(&errorp));
+    krooted_tvs_push(K, exit_int);
+    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    krooted_tvs_pop(K); /* already in guard */
+    krooted_tvs_push(K, exit_guard);
+    TValue exit_guards = kcons(K, exit_guard, KNIL);
+    krooted_tvs_pop(K); /* already in guards */
+    krooted_tvs_push(K, exit_guards);
+
+    TValue entry_guards = KNIL;
+
+    /* this is needed for interception code */
+    TValue env = kmake_empty_environment(K);
+    krooted_tvs_push(K, env);
+    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+					   do_pass_value, 2, entry_guards, env);
+    kset_outer_cont(outer_cont);
+    krooted_tvs_push(K, outer_cont);
+    TValue inner_cont = kmake_continuation(K, outer_cont, 
+					   do_pass_value, 2, exit_guards, env);
+    kset_inner_cont(inner_cont);
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
+
+    /* only name remains in the root stack */
+    krooted_tvs_push(K, inner_cont);
+
+
+    /* This continuation will discard the result of the evaluation
+       and return #inert instead, it will also signal via rootp = false
+       that the evaluation didn't explicitly invoke the root continuation
+    */
+    TValue discard_cont = kmake_continuation(K, inner_cont, do_int_mark_root,
+					     1, p2tv(&rootp));
+
+    krooted_tvs_pop(K); /* pop inner cont */
+
+    /* set the cont & call require */
+    kset_cc(K, discard_cont); 
+    
+    /* prepare params (str still in the gc stack) */
+    env = K->next_env; /* this will be ignored anyways */
+    TValue ptree = kcons(K, name_str, KNIL);
+    krooted_tvs_pop(K);
+    krooted_tvs_push(K, ptree);
+    /* TODO factor this out into a get_ground_binding(K, char *) */
+    TValue req = ksymbol_new_b(K, "require", KNIL);
+    krooted_vars_push(K, &req);
+    klisp_assert(kbinds(K, K->ground_env, req));
+    req = kunwrap(kget_binding(K, K->ground_env, req));
+    krooted_tvs_pop(K);
+    krooted_vars_pop(K);
+
+    klispS_tail_call_si(K, req, ptree, env, KNIL);
+    klispS_run(K);
+
+    int status = errorp? STATUS_ERROR : 
+	(rootp? STATUS_ROOT : STATUS_CONTINUE);
+
+    /* get the standard environment again in K->next_env */
+    K->next_env = env;
+    return report(K, status);
+}
+
 static int handle_script(klisp_State *K, char **argv, int n) 
 {
     const char *fname;
@@ -491,7 +575,7 @@ static int collectargs (char **argv, bool *pi, bool *pv, bool *pe, bool *pl)
 	case 'l': 
 	    *pl = true;
 	    goto select_arg;
-	case 'r': klisp_assert(0);
+	case 'r':
 	select_arg:
 	    if (argv[i][2] == '\0') {
 		i++;
@@ -543,7 +627,16 @@ static int runargs (klisp_State *K, char **argv, int n)
 		return res; /* stop if file fails/exit */
 	    break;
 	}
-//	case 'l':  /* no libraries for now */
+	case 'r': { /* require file */
+	    const char *filename = argv[i] + 2;
+	    if (*filename == '\0') filename = argv[++i];
+	    klisp_assert(filename != NULL);
+	    
+	    int res = dorfile(K, filename);
+	    if (res != STATUS_CONTINUE)
+		return res; /* stop if file fails/exit */
+	    break;
+	}
 	default: 
 	    break;
 	}
