@@ -39,5 +39,20 @@
 ** add modules support to the interpreter (r7rs)
 ** complex numbers (Kernel report)
 ** interval arithmetic (Kernel report)
-** reduce binary size! 5/12 is 3megs... most of it from kg*.o
-  (try converting inlines and macros to regular functions)
+* reduce binary size 
+** currently (2011/12/05) is 3megs... most of it from kg*.o
+** 1st culprite klisp_assert:
+** almost 1 meg comes from klisp_asserts, asserts also add
+   considerably to the compilation time
+** add a flag to enable assertions (maybe debug) and disable
+   it by default
+** fix warnings when assertions are turned off (probably unitialized 
+   uses, unused variables, etc)
+** 2nd culprite debugging symbols:
+** 1 meg and a half comes from debugging symbols, they also add to
+   the compilation time
+** add a flag (maybe the same as for asserts, maybe another one) to 
+   include debug symbols and disable it by default
+** After removing asserts & symbols the size is reduced to a more 
+   manageable 500k, however it would be nice to bring that even 
+   lower
