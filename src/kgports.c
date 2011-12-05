@@ -770,6 +770,68 @@ void load(klisp_State *K)
     }
 }
 
+/* ?.? require, it's like load except in a standard environment */
+/* TODO check to see if the files was required before! */
+void require(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+    bind_1tp(K, ptree, "string", ttisstring, filename);
+
+    /* the reads must be guarded to close the file if there is some error 
+     this continuation also will return inert after the evaluation of the
+     last expression is done */
+    TValue port = kmake_fport(K, filename, false, false);
+    krooted_tvs_push(K, port);
+
+    TValue inert_cont = kmake_continuation(K, kget_cc(K), do_return_value, 1, 
+					   KINERT);
+    
+    krooted_tvs_push(K, inert_cont);
+
+    TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
+    /* this will be used later, but contruct it now to use the 
+       current continuation as parent 
+    GC: root this obj */
+    kset_cc(K, guarded_cont); /* implicit rooting */
+    /* any error will close the port */
+    TValue ls = kread_list_from_port(K, port, false);  /* immutable pairs */
+
+    /* now the sequence of expresions should be evaluated in a
+       standard environment and #inert returned after all are done */
+    kset_cc(K, inert_cont); /* implicit rooting */
+    krooted_tvs_pop(K); /* already rooted */
+
+    if (ttisnil(ls)) {
+	krooted_tvs_pop(K); /* port */
+	kapply_cc(K, KINERT);
+    } else {
+	TValue tail = kcdr(ls);
+	/* std environments have hashtable for bindings */
+	TValue env = kmake_table_environment(K, K->ground_env);
+	if (ttispair(tail)) {
+	    krooted_tvs_push(K, ls);
+	    krooted_tvs_push(K, env);
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
+						 do_seq, 2, tail, env);
+	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
+	    krooted_tvs_pop(K); /* env */
+	    krooted_tvs_pop(K); /* ls */
+	} 
+	krooted_tvs_pop(K); /* port */
+	ktail_eval(K, kcar(ls), env);
+    }
+}
+
 /* 15.2.3 get-module */
 void get_module(klisp_State *K)
 {
@@ -1068,6 +1130,8 @@ void kinit_ports_ground_env(klisp_State *K)
 		    2, symbol, b2tv(true));
     /* 15.2.2 load */
     add_applicative(K, ground_env, "load", load, 0);
+    /* 15.2.? require */
+    add_applicative(K, ground_env, "require", require, 0);
     /* 15.2.3 get-module */
     add_applicative(K, ground_env, "get-module", get_module, 0);
     /* 15.2.? display */
