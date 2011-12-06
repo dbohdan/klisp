@@ -14,6 +14,7 @@
 #include "kobject.h"
 #include "kport.h"
 #include "kstring.h"
+#include "ktable.h"
 #include "kbytevector.h"
 #include "kenvironment.h"
 #include "kapplicative.h"
@@ -876,6 +877,21 @@ void require(klisp_State *K)
 	klispE_throw_simple(K, "Empty name");
 	return;
     }
+    /* search for the named file in the table of already
+       required files. 
+       N.B. this will be fooled if the same file is accessed
+       through different names */
+    TValue saved_name = kstring_immutablep(name)? name :
+	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+
+    const TValue *node = klispH_getstr(tv2table(K->require_table), 
+				       tv2str(saved_name));
+    if (node != &kfree) {
+	/* was required already, nothing to be done */
+	kapply_cc(K, KINERT);
+    }
+
+    krooted_tvs_push(K, saved_name);
     TValue filename = K->empty_string;
     krooted_vars_push(K, &filename);
     filename = find_file(K, name, K->require_path);
@@ -884,6 +900,16 @@ void require(klisp_State *K)
 	klispE_throw_simple_with_irritants(K, "Not found", 1, name);
 	return;
     }
+
+    /* the file was found, save it in the table */
+    /* MAYBE the name should be saved in the table only if no error
+       occured... but that could lead to loops if the file is
+       required recursively. A third option would be to record the 
+       sate of the require in the table, so we could have: error, required,
+       requiring, etc */
+    *(klispH_setstr(K, tv2table(K->require_table), tv2str(saved_name))) = 
+	KTRUE;
+    krooted_tvs_pop(K); /* saved_name no longer necessary */
 
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the

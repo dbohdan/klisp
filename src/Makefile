@@ -214,7 +214,7 @@ kgpairs_lists.o: kgpairs_lists.c kstate.h klimits.h klisp.h kobject.h \
 kgports.o: kgports.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kport.h kstring.h kbytevector.h kenvironment.h \
  kapplicative.h koperative.h kcontinuation.h kpair.h kgc.h kerror.h \
- ksymbol.h kread.h kwrite.h kghelpers.h ktable.h kgports.h
+ ksymbol.h kread.h kwrite.h kghelpers.h ktable.h kgports.h ktable.h
 kgpromises.o: kgpromises.c kstate.h klimits.h klisp.h kobject.h \
  klispconf.h ktoken.h kmem.h kpromise.h kpair.h kgc.h kapplicative.h \
  koperative.h kcontinuation.h kerror.h kghelpers.h kenvironment.h \
