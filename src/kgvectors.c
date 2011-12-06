@@ -19,10 +19,10 @@
 #include "kerror.h"
 #include "kvector.h"
 #include "kpair.h"
+#include "kbytevector.h"
 
 #include "kghelpers.h"
 #include "kgvectors.h"
-#include "kgnumbers.h" /* for keintegerp & knegativep */
 
 /* (R7RS 3rd draft 6.3.6) vector? */
 /* uses typep */
@@ -47,8 +47,8 @@ void make_vector(klisp_State *K)
         klispE_throw_simple(K, "vector length is too big");
         return;
     }
-    TValue new_vector = (ivalue(tv_s) == 0)
-        ? K->empty_vector
+    TValue new_vector = (ivalue(tv_s) == 0)?
+	K->empty_vector
         : kvector_new_sf(K, ivalue(tv_s), fill);
     kapply_cc(K, new_vector);
 }
@@ -61,7 +61,7 @@ void vector_length(klisp_State *K)
 
     bind_1tp(K, ptree, "vector", ttisvector, vector);
 
-    TValue res = i2tv(kvector_length(vector));
+    TValue res = i2tv(kvector_size(vector));
     kapply_cc(K, res);
 }
 
@@ -80,16 +80,16 @@ void vector_ref(klisp_State *K)
         return;
     }
     int32_t i = ivalue(tv_i);
-    if (i < 0 || i >= kvector_length(vector)) {
+    if (i < 0 || i >= kvector_size(vector)) {
         klispE_throw_simple_with_irritants(K, "vector index out of bounds",
                                            1, tv_i);
         return;
     }
-    kapply_cc(K, kvector_array(vector)[i]);
+    kapply_cc(K, kvector_buf(vector)[i]);
 }
 
 /* (R7RS 3rd draft 6.3.6) vector-set! */
-void vector_setS(klisp_State *K)
+void vector_setB(klisp_State *K)
 {
     klisp_assert(ttisenvironment(K->next_env));
 
@@ -101,19 +101,19 @@ void vector_setS(klisp_State *K)
         klispE_throw_simple_with_irritants(K, "vector index out of bounds",
                                            1, tv_i);
         return;
+    }
+
+    int32_t i = ivalue(tv_i);
+    if (i < 0 || i >= kvector_size(vector)) {
+        klispE_throw_simple_with_irritants(K, "vector index out of bounds",
+                                           1, tv_i);
+        return;
     } else if (kvector_immutablep(vector)) {
         klispE_throw_simple(K, "immutable vector");
         return;
     }
 
-    int32_t i = ivalue(tv_i);
-    if (i < 0 || i >= kvector_length(vector)) {
-        klispE_throw_simple_with_irritants(K, "vector index out of bounds",
-                                           1, tv_i);
-        return;
-    }
-
-    kvector_array(vector)[i] = tv_new_value;
+    kvector_buf(vector)[i] = tv_new_value;
     kapply_cc(K, KINERT);
 }
 
@@ -128,25 +128,8 @@ void vector_copy(klisp_State *K)
 
     TValue new_vector = kvector_emptyp(v)? 
 	v
-        : kvector_new_bs_g(K, true, kvector_array(v), kvector_length(v));
+        : kvector_new_bs_g(K, true, kvector_buf(v), kvector_size(v));
     kapply_cc(K, new_vector);
-}
-
-static TValue list_to_vector_h(klisp_State *K, const char *name, TValue ls)
-{
-    int32_t dummy;
-    int32_t pairs = check_list(K, name, false, ls, &dummy);
-
-    if (pairs == 0) {
-        return K->empty_vector;
-    } else {
-        TValue res = kvector_new_sf(K, pairs, KINERT);
-        for (int i = 0; i < pairs; i++) {
-            kvector_array(res)[i] = kcar(ls);
-            ls = kcdr(ls);
-        }
-        return res;
-    }
 }
 
 /* (R7RS 3rd draft 6.3.6) vector */
@@ -155,7 +138,11 @@ void vector(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
 
     TValue ptree = K->next_value;
-    kapply_cc(K, list_to_vector_h(K, "vector", ptree));
+    /* don't allow cycles */
+    int32_t pairs;
+    check_list(K, false, ptree, &pairs, NULL);
+    TValue res = list_to_vector_h(K, ptree, pairs);
+    kapply_cc(K, res);
 }
 
 /* (R7RS 3rd draft 6.3.6) list->vector */
@@ -165,7 +152,11 @@ void list_to_vector(klisp_State *K)
 
     TValue ptree = K->next_value;
     bind_1p(K, ptree, ls);
-    kapply_cc(K, list_to_vector_h(K, "list->vector", ls));
+    /* don't allow cycles */
+    int32_t pairs;
+    check_list(K, false, ls, &pairs, NULL);
+    TValue res = list_to_vector_h(K, ls, pairs);
+    kapply_cc(K, res);
 }
 
 /* (R7RS 3rd draft 6.3.6) vector->list */
@@ -176,13 +167,248 @@ void vector_to_list(klisp_State *K)
     TValue ptree = K->next_value;
     bind_1tp(K, ptree, "vector", ttisvector, v);
 
-    TValue tail = KNIL;
-    krooted_vars_push(K, &tail);
-    size_t i = kvector_length(v);
-    while (i-- > 0)
-        tail = kcons(K, kvector_array(v)[i], tail);
-    krooted_vars_pop(K);
-    kapply_cc(K, tail);
+    TValue res = vector_to_list_h(K, v, NULL);
+    kapply_cc(K, res);
+}
+
+/* 13.? bytevector->vector, vector->bytevector */
+void bytevector_to_vector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, str);
+    TValue res;
+
+    if (kbytevector_emptyp(str)) {
+	res = K->empty_vector;
+    } else {
+	uint32_t size = kbytevector_size(str);
+
+	/* MAYBE add vector constructor without fill */
+	/* no need to root this */
+	res = kvector_new_sf(K, size, KINERT);
+	uint8_t  *src = kbytevector_buf(str);
+	TValue *dst = kvector_buf(res);
+	while(size--) {
+	    uint8_t u8 = *src++; /* not needed but just in case */
+	    *dst++ = i2tv(u8);
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* TEMP Only ASCII for now */
+void vector_to_bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "vector", ttisvector, vec);
+    TValue res;
+
+    if (kvector_emptyp(vec)) {
+	res = K->empty_bytevector;
+    } else {
+	uint32_t size = kvector_size(vec);
+
+	res = kbytevector_new_s(K, size); /* no need to root this */
+	TValue *src = kvector_buf(vec);
+	uint8_t *dst = kbytevector_buf(res);
+	while(size--) {
+	    TValue tv = *src++;
+	    if (!ttisu8(tv)) {
+		klispE_throw_simple_with_irritants(K, "Non u8 object found", 
+						   1, tv);
+		return;
+	    }
+	    *dst++ = (uint8_t) ivalue(tv);
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* 13.2.9? vector-copy! */
+void vector_copyB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "vector", ttisvector, vector1, 
+	"vector", ttisvector, vector2);
+
+    if (kvector_immutablep(vector2)) {
+	klispE_throw_simple(K, "immutable destination vector");
+	return;
+    } else if (kvector_size(vector1) > kvector_size(vector2)) {
+	klispE_throw_simple(K, "destination vector is too small");
+	return;
+    }
+
+    if (!tv_equal(vector1, vector2) && 
+	  !tv_equal(vector1, K->empty_vector)) {
+	memcpy(kvector_buf(vector2),
+	       kvector_buf(vector1),
+	       kvector_size(vector1) * sizeof(TValue));
+    }
+    kapply_cc(K, KINERT);
+}
+
+/* ?.? vector-copy-partial */
+/* TEMP: at least for now this always returns mutable vectors */
+void vector_copy_partial(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_3tp(K, ptree, "vector", ttisvector, vector,
+	     "exact integer", keintegerp, tv_start,
+	     "exact integer", keintegerp, tv_end);
+
+    if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
+	  ivalue(tv_start) > kvector_size(vector)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "start index out of bounds");
+	return;
+    } 
+
+    int32_t start = ivalue(tv_start);
+
+    if (!ttisfixint(tv_end) || ivalue(tv_end) < 0 || 
+	  ivalue(tv_end) > kvector_size(vector)) {
+	klispE_throw_simple(K, "end index out of bounds");
+	return;
+    }
+
+    int32_t end = ivalue(tv_end);
+
+    if (start > end) {
+	/* TODO show indexes */
+	klispE_throw_simple(K, "end index is smaller than start index");
+	return;
+    }
+
+    int32_t size = end - start;
+    TValue new_vector;
+    /* the if isn't strictly necessary but it's clearer this way */
+    if (size == 0) {
+	new_vector = K->empty_vector;
+    } else {
+	new_vector = kvector_new_bs_g(K, true, kvector_buf(vector) 
+				      + start, size);
+    }
+    kapply_cc(K, new_vector);
+}
+
+/* ?.? vector-copy-partial! */
+void vector_copy_partialB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_al3tp(K, ptree, "vector", ttisvector, vector1, 
+	       "exact integer", keintegerp, tv_start,
+	       "exact integer", keintegerp, tv_end,
+	       rest);
+
+    /* XXX: this will send wrong error msgs (bad number of arg) */
+    bind_2tp(K, rest, 
+	     "vector", ttisvector, vector2, 
+	     "exact integer", keintegerp, tv_start2);
+
+    if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
+	  ivalue(tv_start) > kvector_size(vector1)) {
+	/* TODO show index */
+	klispE_throw_simple(K, "start index out of bounds");
+	return;
+    } 
+
+    int32_t start = ivalue(tv_start);
+
+    if (!ttisfixint(tv_end) || ivalue(tv_end) < 0 || 
+	  ivalue(tv_end) > kvector_size(vector1)) {
+	klispE_throw_simple(K, "end index out of bounds");
+	return;
+    }
+
+    int32_t end = ivalue(tv_end);
+
+    if (start > end) {
+	/* TODO show indexes */
+	klispE_throw_simple(K, "end index is smaller than start index");
+	return;
+    }
+
+    int32_t size = end - start;
+
+    if (kvector_immutablep(vector2)) {
+	klispE_throw_simple(K, "immutable destination vector");
+	return;
+    }
+
+    if (!ttisfixint(tv_start2) || ivalue(tv_start2) < 0 || 
+	  ivalue(tv_start2) > kvector_size(vector2)) {
+	klispE_throw_simple(K, "to index out of bounds");
+	return;
+    }
+
+    int32_t start2 = ivalue(tv_start2);
+    int64_t end2 = (int64_t) start2 + size;
+
+    if ((end2 > INT32_MAX) || 
+	(((int32_t) end2) > kvector_size(vector2))) {
+	klispE_throw_simple(K, "not enough space in destination");
+	return;
+    }
+
+    if (size > 0) {
+	memcpy(kvector_buf(vector2) + start2,
+	       kvector_buf(vector1) + start,
+	       size * sizeof(TValue));
+    }
+    kapply_cc(K, KINERT);
+}
+
+/* ?.? vector-fill! */
+void vector_fillB(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_2tp(K, ptree, "vector", ttisvector, vector,
+	     "any", anytype, fill);
+
+    if (kvector_immutablep(vector)) {
+	klispE_throw_simple(K, "immutable vector");
+	return;
+    } 
+
+    uint32_t size = kvector_size(vector);
+    TValue *buf = kvector_buf(vector);
+    while(size-- > 0) {
+	*buf++ = fill;
+    }
+    kapply_cc(K, KINERT);
 }
 
 /* ??.?.? vector->immutable-vector */
@@ -195,7 +421,7 @@ void vector_to_immutable_vector(klisp_State *K)
 
     TValue res = kvector_immutablep(v)? 
 	v
-	: kvector_new_bs_g(K, false, kvector_array(v), kvector_length(v));
+	: kvector_new_bs_g(K, false, kvector_buf(v), kvector_size(v));
     kapply_cc(K, res);
 }
 
@@ -226,20 +452,39 @@ void kinit_vectors_ground_env(klisp_State *K)
 
     /* (R7RS 3rd draft 6.3.6) vector-ref vector-set! */
     add_applicative(K, ground_env, "vector-ref", vector_ref, 0);
-    add_applicative(K, ground_env, "vector-set!", vector_setS, 0);
+    add_applicative(K, ground_env, "vector-set!", vector_setB, 0);
 
     /* (R7RS 3rd draft 6.3.6) vector, vector->list, list->vector */
     add_applicative(K, ground_env, "vector", vector, 0);
     add_applicative(K, ground_env, "vector->list", vector_to_list, 0);
     add_applicative(K, ground_env, "list->vector", list_to_vector, 0);
 
-    /* ??.1.?? vector-copy */
+    /* ?.? vector-copy */
     add_applicative(K, ground_env, "vector-copy", vector_copy, 0);
 
-    /* TODO: vector->string, string->vector, vector-fill */
-    /* TODO: vector-copy! vector-copy-partial vector-copy-partial! */
+    /* ?.? vector->bytevector, bytevector->vector */
+    add_applicative(K, ground_env, "vector->bytevector", 
+		    vector_to_bytevector, 0);
+    add_applicative(K, ground_env, "bytevector->vector", 
+		    bytevector_to_vector, 0);
 
-    /* ??.1.?? vector->immutable-vector */
+    /* ?.? vector->string, string->vector */
+    /* in kgstrings.c */
+
+    /* ?.? vector-copy! */
+    add_applicative(K, ground_env, "vector-copy!", vector_copyB, 0);
+
+    /* ?.? vector-copy-partial */
+    add_applicative(K, ground_env, "vector-copy-partial", 
+		    vector_copy_partial, 0);
+    /* ?.? vector-copy-partial! */
+    add_applicative(K, ground_env, "vector-copy-partial!", 
+		    vector_copy_partialB, 0);
+
+    /* ?.? vector-fill! */
+    add_applicative(K, ground_env, "vector-fill!", vector_fillB, 0);
+
+    /* ?.? vector->immutable-vector */
     add_applicative(K, ground_env, "vector->immutable-vector",
 		    vector_to_immutable_vector, 0);
 }

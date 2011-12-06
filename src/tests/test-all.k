@@ -25,5 +25,6 @@
 (load "tests/error.k")
 (load "tests/bytevectors.k")
 (load "tests/vectors.k")
+(load "tests/system.k")
 
 (check-report)

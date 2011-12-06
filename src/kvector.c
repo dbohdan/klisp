@@ -14,6 +14,8 @@
 
 /* helper function allocating vectors */
 
+/* XXX I'm not too convinced this is the best way to handle the empty
+   vector... Try to find a better way */
 static Vector *kvector_alloc(klisp_State *K, bool m, uint32_t length)
 {
     Vector *new_vector;

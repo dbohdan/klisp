@@ -41,9 +41,6 @@
 #include "ktable.h"
 
 #include "kghelpers.h"
-#include "kgencapsulations.h"
-#include "kgcombiners.h"
-#include "kgcontinuations.h"
 #include "kgffi.h"
 
 /* Set to 0 to ignore aligment errors during direct
@@ -78,6 +75,10 @@ typedef struct {
 #define CB_INDEX_N      0
 #define CB_INDEX_STACK  1
 #define CB_INDEX_FIRST_CALLBACK  2
+
+/* Continuations */
+void do_ffi_callback_encode_result(klisp_State *K);
+void do_ffi_callback_return(klisp_State *K);
 
 static TValue ffi_decode_void(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
@@ -279,25 +280,8 @@ static void ffi_encode_sint32(ffi_codec_t *self, klisp_State *K, TValue v, void 
 
 static TValue ffi_decode_uint64(ffi_codec_t *self, klisp_State *K, const void *buf)
 {
-    /* TODO */
     UNUSED(self);
-    uint64_t x = *(uint64_t *)buf;
-    if (x <= INT32_MAX) {
-        return i2tv((int32_t) x);
-    } else {
-        TValue res = kbigint_make_simple(K);
-        krooted_tvs_push(K, res);
-
-        uint8_t d[8];
-        for (int i = 7; i >= 0; i--) {
-          d[i] = (x & 0xFF);
-          x >>= 8;
-        }
-
-        mp_int_read_unsigned(K, tv2bigint(res), d, 8);
-        krooted_tvs_pop(K);
-        return res;
-    }
+    return kinteger_new_uint64(K, *(uint64_t *)buf);
 }
 
 static void ffi_encode_uint64(ffi_codec_t *self, klisp_State *K, TValue v, void *buf)
@@ -499,8 +483,9 @@ void ffi_make_call_interface(klisp_State *K)
             "argtypes string list", ttislist, argtypes_tv);
 #undef ttislist
 
-    size_t nargs = check_typed_list(K, "ffi-make-call-interface", "argtype string",
-                                    kstringp, false, argtypes_tv, NULL);
+    size_t nargs;
+    check_typed_list(K, kstringp, false, argtypes_tv, (int32_t *) &nargs, 
+		     NULL);
 
     /* Allocate C structure ffi_call_interface_t inside
      a mutable bytevector. The structure contains C pointers
@@ -868,7 +853,12 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
     TValue exit_guard = ffi_callback_guard(cb, do_ffi_callback_exit_guard);
     krooted_tvs_push(K, exit_guard);
 
+    /* Construct fresh dynamic environment for the callback applicative. */
+    TValue denv = kmake_empty_environment(K);
+    krooted_tvs_push(K, denv);
+
     TValue ptree = kimm_list(K, 3, entry_guard, app, exit_guard);
+    krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -876,7 +866,8 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
 
     K->next_xparams = NULL;
     K->next_value = ptree;
-    /* K->next_env already has the correct value */
+    K->next_env = denv;
+
     guard_dynamic_extent(K);
 
     /* Enter new "inner" trampoline loop. */
@@ -1190,4 +1181,15 @@ void kinit_ffi_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "ffi-klisp-state", ffi_klisp_state, 0);
     add_applicative(K, ground_env, "ffi-library?", enc_typep, 1, dll_key);
     add_applicative(K, ground_env, "ffi-call-interface?", enc_typep, 1, cif_key);
+}
+
+/* init continuation names */
+void kinit_ffi_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_ffi_callback_encode_result, 
+		  "ffi-callback-encode-result");
+    add_cont_name(K, t, do_ffi_callback_return, 
+		  "ffi-callback-ret");
 }

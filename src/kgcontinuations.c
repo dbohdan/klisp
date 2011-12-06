@@ -22,7 +22,9 @@
 
 #include "kghelpers.h"
 #include "kgcontinuations.h"
-#include "kgcontrol.h" /* for seq helpers in $let/cc */
+
+/* Continuations */
+void do_extended_cont(klisp_State *K);
 
 /* 7.1.1 continuation? */
 /* uses typep */
@@ -82,92 +84,6 @@ void extend_continuation(klisp_State *K)
 					 do_extended_cont, 2, app, env);
     krooted_tvs_pop(K);
     kapply_cc(K, new_cont);
-}
-
-/* Helpers for guard-continuation (& guard-dynamic-extent) */
-
-/* this is used for inner & outer continuations, it just
-   passes the value. xparams is not actually empty, it contains
-   the entry/exit guards, but they are used only in 
-   continuation->applicative (that is during abnormal passes) */
-void do_pass_value(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue obj = K->next_value;
-    klisp_assert(ttisnil(K->next_env));
-    UNUSED(xparams);
-    kapply_cc(K, obj);
-}
-
-#define singly_wrapped(obj_) (ttisapplicative(obj_) && \
-			      ttisoperative(kunwrap(obj_)))
-
-/* this unmarks root before throwing any error */
-/* TODO: this isn't very clean, refactor */
-
-/* GC: assumes obj & root are rooted, dummy1 is in use */
-inline TValue check_copy_single_entry(klisp_State *K, char *name,
-				      TValue obj, TValue root)
-{
-    if (!ttispair(obj) || !ttispair(kcdr(obj)) || 
-	    !ttisnil(kcddr(obj))) {
-	unmark_list(K, root);
-	klispE_throw_simple(K, "Bad entry (expected list of length 2)");
-	return KINERT;
-    } 
-    TValue cont = kcar(obj);
-    TValue app = kcadr(obj);
-
-    if (!ttiscontinuation(cont)) {
-	unmark_list(K, root);
-	klispE_throw_simple(K, "Bad type on first element (expected " 
-		     "continuation)");				     
-	return KINERT;
-    } else if (!singly_wrapped(app)) { 
-	unmark_list(K, root);
-	klispE_throw_simple(K, "Bad type on second element (expected " 
-		     "singly wrapped applicative)");				     
-	return KINERT; 
-    }
-
-    /* save the operative directly, don't waste space/time
-     with a list, use just a pair */
-    return kcons(K, cont, kunwrap(app)); 
-}
-
-/* the guards are probably generated on the spot so we don't check
-   for immutability and copy it anyways */
-/* GC: Assumes obj is rooted */
-TValue check_copy_guards(klisp_State *K, char *name, TValue obj)
-{
-    if (ttisnil(obj)) {
-	return obj;
-    } else {
-	TValue last_pair = kget_dummy1(K);
-	TValue tail = obj;
-    
-	while(ttispair(tail) && !kis_marked(tail)) {
-	    /* this will clear the marks and throw an error if the structure
-	       is incorrect */
-	    TValue entry = check_copy_single_entry(K, name, kcar(tail), obj);
-	    krooted_tvs_push(K, entry);
-	    TValue new_pair = kcons(K, entry, KNIL);
-	    krooted_tvs_pop(K);
-	    kmark(tail);
-	    kset_cdr(last_pair, new_pair);
-	    last_pair = new_pair;
-	    tail = kcdr(tail);
-	}
-
-	/* dont close the cycle (if there is one) */
-	unmark_list(K, obj);
-	TValue ret = kcutoff_dummy1(K);
-	if (!ttispair(tail) && !ttisnil(tail)) {
-	    klispE_throw_simple(K, "expected list"); 
-	    return KINERT;
-	} 
-	return ret;
-    }
 }
 
 /* 7.2.4 guard-continuation */
@@ -280,7 +196,7 @@ void Slet_cc(klisp_State *K)
 	
 	/* the list of instructions is copied to avoid mutation */
 	/* MAYBE: copy the evaluation structure, ASK John */
-	TValue ls = check_copy_list(K, "$let/cc", objs, false);
+	TValue ls = check_copy_list(K, objs, false, NULL, NULL);
         krooted_tvs_push(K, ls);
 
 	/* this is needed because seq continuation doesn't check for 
@@ -300,47 +216,11 @@ void Slet_cc(klisp_State *K)
 }
 
 /* 7.3.3 guard-dynamic-extent */
-void guard_dynamic_extent(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-
-    bind_3tp(K, ptree, "any", anytype, entry_guards,
-	     "combiner", ttiscombiner, comb,
-	     "any", anytype, exit_guards);
-
-    entry_guards = check_copy_guards(K, "guard-dynamic-extent: entry guards", 
-				     entry_guards);
-    krooted_tvs_push(K, entry_guards);
-    exit_guards = check_copy_guards(K, "guard-dynamic-extent: exit guards", 
-				     exit_guards);
-    krooted_tvs_push(K, exit_guards);
-    /* GC: root continuations */
-    /* The current continuation is guarded */
-    TValue outer_cont = kmake_continuation(K, kget_cc(K), do_pass_value, 
-					   2, entry_guards, denv);
-    kset_outer_cont(outer_cont);
-    kset_cc(K, outer_cont); /* this implicitly roots outer_cont */
-
-    TValue inner_cont = kmake_continuation(K, outer_cont, do_pass_value, 2, 
-					   exit_guards, denv);
-    kset_inner_cont(inner_cont);
-
-    /* call combiner with no operands in the dynamic extent of inner,
-     with the dynamic env of this call */
-    kset_cc(K, inner_cont); /* this implicitly roots inner_cont */
-    TValue expr = kcons(K, comb, KNIL);
-
-    krooted_tvs_pop(K);
-    krooted_tvs_pop(K);
-
-    ktail_eval(K, expr, denv);
-}
+/* in kghelpers */
 
 /* 7.3.4 exit */    
+/* Unlike in the report, in klisp this takes an optional argument
+   to be passed to the root continuation (defaults to #inert) */
 void kgexit(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -350,11 +230,13 @@ void kgexit(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
 
-    check_0p(K, ptree);
+    TValue obj = ptree;
+    if (!get_opt_tpar(K, obj, "any", anytype))
+	obj = KINERT;
 
     /* TODO: look out for guards and dynamic variables */
     /* should be probably handled in kcall_cont() */
-    kcall_cont(K, K->root_cont, KINERT);
+    kcall_cont(K, K->root_cont, obj);
 }
 
 /* init ground */
@@ -397,4 +279,12 @@ void kinit_continuations_ground_env(klisp_State *K)
     /* 7.3.4 exit */    
     add_applicative(K, ground_env, "exit", kgexit, 
 		    0);
+}
+
+/* init continuation names */
+void kinit_continuations_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    
+    add_cont_name(K, t, do_extended_cont, "extended-cont");
 }

@@ -55,7 +55,7 @@ void klispE_throw_system_error_with_irritants(
         TValue ls__ = klist(K__, __VA_ARGS__); \
         krooted_tvs_push(K__, ls__); \
         klispE_throw_system_error_with_irritants(K__, service__, errnum__, ls__); \
-    }
+   }
 
 #define klispE_throw_errno_simple(K__, service__) \
     klispE_throw_system_error_with_irritants(K__, service__, errno, KNIL);

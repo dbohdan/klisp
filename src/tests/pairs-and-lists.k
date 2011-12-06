@@ -31,11 +31,11 @@
 				  (enc #inert))))
 ($check-not-predicate (null? (memoize #inert)))
 ($check-not-predicate (null? 1))
-;($check-not-predicate (null? 1.0))
+($check-not-predicate (null? 1.0))
 ($check-not-predicate (null? #e+infinity))
-;($check-not-predicate (null? #i+infinity))
-;($check-not-predicate (null? #undefined))
-;($check-not-predicate (null? #real-with-no-primary-value))
+($check-not-predicate (null? #i+infinity))
+($check-not-predicate (null? #undefined))
+($check-not-predicate (null? #real))
 ($check-not-predicate (null? "string"))
 ($check-not-predicate (null? #\a))
 ($check-not-predicate (null? (get-current-input-port)))
@@ -54,11 +54,11 @@
 				  (enc #inert))))
 ($check-not-predicate (pair? (memoize #inert)))
 ($check-not-predicate (pair? 1))
-;($check-not-predicate (pair? 1.0))
+($check-not-predicate (pair? 1.0))
 ($check-not-predicate (pair? #e+infinity))
-;($check-not-predicate (pair? #i+infinity))
-;($check-not-predicate (pair? #undefined))
-;($check-not-predicate (pair? #real-with-no-primary-value))
+($check-not-predicate (pair? #i+infinity))
+($check-not-predicate (pair? #undefined))
+($check-not-predicate (pair? #real))
 ($check-not-predicate (pair? "string"))
 ($check-not-predicate (pair? #\a))
 ($check-not-predicate (pair? (get-current-input-port)))
@@ -128,6 +128,26 @@
   ($check eq? (cadddr tree16) 15)
   ($check eq? (cddddr tree16) 16))
 
+;; make-list
+($check-predicate (null? (make-list 0)))
+($check-predicate (mutable-pair? (make-list 1)))
+($check equal? (make-list 2) (list #inert #inert))
+($check equal? (make-list 3 "val") (list "val" "val" "val"))
+
+;; list-copy
+($check-predicate (null? (list-copy ())))
+($check-predicate (mutable-pair? (list-copy (list 1))))
+($check-predicate (mutable-pair? (list-copy (copy-es-immutable (list 1)))))
+($check equal? (list-copy (list 1 2 3)) (list 1 2 3))
+($check equal? (list-copy (list . #1=(1 2 . #1#))) (list . #2=(1 2 . #2#)))
+
+;; reverse
+($check-predicate (null? (reverse ())))
+($check-predicate (mutable-pair? (reverse (list 1))))
+($check-predicate (mutable-pair? (reverse (copy-es-immutable (list 1)))))
+($check equal? (reverse (list 1)) (list 1))
+($check equal? (reverse (list 1 2 3)) (list 3 2 1))
+
 ;; get-list-metrics
 ($check equal? (get-list-metrics ()) (list 0 1 0 0))
 ($check equal? (get-list-metrics #inert) (list 0 0 0 0))
@@ -152,7 +172,7 @@
 ;; list-ref
 ($check =? (list-ref (list 1 2 3 4 5) 0) 1)
 ($check =? (list-ref (list 1 2 3 4 5) 1) 2)
-;; see ground/pairs-and-lists.scm for rationale on allowing
+;; see kgpairs_lists.c for rationale on allowing
 ;; improper lists as argument to list-ref 
 ($check =? (list-ref (list* 1 2 3 4) 2) 3)
 ($check =? (list-ref (list . #0=(1 2 3 4 5 . #0#)) 10) 1)
@@ -217,6 +237,7 @@
 ($check equal? (assoc #inert ()) ())
 ($check equal? (assoc 3 (list (list 1 10) (list 2 20))) ())
 ($check equal? (assoc 1 (list (list 1 10) (list 2 20))) (list 1 10))
+($check equal? (assoc 1 (list (list 1 10) (list 2 20)) =?) (list 1 10))
 ($check equal?
 	(assoc 1 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
 	(list 1 10))
@@ -227,6 +248,10 @@
 	(assoc (list 1) (list (list (list 1) 1) (list (list 2) 2)))
 	(list (list 1) 1))
 
+($check equal?
+	(assoc 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#))
+	       =?)
+	())
 ;; member?
 ($check-predicate (member? 1 (list 1 2)))
 ($check-predicate (member? 2 (list 1 2)))
@@ -238,6 +263,10 @@
 	(member? (list 1 3) (list . #0=(1 2 (list 1 3) . #0#))))
 ($check-not-predicate
 	(member? 4 (list . #0=(1 2 1 . #0#))))
+
+($check-predicate (member? -1 (list 1 2) ($lambda (x y) (=? x (- 0 y)))))
+($check-not-predicate (member? 1 (list 1 2 . #0=(3 4 . #0#)) 
+			       ($lambda (x y) (=? x (- 0 y)))))
 
 ;; finite-list?
 ($check-predicate (finite-list? ()))
@@ -353,6 +382,27 @@
   ($check-error (cadddr tree8))
   ($check-error (cddddr tree8)))
 
+;; make-list
+($check-error (make-list))
+($check-error (make-list "str"))
+($check-error (make-list 1 "str" "str2"))
+($check-error (make-list -2))
+($check-error (make-list 3/4))
+($check-error (make-list #e+infinity))
+
+;; list-copy
+($check-error (list-copy))
+($check-error (list-copy () ()))
+($check-error (list-copy #inert))
+($check-error (list-copy (list* 1 2 3)))
+
+;; reverse
+($check-error (reverse))
+($check-error (reverse () ()))
+($check-error (reverse #inert))
+($check-error (reverse (list* 1 2 3)))
+($check-error (reverse (list 1 . #1=(2 . #1#))))
+
 ;; get-list-metrics
 ($check-error (get-list-metrics))
 ($check-error (get-list-metrics () ()))
@@ -408,22 +458,28 @@
 ;; asooc
 ($check-error (assoc))
 ($check-error (assoc 2))
-($check-error (assoc 2 (list (list 1 1) (list 2 2)) ()))
+($check-error (assoc 2 (list (list 1 1) (list 2 2)) () ()))
 ($check-error (assoc . #0=(2 (list (list 1 1) (list 2 2)) . #0#)))
+($check-error (assoc 2 (list (list 1 1) (list 2 2)) () (unwrap equal?)))
 
 ($check-error (assoc 2 (list* (list 1 1) 2)))
 ($check-error (assoc 2 (list* (list 1 1) (list 2 2) #inert)))
+($check-error (assoc 2 (list* 1 2) equal?))
 ($check-error (assoc 4 (list (list 1 1) (list 2 2) #inert (list 4 4))))
 ($check-error (assoc 2 (list (list 1 1) (list 2 2) #inert (list 4 4))))
+($check-error (assoc 2 (list (list 1 1) (list 2 2) #inert (list 4 4)) 
+		     equal?))
 
 ;; member?
 ($check-error (member?))
 ($check-error (member? 2))
-($check-error (member? 2 (list 1 2) ()))
+($check-error (member? 2 (list 1 2) () ()))
 ($check-error (member? . #0=(2 (list 1 2) . #0#)))
+($check-error (member? 2 (list 1 2) (unwrap equal?)))
 
 ($check-error (member? 2 (list* 1 2)))
 ($check-error (member? 2 (list* 1 2 3)))
+($check-error (member? 2 (list* 1 2) equal?))
 
 ;; finite-list?
 ($check-error (countable-list? (cons () ()) . #inert))

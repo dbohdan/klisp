@@ -17,6 +17,7 @@
 #include "koperative.h"
 #include "kcontinuation.h"
 #include "kerror.h"
+#include "kchar.h"
 
 #include "kghelpers.h"
 #include "kgchars.h"
@@ -29,14 +30,6 @@
 
 /* 14.1.3? char-upper-case?, char-lower-case? */
 /* use ftyped_predp */
-
-/* Helpers for typed predicates */
-bool kcharp(TValue tv) { return ttischar(tv); }
-bool kchar_alphabeticp(TValue ch) { return isalpha(chvalue(ch)) != 0; }
-bool kchar_numericp(TValue ch)    { return isdigit(chvalue(ch)) != 0; }
-bool kchar_whitespacep(TValue ch) { return isspace(chvalue(ch)) != 0; }
-bool kchar_upper_casep(TValue ch) { return isupper(chvalue(ch)) != 0; }
-bool kchar_lower_casep(TValue ch) { return islower(chvalue(ch)) != 0; }
 
 /* 14.1.4? char->integer, integer->char */
 void kchar_to_integer(klisp_State *K)
@@ -76,32 +69,21 @@ void kinteger_to_char(klisp_State *K)
     kapply_cc(K, ch2tv((char) i));
 }
 
-/* 14.1.4? char-upcase, char-downcase */
-void kchar_upcase(klisp_State *K)
+/* 14.1.4? char-upcase, char-downcase, char-titlecase, char-foldcase */
+void kchar_change_case(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
     TValue denv = K->next_env;
     klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
+    /*
+    ** xparams[0]: conversion fn
+    */
     UNUSED(denv);
     bind_1tp(K, ptree, "character", ttischar, chtv);
     char ch = chvalue(chtv);
-    ch = toupper(ch);
-    kapply_cc(K, ch2tv(ch));
-}
-
-void kchar_downcase(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-    bind_1tp(K, ptree, "character", ttischar, chtv);
-    char ch = chvalue(chtv);
-    ch = tolower(ch);
+    char (*fn)(char) = pvalue(xparams[0]);
+    ch = fn(ch);
     kapply_cc(K, ch2tv(ch));
 }
 
@@ -117,27 +99,89 @@ void kchar_downcase(klisp_State *K)
 /* 14.2.4? char-ci<?, char-ci<=?, char-ci>?, char-ci>=? */
 /* use ftyped_bpredp */
 
-/* Helpers for binary typed predicates */
-bool kchar_eqp(TValue ch1, TValue ch2) { return chvalue(ch1) == chvalue(ch2); }
-bool kchar_ltp(TValue ch1, TValue ch2) { return chvalue(ch1) <  chvalue(ch2); }
-bool kchar_lep(TValue ch1, TValue ch2) { return chvalue(ch1) <= chvalue(ch2); }
-bool kchar_gtp(TValue ch1, TValue ch2) { return chvalue(ch1) >  chvalue(ch2); }
-bool kchar_gep(TValue ch1, TValue ch2) { return chvalue(ch1) >= chvalue(ch2); }
+/* 14.2.? char-digit?, char->digit, digit->char */
+void char_digitp(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 
-bool kchar_ci_eqp(TValue ch1, TValue ch2)
-{ return tolower(chvalue(ch1)) == tolower(chvalue(ch2)); }
+    UNUSED(denv);
+    UNUSED(xparams);
+    bind_al1tp(K, ptree, "character", ttischar, chtv, basetv);
 
-bool kchar_ci_ltp(TValue ch1, TValue ch2)
-{ return tolower(chvalue(ch1)) <  tolower(chvalue(ch2)); }
+    int base = 10; /* default */
 
-bool kchar_ci_lep(TValue ch1, TValue ch2)
-{ return tolower(chvalue(ch1)) <= tolower(chvalue(ch2)); }
+    if (get_opt_tpar(K, basetv, "base [2-36]", ttisbase)) {
+	base = ivalue(basetv); 
+    }
+    char ch = tolower(chvalue(chtv));
+    bool b = (isdigit(ch) && (ch - '0') < base) || 
+	(isalpha(ch) && (ch - 'a' + 10) < base);
+    kapply_cc(K, b2tv(b));
+}
 
-bool kchar_ci_gtp(TValue ch1, TValue ch2)
-{ return tolower(chvalue(ch1)) > tolower(chvalue(ch2)); }
+void char_to_digit(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
 
-bool kchar_ci_gep(TValue ch1, TValue ch2)
-{ return tolower(chvalue(ch1)) >= tolower(chvalue(ch2)); }
+    UNUSED(denv);
+    UNUSED(xparams);
+    bind_al1tp(K, ptree, "character", ttischar, chtv, basetv);
+
+    int base = 10; /* default */
+
+    if (get_opt_tpar(K, basetv, "base [2-36]", ttisbase)) {
+	base = ivalue(basetv); 
+    }
+    char ch = tolower(chvalue(chtv));
+    int digit = 0;
+
+    if (isdigit(ch) && (ch - '0') < base)
+	digit = ch - '0';
+    else if (isalpha(ch) && (ch - 'a' + 10) < base)
+	digit = ch - 'a' + 10;
+    else {
+	klispE_throw_simple_with_irritants(K, "Not a digit in this base", 
+					  2, ch2tv(ch), i2tv(base));
+	return;
+    }
+    kapply_cc(K, i2tv(digit));
+}
+
+void digit_to_char(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(denv);
+    UNUSED(xparams);
+    bind_al1tp(K, ptree, "exact integer", ttiseinteger, digittv, basetv);
+
+    int base = 10; /* default */
+
+    if (get_opt_tpar(K, basetv, "base [2-36]", ttisbase)) {
+	base = ivalue(basetv); 
+    }
+
+    if (ttisbigint(digittv) || ivalue(digittv) < 0 || 
+            ivalue(digittv) >= base) {
+	klispE_throw_simple_with_irritants(K, "Not a digit in this base",
+					   2, digittv, i2tv(base));
+	return;
+    }
+    int digit = ivalue(digittv);
+    char ch = digit <= 9? 
+	'0' + digit : 
+	'a' + (digit - 10);
+    kapply_cc(K, ch2tv(ch));
+}
 
 /* init ground */
 void kinit_chars_ground_env(klisp_State *K)
@@ -174,9 +218,15 @@ void kinit_chars_ground_env(klisp_State *K)
     /* 14.1.4? char->integer, integer->char */
     add_applicative(K, ground_env, "char->integer", kchar_to_integer, 0);
     add_applicative(K, ground_env, "integer->char", kinteger_to_char, 0);
-    /* 14.1.4? char-upcase, char-downcase */
-    add_applicative(K, ground_env, "char-upcase", kchar_upcase, 0);
-    add_applicative(K, ground_env, "char-downcase", kchar_downcase, 0);
+    /* 14.1.4? char-upcase, char-downcase, char-titlecase, char-foldcase */
+    add_applicative(K, ground_env, "char-upcase", kchar_change_case, 1,
+		    p2tv(toupper));
+    add_applicative(K, ground_env, "char-downcase", kchar_change_case, 1,
+		    p2tv(tolower));
+    add_applicative(K, ground_env, "char-titlecase", kchar_change_case, 1,
+		    p2tv(toupper));
+    add_applicative(K, ground_env, "char-foldcase", kchar_change_case, 1,
+		    p2tv(tolower));
     /* 14.2.1? char=? */
     add_applicative(K, ground_env, "char=?", ftyped_bpredp, 3,
 		    symbol, p2tv(kcharp), p2tv(kchar_eqp));
@@ -201,4 +251,8 @@ void kinit_chars_ground_env(klisp_State *K)
 		    symbol, p2tv(kcharp), p2tv(kchar_ci_gtp));
     add_applicative(K, ground_env, "char-ci>=?", ftyped_bpredp, 3,
 		    symbol, p2tv(kcharp), p2tv(kchar_ci_gep));
+    /* 14.2.? char-digit?, char->digit, digit->char */
+    add_applicative(K, ground_env, "char-digit?", char_digitp, 0);
+    add_applicative(K, ground_env, "char->digit", char_to_digit, 0);
+    add_applicative(K, ground_env, "digit->char", digit_to_char, 0);
 }

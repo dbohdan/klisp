@@ -25,9 +25,10 @@
 
 ($check-error ($lazy))
 ($check-error ($lazy "too" "many"))
+($check equal? (force ($lazy (get-current-environment))) 
+	(get-current-environment))
 
 ;; Test cases from R(-1)RK
-
 ($define! lazy-test-1
   ($sequence
     ($provide! (get-count p)
@@ -104,3 +105,15 @@
 ($check equal? (force (force (memoize ($lazy 0)))) 0)
 ($check equal? (force ($lazy (memoize 0))) 0)
 ($check equal? (force (force ($lazy (memoize 0)))) 0)
+
+;; 9.1.5? $delay
+
+($check-error (memoize))
+($check-error (memoize "too" "many"))
+
+($check equal? (force ($delay 0)) 0)
+($check equal? (force (force ($delay 0))) 0)
+($check equal? (force ($delay (get-current-environment))) 
+	(get-current-environment))
+($check-predicate (promise? (force ($delay (memoize 0)))))
+($check equal? (force (force ($delay (memoize 0)))) 0)

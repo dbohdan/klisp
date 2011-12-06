@@ -11,6 +11,11 @@
 #include "kpair.h"
 #include "kgc.h"
 
+bool kis_encapsulation_type(TValue enc, TValue key)
+{
+    return ttisencapsulation(enc) && tv_equal(kget_enc_key(enc), key);
+}
+
 /* GC: Assumes that key & val are rooted */
 TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val)
 {

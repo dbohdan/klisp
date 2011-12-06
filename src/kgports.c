@@ -4,16 +4,17 @@
 ** See Copyright Notice in klisp.h
 */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "kstate.h"
 #include "kobject.h"
 #include "kport.h"
 #include "kstring.h"
+#include "ktable.h"
 #include "kbytevector.h"
 #include "kenvironment.h"
 #include "kapplicative.h"
@@ -27,13 +28,11 @@
 #include "kwrite.h"
 #include "kpair.h"
 
-#include "kscript.h"
-
 #include "kghelpers.h"
 #include "kgports.h"
-#include "kgcontinuations.h" /* for guards */
-#include "kgcontrol.h" /* for evaling in sequence */
-#include "kgkd_vars.h" /* for dynamic input/output port */
+
+/* Continuations */
+void do_close_file_ret(klisp_State *K);
 
 /* 15.1.1 port? */
 /* uses typep */
@@ -335,6 +334,38 @@ void gwrite(klisp_State *K)
 
     /* false: quote strings, escape chars */
     kwrite_display_to_port(K, port, obj, false); 
+    kapply_cc(K, KINERT);
+}
+
+/* 15.1.? write-simple */
+void gwrite_simple(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_al1tp(K, ptree, "any", anytype, obj,
+	       port);
+
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
+	port = kcdr(K->kd_out_port_key); /* access directly */
+    } 
+
+    if (!kport_is_output(port)) {
+	klispE_throw_simple(K, "the port should be an output port");
+	return;
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    kwrite_simple_to_port(K, port, obj); 
     kapply_cc(K, KINERT);
 }
 
@@ -699,7 +730,9 @@ void load(klisp_State *K)
     TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
 
-    TValue inert_cont = make_return_value_cont(K, kget_cc(K), KINERT);
+    TValue inert_cont = kmake_continuation(K, kget_cc(K), do_return_value, 1, 
+					   KINERT);
+    
     krooted_tvs_push(K, inert_cont);
 
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
@@ -738,6 +771,197 @@ void load(klisp_State *K)
     }
 }
 
+/* Helpers for require */
+static bool readable(const char *filename) {
+    FILE *f = fopen(filename, "r");  /* try to open file */
+    if (f == NULL) return false;  /* open failed */
+    fclose(f);
+    return true;
+}
+
+/* Path can't/shouldn't contain embedded zeros */
+static const char *get_next_template(klisp_State *K, const char *path, 
+				     TValue *next) {
+    const char *l;
+    while (*path == *KLISP_PATHSEP) path++;  /* skip separators */
+    if (*path == '\0') return NULL;  /* no more templates */
+    l = strchr(path, *KLISP_PATHSEP);  /* find next separator */
+    if (l == NULL) l = path + strlen(path);
+    *next = kstring_new_bs(K, path, l-path); /* template */
+    return l; /* pointer to the end of the template */
+}
+
+/* no strings should contains embedded zeroes */
+static TValue str_sub(klisp_State *K, TValue s, TValue p, TValue r)
+{
+    const char *sp = kstring_buf(s);
+    const char *pp = kstring_buf(p);
+    const char *rp = kstring_buf(r);
+
+    uint32_t size = kstring_size(s);
+    uint32_t psize = kstring_size(p);
+    uint32_t rsize = kstring_size(r);
+    int32_t diff_size = rsize - psize;
+
+    const char *wild;
+
+    /* first calculate needed size */
+    while ((wild = strstr(sp, pp)) != NULL) {
+	size += diff_size;
+	sp = wild + psize;
+    }
+
+    /* now construct result buffer and fill it */
+    TValue res = kstring_new_s(K, size);
+    char *resp = kstring_buf(res);
+    sp = kstring_buf(s);
+    while ((wild = strstr(sp, pp)) != NULL) {
+	ptrdiff_t l = wild - sp;
+	memcpy(resp, sp, l);
+	resp += l;
+	memcpy(resp, rp, rsize);
+	resp += rsize;
+	sp = wild + psize;
+    }
+    strcpy(resp, sp); /* the size was calculated beforehand */
+    return res;
+}
+
+static TValue find_file (klisp_State *K, TValue name, TValue pname) {
+  /* not used in klisp */
+  /* name = luaL_gsub(L, name, ".", LUA_DIRSEP); */
+  /* lua_getfield(L, LUA_ENVIRONINDEX, pname); */
+    klisp_assert(ttisstring(name) && !kstring_emptyp(name));
+    const char *path = kstring_buf(pname);
+    TValue next = K->empty_string;
+    krooted_vars_push(K, &next);
+    TValue wild = kstring_new_b(K, KLISP_PATH_MARK);
+    krooted_tvs_push(K, wild);
+
+    while ((path = get_next_template(K, path, &next)) != NULL) {
+	next = str_sub(K, next, wild, name);
+	if (readable(kstring_buf(next))) {  /* does file exist and is readable? */
+	    krooted_tvs_pop(K);
+	    krooted_vars_pop(K);
+	    return next;  /* return that file name */
+	}
+    }
+    
+    krooted_tvs_pop(K);
+    krooted_vars_pop(K);
+    return K->empty_string;  /* return empty_string */
+}
+
+/* ?.? require */
+/*
+** require is like load except that:
+**  - require first checks to see if the file was already required
+**    and if so, doesnt' do anything
+**  - require looks for the named file in a number of locations
+**    configurable via env var KLISP_PATH
+**  - When/if the file is found, evaluation happens in an initially
+**   standard environment
+*/
+/* TODO check if file was required */
+void require(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+    bind_1tp(K, ptree, "string", ttisstring, name);
+
+    if (kstring_emptyp(name)) {
+	klispE_throw_simple(K, "Empty name");
+	return;
+    }
+    /* search for the named file in the table of already
+       required files. 
+       N.B. this will be fooled if the same file is accessed
+       through different names */
+    TValue saved_name = kstring_immutablep(name)? name :
+	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+
+    const TValue *node = klispH_getstr(tv2table(K->require_table), 
+				       tv2str(saved_name));
+    if (node != &kfree) {
+	/* was required already, nothing to be done */
+	kapply_cc(K, KINERT);
+    }
+
+    krooted_tvs_push(K, saved_name);
+    TValue filename = K->empty_string;
+    krooted_vars_push(K, &filename);
+    filename = find_file(K, name, K->require_path);
+    
+    if (kstring_emptyp(filename)) {
+	klispE_throw_simple_with_irritants(K, "Not found", 1, name);
+	return;
+    }
+
+    /* the file was found, save it in the table */
+    /* MAYBE the name should be saved in the table only if no error
+       occured... but that could lead to loops if the file is
+       required recursively. A third option would be to record the 
+       sate of the require in the table, so we could have: error, required,
+       requiring, etc */
+    *(klispH_setstr(K, tv2table(K->require_table), tv2str(saved_name))) = 
+	KTRUE;
+    krooted_tvs_pop(K); /* saved_name no longer necessary */
+
+    /* the reads must be guarded to close the file if there is some error 
+     this continuation also will return inert after the evaluation of the
+     last expression is done */
+    TValue port = kmake_fport(K, filename, false, false);
+    krooted_tvs_push(K, port);
+    krooted_vars_pop(K); /* filename already rooted */
+
+    TValue inert_cont = kmake_continuation(K, kget_cc(K), do_return_value, 1, 
+					   KINERT);
+    
+    krooted_tvs_push(K, inert_cont);
+
+    TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
+    /* this will be used later, but contruct it now to use the 
+       current continuation as parent 
+    GC: root this obj */
+    kset_cc(K, guarded_cont); /* implicit rooting */
+    /* any error will close the port */
+    TValue ls = kread_list_from_port(K, port, false);  /* immutable pairs */
+
+    /* now the sequence of expresions should be evaluated in a
+       standard environment and #inert returned after all are done */
+    kset_cc(K, inert_cont); /* implicit rooting */
+    krooted_tvs_pop(K); /* already rooted */
+
+    if (ttisnil(ls)) {
+	krooted_tvs_pop(K); /* port */
+	kapply_cc(K, KINERT);
+    } else {
+	TValue tail = kcdr(ls);
+	/* std environments have hashtable for bindings */
+	TValue env = kmake_table_environment(K, K->ground_env);
+	if (ttispair(tail)) {
+	    krooted_tvs_push(K, ls);
+	    krooted_tvs_push(K, env);
+	    TValue new_cont = kmake_continuation(K, kget_cc(K),
+						 do_seq, 2, tail, env);
+	    kset_cc(K, new_cont);
+#if KTRACK_SI
+	    /* put the source info of the list including the element
+	       that we are about to evaluate */
+	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+#endif
+	    krooted_tvs_pop(K); /* env */
+	    krooted_tvs_pop(K); /* ls */
+	} 
+	krooted_tvs_pop(K); /* port */
+	ktail_eval(K, kcar(ls), env);
+    }
+}
+
 /* 15.2.3 get-module */
 void get_module(klisp_State *K)
 {
@@ -762,7 +986,8 @@ void get_module(klisp_State *K)
 	kadd_binding(K, env, K->module_params_sym, maybe_env);
     }
 
-    TValue ret_env_cont = make_return_value_cont(K, kget_cc(K), env);
+    TValue ret_env_cont = kmake_continuation(K, kget_cc(K), do_return_value, 
+					     1, env);
     krooted_tvs_pop(K); /* env alread in cont */
     krooted_tvs_push(K, ret_env_cont);
 
@@ -836,6 +1061,36 @@ void display(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+void read_line(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    TValue port = ptree;
+    if (!get_opt_tpar(K, port, "port", ttisport)) {
+	port = kcdr(K->kd_in_port_key); /* access directly */
+    }
+
+    if (!kport_is_input(port)) {
+	klispE_throw_simple(K, "the port should be an input port");
+	return;
+    } else if (!kport_is_textual(port)) {
+	klispE_throw_simple(K, "the port should be a textual port");
+	return;
+    } else if (kport_is_closed(port)) {
+	klispE_throw_simple(K, "the port is already closed");
+	return;
+    }
+
+    TValue obj = kread_line_from_port(K, port);
+    kapply_cc(K, obj);
+}
+
 /* 15.1.? flush-output-port */
 void flush(klisp_State *K)
 {
@@ -864,80 +1119,6 @@ void flush(klisp_State *K)
 
     kwrite_flush_port(K, port);
     kapply_cc(K, KINERT);
-}
-
-/* 15.1.? file-exists? */
-void file_existsp(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
-    bind_1tp(K, ptree, "string", ttisstring, filename);
-
-    /* TEMP: this should probably be done in a operating system specific
-       manner, but this will do for now */
-    TValue res = KFALSE;
-    FILE *file = fopen(kstring_buf(filename), "r");
-    if (file) {
-	res = KTRUE;
-	UNUSED(fclose(file));
-    }
-    kapply_cc(K, res);
-}
-
-/* 15.1.? delete-file */
-void delete_file(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
-    bind_1tp(K, ptree, "string", ttisstring, filename);
-
-    /* TEMP: this should probably be done in a operating system specific
-       manner, but this will do for now */
-    /* XXX: this could fail if there's a dead (in the gc sense) port still 
-       open, should probably retry once after doing a complete GC */
-    if (remove(kstring_buf(filename))) {
-        klispE_throw_errno_with_irritants(K, "remove", 1, filename);
-        return;
-    } else {
-	kapply_cc(K, KINERT);
-	return;
-    }
-}
-
-/* 15.1.? rename-file */
-void rename_file(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    UNUSED(xparams);
-    UNUSED(denv);
-
-    bind_2tp(K, ptree, "string", ttisstring, old_filename, 
-	     "string", ttisstring, new_filename);
-
-    /* TEMP: this should probably be done in a operating system specific
-       manner, but this will do for now */
-    /* XXX: this could fail if there's a dead (in the gc sense) port still 
-       open, should probably retry once after doing a complete GC */
-    if (rename(kstring_buf(old_filename), kstring_buf(new_filename))) {
-        klispE_throw_errno_with_irritants(K, "rename", 2, old_filename, new_filename);
-        return;
-    } else {
-	kapply_cc(K, KINERT);
-	return;
-    }
 }
 
 /* init ground */
@@ -1036,6 +1217,8 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "read", gread, 0);
     /* 15.1.8 write */
     add_applicative(K, ground_env, "write", gwrite, 0);
+    /* 15.1.? write-simple */
+    add_applicative(K, ground_env, "write-simple", gwrite_simple, 0);
 
     /* 15.1.? eof-object? */
     add_applicative(K, ground_env, "eof-object?", typep, 2, symbol, 
@@ -1077,26 +1260,17 @@ void kinit_ports_ground_env(klisp_State *K)
 		    2, symbol, b2tv(true));
     /* 15.2.2 load */
     add_applicative(K, ground_env, "load", load, 0);
+    /* 15.2.? require */
+    add_applicative(K, ground_env, "require", require, 0);
     /* 15.2.3 get-module */
     add_applicative(K, ground_env, "get-module", get_module, 0);
     /* 15.2.? display */
     add_applicative(K, ground_env, "display", display, 0);
 
+    /* 15.1.? read-line */
+    add_applicative(K, ground_env, "read-line", read_line, 0);
     /* 15.1.? flush-output-port */
     add_applicative(K, ground_env, "flush-output-port", flush, 0);
-
-    /* REFACTOR move to system module */
-
-    /* 15.1.? file-exists? */
-    add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
-
-    /* 15.1.? delete-file */
-    add_applicative(K, ground_env, "delete-file", delete_file, 0);
-
-    /* this isn't in r7rs but it's in ansi c and quite easy to implement */
-
-    /* 15.1.? rename-file */
-    add_applicative(K, ground_env, "rename-file", rename_file, 0);
 
     /*
      * That's all there is in the report combined with r5rs and r7rs scheme.
@@ -1106,4 +1280,12 @@ void kinit_ports_ground_env(klisp_State *K)
      * methods of opening. Also some directory checking, traversing, etc,
      * would be nice
      */
+}
+
+/* init continuation names */
+void kinit_ports_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_close_file_ret, "close-file-and-ret");
 }

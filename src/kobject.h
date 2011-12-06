@@ -244,9 +244,20 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
 #define ttiseinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
 	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+/* for items in bytevectors */
 #define ttisu8(o) ({							\
 	TValue o__ = (o);						\
 	(ttisfixint(o__) && ivalue(o__) >= 0 && ivalue(o__) < 256); })		
+/* for radixes in string<->number */
+#define ttisradix(o) ({							\
+	TValue o__ = (o);						\
+	(ttisfixint(o__) &&						\
+	 (ivalue(o__) == 2 || ivalue(o__) == 8 ||			\
+	  ivalue(o__) == 10 || ivalue(o__) == 16)); })
+/* for bases in char->digit and related functions */
+#define ttisbase(o) ({							\
+	TValue o__ = (o);						\
+	(ttisfixint(o__) && ivalue(o__) >= 2 && ivalue(o__) <= 36); })		
 #define ttisinteger(o) ({ TValue o__ = (o);				\
 	    (ttiseinteger(o__) ||					\
 	     (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})
@@ -605,10 +616,20 @@ union GCObject {
 #define KIMINF_ {.tv = {.t = K_TAG_IINF, .v = { .i = -1 }}}
 #define KRWNPV_ {.tv = {.t = K_TAG_RWNPV, .v = { .i = 0 }}}
 #define KUNDEF_ {.tv = {.t = K_TAG_UNDEFINED, .v = { .i = 0 }}}
-#define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
-#define KNEWLINE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\n' }}}
 #define KFREE_ {.tv = {.t = K_TAG_FREE, .v = { .i = 0 }}}
-
+/* named character */
+/* N.B. don't confuse with KNULL_ with KNIL!!! */
+#define KNULL_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\0' }}}
+#define KALARM_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\a' }}}
+#define KBACKSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\b' }}}
+#define KTAB_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\t' }}}
+#define KNEWLINE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\n' }}}
+#define KRETURN_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\r' }}}
+#define KESCAPE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\x1b' }}}
+#define KSPACE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = ' ' }}}
+#define KDELETE_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\x7f' }}}
+#define KVTAB_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\v' }}}
+#define KFORMFEED_ {.tv = {.t = K_TAG_CHAR, .v = { .ch = '\f' }}}
 
 /* RATIONALE: the ones above can be used in initializers */
 #define KNIL ((TValue) KNIL_)
@@ -807,27 +828,27 @@ int32_t kmark_count;
 #define kis_mutable(o_) ((tv_get_kflags(o_) & K_FLAG_IMMUTABLE) == 0)
 #define kis_immutable(o_) (!kis_mutable(o_))
 
-/* KFlags for symbols */
-/* has external representation (identifiers) */
-#define K_FLAG_EXT_REP 0x01
-#define khas_ext_rep(s_) ((tv_get_kflags(s_) & K_FLAG_EXT_REP) != 0)
-
 /* KFlags for marking continuations */
 #define K_FLAG_OUTER 0x01
 #define K_FLAG_INNER 0x02
 #define K_FLAG_DYNAMIC 0x04
 #define K_FLAG_BOOL_CHECK 0x08
+/* this is the same as immutable, but there is no problem
+   with continuations */
+#define K_FLAG_INERT_RET 0x10
 
 /* evaluate c_ more than once */
 #define kset_inner_cont(c_) (tv_get_kflags(c_) |= K_FLAG_INNER)
 #define kset_outer_cont(c_) (tv_get_kflags(c_) |= K_FLAG_OUTER)
 #define kset_dyn_cont(c_) (tv_get_kflags(c_) |= K_FLAG_DYNAMIC)
 #define kset_bool_check_cont(c_) (tv_get_kflags(c_) |= K_FLAG_BOOL_CHECK)
+#define kset_inert_ret_cont(c_) (tv_get_kflags(c_) |= K_FLAG_INERT_RET)
 
 #define kis_inner_cont(c_) ((tv_get_kflags(c_) & K_FLAG_INNER) != 0)
 #define kis_outer_cont(c_) ((tv_get_kflags(c_) & K_FLAG_OUTER) != 0)
 #define kis_dyn_cont(c_) ((tv_get_kflags(c_) & K_FLAG_DYNAMIC) != 0)
 #define kis_bool_check_cont(c_) ((tv_get_kflags(c_) & K_FLAG_BOOL_CHECK) != 0)
+#define kis_inert_ret_cont(c_) ((tv_get_kflags(c_) & K_FLAG_INERT_RET) != 0)
 
 #define K_FLAG_OUTPUT_PORT 0x01
 #define K_FLAG_INPUT_PORT 0x02

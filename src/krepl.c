@@ -19,11 +19,15 @@
 #include "ksymbol.h"
 #include "kport.h"
 #include "kpair.h"
-#include "kgerror.h"
-/* for names */
-#include "ktable.h"
-/* for do_pass_value */
-#include "kgcontinuations.h"
+#include "ktable.h" /* for names */
+#include "kghelpers.h" /* for do_pass_value */
+
+/* Continuations */
+void do_repl_read(klisp_State *K);
+void do_repl_eval(klisp_State *K);
+void do_repl_loop(klisp_State *K);
+void do_repl_int_error(klisp_State *K);
+
 
 /* TODO add names & source info to the repl continuations */
 
@@ -41,13 +45,10 @@ void do_repl_read(klisp_State *K)
 
     TValue port = kcdr(K->kd_in_port_key);
     klisp_assert(kfport_file(port) == stdin);
-#if 0 /* Let's disable this for now */
-    /* workaround to the problem of the dangling '\n' in repl 
+    /* Workaround to the problem of the dangling '\n' in repl 
        (from previous line) */
-    kread_ignore_whitespace_and_comments_from_port(K, port);
-    
-    kport_reset_source_info(port);
-#endif
+    kread_clear_leading_whitespace_from_port(K, port);
+    kport_reset_source_info(port); /* always start with a clean source info */
     obj = kread_from_port(K, port, true); /* read mutable pairs */
     kapply_cc(K, obj);
 }
@@ -82,17 +83,14 @@ void do_repl_eval(klisp_State *K)
     }
 }
 
-void do_repl_loop(klisp_State *K);
-void do_int_repl_error(klisp_State *K);
-
-/* this is called from both do_repl_loop and do_repl_error */
+/* this is called from both do_repl_loop and do_repl_int_error */
 /* GC: assumes denv is NOT rooted */
 void create_loop(klisp_State *K, TValue denv)
 {
     krooted_tvs_push(K, denv);
 
     /* TODO this should be factored out, it is quite common */
-    TValue error_int = kmake_operative(K, do_int_repl_error, 1, denv);
+    TValue error_int = kmake_operative(K, do_repl_int_error, 1, denv);
     krooted_tvs_pop(K); /* already in cont */
     krooted_tvs_push(K, error_int);
     TValue exit_guard = kcons(K, K->error_cont, error_int);
@@ -154,7 +152,7 @@ void do_repl_loop(klisp_State *K)
 } 
 
 /* the underlying function of the error cont */
-void do_int_repl_error(klisp_State *K)
+void do_repl_int_error(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -237,7 +235,7 @@ void do_int_repl_error(klisp_State *K)
 	krooted_tvs_pop(K);
     } else {
 	fprintf(stderr, "\n*ERROR*: not an error object passed to " 
-		"error continuation");
+		"error continuation\n\n");
     }
 
     UNUSED(divert);
@@ -261,4 +259,14 @@ void kinit_repl(klisp_State *K)
 
     /* GC: create_loop will root std_env */
     create_loop(K, std_env);
+}
+
+/* init continuation names */
+void kinit_repl_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    add_cont_name(K, t, do_repl_read, "repl-read");
+    add_cont_name(K, t, do_repl_eval, "repl-eval");
+    add_cont_name(K, t, do_repl_loop, "repl-print-loop");
+    add_cont_name(K, t, do_repl_int_error, "repl-int-error");
 }

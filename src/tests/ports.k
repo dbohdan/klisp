@@ -158,7 +158,6 @@
 ($check-error (call-with-closed-input-port close-output-file))
 
 ;; 15.1.7 read
-
 ($check-predicate (eof-object? ($input-test #inert (read))))
 ($check-predicate (eof-object? ($input-test "" (read))))
 
@@ -206,6 +205,8 @@
 ($check-error (write 0 (get-current-input-port)))
 ($check-error (call-with-closed-output-port ($lambda (p) (write 0 p))))
 
+;; write-simple
+;; read-line
 ;; 15.2.1 call-with-input-file call-with-output-file
 ;; 15.2.2 load
 ;; 15.2.3 get-module

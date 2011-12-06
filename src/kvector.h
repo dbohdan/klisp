@@ -24,10 +24,10 @@ bool kmutable_vectorp(TValue obj);
 
 /* some macros to access the parts of vectors */
 
-#define kvector_array(tv_) (tv2vector(tv_)->array)
-#define kvector_length(tv_) (tv2vector(tv_)->sizearray)
+#define kvector_buf(tv_) (tv2vector(tv_)->array)
+#define kvector_size(tv_) (tv2vector(tv_)->sizearray)
 
-#define kvector_emptyp(tv_) (kvector_length(tv_) == 0)
+#define kvector_emptyp(tv_) (kvector_size(tv_) == 0)
 #define kvector_mutablep(tv_) (kis_mutable(tv_))
 #define kvector_immutablep(tv_) (kis_immutable(tv_))
 

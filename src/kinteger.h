@@ -94,6 +94,7 @@ void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
 /* read/write interface */
 
 /* this works for bigints & fixints, returns true if ok */
+/* only positive numbers? */
 bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
 		   char **end);
 
@@ -131,5 +132,8 @@ TValue kbigint_abs(klisp_State *K, TValue tv_bigint);
 
 TValue kbigint_gcd(klisp_State *K, TValue n1, TValue n2);
 TValue kbigint_lcm(klisp_State *K, TValue n1, TValue n2);
+
+/* conversion from uint64_t */
+TValue kinteger_new_uint64(klisp_State *K, uint64_t x);
 
 #endif

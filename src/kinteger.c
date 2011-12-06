@@ -68,6 +68,7 @@ bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out,
    print the number */
 int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
 {
+    klisp_assert(ttisbigint(tv_bigint));
     return mp_int_string_len(tv2bigint(tv_bigint), base);
 }
 
@@ -75,6 +76,7 @@ int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
 void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
 			   char *buf, int32_t limit)
 {
+    klisp_assert(ttisbigint(tv_bigint));
     mp_result res = mp_int_to_string(K, tv2bigint(tv_bigint), base, buf, 
 				     limit);
     /* only possible error is truncation */
@@ -292,4 +294,24 @@ TValue kbigint_lcm(klisp_State *K, TValue n1, TValue n2)
     UNUSED(mp_int_abs(K, res, res));
     krooted_tvs_pop(K);
     return kbigint_try_fixint(K, tv_res);
+}
+
+TValue kinteger_new_uint64(klisp_State *K, uint64_t x)
+{
+    if (x <= INT32_MAX) {
+        return i2tv((int32_t) x);
+    } else {
+        TValue res = kbigint_make_simple(K);
+        krooted_tvs_push(K, res);
+
+        uint8_t d[8];
+        for (int i = 7; i >= 0; i--) {
+          d[i] = (x & 0xFF);
+          x >>= 8;
+        }
+
+        mp_int_read_unsigned(K, tv2bigint(res), d, 8);
+        krooted_tvs_pop(K);
+        return res;
+    }
 }

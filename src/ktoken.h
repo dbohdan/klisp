@@ -7,10 +7,11 @@
 #ifndef ktoken_h
 #define ktoken_h
 
+#include <stdio.h>
+#include <ctype.h>
+
 #include "kobject.h"
 #include "kstate.h"
-
-#include <stdio.h>
 
 /*
 ** Tokenizer interface
@@ -32,12 +33,11 @@ inline int ktok_getc(klisp_State *K) { return ktok_peekc_getc(K, false); }
 inline int ktok_peekc(klisp_State *K) { return ktok_peekc_getc(K, true); }
 
 /* needed by the repl */
-void ktok_ignore_whitespace_and_comments(klisp_State *K);
+void ktok_ignore_whitespace(klisp_State *K);
 
-/* This is needed for string->symbol to check if a symbol has external
+/* This is needed for kwrite to check if a symbol has external
    representation as an identifier */
 /* REFACTOR: think out a better interface to all this */
-
 /*
 ** Char set contains macro interface
 */
@@ -48,7 +48,8 @@ void ktok_ignore_whitespace_and_comments(klisp_State *K);
 typedef uint32_t kcharset[8];
 
 extern kcharset ktok_alphabetic, ktok_numeric, ktok_whitespace;
-extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
+extern kcharset ktok_delimiter, ktok_extended;
+extern kcharset ktok_subsequent, ktok_initial;
 
 #define ktok_is_alphabetic(chi_) kcharset_contains(ktok_alphabetic, chi_)
 #define ktok_is_numeric(chi_) kcharset_contains(ktok_numeric, chi_)
@@ -56,6 +57,7 @@ extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 #define ktok_is_whitespace(chi_) kcharset_contains(ktok_whitespace, chi_)
 #define ktok_is_delimiter(chi_) ((chi_) == EOF ||			\
 				 kcharset_contains(ktok_delimiter, chi_))
+#define ktok_is_initial(chi_) kcharset_contains(ktok_initial, chi_)
 #define ktok_is_subsequent(chi_) kcharset_contains(ktok_subsequent, chi_)
 
 #define kcharset_contains(kch_, ch_) \
@@ -63,25 +65,17 @@ extern kcharset ktok_delimiter, ktok_extended, ktok_subsequent;
 	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
 
-/* NOTE: only lowercase chars for hexa */
 inline bool ktok_is_digit(char ch, int32_t radix)
 {
+    ch = tolower(ch);
     return (ktok_is_numeric(ch) && (ch - '0') < radix) ||
 	(ktok_is_alphabetic(ch) && (10 + (ch - 'a')) < radix);
 }
 
 inline int32_t ktok_digit_value(char ch)
 {
+    ch = tolower(ch);
     return (ch <= '9')? ch - '0' : 10 + (ch - 'a');
-}
-
-/* This takes the args in sign magnitude form (sign & res),
-   but must work for any representation of negative numbers */
-inline bool can_add_digit(uint32_t res, bool sign, uint32_t new_digit, 
-			  int32_t radix)
-{
-    return (sign)? res <= -(INT32_MIN + new_digit) / radix :
-	res <= (INT32_MAX - new_digit) / radix;
 }
 
 #endif

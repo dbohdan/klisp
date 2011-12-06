@@ -21,13 +21,17 @@
 #include "kerror.h"
 
 #include "kghelpers.h"
-#include "kgpair_mut.h" /* for copy_es_immutable_h */
-#include "kgenv_mut.h" /* for match */
-#include "kgcontrol.h" /* for do_seq */
 #include "kgcombiners.h"
 
-/* Helper (used by $vau & $lambda) */
+/* continuations */
 void do_vau(klisp_State *K);
+
+void do_map(klisp_State *K);
+void do_map_ret(klisp_State *K);
+void do_map_encycle(klisp_State *K);
+void do_map_cycle(klisp_State *K);
+
+void do_array_map_ret(klisp_State *K);
 
 /* 4.10.1 operative? */
 /* uses typep */
@@ -47,13 +51,13 @@ void Svau(klisp_State *K)
     bind_al2p(K, ptree, vptree, vpenv, vbody);
 
     /* The ptree & body are copied to avoid mutation */
-    vptree = check_copy_ptree(K, "$vau", vptree, vpenv);
+    vptree = check_copy_ptree(K, vptree, vpenv);
     
     krooted_tvs_push(K, vptree);
 
     /* the body should be a list */
-    UNUSED(check_list(K, "$vau", true, vbody, NULL));
-    vbody = copy_es_immutable_h(K, "$vau", vbody, false);
+    check_list(K, true, vbody, NULL, NULL);
+    vbody = copy_es_immutable_h(K, vbody, false);
 
     krooted_tvs_push(K, vbody);
     
@@ -101,8 +105,7 @@ void do_vau(klisp_State *K)
     /* protect env */
     krooted_tvs_push(K, env); 
 
-    /* TODO use name from operative */
-    match(K, "[user-operative]", env, op_ptree, ptree);
+    match(K, env, op_ptree, ptree);
     if (!ttisignore(penv))
 	kadd_binding(K, env, penv, denv);
 
@@ -182,11 +185,11 @@ void Slambda(klisp_State *K)
     bind_al1p(K, ptree, vptree, vbody);
 
     /* The ptree & body are copied to avoid mutation */
-    vptree = check_copy_ptree(K, "$lambda", vptree, KIGNORE);
+    vptree = check_copy_ptree(K, vptree, KIGNORE);
     krooted_tvs_push(K, vptree); 
     /* the body should be a list */
-    UNUSED(check_list(K, "$lambda", true, vbody, NULL));
-    vbody = copy_es_immutable_h(K, "$lambda", vbody, false);
+    check_list(K, true, vbody, NULL, NULL);
+    vbody = copy_es_immutable_h(K, vbody, false);
 
     krooted_tvs_push(K, vbody); 
 
@@ -235,205 +238,6 @@ void apply(klisp_State *K)
     ktail_eval(K, expr, env);
 }
 
-/* Helpers for map (also used by for each) */
-void map_for_each_get_metrics(klisp_State *K, char *name, TValue lss,
-			      int32_t *app_apairs_out, int32_t *app_cpairs_out,
-			      int32_t *res_apairs_out, int32_t *res_cpairs_out)
-{
-    /* avoid warnings (shouldn't happen if _No_return was used in throw) */
-    *app_apairs_out = 0;
-    *app_cpairs_out = 0;
-    *res_apairs_out = 0;
-    *res_cpairs_out = 0;
-
-    /* get the metrics of the ptree of each call to app */
-    int32_t app_cpairs;
-    int32_t app_pairs = check_list(K, name, true, lss, &app_cpairs);
-    int32_t app_apairs = app_pairs - app_cpairs;
-
-    /* get the metrics of the result list */
-    int32_t res_cpairs;
-    /* We now that lss has at least one elem */
-    int32_t res_pairs = check_list(K, name, true, kcar(lss), &res_cpairs);
-    int32_t res_apairs = res_pairs - res_cpairs;
-    
-    if (res_cpairs == 0) {
-	/* finite list of length res_pairs (all lists should
-	 have the same structure: acyclic with same length) */
-	int32_t pairs = app_pairs - 1;
-	TValue tail = kcdr(lss);
-	while(pairs--) {
-	    int32_t first_cpairs;
-	    int32_t first_pairs = check_list(K, name, true, kcar(tail), 
-					     &first_cpairs);
-	    tail = kcdr(tail);
-
-	    if (first_cpairs != 0) {
-		klispE_throw_simple(K, "mixed finite and infinite lists");
-		return;
-	    } else if (first_pairs != res_pairs) {
-		klispE_throw_simple(K, "lists of different length");
-		return;
-	    }
-	}
-    } else {
-	/* cyclic list: all lists should be cyclic.
-	   result will have acyclic length equal to the
-	   max of all the lists and cyclic length equal to the lcm
-	   of all the lists. res_pairs may be broken but will be 
-	   restored by after the loop */
-	int32_t pairs = app_pairs - 1;
-	TValue tail = kcdr(lss);
-	while(pairs--) {
-	    int32_t first_cpairs;
-	    int32_t first_pairs = check_list(K, name, true, kcar(tail), 
-					     &first_cpairs);
-	    int32_t first_apairs = first_pairs - first_cpairs;
-	    tail = kcdr(tail);
-
-	    if (first_cpairs == 0) {
-		klispE_throw_simple(K, "mixed finite and infinite lists");
-		return;
-	    } 
-	    res_apairs = kmax32(res_apairs, first_apairs);
-	    /* this can throw an error if res_cpairs doesn't 
-	       fit in 32 bits, which is a reasonable implementation
-	       restriction because the list wouldn't fit in memory 
-	       anyways */
-	    res_cpairs = kcheck32(K, "map/for-each: result list is too big", 
-				  klcm32_64(res_cpairs, first_cpairs));
-	}
-	res_pairs = kcheck32(K, "map/for-each: result list is too big", 
-			     (int64_t) res_cpairs + (int64_t) res_apairs);
-	UNUSED(res_pairs);
-    }
-
-    *app_apairs_out = app_apairs;
-    *app_cpairs_out = app_cpairs;
-    *res_apairs_out = res_apairs;
-    *res_cpairs_out = res_cpairs;
-}
-
-/* Return two lists, isomorphic to lss: one list of cars and one list
-   of cdrs (replacing the value of lss) */
-
-/* GC: assumes lss is rooted, and dummy1 & 2 are free in K */
-TValue map_for_each_get_cars_cdrs(klisp_State *K, TValue *lss, 
-				  int32_t apairs, int32_t cpairs)
-{
-    TValue tail = *lss;
-
-    TValue lp_cars = kget_dummy1(K);
-    TValue lap_cars = lp_cars;
-
-    TValue lp_cdrs = kget_dummy2(K);
-    TValue lap_cdrs = lp_cdrs;
-    
-    while(apairs != 0 || cpairs != 0) {
-	int32_t pairs;
-	if (apairs != 0) {
-	    pairs = apairs;
-	} else {
-	    /* remember last acyclic pair of both lists to to encycle! later */
-	    lap_cars = lp_cars;
-	    lap_cdrs = lp_cdrs;
-	    pairs = cpairs;
-	}
-
-	while(pairs--) {
-	    TValue first = kcar(tail);
-	    tail = kcdr(tail);
-	 
-	    /* accumulate both cars and cdrs */
-	    TValue np;
-	    np = kcons(K, kcar(first), KNIL);
-	    kset_cdr(lp_cars, np);
-	    lp_cars = np;
-
-	    np = kcons(K, kcdr(first), KNIL);
-	    kset_cdr(lp_cdrs, np);
-	    lp_cdrs = np;
-	}
-
-	if (apairs != 0) {
-	    apairs = 0;
-	} else {
-	    cpairs = 0;
-	    /* encycle! the list of cars and the list of cdrs */
-	    TValue fcp, lcp;
-	    fcp = kcdr(lap_cars);
-	    lcp = lp_cars;
-	    kset_cdr(lcp, fcp);
-
-	    fcp = kcdr(lap_cdrs);
-	    lcp = lp_cdrs;
-	    kset_cdr(lcp, fcp);
-	}
-    }
-
-    *lss = kcutoff_dummy2(K);
-    return kcutoff_dummy1(K);
-}
-
-/* Transpose lss so that the result is a list of lists, each one having
-   metrics (app_apairs, app_cpairs). The metrics of the returned list
-   should be (res_apairs, res_cpairs) */
-
-/* GC: assumes lss is rooted */
-TValue map_for_each_transpose(klisp_State *K, TValue lss, 
-			      int32_t app_apairs, int32_t app_cpairs, 
-			      int32_t res_apairs, int32_t res_cpairs)
-{
-    /* reserve dummy1 & 2 to get_cars_cdrs */
-    TValue lp = kget_dummy3(K);
-    TValue lap = lp;
-
-    TValue cars = KNIL; /* put something for GC */
-    TValue tail = lss;
-
-    /* GC: both cars & tail vary in each loop, to protect them we need
-       the vars stack */
-    krooted_vars_push(K, &cars);
-    krooted_vars_push(K, &tail);
-    
-    /* Loop over list of lists, creating a list of cars and 
-       a list of cdrs, accumulate the list of cars and loop
-       with the list of cdrs as the new list of lists (lss) */
-    while(res_apairs != 0 || res_cpairs != 0) {
-	int32_t pairs;
-	
-	if (res_apairs != 0) {
-	    pairs = res_apairs;
-	} else {
-	    pairs = res_cpairs;
-	    /* remember last acyclic pair to encycle! later */
-	    lap = lp;
-	}
-
-	while(pairs--) {
-	    /* accumulate cars and replace tail with cdrs */
-	    cars = map_for_each_get_cars_cdrs(K, &tail, app_apairs, app_cpairs);
-	    TValue np = kcons(K, cars, KNIL);
-	    kset_cdr(lp, np);
-	    lp = np;
-	}
-
-	if (res_apairs != 0) {
-	    res_apairs = 0;
-	} else {
-	    res_cpairs = 0;
-	    /* encycle! the list of list of cars */
-	    TValue fcp = kcdr(lap);
-	    TValue lcp = lp;
-	    kset_cdr(lcp, fcp);
-	}
-    }
-
-    krooted_vars_pop(K);
-    krooted_vars_pop(K);
-    return kcutoff_dummy3(K);
-}
-
 /* Continuation helpers for map */
 
 /* For acyclic input lists: Return the mapped list */
@@ -451,7 +255,7 @@ void do_map_ret(klisp_State *K)
        and later mutation of the result */
     /* XXX: the check isn't necessary really, but there is
        no list_copy */
-    TValue copy = check_copy_list(K, "map", kcdr(xparams[0]), false);
+    TValue copy = check_copy_list(K, kcdr(xparams[0]), false, NULL, NULL);
     kapply_cc(K, copy);
 }
 
@@ -478,7 +282,7 @@ void do_map_encycle(klisp_State *K)
        and later mutation of the result */
     /* XXX: the check isn't necessary really, but there is
        no list_copy */
-    TValue copy = check_copy_list(K, "map", kcdr(xparams[0]), false);
+    TValue copy = check_copy_list(K, kcdr(xparams[0]), false, NULL, NULL);
     kapply_cc(K, copy);
 }
 
@@ -517,7 +321,7 @@ void do_map(klisp_State *K)
 	/* copy the ptree to avoid problems with mutation */
 	/* XXX: no check necessary, could just use copy_list if there
 	 was such a procedure */
-	TValue first_ptree = check_copy_list(K, "map", kcar(ls), false);
+	TValue first_ptree = check_copy_list(K, kcar(ls), false, NULL, NULL);
 	ls = kcdr(ls);
 	n = n-1;
 	krooted_tvs_push(K, first_ptree);
@@ -596,7 +400,7 @@ void map(klisp_State *K)
     int32_t app_pairs, app_apairs, app_cpairs;
     int32_t res_pairs, res_apairs, res_cpairs;
 
-    map_for_each_get_metrics(K, "map", lss, &app_apairs, &app_cpairs,
+    map_for_each_get_metrics(K, lss, &app_apairs, &app_cpairs,
 			     &res_apairs, &res_cpairs);
     app_pairs = app_apairs + app_cpairs;
     res_pairs = res_apairs + res_cpairs;
@@ -640,11 +444,141 @@ void map(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* 
+** These are from r7rs (except bytevector). For now just follow
+** Kernel version of (list) map. That means that the objects should
+** all have the same size, and that the dynamic environment is passed
+** to the applicatives. Continuation capturing interaction is still
+** an open issue (see comment in map).
+*/
+
+/* NOTE: the type error on the result of app are only checked after
+   all values are collected. This could be changed if necessary, by
+   having map continuations take an additional typecheck param */
+/* Helpers for array_map */
+
+/* copy the resulting list to a new vector */
+void do_array_map_ret(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    /*
+    ** xparams[0]: (dummy . complete-ls)
+    ** xparams[1]: list->array
+    ** xparams[2]: length
+    */
+    UNUSED(obj);
+
+    TValue ls = kcdr(xparams[0]);
+    TValue (*list_to_array)(klisp_State *K, TValue array, int32_t size) = 
+	pvalue(xparams[1]);
+    int32_t length = ivalue(xparams[2]);
+
+    /* This will also avoid some problems with continuations
+       captured from within the dynamic extent to map
+       and later mutation of the result */
+    TValue copy = list_to_array(K, ls, length);
+    kapply_cc(K, copy);
+}
+
+/* 5.9.? string-map */
+/* 5.9.? vector-map */
+/* 5.9.? bytevector-map */
+void array_map(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+
+    /*
+    ** xparams[0]: list->array fn 
+    ** xparams[1]: array->list fn (with type check and size ret)
+    */
+
+    TValue list_to_array_tv = xparams[0];
+    TValue (*array_to_list)(klisp_State *K, TValue array, int32_t *size) = 
+	pvalue(xparams[1]);
+
+    bind_al1tp(K, ptree, "applicative", ttisapplicative, app, lss);
+    
+    /* check that lss is a non empty list, and copy it */
+    if (ttisnil(lss)) {
+	klispE_throw_simple(K, "no arguments after applicative");
+	return;
+    }
+
+    int32_t app_pairs, app_apairs, app_cpairs;
+    /* the copied list should be protected from gc, and will host
+       the lists resulting from the conversion */
+    lss = check_copy_list(K, lss, true, &app_pairs, &app_cpairs);
+    app_apairs = app_pairs - app_cpairs;
+    krooted_tvs_push(K, lss);
+
+    /* check that all elements have the correct type and same size,
+       and convert them to lists */
+    int32_t res_pairs;
+    TValue head = kcar(lss);
+    TValue tail = kcdr(lss);
+    TValue ls = array_to_list(K, head, &res_pairs);
+    kset_car(lss, ls); /* save the first */
+    /* all array will produce acyclic lists */
+
+    for(int32_t i = 1 /* jump over first */; i < app_pairs; ++i) {
+	head = kcar(tail);
+	int32_t pairs;
+	ls = array_to_list(K, head, &pairs);
+	/* in klisp all arrays should have the same length */
+	if (pairs != res_pairs) {
+	    klispE_throw_simple(K, "arguments of different length");
+	    return;
+	}
+	kset_car(tail, ls);
+	tail = kcdr(tail);
+    }
+    
+    /* create the list of parameters to app */
+    lss = map_for_each_transpose(K, lss, app_apairs, app_cpairs, 
+				 res_pairs, 0); /* cycle pairs is always 0 */
+
+    /* ASK John: the semantics when this is mixed with continuations,
+       isn't all that great..., but what are the expectations considering
+       there is no prescribed order? */
+
+    krooted_tvs_pop(K);
+    krooted_tvs_push(K, lss);
+    /* This will be the list to be returned, but it will be transformed
+       to an array before returning (making it also play a little nicer 
+       with continuations) */
+    TValue dummy = kcons(K, KINERT, KNIL);
+    
+    krooted_tvs_push(K, dummy);
+
+    TValue ret_cont = 
+	kmake_continuation(K, kget_cc(K), do_array_map_ret, 3, dummy, 
+			   list_to_array_tv, i2tv(res_pairs));
+    krooted_tvs_push(K, ret_cont);
+
+    /* schedule the mapping of the elements of the acyclic part.
+       signal dummyp = true to avoid creating a pair for
+       the inert value passed to the first continuation */
+    TValue new_cont = 
+	kmake_continuation(K, ret_cont, do_map, 6, app, lss, dummy,
+			   i2tv(res_pairs), denv, KTRUE);
+
+    krooted_tvs_pop(K); 
+    krooted_tvs_pop(K); 
+    krooted_tvs_pop(K); 
+
+    kset_cc(K, new_cont);
+
+    /* this will be a nop, and will continue with do_map */
+    kapply_cc(K, KINERT);
+}
+
 /* 6.2.1 combiner? */
 /* uses ftypedp */
-
-/* Helper for combiner? */
-bool kcombinerp(TValue obj) { return ttiscombiner(obj); }
 
 /* init ground */
 void kinit_combiners_ground_env(klisp_State *K)
@@ -671,7 +605,29 @@ void kinit_combiners_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "apply", apply, 0);
     /* 5.9.1 map */
     add_applicative(K, ground_env, "map", map, 0);
+    /* 5.9.? string-map, vector-map, bytevector-map */
+    add_applicative(K, ground_env, "string-map", array_map, 2, 
+		    p2tv(list_to_string_h), p2tv(string_to_list_h));
+    add_applicative(K, ground_env, "vector-map", array_map, 2, 
+		    p2tv(list_to_vector_h), p2tv(vector_to_list_h));
+    add_applicative(K, ground_env, "bytevector-map", array_map, 2, 
+		    p2tv(list_to_bytevector_h), p2tv(bytevector_to_list_h));
     /* 6.2.1 combiner? */
     add_applicative(K, ground_env, "combiner?", ftypep, 2, symbol, 
 		    p2tv(kcombinerp));
+}
+
+/* init continuation names */
+void kinit_combiners_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    
+    add_cont_name(K, t, do_vau, "$vau-bind!-eval");
+
+    add_cont_name(K, t, do_map, "map-acyclic-part");
+    add_cont_name(K, t, do_map_encycle, "map-encycle!");
+    add_cont_name(K, t, do_map_ret, "map-ret");
+    add_cont_name(K, t, do_map_cycle, "map-cyclic-part");
+
+    add_cont_name(K, t, do_array_map_ret, "array-map-ret");
 }

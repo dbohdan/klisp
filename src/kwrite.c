@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "kwrite.h"
 #include "kobject.h"
@@ -26,6 +27,7 @@
 #include "kenvironment.h"
 #include "kbytevector.h"
 #include "kvector.h"
+#include "ktoken.h" /* for identifier checking */
 
 /*
 ** Stack for the write FSM
@@ -156,9 +158,12 @@ void kw_print_double(klisp_State *K, TValue tv_double)
 }
 
 /*
-** Helper for printing strings (correcly escapes backslashes and
-** double quotes & prints embedded '\0's). It includes the surrounding
-** double quotes.
+** Helper for printing strings.
+** If !displayp it prints the surrounding double quotes
+** and escapes backslashes, double quotes,
+** and non printable chars (including NULL). 
+** if displayp it doesn't include surrounding quotes and just
+** converts non-printable characters to spaces
 */
 void kw_print_string(klisp_State *K, TValue str)
 {
@@ -175,6 +180,7 @@ void kw_print_string(klisp_State *K, TValue str)
 	 for every char */
 	for (ptr = buf; 
 	     i < size && *ptr != '\0' &&
+		 (*ptr >= 32 && *ptr < 127) &&
 		 (K->write_displayp || (*ptr != '\\' && *ptr != '"')); 
 	     i++, ptr++)
 	    ;
@@ -186,21 +192,137 @@ void kw_print_string(klisp_State *K, TValue str)
 	kw_printf(K, "%s", buf);
 	*ptr = ch;
 
-	while(i < size && (*ptr == '\0' || 
-        	(!K->write_displayp && (*ptr == '\\' || *ptr == '"')))) {
-	    if (*ptr == '\0') {
-		kw_printf(K, "%c", '\0'); /* this may not show in the terminal */
+	for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
+			   (!K->write_displayp && 
+			    (*ptr == '\\' || *ptr == '"')));
+    	      ++i, ptr++) {
+	    /* This are all ASCII printable characters (including space,
+	       and exceptuating '\' and '"' if !displayp) */
+	    char *fmt;
+	    /* must be uint32_t to support all unicode chars
+	     in the future */
+	    uint32_t arg;
+	    ch = *ptr;
+	    if (K->write_displayp) {
+		fmt = "%c";
+		/* in display only show tabs and newlines, 
+		 all other non printables are shown as spaces */
+		arg = (uint32_t) ((ch == '\r' || ch == '\n' || ch == '\t')? 
+				  ch : ' ');
 	    } else {
-		kw_printf(K, "\\%c", *ptr);
+		switch(*ptr) {
+		    /* regular \ escapes */
+		case '\"': fmt = "\\%c"; arg = (uint32_t) '"'; break;
+		case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
+		case '\0': fmt = "\\%c"; arg = (uint32_t) '0'; break;
+		case '\a': fmt = "\\%c"; arg = (uint32_t) 'a'; break;
+		case '\b': fmt = "\\%c"; arg = (uint32_t) 'b'; break;
+		case '\t': fmt = "\\%c"; arg = (uint32_t) 't'; break;
+		case '\n': fmt = "\\%c"; arg = (uint32_t) 'n'; break;
+		case '\r': fmt = "\\%c"; arg = (uint32_t) 'r'; break;
+		case '\v': fmt = "\\%c"; arg = (uint32_t) 'v'; break;
+		case '\f': fmt = "\\%c"; arg = (uint32_t) 'f'; break;
+		    /* for the rest of the non printable chars, 
+		       use hex escape */
+		default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
+		}
 	    }
-	    i++;
-	    ptr++;
+	    kw_printf(K, fmt, arg);
 	}
 	buf = ptr;
     }
 			
     if (!K->write_displayp)
 	kw_printf(K, "\"");
+}
+
+/*
+** Helper for printing symbols.
+** If symbol is not a regular identifier it
+** uses the "|...|" syntax, escaping '|', '\' and 
+** non printing characters.
+*/
+void kw_print_symbol(klisp_State *K, TValue sym)
+{
+    uint32_t size = ksymbol_size(sym);
+    char *buf = ksymbol_buf(sym);
+
+    /* first determine if it's a simple identifier */
+    bool identifierp;
+    if (size == 0)
+	identifierp = false;
+    else if (size == 1 && *buf == '.')
+	identifierp = false;
+    else if (size == 1 && (*buf == '+' || *buf == '-'))
+	identifierp = true;
+    else if (*buf == tolower(*buf) && ktok_is_initial(*buf)) {
+	char *ptr = buf;
+	uint32_t i = 0;
+	identifierp = true;
+	while (identifierp && i < size) {
+	    char ch = *ptr++;
+	    ++i;
+	    if (tolower(ch) != ch || !ktok_is_subsequent(ch))
+		identifierp = false;
+	}
+    } else
+	identifierp = false;
+
+    if (identifierp) {
+	/* no problem, just a simple string */
+	kw_printf(K, "%s", buf);
+	return;
+    } 
+
+    /*
+    ** In case we get here, we'll have to use the "|...|" syntax
+    */
+    char *ptr = buf;
+    int i = 0;
+
+    kw_printf(K, "|");
+
+    while (i < size) {
+	/* find the longest printf-able substring to avoid calling printf
+	 for every char */
+	for (ptr = buf; 
+	     i < size && *ptr != '\0' &&
+		 (*ptr >= 32 && *ptr < 127) &&
+		 (*ptr != '\\' && *ptr != '|'); 
+	     i++, ptr++)
+	    ;
+
+	/* NOTE: this work even if ptr == buf (which can only happen the 
+	 first or last time) */
+	char ch = *ptr;
+	*ptr = '\0';
+	kw_printf(K, "%s", buf);
+	*ptr = ch;
+
+	for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
+			   (*ptr == '\\' || *ptr == '|'));
+	      ++i, ptr++) {
+	    /* This are all ASCII printable characters (including space,
+	       and exceptuating '\' and '|') */
+	    char *fmt;
+	    /* must be uint32_t to support all unicode chars
+	     in the future */
+	    uint32_t arg;
+	    ch = *ptr;
+	    switch(*ptr) {
+		/* regular \ escapes */
+	    case '|': fmt = "\\%c"; arg = (uint32_t) '|'; break;
+	    case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
+		/* for the rest of the non printable chars, 
+		   use hex escape */
+	    default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
+	    }
+	    kw_printf(K, fmt, arg);
+	}
+	buf = ptr;
+    }
+			
+    kw_printf(K, "|");
 }
 
 /*
@@ -274,7 +396,8 @@ void kw_set_initial_marks(klisp_State *K, TValue root)
 #if KTRACK_NAMES
 void kw_print_name(klisp_State *K, TValue obj)
 {
-    kw_printf(K, ": %s", ksymbol_buf(kget_name(K, obj)));
+    kw_printf(K, ": ");
+    kw_print_symbol(K, kget_name(K, obj));
 }
 #endif /* KTRACK_NAMES */
 
@@ -327,13 +450,12 @@ void kw_print_cont_type(klisp_State *K, TValue obj)
 /*
 ** Writes all values except strings and pairs
 */
-
-void kwrite_simple(klisp_State *K, TValue obj)
+void kwrite_scalar(klisp_State *K, TValue obj)
 {
     switch(ttype(obj)) {
     case K_TSTRING:
 	/* shouldn't happen */
-	kwrite_error(K, "string type found in kwrite-simple");
+	klisp_assert(0);
 	/* avoid warning */
 	return;
     case K_TFIXINT:
@@ -369,18 +491,69 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	if (K->write_displayp) {
 	    kw_printf(K, "%c", chvalue(obj));
 	} else {
-	    char ch_buf[4];
+	    char ch_buf[16]; /* should be able to contain hex escapes */
 	    char ch = chvalue(obj);
 	    char *ch_ptr;
 
-	    if (ch == '\n') {
+	    switch (ch) {
+	    case '\0':
+		ch_ptr = "null";
+		break;
+	    case '\a':
+		ch_ptr = "alarm";
+		break;
+	    case '\b':
+		ch_ptr = "backspace";
+		break;
+	    case '\t':
+		ch_ptr = "tab";
+		break;
+	    case '\n':
 		ch_ptr = "newline";
-	    } else if (ch == ' ') {
+		break;
+	    case '\r':
+		ch_ptr = "return";
+		break;
+	    case '\x1b':
+		ch_ptr = "escape";
+		break;
+	    case ' ':
 		ch_ptr = "space";
-	    } else {
-		ch_buf[0] = ch;
-		ch_buf[1] = '\0';
+		break;
+	    case '\x7f':
+		ch_ptr = "delete";
+		break;
+	    case '\v':
+		ch_ptr = "vtab";
+		break;
+	    default: {
+		int i = 0;
+		if (ch >= 32 && ch < 127) {
+		    /* printable ASCII range */
+		    /* (del(127) and space(32) were already considered, 
+		       but it's clearer this way) */
+		    ch_buf[i++] = ch;
+		} else {
+		    /* use an hex escape for non printing, unnamed chars */
+		    ch_buf[i++] = 'x';
+		    int res = snprintf(ch_buf+i, sizeof(ch_buf) - i, 
+				       "%x", ch);
+		    if (res < 0) {
+			/* shouldn't happen, but for the sake of
+			   completeness... */
+			TValue port = K->curr_port;
+			if (ttisfport(port)) {
+			    FILE *file = kfport_file(port);
+			    clearerr(file); /* clear error for next time */
+			}
+			kwrite_error(K, "error writing");
+			return;
+		    } 
+		    i += res; /* res doesn't include the '\0' */
+		}
+		ch_buf[i++] = '\0';
 		ch_ptr = ch_buf;
+	    }
 	    }
 	    kw_printf(K, "#\\%s", ch_ptr);
 	}
@@ -390,12 +563,7 @@ void kwrite_simple(klisp_State *K, TValue obj)
 	kw_printf(K, "#%c", bvalue(obj)? 't' : 'f');
 	break;
     case K_TSYMBOL:
-	if (khas_ext_rep(obj)) {
-	    /* TEMP: access symbol structure directly */
-	    kw_printf(K, "%s", ksymbol_buf(obj));
-	} else {
-	    kw_printf(K, "#[symbol]");
-	}
+	kw_print_symbol(K, obj);
 	break;
     case K_TINERT:
 	kw_printf(K, "#inert");
@@ -607,7 +775,7 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 		break;
 	    }
 	    default:
-		kwrite_simple(K, obj);
+		kwrite_scalar(K, obj);
 		middle_list = true;
 	    }
 	}
@@ -633,18 +801,52 @@ void kwrite(klisp_State *K, TValue obj)
 }
 
 /*
-** Interface
+** This is the same as above but will not display
+** shared tags (and will hang if there are cycles)
+*/
+void kwrite_simple(klisp_State *K, TValue obj)
+{
+    /* GC: root obj */
+    krooted_tvs_push(K, obj);
+    kwrite_fsm(K, obj);
+    kw_flush(K);
+    krooted_tvs_pop(K);
+}
+
+/*
+** Writer Interface
 */
 void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj, 
 			    bool displayp)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
+
     K->curr_port = port;
     K->write_displayp = displayp;
     kwrite(K, obj);
 }
 
+void kwrite_simple_to_port(klisp_State *K, TValue port, TValue obj)
+{
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
+
+    K->curr_port = port;
+    K->write_displayp = false;
+    kwrite_simple(K, obj);
+}
+
 void kwrite_newline_to_port(klisp_State *K, TValue port)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
     kwrite_char_to_port(K, port, ch2tv('\n'));
@@ -652,6 +854,10 @@ void kwrite_newline_to_port(klisp_State *K, TValue port)
 
 void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_textual(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
 
@@ -687,6 +893,10 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 
 void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
+    klisp_assert(kport_is_binary(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
     if (ttisfport(port)) {
@@ -723,6 +933,9 @@ void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
 
 void kwrite_flush_port(klisp_State *K, TValue port) 
 {
+    klisp_assert(ttisport(port));
+    klisp_assert(kport_is_output(port));
+    klisp_assert(kport_is_open(port));
     K->curr_port = port; /* this isn't needed but all other 
 			    i/o functions set it */
     if (ttisfport(port)) { /* only necessary for file ports */

@@ -35,7 +35,29 @@
 ($check equal? ($let ((l (list* 1 2 3 4 5))) (encycle! l 0 3) l)
 	(list . #0=(1 2 3 . #0#)))
 
+;; list-set!
+($check-predicate (inert? (list-set! (list 0 1 2 3) 0 10)))
+($check equal? ($let ((l (list 0 1 2 3))) 
+		 (list-set! l 1 10)
+		 (list-set! l 3 30)
+		 l) 
+	(list 0 10 2 30))
+($check equal? ($let ((l (list 0 . #1=(1 2 . #1#)))) 
+		 (list-set! l 1 10)
+		 (list-set! l 4 20)
+		 l) 
+	(list 0 . #2=(10 20 . #2#)))
+;; see kgpair_mut.c for rationale on allowing
+;; improper lists as argument to list-set!
+($check equal? ($let ((l (list* 0 1 2 3)))
+		 (list-set! l 1 10)
+		 (list-set! l 2 20)
+		 l)
+	(list* 0 10 20 3))
+
 ;; append!
+($check-predicate (inert? (append! (list 1) (list 2))))
+
 ($let ()
   ($define! l1 (list 1 2))
   ($define! l2 (list 3 4))
@@ -158,6 +180,19 @@
 ($check-error (encycle! (list 1 2 3) -1 2))
 ($check-error (encycle! (list 1 2 3) 0 -2))
 ($check-error (encycle! (list 1 2 3) 0 #e+infinity))
+
+;; list-set!
+;; set-car! & set-cdr!
+($check-error (list-set!))
+($check-error (list-set! (list 1)))
+($check-error (list-set! (list 1) 0))
+($check-error (list-set! (list 1) 0 1 1))
+
+($check-error (list-set! #inert 0 0))
+($check-error (list-set! () 0 0))
+($check-error (list-set! (list 1 2) 2 0))
+($check-error (list-set! (list 1 2) -1 0))
+($check-error (list-set! (list* 1 2 3) 2 0))
 
 ;; append!
 ;; ASK does the report assert that the lists remains unmodified??

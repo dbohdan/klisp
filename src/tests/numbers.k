@@ -60,7 +60,6 @@
 ($check equal? #i+infinity #i+infinity)
 
 ;; 12.5.1 number? finite? integer?
-
 ($check-predicate (number? 0 1 3/5 -3.14e0 #real))
 ($check-not-predicate (number? 5 "6" 7))
 
@@ -76,6 +75,15 @@
 ($check-not-predicate (integer? #e-infinity))
 ($check-not-predicate (integer? #real))
 ($check-not-predicate (integer? "0"))
+
+;; 12.?? exact-integer?
+($check-predicate (exact-integer? 0 8/2 -12/6))
+($check-not-predicate (exact-integer? 1.0))
+($check-not-predicate (exact-integer? #e+infinity))
+($check-not-predicate (exact-integer? #e-infinity))
+($check-not-predicate (exact-integer? #real))
+($check-not-predicate (exact-integer? "0"))
+
 
 ;; 12.5.2 =?
 
@@ -415,3 +423,94 @@
 
 ;; 12.10 Complex features
 ;; not implemented
+
+;; String conversion
+
+;; 12.? number->string
+($check string-ci=? (number->string 0) "0")
+($check string-ci=? (number->string 1) "1")
+($check string-ci=? (number->string -1) "-1")
+($check string-ci=? (number->string 2 2) "10")
+($check string-ci=? (number->string -2 2) "-10")
+($check string-ci=? (number->string 8 8) "10")
+($check string-ci=? (number->string -8 8) "-10")
+($check string-ci=? (number->string 10 10) "10")
+($check string-ci=? (number->string -10 10) "-10")
+($check string-ci=? (number->string 16 16) "10")
+($check string-ci=? (number->string -16 16) "-10")
+; default base
+($check string-ci=? (number->string 10) (number->string 10 10))
+;; infinities, undefined and reals with no primary value
+($check string-ci=? (number->string #undefined) "#undefined")
+($check string-ci=? (number->string #real) "#real")
+($check string-ci=? (number->string #e+infinity) "#e+infinity")
+($check string-ci=? (number->string #e-infinity) "#e-infinity")
+($check string-ci=? (number->string #i+infinity) "#i+infinity")
+($check string-ci=? (number->string #i-infinity) "#i-infinity")
+;; rationals
+($check string-ci=? (number->string 13/17) "13/17")
+($check string-ci=? (number->string -17/13) "-17/13")
+($check string-ci=? (number->string #o-21/15 8) "-21/15")
+;; bigints
+($check string-ci=? (number->string #x1234567890abcdef 16) 
+	"1234567890abcdef")
+
+; only bases 2, 8, 10, 16
+($check-error (number->string 10 3))
+; only numbers
+($check-error (number->string #inert))
+($check-error (number->string #inert 2))
+; only numbers
+($check-error (number->string "2"))
+($check-error (number->string "2" 8))
+; only base 10 with inexact numbers
+($check-error (number->string -1.0 2))
+($check-error (number->string 1.25 8))
+($check-error (number->string 3.0 16))
+
+;; 12.? string->number
+($check =? (string->number "0") 0)
+($check =? (string->number "1") 1)
+($check =? (string->number "-1") -1)
+($check =? (string->number "10" 2) 2)
+($check =? (string->number "-10" 2) -2)
+($check =? (string->number "10" 8) 8)
+($check =? (string->number "-10" 8) -8)
+($check =? (string->number "10" 10) 10)
+($check =? (string->number "-10" 10) -10)
+($check =? (string->number "10" 16) 16)
+($check =? (string->number "-10" 16) -16)
+; default base
+($check =? (string->number "10") (string->number "10" 10))
+;; infinities, undefined and reals with no primary value
+;; #undefined and #real can't be compared with =?
+($check equal? (string->number "#undefined") #undefined)
+($check equal? (string->number "#real") #real)
+($check =? (string->number "#e+infinity") #e+infinity)
+($check =? (string->number "#e-infinity") #e-infinity)
+($check =? (string->number "#i+infinity") #i+infinity)
+($check =? (string->number "#i-infinity") #i-infinity)
+;; rationals
+($check =? (string->number "13/17") 13/17)
+($check =? (string->number "-17/13") -17/13)
+($check =? (string->number "-21/15" 8) #o-21/15)
+;; bigints
+($check =? (string->number "1234567890abcdef" 16) 
+	#x1234567890abcdef)
+($check =? (string->number "1234567890ABCDEF" 16) 
+	#x1234567890abcdef)
+;; doubles
+($check =? (string->number "1.25e10") 1.25e10)
+($check =? (string->number "-1.25e10" 10) -1.25e10)
+
+; only bases 2, 8, 10, 16
+($check-error (string->number "10" 3))
+; only strings
+($check-error (string->number #inert))
+($check-error (string->number #inert 2))
+($check-error (string->number 2))
+($check-error (string->number 2 8))
+; only base 10 with inexact numbers
+($check-error (string->number "-1.0" 2))
+($check-error (string->number "1.25" 8))
+($check-error (string->number "3.0" 16))

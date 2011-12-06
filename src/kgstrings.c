@@ -19,12 +19,13 @@
 #include "kcontinuation.h"
 #include "kerror.h"
 #include "ksymbol.h"
+#include "kchar.h"
 #include "kstring.h"
+#include "kvector.h"
+#include "kbytevector.h"
 
 #include "kghelpers.h"
-#include "kgchars.h" /* for kcharp */
 #include "kgstrings.h"
-#include "kgnumbers.h" /* for keintegerp & knegativep */
 
 /* 13.1.1? string? */
 /* uses typep */
@@ -105,7 +106,7 @@ void string_ref(klisp_State *K)
 }
 
 /* 13.1.5? string-set! */
-void string_setS(klisp_State *K)
+void string_setB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -137,31 +138,6 @@ void string_setS(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
-/* Helper for string and list->string */
-/* GC: Assumes ls is rooted */
-inline TValue list_to_string_h(klisp_State *K, char *name, TValue ls)
-{
-    int32_t dummy;
-    /* don't allow cycles */
-    int32_t pairs = check_typed_list(K, name, "char", kcharp, false,
-				     ls, &dummy);
-
-    TValue new_str;
-    /* the if isn't strictly necessary but it's clearer this way */
-    if (pairs == 0) {
-	return K->empty_string; 
-    } else {
-	new_str = kstring_new_s(K, pairs);
-	char *buf = kstring_buf(new_str);
-	TValue tail = ls;
-	while(pairs--) {
-	    *buf++ = chvalue(kcar(tail));
-	    tail = kcdr(tail);
-	}
-	return new_str;
-    }
-}
-
 /* 13.2.1? string */
 void string(klisp_State *K)
 {
@@ -172,8 +148,63 @@ void string(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     
-    TValue new_str = list_to_string_h(K, "string", ptree);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_typed_list(K, kcharp, false, ptree, &pairs, NULL);
+    TValue new_str = list_to_string_h(K, ptree, pairs);
     kapply_cc(K, new_str);
+}
+
+/* 13.?? string-upcase, string-downcase, string-titlecase, string-foldcase */
+/* this will work for upcase, downcase and foldcase (in ASCII) */
+void kstring_change_case(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    /*
+    ** xparams[0]: conversion fn
+    */
+    UNUSED(denv);
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    char (*fn)(char) = pvalue(xparams[0]);
+    int32_t size = kstring_size(str);
+    TValue res = kstring_new_bs(K, kstring_buf(str), size);
+    char *buf = kstring_buf(res);
+    for(int32_t i = 0; i < size; ++i, buf++) {
+	*buf = fn(*buf);
+    }
+    kapply_cc(K, res);
+}
+
+void kstring_title_case(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    uint32_t size = kstring_size(str);
+    TValue res = kstring_new_bs(K, kstring_buf(str), size);
+    char *buf = kstring_buf(res);
+    bool first = true;
+    while(size-- > 0) {
+	char ch = *buf;
+	if (ch == ' ')
+	    first = true;
+	else if (!first)
+	    *buf = tolower(ch);
+	else if (isalpha(ch)) { 
+            /* only count as first letter something that can be capitalized */
+	    *buf = toupper(ch);
+	    first = false;
+	} 
+	++buf;
+    }
+    kapply_cc(K, res);
 }
 
 /* 13.2.2? string=?, string-ci=? */
@@ -322,10 +353,9 @@ void string_append(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
-    int32_t dummy;
     /* don't allow cycles */
-    int32_t pairs = check_typed_list(K, "string-append", "string", kstringp, 
-				     false, ptree, &dummy);
+    int32_t pairs;
+    check_typed_list(K, kstringp, false, ptree, &pairs, NULL);
 
     TValue new_str;
     int64_t total_size = 0; /* use int64 to check for overflow */
@@ -376,18 +406,8 @@ void string_to_list(klisp_State *K)
     UNUSED(denv);
     
     bind_1tp(K, ptree, "string", ttisstring, str);
-    int32_t pairs = kstring_size(str);
-    char *buf = kstring_buf(str);
-
-    TValue tail = kget_dummy1(K);
-
-    while(pairs--) {
-	TValue new_pair = kcons(K, ch2tv(*buf), KNIL);
-	buf++;
-	kset_cdr(tail, new_pair);
-	tail = new_pair;
-    }
-    kapply_cc(K, kcutoff_dummy1(K));
+    TValue res = string_to_list_h(K, str, NULL);
+    kapply_cc(K, res);
 }
 
 void list_to_string(klisp_State *K)
@@ -399,11 +419,142 @@ void list_to_string(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     
-    /* check later in list_to_string_h */
+    /* check later */
     bind_1p(K, ptree, ls);
-
-    TValue new_str = list_to_string_h(K, "list->string", ls);
+    /* don't allow cycles */
+    int32_t pairs;
+    check_typed_list(K, kcharp, false, ls, &pairs, NULL);
+    TValue new_str = list_to_string_h(K, ls, pairs);
     kapply_cc(K, new_str);
+}
+
+/* 13.? string->vector, vector->string */
+void string_to_vector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    TValue res;
+
+    if (kstring_emptyp(str)) {
+	res = K->empty_vector;
+    } else {
+	uint32_t size = kstring_size(str);
+
+	/* MAYBE add vector constructor without fill */
+	/* no need to root this */
+	res = kvector_new_sf(K, size, KINERT);
+	char *src = kstring_buf(str);
+	TValue *dst = kvector_buf(res);
+	while(size--) {
+	    char ch = *src++; /* not needed but just in case */
+	    *dst++ = ch2tv(ch); 
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* TEMP Only ASCII for now */
+void vector_to_string(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "vector", ttisvector, vec);
+    TValue res;
+
+    if (kvector_emptyp(vec)) {
+	res = K->empty_string;
+    } else {
+	uint32_t size = kvector_size(vec);
+
+	res = kstring_new_s(K, size); /* no need to root this */
+	TValue *src = kvector_buf(vec);
+	char *dst = kstring_buf(res);
+	while(size--) {
+	    TValue tv = *src++;
+	    if (!ttischar(tv)) {
+		klispE_throw_simple_with_irritants(K, "Non char object found", 
+						   1, tv);
+		return;
+	    }
+	    *dst++ = chvalue(tv);
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* 13.? string->bytevector, bytevector->string */
+void string_to_bytevector(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "string", ttisstring, str);
+    TValue res;
+
+    if (kstring_emptyp(str)) {
+	res = K->empty_bytevector;
+    } else {
+	uint32_t size = kstring_size(str);
+
+	/* MAYBE add bytevector constructor without fill */
+	/* no need to root this */
+	res = kbytevector_new_s(K, size);
+	char *src = kstring_buf(str);
+	uint8_t *dst = kbytevector_buf(res);
+	
+	while(size--) {
+	    *dst++ = (uint8_t)*src++; 
+	}
+    }
+    kapply_cc(K, res);
+}
+
+/* TEMP Only ASCII for now */
+void bytevector_to_string(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
+    TValue res;
+
+    if (kbytevector_emptyp(bb)) {
+	res = K->empty_string;
+    } else {
+	uint32_t size = kbytevector_size(bb);
+	res = kstring_new_s(K, size); /* no need to root this */
+	uint8_t *src = kbytevector_buf(bb);
+	char *dst = kstring_buf(res);
+	while(size--) {
+	    uint8_t u8 = *src++;
+	    if (u8 >= 128) {
+		klispE_throw_simple_with_irritants(K, "Char out of range", 
+						   1, i2tv(u8));
+		return;
+	    }
+	    *dst++ = (char) u8;
+	}
+    }
+    kapply_cc(K, res);
 }
 
 /* 13.2.8? string-copy */
@@ -449,7 +600,7 @@ void string_to_immutable_string(klisp_State *K)
 }
 
 /* 13.2.10? string-fill! */
-void string_fillS(klisp_State *K)
+void string_fillB(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -497,9 +648,18 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.1.4? string-ref */
     add_applicative(K, ground_env, "string-ref", string_ref, 0);
     /* 13.1.5? string-set! */
-    add_applicative(K, ground_env, "string-set!", string_setS, 0);
+    add_applicative(K, ground_env, "string-set!", string_setB, 0);
     /* 13.2.1? string */
     add_applicative(K, ground_env, "string", string, 0);
+    /* 13.?? string-upcase, string-downcase, string-titlecase, 
+       string-foldcase */
+    add_applicative(K, ground_env, "string-upcase", kstring_change_case, 1,
+		    p2tv(toupper));
+    add_applicative(K, ground_env, "string-downcase", kstring_change_case, 1,
+		    p2tv(tolower));
+    add_applicative(K, ground_env, "string-titlecase", kstring_title_case, 0);
+    add_applicative(K, ground_env, "string-foldcase", kstring_change_case, 1,
+		    p2tv(tolower));
     /* 13.2.2? string=?, string-ci=? */
     add_applicative(K, ground_env, "string=?", ftyped_bpredp, 3,
 		    symbol, p2tv(kstringp), p2tv(kstring_eqp));
@@ -530,14 +690,20 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.2.7? string->list, list->string */
     add_applicative(K, ground_env, "string->list", string_to_list, 0);
     add_applicative(K, ground_env, "list->string", list_to_string, 0);
+    /* 13.?? string->vector, vector->string */
+    add_applicative(K, ground_env, "string->vector", string_to_vector, 0);
+    add_applicative(K, ground_env, "vector->string", vector_to_string, 0);
+    /* 13.?? string->bytevector, bytevector->string */
+    add_applicative(K, ground_env, "string->bytevector", 
+		    string_to_bytevector, 0);
+    add_applicative(K, ground_env, "bytevector->string", 
+		    bytevector_to_string, 0);
     /* 13.2.8? string-copy */
     add_applicative(K, ground_env, "string-copy", string_copy, 0);
     /* 13.2.9? string->immutable-string */
     add_applicative(K, ground_env, "string->immutable-string", 
 		    string_to_immutable_string, 0);
 
-    /* TODO: add string-upcase and string-downcase like in r7rs-draft */
-
     /* 13.2.10? string-fill! */
-    add_applicative(K, ground_env, "string-fill!", string_fillS, 0);
+    add_applicative(K, ground_env, "string-fill!", string_fillB, 0);
 }

@@ -13,14 +13,15 @@
 ** problem. ASK John.
 */
 
+#include <stdlib.h>
 #include <stddef.h>
 #include <setjmp.h>
+#include <string.h>
 
 #include "klisp.h"
 #include "klimits.h"
 #include "kstate.h"
 #include "kobject.h"
-#include "kstring.h"
 #include "kpair.h"
 #include "kmem.h"
 #include "keval.h"
@@ -30,7 +31,6 @@
 #include "kenvironment.h"
 #include "kground.h"
 #include "krepl.h"
-#include "kscript.h"
 #include "ksymbol.h"
 #include "kstring.h"
 #include "kport.h"
@@ -38,8 +38,8 @@
 #include "kbytevector.h"
 #include "kvector.h"
 
-#include "kgpairs_lists.h" /* for creating list_app */
-#include "kgerror.h" /* for creating error hierarchy */
+#include "kghelpers.h" /* for creating list_app & memoize_app */
+#include "kgerrors.h" /* for creating error hierarchy */
 
 #include "kgc.h" /* for memory freeing & gc init */
 
@@ -128,10 +128,6 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->rooted_tvs_top = 0;
     K->rooted_vars_top = 0;
 
-    K->dummy_pair1 = kcons(K, KINERT, KNIL);
-    K->dummy_pair2 = kcons(K, KINERT, KNIL);
-    K->dummy_pair3 = kcons(K, KINERT, KNIL);
-
     /* initialize strings */
 
     /* initial size of string/symbol table */
@@ -196,8 +192,20 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* initialize writer */
     K->write_displayp = false; /* set on each call to write */
 
-    /* initialize script */
-    K->script_exit_code = KSCRIPT_DEFAULT_ERROR_EXIT_CODE;
+    /* initialize require facilities */ 
+    {
+	char *str = getenv(KLISP_PATH);
+	if (str == NULL)
+	    str = KLISP_PATH_DEFAULT;
+	
+	K->require_path = kstring_new_b_imm(K, str);
+	/* replace dirsep with forward slashes,
+	 windows will happily accept forward slashes */
+	str = kstring_buf(K->require_path);
+	while ((str = strchr(str, *KLISP_DIRSEP)) != NULL)
+	    *str++ = '/';
+    }
+    K->require_table = klispH_new(K, 0, MINREQUIRETABSIZE, 0);
 
     /* initialize temp stack */
     K->ssize = KS_ISSIZE;
@@ -222,27 +230,37 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     int32_t line_number; 
     TValue si;
     K->eval_op = kmake_operative(K, keval_ofn, 0), line_number = __LINE__;
+#if KTRACK_SI
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
 		      kcons(K, i2tv(line_number), i2tv(0)));
     kset_source_info(K, K->eval_op, si);
-
+#endif
     /* TODO: si */
-    TValue eval_name = ksymbol_new(K, "eval", KNIL);
+    TValue eval_name = ksymbol_new_b(K, "eval", KNIL);
     ktry_set_name(K, K->eval_op, eval_name);
     
     K->list_app = kmake_applicative(K, list, 0), line_number = __LINE__;
+#if KTRACK_SI
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
 		      kcons(K, i2tv(__LINE__), i2tv(0)));
     kset_source_info(K, K->list_app, si);
     kset_source_info(K, kunwrap(K->list_app), si);
+#endif
 
+    K->memoize_app = kmake_applicative(K, memoize, 0), line_number = __LINE__;
+#if KTRACK_SI
+    si = kcons(K, kstring_new_b_imm(K, __FILE__), 
+		      kcons(K, i2tv(__LINE__), i2tv(0)));
+    kset_source_info(K, K->memoize_app, si);
+    kset_source_info(K, kunwrap(K->memoize_app), si);
+#endif
     /* ground environment has a hashtable for bindings */
     K->ground_env = kmake_table_environment(K, KNIL);
 //    K->ground_env = kmake_empty_environment(K);
 
     /* MAYBE: fix it so we can remove module_params_sym from roots */
     /* TODO si */
-    K->module_params_sym = ksymbol_new(K, "module-parameters", KNIL);
+    K->module_params_sym = ksymbol_new_b(K, "module-parameters", KNIL);
 
     /* Create the root and error continuation (will be added to the 
      environment in kinit_ground_env) */
@@ -267,8 +285,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* this must be done before calling kinit_ground_env */
     kinit_error_hierarchy(K); 
-
     kinit_ground_env(K);
+    kinit_cont_names(K);
 
     /* create a std environment and leave it in K->next_env */
     K->next_env = kmake_table_environment(K, K->ground_env);
@@ -429,12 +447,14 @@ TValue select_interceptor(TValue guard_ls)
 ** (interceptor-op outer_cont . denv)
 */
 
-/* GC: assume src_cont & dst_cont are rooted, uses dummy1 */
+/* GC: assume src_cont & dst_cont are rooted */
 inline TValue create_interception_list(klisp_State *K, TValue src_cont, 
 				       TValue dst_cont)
 {
     mark_iancestors(dst_cont);
-    TValue tail = kget_dummy1(K);
+    TValue ilist = kcons(K, KNIL, KNIL);
+    krooted_vars_push(K, &ilist);
+    TValue tail = ilist;
     TValue cont = src_cont;
 
     /* exit guards are from the inside to the outside, and
@@ -505,7 +525,8 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
     /* all interceptions collected, append the two lists and return */
     kset_cdr(tail, entry_int);
     krooted_vars_pop(K);
-    return kcutoff_dummy1(K);
+    krooted_vars_pop(K);
+    return kcdr(ilist);
 }
 
 /* this passes the operand tree to the continuation */

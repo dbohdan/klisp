@@ -21,6 +21,10 @@
 #include "kghelpers.h"
 #include "kgpromises.h"
 
+/* Continuations */
+void do_handle_result(klisp_State *K);
+
+
 /* SOURCE_NOTE: this is mostly an adaptation of the library derivation
    in the report */
 
@@ -107,7 +111,10 @@ void Slazy(klisp_State *K)
 }
 
 /* 9.1.4 memoize */
-void memoize(klisp_State *K)
+/* in kghelpers.c */
+
+/* $delay it's actually a short hand for ($lazy (memoize ...)) */
+void Sdelay(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -117,7 +124,11 @@ void memoize(klisp_State *K)
     UNUSED(denv);
 
     bind_1p(K, ptree, exp);
-    TValue new_prom = kmake_promise(K, exp, KNIL);
+    TValue promise_body = kcons(K, exp, KNIL);
+    krooted_vars_push(K, &promise_body);
+    promise_body = kcons(K, K->memoize_app, promise_body);
+    TValue new_prom = kmake_promise(K, promise_body, denv);
+    krooted_vars_pop(K);
     kapply_cc(K, new_prom);
 }
 
@@ -136,4 +147,14 @@ void kinit_promises_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$lazy", Slazy, 0); 
     /* 9.1.4 memoize */
     add_applicative(K, ground_env, "memoize", memoize, 0); 
+    /* 9.1.5? $delay */
+    add_applicative(K, ground_env, "$delay", Sdelay, 0); 
+}
+
+/* init continuation names */
+void kinit_promises_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+
+    add_cont_name(K, t, do_handle_result, "promise-handle-result");
 }

@@ -7,94 +7,11 @@
 #ifndef kgpairs_lists_h
 #define kgpairs_lists_h
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "kobject.h"
-#include "klisp.h"
 #include "kstate.h"
-#include "kghelpers.h"
-
-/* 4.6.1 pair? */
-/* uses typep */
-
-/* 4.6.2 null? */
-/* uses typep */
     
-/* 4.6.3 cons */
-void cons(klisp_State *K);
-
-/* 5.2.1 list */
-void list(klisp_State *K);
-
-/* 5.2.2 list* */
-void listS(klisp_State *K);
-
-/* 5.4.1 car, cdr */
-/* 5.4.2 caar, cadr, ... cddddr */
-void c_ad_r(klisp_State *K);
-
-/* Helper macros to construct xparams[1] for c[ad]{1,4}r */
-#define C_AD_R_PARAM(len_, br_) \
-    (i2tv((C_AD_R_LEN(len_) | (C_AD_R_BRANCH(br_)))))
-#define C_AD_R_LEN(len_) ((len_) << 4)
-#define C_AD_R_BRANCH(br_) \
-    ((br_ & 0x0001? 0x1 : 0) | \
-     (br_ & 0x0010? 0x2 : 0) | \
-     (br_ & 0x0100? 0x4 : 0) | \
-     (br_ & 0x1000? 0x8 : 0))
-
-/* 5.7.1 get-list-metrics */
-void get_list_metrics(klisp_State *K);
-
-/* 5.7.2 list-tail */
-void list_tail(klisp_State *K);
-
-/* 6.3.1 length */
-void length(klisp_State *K);
-
-/* 6.3.2 list-ref */
-void list_ref(klisp_State *K);
-
-/* 6.3.3 append */
-void append(klisp_State *K);
-
-/* 6.3.4 list-neighbors */
-void list_neighbors(klisp_State *K);
-
-/* 6.3.5 filter */
-void filter(klisp_State *K);
-
-/* 6.3.6 assoc */
-void assoc(klisp_State *K);
-
-/* 6.3.7 member? */
-void memberp(klisp_State *K);
-
-/* 6.3.8 finite-list? */
-void finite_listp(klisp_State *K);
-
-/* 6.3.9 countable-list? */
-void countable_listp(klisp_State *K);
-
-/* 6.3.10 reduce */
-void reduce(klisp_State *K);
-
-
-void do_ret_cdr(klisp_State *K);
-void do_filter_encycle(klisp_State *K);
-void do_filter_cycle(klisp_State *K);
-void do_filter(klisp_State *K);
-void do_reduce_prec(klisp_State *K);
-void do_reduce_postc(klisp_State *K);
-void do_reduce_combine(klisp_State *K);
-void do_reduce_cycle(klisp_State *K);
-void do_reduce(klisp_State *K);
-
 /* init ground */
 void kinit_pairs_lists_ground_env(klisp_State *K);
+/* init continuation names */
+void kinit_pairs_lists_cont_names(klisp_State *K);
 
 #endif

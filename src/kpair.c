@@ -37,8 +37,6 @@ TValue klist_g(klisp_State *K, bool m, int32_t n, ...)
 
     klisp_assert(n < MAX_LIST_N);
 
-    /* don't use any of the klisp dummys, because this is 
-       called from many places */
     TValue dummy = kcons_g(K, m, KINERT, KNIL);
     krooted_tvs_push(K, dummy);
     TValue tail = dummy;

@@ -55,7 +55,9 @@ TValue kmake_environment(klisp_State *K, TValue parents)
     } else {
 	/* list of parents, for now, just append them */
 	krooted_tvs_push(K, gc2env(new_env)); /* keep the new env rooted */
-	TValue tail = kget_dummy1(K); /* keep the list rooted */
+	TValue plist = kcons(K, KNIL, KNIL); /* keep the list rooted */
+	krooted_vars_push(K, &plist);
+	TValue tail = plist;
 	while(!ttisnil(parents)) {
 	    TValue parent = kcar(parents);
 	    TValue pkparents = env_keyed_parents(parent);
@@ -74,8 +76,9 @@ TValue kmake_environment(klisp_State *K, TValue parents)
 	    }
 	    parents = kcdr(parents);
 	}
-       /* all alocation done */
-	kparents = kcutoff_dummy1(K); 
+	/* all alocation done */
+	kparents = kcdr(plist); 
+	krooted_vars_pop(K);
 	krooted_tvs_pop(K); 
 	/* if it's just one env switch from (env) to env. */
 	if (ttispair(kparents) && ttisnil(kcdr(kparents)))

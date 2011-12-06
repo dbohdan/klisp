@@ -4,7 +4,9 @@
 ;;
 
 ;; XXX immutability of string constants
-
+;; this works because this file is loaded and the strings
+;; are immutable, but just reading the file wouldn't make them
+;; immutable
 ($check-predicate (immutable-string? ""))
 ($check-predicate (immutable-string? "abcd"))
 
@@ -83,6 +85,24 @@
 ($check equal? (string) "")
 ($check equal? (string #\a #\b #\c) "abc")
 ($check-not-predicate ($let ((x (string #\a)) (y (string #\a))) (eq? x y)))
+
+;; XXX string-upcase string-downcase string-titlecase string-foldcase
+($check equal? (string-upcase "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz")
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+($check equal? (string-titlecase "this is a regular sentence. this 1 2!")
+	 "This Is A Regular Sentence. This 1 2!")
+($check equal? (string-downcase "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz")
+	"abcdefghijklmnopqrstuvwxyz01234567890abcdefghijklmnopqrstuvwxyz")
+($check equal? (string-foldcase "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz")
+	"abcdefghijklmnopqrstuvwxyz01234567890abcdefghijklmnopqrstuvwxyz")
+($check-predicate (mutable-string? (string-upcase (string-copy "A0a"))))
+($check-predicate (mutable-string? (string-upcase "A0a")))
+($check-predicate (mutable-string? (string-downcase (string-copy "A0a"))))
+($check-predicate (mutable-string? (string-downcase "A0a")))
+($check-predicate (mutable-string? (string-titlecase (string-copy "A0a"))))
+($check-predicate (mutable-string? (string-titlecase "A0a")))
+($check-predicate (mutable-string? (string-foldcase (string-copy "A0a"))))
+($check-predicate (mutable-string? (string-foldcase "A0a")))
 
 ;; XXX string-length
 
@@ -205,6 +225,80 @@
 ($check-predicate (nonempty-mutable-string? (list->string (list #\a #\b))))
 
 ($check-error (list->string ($quote (#\a #0=(#\a . #0#)))))
+
+;; XXX string->vector
+
+($check equal? (string->vector "") (vector))
+($check equal? (string->vector "abc") (vector #\a #\B #\c))
+
+($check-not-predicate
+  ($let*
+    ( (str "abc")
+      (x (string->vector str))
+      (y (string->vector str)))
+  (eq? x y)))
+
+($check-predicate (mutable-vector? (string->vector "abc")))
+
+;; XXX vector->string
+
+($check equal? (vector->string (vector)) "")
+($check equal? (vector->string (vector #\a #\b #\c)) "abc")
+
+($check-not-predicate
+  ($let*
+    ( (cs (vector #\a #\b #\c))
+      (x (vector->string cs))
+      (y (vector->string cs)))
+  (eq? x y)))
+
+($check-predicate (mutable-string? (vector->string (vector #\a #\b))))
+
+;; errors
+($check-error (vector->string (vector 41)))
+($check-error (vector->string (vector "a")))
+
+;; XXX string->bytevector
+
+($check equal? (string->bytevector "") (bytevector))
+($check equal? (string->bytevector "aBc") 
+	(bytevector (char->integer #\a)
+		    (char->integer #\B) 
+		    (char->integer #\c)))
+
+($check-not-predicate
+  ($let*
+    ( (str "abc")
+      (x (string->bytevector str))
+      (y (string->bytevector str)))
+  (eq? x y)))
+
+($check-predicate (mutable-bytevector? (string->bytevector "abc")))
+
+;; XXX bytevector->string
+
+($check equal? (bytevector->string (bytevector)) "")
+($check equal? (bytevector->string (bytevector (char->integer #\a) 
+					       (char->integer #\b) 
+					       (char->integer #\c))) 
+	"abc")
+
+($check-not-predicate
+  ($let*
+      ((cs (bytevector (char->integer #\a) 
+		       (char->integer #\b)
+		       (char->integer #\c)))
+      (x (bytevector->string cs))
+      (y (bytevector->string cs)))
+  (eq? x y)))
+
+($check-predicate (mutable-string? 
+		   (bytevector->string (bytevector (char->integer #\a)
+						   (char->integer #\b)))))
+
+;; errors
+($check-error (bytevector->string (bytevector 128))) ;; only ASCII
+
 
 ;; 13.1.1 string->symbol
 ;; XXX symbol->string

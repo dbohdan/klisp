@@ -11,9 +11,11 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <inttypes.h> /* for string conversion */
 
 #include "kstate.h"
 #include "kobject.h"
@@ -28,41 +30,9 @@
 
 #include "kghelpers.h"
 #include "kgnumbers.h"
-#include "kgkd_vars.h" /* for strict arith flag */
 
 /* 15.5.1? number?, finite?, integer? */
 /* use ftypep & ftypep_predp */
-
-/* Helpers for typed predicates */
-bool knumberp(TValue obj) { return ttisnumber(obj); }
-/* TEMP used (as a type predicate) in all predicates that need a primary value
-   (XXX it's not actually a type error, but it's close enough and otherwise 
-   should define new predp & bpredp for numeric predicates...) */
-bool knumber_wpvp(TValue obj) 
-{ 
-    return ttisnumber(obj) && !ttisrwnpv(obj) && !ttisundef(obj); 
-}
-/* This is used in gcd & lcm */
-bool kimp_intp(TValue obj) { return ttisinteger(obj) || ttisinf(obj); }
-/* obj is known to be a number */
-bool kfinitep(TValue obj) { return !ttisinf(obj); }
-/* fixint, bigints & inexact integers */
-bool kintegerp(TValue obj) { return ttisinteger(obj); }
-/* only exact integers (like for indices), bigints & fixints */
-bool keintegerp(TValue obj) { return ttiseinteger(obj); }
-/* exact integers between 0 and 255 inclusive */
-bool ku8p(TValue obj) { return ttisu8(obj); }
-bool krationalp(TValue obj) { return ttisrational(obj); }
-bool krealp(TValue obj) { return ttisreal(obj); }
-/* TEMP used (as a type predicate) in all predicates that need a real with 
-   primary value (XXX it's not actually a type error, but it's close enough 
-   and otherwise should define new predp & bpredp for numeric predicates...) */
-bool kreal_wpvp(TValue obj) { return ttisreal(obj) && !ttisrwnpv(obj); }
-
-bool kexactp(TValue obj) { return ttisexact(obj); }
-bool kinexactp(TValue obj) { return ttisinexact(obj); }
-bool kundefinedp(TValue obj) { return ttisundef(obj); }
-bool krobustp(TValue obj) { return ttisrobust(obj); }
 
 /* 12.5.2 =? */
 /* uses typed_bpredp */
@@ -907,9 +877,8 @@ void kplus(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs; 
-    int32_t pairs = check_typed_list(K, "+", "number", knumberp, 
-				     true, ptree, &cpairs);
+    int32_t pairs, cpairs; 
+    check_typed_list(K, knumberp, true, ptree, &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -978,9 +947,8 @@ void ktimes(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs; 
-    int32_t pairs = check_typed_list(K, "*", "number", knumberp, true,
-				     ptree, &cpairs);
+    int32_t pairs, cpairs; 
+    check_typed_list(K, knumberp, true, ptree, &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -1060,7 +1028,7 @@ void kminus(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs;
+    int32_t pairs, cpairs;
     
     /* - in kernel (and unlike in scheme) requires at least 2 arguments */
     if (!ttispair(ptree) || !ttispair(kcdr(ptree))) {
@@ -1071,8 +1039,7 @@ void kminus(klisp_State *K)
 	return;
     }
     TValue first_val = kcar(ptree);
-    int32_t pairs = check_typed_list(K, "-", "number", knumberp, true,
-				     kcdr(ptree), &cpairs);
+    check_typed_list(K, knumberp, true, kcdr(ptree), &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -1205,6 +1172,11 @@ int32_t kfixint_div0_mod0(int32_t n, int32_t d, int32_t *res_mod)
     *res_mod = mod;
     return div;
 }
+
+/* Helper for div and mod */
+#define FDIV_DIV 1
+#define FDIV_MOD 2
+#define FDIV_ZERO 4
 
 /* flags are FDIV_DIV, FDIV_MOD, FDIV_ZERO */
 void kdiv_mod(klisp_State *K)
@@ -1374,48 +1346,7 @@ void kdiv_mod(klisp_State *K)
 /* use ftyped_predp */
 
 /* Helpers for positive?, negative?, odd? & even? */
-bool kpositivep(TValue n) 
-{ 
-    switch (ttype(n)) {
-    case K_TFIXINT:
-    case K_TEINF:
-    case K_TIINF:
-	return ivalue(n) > 0;
-    case K_TBIGINT:
-	return kbigint_positivep(n);
-    case K_TBIGRAT:
-	return kbigrat_positivep(n);
-    case K_TDOUBLE:
-	return dvalue(n) > 0.0;
-    /* real with no prim value, complex and undefined should be captured by 
-       type predicate */
-    default:
-	klisp_assert(0);
-	return false;
-    }
-}
-
-bool knegativep(TValue n) 
-{ 
-    switch (ttype(n)) {
-    case K_TFIXINT:
-    case K_TEINF:
-    case K_TIINF:
-	return ivalue(n) < 0;
-    case K_TBIGINT:
-	return kbigint_negativep(n);
-    case K_TBIGRAT:
-	return kbigrat_negativep(n);
-    case K_TDOUBLE:
-	return dvalue(n) < 0.0;
-    /* real with no prim value, complex and undefined should be captured by 
-       type predicate */
-    default:
-	klisp_assert(0);
-	return false;
-    }
-}
-
+/* positive and negative, in kghelpers */
 /* n is finite, integer */
 bool koddp(TValue n) 
 { 
@@ -1467,6 +1398,9 @@ void kabs(klisp_State *K)
     kapply_cc(K, res);
 }
 
+#define FMIN (true)
+#define FMAX (false)
+
 /* 12.5.13 min, max */
 /* NOTE: this does two passes, one for error checking and one for doing
    the actual work */
@@ -1482,21 +1416,15 @@ void kmin_max(klisp_State *K)
     */
     UNUSED(denv);
     
-    char *name = ksymbol_buf(xparams[0]);
     bool minp = bvalue(xparams[1]);
 
     /* cycles are allowed, loop counting pairs */
-    int32_t dummy; /* don't care about count of cycle pairs */
-    int32_t pairs = check_typed_list(K, name, "number", knumberp, true, ptree,
-				     &dummy);
+    int32_t pairs;
+    check_typed_list(K, knumberp, true, ptree, &pairs, NULL);
     
     TValue res;
 
-    if (minp) {
-	res = KEPINF;
-    } else {
-	res = KEMINF;
-    }
+    res = minp? KEPINF : KEMINF;
 
     TValue tail = ptree;
     bool (*cmp)(klisp_State *K, TValue, TValue) = minp? knum_ltp : knum_gtp;
@@ -1521,8 +1449,8 @@ void kgcd(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
-    int32_t pairs = check_typed_list(K, "gcd", "improper integer", kimp_intp, 
-				     true, ptree, NULL);
+    int32_t pairs;
+    check_typed_list(K, kimp_intp, true, ptree, &pairs, NULL);
 
     TValue res = i2tv(0);
     krooted_vars_push(K, &res);
@@ -1559,8 +1487,8 @@ void klcm(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     /* cycles are allowed, loop counting pairs */
-    int32_t pairs = check_typed_list(K, "lcm", "improper integer", kimp_intp, 
-				     true, ptree, NULL);
+    int32_t pairs;
+    check_typed_list(K, kimp_intp, true, ptree, &pairs, NULL);
 
     /* report: this will cover the case of (lcm) = 1 */
     TValue res = i2tv(1);
@@ -1775,7 +1703,7 @@ void kdivided(klisp_State *K)
     UNUSED(denv);
     UNUSED(xparams);
     /* cycles are allowed, loop counting pairs */
-    int32_t cpairs;
+    int32_t pairs, cpairs;
     
     /* / in kernel (and unlike in scheme) requires at least 2 arguments */
     if (!ttispair(ptree) || !ttispair(kcdr(ptree))) {
@@ -1786,8 +1714,7 @@ void kdivided(klisp_State *K)
 	return;
     }
     TValue first_val = kcar(ptree);
-    int32_t pairs = check_typed_list(K, "/", "number", knumberp, true,
-				     kcdr(ptree), &cpairs);
+    check_typed_list(K, knumberp, true, kcdr(ptree), &pairs, &cpairs);
     int32_t apairs = pairs - cpairs;
 
     TValue res;
@@ -2343,6 +2270,232 @@ void kexpt(klisp_State *K)
     arith_kapply_cc(K, res);
 }
 
+/* Number<->String conversion */
+void number_to_string(klisp_State *K)
+{
+    /* MAYBE this code could be factored out and used in kwrite too, 
+       but maybe it's too much allocation for kwrite in the simpler cases */
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_al1tp(K, ptree, "number", knumberp, obj, maybe_radix);
+    int radix = 10;
+    if (get_opt_tpar(K, maybe_radix, "radix (2, 8, 10, or 16)", ttisradix))
+	radix = ivalue(maybe_radix); 
+
+    char small_buf[64]; /* for fixints */
+    TValue buf_str = K->empty_string; /* for bigrats, bigints and doubles */
+    krooted_vars_push(K, &buf_str);
+    char *buf;
+
+    switch(ttype(obj)) {
+    case K_TFIXINT: {
+	/* can't use snprintf here... there's no support for binary,
+	   so just do by hand */
+	uint32_t value;
+	/* convert to unsigned to write */
+	value = (uint32_t) ((ivalue(obj) < 0)? 
+			    -((int64_t) ivalue(obj)) :
+			    ivalue(obj));
+	char *digits = "0123456789abcdef";
+	/* write backwards so we don't have to reverse the buffer */
+	buf = small_buf + sizeof(small_buf) - 1;
+	*buf-- = '\0';
+	do {
+	    *buf-- = digits[value % radix];
+	    value /= radix;
+	} while(value > 0); /* with the guard down it works for zero too */
+
+	/* only put the sign if negative, 
+	   then correct the pointer to the first char */
+	if (ivalue(obj) < 0)
+	    *buf = '-';
+	else 
+	    ++buf;
+	break;
+    }
+    case K_TBIGINT: {
+	int32_t size = kbigint_print_size(obj, radix); 
+	/* here we are using 1 byte extra, because size already includes
+	   1 for the terminator, but better be safe than sorry */
+	buf_str = kstring_new_s(K, size);
+	buf = kstring_buf(buf_str);
+	kbigint_print_string(K, obj, radix, buf, size);
+	/* the string will be copied and trimmed later, 
+	   because print_size may overestimate */
+	break;
+    }
+    case K_TBIGRAT: {
+	int32_t size = kbigrat_print_size(obj, radix); 
+	/* here we are using 1 byte extra, because size already includes
+	   1 for the terminator, but better be safe than sorry */
+	buf_str = kstring_new_s(K, size);
+	buf = kstring_buf(buf_str);
+	kbigrat_print_string(K, obj, radix, buf, size);
+	/* the string will be copied and trimmed later, 
+	   because print_size may overestimate */
+	break;
+    }
+    case K_TEINF:
+	buf = tv_equal(obj, KEPINF)? "#e+infinity" : "#e-infinity";
+	break;
+    case K_TIINF:
+	buf = tv_equal(obj, KIPINF)? "#i+infinity" : "#i-infinity";
+	break;
+    case K_TDOUBLE: {
+	if (radix != 10) {
+	    /* only radix 10 is supported for inexact numbers 
+	     see rationale in the report (technically they could be 
+	     printed without a decimal point, like fractions, but...*/
+	    klispE_throw_simple_with_irritants(K, "radix != 10 with inexact "
+					      "number", 2, obj,maybe_radix);
+	    return;
+	}
+        /* radix is always 10 */
+	int32_t size = kdouble_print_size(obj); 
+	/* here we are using 1 byte extra, because size already includes
+	   1 for the terminator, but better be safe than sorry */
+	buf_str = kstring_new_s(K, size);
+	buf = kstring_buf(buf_str);
+	kdouble_print_string(K, obj, buf, size);
+	/* the string will be copied and trimmed later, 
+	   because print_size may overestimate */
+	break;
+    }
+    case K_TRWNPV:
+	buf = "#real";
+	break;
+    case K_TUNDEFINED:
+	buf = "#undefined";
+	break;
+    default:
+	/* shouldn't happen */
+	klisp_assert(0);
+    }
+
+    TValue str = kstring_new_b(K, buf);
+    krooted_vars_pop(K);
+    kapply_cc(K, str);
+}
+
+struct kspecial_number {
+    const char *ext_rep; /* downcase external representation */
+    TValue obj;
+} kspecial_numbers[] = { { "#e+infinity", KEPINF_ },
+			 { "#e-infinity", KEMINF_ },
+			 { "#i+infinity", KIPINF_ },
+			 { "#i-infinity", KIMINF_ },
+			 { "#real", KRWNPV_ },
+			 { "#undefined", KUNDEF_ }
+};
+
+/* N.B. If case insignificance is removed, check here too!
+ This will happily accept exactness and radix arguments in both cases
+ (but not the names of special numbers) */
+void string_to_number(klisp_State *K)
+{
+    /* MAYBE try to unify with ktoken */
+
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    UNUSED(xparams);
+
+    bind_al1tp(K, ptree, "string", ttisstring, str, maybe_radix);
+    int radix = 10;
+    if (get_opt_tpar(K, maybe_radix, "radix (2, 8, 10, or 16)", ttisradix))
+	radix = ivalue(maybe_radix); 
+
+    /* track length to throw better error msgs */
+    char *buf = kstring_buf(str);
+    int32_t len = kstring_size(str);
+
+    /* if at some point we reach the end of the string
+       the char will be '\0' and will fail all tests,
+       so there is no need to test the length explicitly */
+    bool has_exactp = false;
+    bool exactp = false; /* the default exactness will depend on the format */
+    bool has_radixp = false;
+
+    TValue res = KINERT;
+    size_t snum_size = sizeof(kspecial_numbers) / 
+	sizeof(struct kspecial_number);
+    for (int i = 0; i < snum_size; i++) {
+	struct kspecial_number number = kspecial_numbers[i];
+	/* NOTE: must check type because buf may contain embedded '\0's */
+	if (len == strlen(number.ext_rep) &&
+	       strcmp(number.ext_rep, buf) == 0) {
+	    res = number.obj; 
+	    break;
+	}
+    }
+    if (ttisinert(res)) {
+	/* number wasn't a special number */
+	   while (*buf == '#') {
+	       switch(*++buf) {
+	       case 'e': case 'E': case 'i': case 'I':
+		   if (has_exactp) {
+		       klispE_throw_simple_with_irritants(
+			   K, "two exactness prefixes", 1, str);
+		       return;
+		   }
+		   has_exactp = true;
+		   exactp = (*buf == 'e');
+		   ++buf;
+		   break;
+	       case 'b': case 'B': radix = 2; goto RADIX;
+	       case 'o': case 'O': radix = 8; goto RADIX;
+	       case 'd': case 'D': radix = 10; goto RADIX;
+	       case 'x': case 'X': radix = 16; goto RADIX;
+	       RADIX: 
+		   if (has_radixp) {
+		       klispE_throw_simple_with_irritants(
+			   K, "two radix prefixes", 1, str);
+		       return;
+		   }
+		   has_radixp = true;
+		   ++buf;
+		   break;
+	       default:
+		   klispE_throw_simple_with_irritants(K, "unexpected char "
+						      "after #", 1, str);
+		   return;
+	       }
+	   }
+
+	   if (radix == 10) {
+	       /* only allow decimals with radix 10 */
+	       bool decimalp = false;
+	       if (!krational_read_decimal(K, buf, radix, &res, NULL, &decimalp)) {
+		   klispE_throw_simple_with_irritants(K, "Bad format", 1, str);
+		   return;
+	       }
+	       if (decimalp && !has_exactp) {
+		   /* handle decimal format as an explicit #i */
+		   has_exactp = true;
+		   exactp = false;
+	       }
+	   } else {
+	       if (!krational_read(K, buf, radix, &res, NULL)) {
+		   klispE_throw_simple_with_irritants(K, "Bad format", 1, str);
+		   return;
+	       }
+	   }
+    
+	   if (has_exactp && !exactp) {
+	       krooted_tvs_push(K, res);
+	       res = kexact_to_inexact(K, res);
+	       krooted_tvs_pop(K);
+	   }
+    }
+    kapply_cc(K, res);
+}
 
 /* init ground */
 void kinit_numbers_ground_env(klisp_State *K)
@@ -2358,6 +2511,9 @@ void kinit_numbers_ground_env(klisp_State *K)
 		    p2tv(knumber_wpvp), p2tv(kfinitep));
     add_applicative(K, ground_env, "integer?", ftypep, 2, symbol, 
 		    p2tv(kintegerp));
+    /* 12.5.? exact-integer? */
+    add_applicative(K, ground_env, "exact-integer?", ftypep, 2, symbol, 
+		    p2tv(keintegerp));
     /* 12.5.2 =? */
     add_applicative(K, ground_env, "=?", ftyped_kbpredp, 3,
 		    symbol, p2tv(knumber_wpvp), p2tv(knum_eqp));
@@ -2479,5 +2635,7 @@ void kinit_numbers_ground_env(klisp_State *K)
     /* 12.9.6 expt */
     add_applicative(K, ground_env, "expt", kexpt, 0);
 
-    /* TODO add some conversion like number->string, string->number */
+    /* 12.? string->number, number->string */
+    add_applicative(K, ground_env, "string->number", string_to_number, 0);
+    add_applicative(K, ground_env, "number->string", number_to_string, 0);
 }

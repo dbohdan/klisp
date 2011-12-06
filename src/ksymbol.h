@@ -17,13 +17,15 @@
 /* NOTE: symbols can have source info, they should be compared with
    tv_sym_equal, NOT tv_equal */
 
-/* For identifiers */
-TValue ksymbol_new_i(klisp_State *K, const char *buf, int32_t size,
+/* No case folding is performed by these constructors */
+
+/* buffer + size, may contain nulls */
+TValue ksymbol_new_bs(klisp_State *K, const char *buf, int32_t size,
     TValue si);
-/* For identifiers, simplified for unknown size */
-TValue ksymbol_new(klisp_State *K, const char *buf, TValue si);
-/* For general strings, copies str if not immutable */
-TValue ksymbol_new_check_i(klisp_State *K, TValue str, TValue si);
+/* null terminated buffer */
+TValue ksymbol_new_b(klisp_State *K, const char *buf, TValue si);
+/* copies str if not immutable */
+TValue ksymbol_new_str(klisp_State *K, TValue str, TValue si);
 
 #define ksymbol_str(tv_) (tv2sym(tv_)->str)
 #define ksymbol_buf(tv_) (kstring_buf(tv2sym(tv_)->str))

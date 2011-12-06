@@ -63,10 +63,6 @@ void clear_buffers(klisp_State *K)
     ks_tbclear(K);
     K->shared_dict = KNIL;
 
-    UNUSED(kcutoff_dummy1(K));
-    UNUSED(kcutoff_dummy2(K));
-    UNUSED(kcutoff_dummy3(K));
-
     krooted_tvs_clear(K);
     krooted_vars_clear(K);
 }
@@ -106,6 +102,8 @@ void klispE_throw_simple(klisp_State *K, char *msg)
 /* GC: assumes all objs passed are rooted */
 void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
 {
+    /* it's important that this is immutable, because it's user
+       accessible */
     TValue error_msg = kstring_new_b_imm(K, msg);
     krooted_tvs_push(K, error_msg);
     TValue error_obj = 

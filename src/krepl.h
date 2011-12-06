@@ -12,12 +12,7 @@
 #include "kobject.h"
 
 void kinit_repl(klisp_State *K);
-
-/* continuation functions */
-void do_repl_exit(klisp_State *K);
-void do_repl_read(klisp_State *K);
-void do_repl_eval(klisp_State *K);
-void do_repl_loop(klisp_State *K);
-void do_repl_error(klisp_State *K);
+/* init continuation names */
+void kinit_repl_cont_names(klisp_State *K);
 
 #endif

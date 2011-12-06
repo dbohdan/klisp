@@ -17,7 +17,12 @@
 #include "ksymbol.h"
 #include "kcontinuation.h"
 #include "kerror.h"
+
 #include "kghelpers.h"
+#include "kgbooleans.h"
+
+/* Continuations */
+void do_Sandp_Sorp(klisp_State *K);
 
 /* 4.1.1 boolean? */
 /* uses typep */
@@ -38,9 +43,6 @@ void notp(klisp_State *K)
     kapply_cc(K, res);
 }
 
-/* Helper for type checking booleans */
-bool kbooleanp(TValue obj) { return ttisboolean(obj); }
-
 /* 6.1.2 and? */
 void andp(klisp_State *K)
 {
@@ -50,9 +52,9 @@ void andp(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
+    int32_t pairs;
     /* don't care about cycle pairs */
-    int32_t pairs = check_typed_list(K, "and?", "boolean", kbooleanp,
-				     true, ptree, NULL);
+    check_typed_list(K, kbooleanp, true, ptree, &pairs, NULL);
     TValue res = KTRUE;
     TValue tail = ptree;
     while(pairs--) {
@@ -75,9 +77,9 @@ void orp(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(xparams);
     UNUSED(denv);
+    int32_t pairs; 
     /* don't care about cycle pairs */
-    int32_t pairs = check_typed_list(K, "or?", "boolean", kbooleanp,
-				     true, ptree, NULL);
+    check_typed_list(K, kbooleanp,true, ptree, &pairs, NULL);
     TValue res = KFALSE;
     TValue tail = ptree;
     while(pairs--) {
@@ -119,7 +121,8 @@ void do_Sandp_Sorp(klisp_State *K)
     TValue denv = xparams[3];
 
     if (!ttisboolean(obj)) {
-	klispE_throw_simple(K, "expected boolean");
+	klispE_throw_simple_with_irritants(K, "expected boolean", 1, 
+	    obj);
 	return;
     } else if (ttisnil(ls) || tv_equal(obj, term_bool)) {
 	/* in both cases the value to be returned is obj:
@@ -169,7 +172,7 @@ void Sandp_Sorp(klisp_State *K)
     TValue sname = xparams[0];
     TValue term_bool = xparams[1];
     
-    TValue ls = check_copy_list(K, ksymbol_buf(sname), ptree, false);
+    TValue ls = check_copy_list(K, ptree, false, NULL, NULL);
     /* This will work even if ls is empty */
     krooted_tvs_push(K, ls);
     TValue new_cont = kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 4, 
@@ -207,4 +210,11 @@ void kinit_booleans_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$and?", Sandp_Sorp, 2, symbol, KFALSE);
     /* 6.1.5 $or? */
     add_operative(K, ground_env, "$or?", Sandp_Sorp, 2, symbol, KTRUE);
+}
+
+/* init continuation names */
+void kinit_booleans_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(K->cont_name_table);
+    add_cont_name(K, t, do_Sandp_Sorp, "eval-booleans");
 }
