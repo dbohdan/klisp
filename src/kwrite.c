@@ -20,6 +20,7 @@
 #include "kpair.h"
 #include "kstring.h"
 #include "ksymbol.h"
+#include "kkeyword.h"
 #include "kstate.h"
 #include "kerror.h"
 #include "ktable.h"
@@ -237,16 +238,13 @@ void kw_print_string(klisp_State *K, TValue str)
 }
 
 /*
-** Helper for printing symbols.
+** Helper for printing symbols & keywords.
 ** If symbol is not a regular identifier it
 ** uses the "|...|" syntax, escaping '|', '\' and 
 ** non printing characters.
 */
-void kw_print_symbol(klisp_State *K, TValue sym)
+void kw_print_symbol_buf(klisp_State *K, char *buf, uint32_t size)
 {
-    uint32_t size = ksymbol_size(sym);
-    char *buf = ksymbol_buf(sym);
-
     /* first determine if it's a simple identifier */
     bool identifierp;
     if (size == 0)
@@ -323,6 +321,17 @@ void kw_print_symbol(klisp_State *K, TValue sym)
     }
 			
     kw_printf(K, "|");
+}
+
+void kw_print_symbol(klisp_State *K, TValue sym)
+{
+    kw_print_symbol_buf(K, ksymbol_buf(sym), ksymbol_size(sym));
+}
+
+void kw_print_keyword(klisp_State *K, TValue keyw)
+{
+    kw_printf(K, "#:");
+    kw_print_symbol_buf(K, kkeyword_buf(keyw), kkeyword_size(keyw));
 }
 
 /*
@@ -564,6 +573,9 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 	break;
     case K_TSYMBOL:
 	kw_print_symbol(K, obj);
+	break;
+    case K_TKEYWORD:
+	kw_print_keyword(K, obj);
 	break;
     case K_TINERT:
 	kw_printf(K, "#inert");

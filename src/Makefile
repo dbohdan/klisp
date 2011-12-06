@@ -300,7 +300,7 @@ kvector.o: kvector.c kvector.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kgc.h
 kwrite.o: kwrite.c kwrite.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kinteger.h imath.h krational.h imrat.h kreal.h \
- kpair.h kgc.h kstring.h ksymbol.h kerror.h ktable.h kport.h \
+ kpair.h kgc.h kstring.h ksymbol.h kkeyword.h kerror.h ktable.h kport.h \
  kenvironment.h kbytevector.h kvector.h ktoken.h
 imath.o: imath.c imath.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kerror.h kpair.h kgc.h
