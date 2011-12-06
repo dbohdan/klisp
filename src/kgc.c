@@ -100,6 +100,7 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
 	break;
     case K_TPAIR:
     case K_TSYMBOL:
+    case K_TKEYWORD:
     case K_TSTRING:
     case K_TENVIRONMENT:
     case K_TCONTINUATION:
@@ -260,6 +261,11 @@ static int32_t propagatemark (klisp_State *K) {
 	Symbol *s = cast(Symbol *, o);
 	markvalue(K, s->str);
 	return sizeof(Symbol);
+    }
+    case K_TKEYWORD: {
+	Keyword *k = cast(Keyword *, o);
+	markvalue(K, k->str);
+	return sizeof(Keyword);
     }
     case K_TSTRING: {
 	String *s = cast(String *, o);
@@ -432,6 +438,12 @@ static void freeobj (klisp_State *K, GCObject *o) {
 	    K->strt.nuse--;
 	klispM_free(K, (Symbol *)o);
 	break;
+    case K_TKEYWORD:
+	/* keywords are in the string table */
+	/* The string will be freed before/after */
+	K->strt.nuse--;
+	klispM_free(K, (Keyword *)o);
+	break;
     case K_TSTRING:
 	/* immutable strings are in the string/symbol table */
 	if (kstring_immutablep(gc2str(o)))
@@ -580,7 +592,7 @@ void klispC_freeall (klisp_State *K) {
     K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT); /* in klisp this may not be
 							 necessary */
     sweepwholelist(K, &K->rootgc);
-    /* free all symbol/string/bytevectors lists */
+    /* free all keyword/symbol/string/bytevectors lists */
     for (int32_t i = 0; i < K->strt.size; i++)  
 	sweepwholelist(K, &K->strt.hash[i]);
 }
@@ -811,8 +823,8 @@ void klispC_barrierback (klisp_State *K, Table *t) {
 }
 
 /* NOTE: kflags is added for klisp */
-/* NOTE: symbols, immutable strings and immutable bytevectors do this 
-  "by hand", they don't call this */
+/* NOTE: symbols, keywords, immutable strings and immutable bytevectors do 
+   this "by hand", they don't call this */
 void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
     o->gch.next = K->rootgc;
     K->rootgc = o;
