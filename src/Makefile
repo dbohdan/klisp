@@ -36,12 +36,12 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
 	kencapsulation.o kpromise.o kport.o kinteger.o krational.o ksystem.o \
 	kreal.o ktable.o kgc.o imath.o imrat.o kbytevector.o kvector.o \
-	kchar.o ksymbol.o kground.o kghelpers.o kgbooleans.o kgeqp.o \
+	kchar.o kkeyword.o kground.o kghelpers.o kgbooleans.o kgeqp.o \
 	kgequalp.o kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o \
 	kgenvironments.o kgenv_mut.o kgcombiners.o kgcontinuations.o \
 	kgencapsulations.o kgpromises.o kgkd_vars.o kgks_vars.o kgports.o \
 	kgchars.o kgnumbers.o kgstrings.o kgbytevectors.o kgvectors.o \
-	kgsystem.o kgerrors.o \
+	kgsystem.o kgerrors.o kgkeywords.o \
 	$(if $(USE_LIBFFI),kgffi.o)
 
 # TEMP: in klisp there is no distinction between core & lib
@@ -237,6 +237,10 @@ kgsymbols.o: kgsymbols.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kcontinuation.h kpair.h kgc.h kstring.h ksymbol.h \
  kerror.h kghelpers.h kapplicative.h koperative.h kenvironment.h ktable.h \
  kgsymbols.h
+kgkeywords.o: kgkeywords.c kgkeywords.h kstate.h klimits.h klisp.h kobject.h \
+ klispconf.h ktoken.h kmem.h kcontinuation.h kpair.h kgc.h kstring.h \
+ ksymbol.h kerror.h kghelpers.h kapplicative.h koperative.h kenvironment.h \
+ ktable.h kkeyword.h
 kgsystem.o: kgsystem.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kpair.h kgc.h kerror.h ksystem.h kghelpers.h \
  kapplicative.h koperative.h kcontinuation.h kenvironment.h ksymbol.h \

@@ -39,6 +39,7 @@
 #include "kgvectors.h"
 #include "kgsystem.h"
 #include "kgerrors.h"
+#include "kgkeywords.h"
 
 #if KUSE_LIBFFI
 #  include "kgffi.h"
@@ -116,6 +117,7 @@ void kinit_ground_env(klisp_State *K)
     kinit_vectors_ground_env(K);
     kinit_system_ground_env(K);
     kinit_error_ground_env(K);
+    kinit_keywords_ground_env(K);
 #if KUSE_LIBFFI
     kinit_ffi_ground_env(K);
 #endif

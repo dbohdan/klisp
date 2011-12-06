@@ -41,7 +41,7 @@ TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
 	if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
 	    /* keyword and/or string may be dead */
 	    if (isdead(K, o)) changewhite(o);
-	    if (isdead(K, (Object *) ts)) changewhite((Object *) ts);
+	    if (isdead(K, (GCObject *) ts)) changewhite((GCObject *) ts);
 	    return gc2keyw(o);
 	}
     } 
