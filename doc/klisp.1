@@ -163,6 +163,27 @@ is returned.
 In any other case 
 .B EXIT_FAILURE
 is returned.
+.SH ENVIRONMENT
+.br
+.TP
+.BI KLISP_INIT
+.br
+A Kernel expression to be evaluated before
+any arguments to the interpreter.
+.br
+To use an init file, just define 
+.B KLISP_INIT
+to the following form
+.RI '(load
+"/path/to/init-file")'.
+.br
+.TP
+.BI KLISP_PATH
+.br
+A colon separated list of templates for 
+controlling the search of required files. 
+Each template can use the char '?' to
+be replaced by the required name at run-time.
 .SH "SEE ALSO"
 .br
 http://klisp.org/
