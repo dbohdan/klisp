@@ -155,6 +155,10 @@ struct klisp_State {
     /* writer */
     bool write_displayp;
 
+    /* require */
+    TValue require_path;
+    TValue require_table;
+
     /* auxiliary stack (XXX this could be a vector) */
     int32_t ssize; /* total size of array */
     int32_t stop; /* top of the stack (all elements are below this index) */

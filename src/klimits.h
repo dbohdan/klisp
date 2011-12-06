@@ -63,6 +63,11 @@
 #define MINCONTNAMETABSIZE	32
 #endif
 
+/* minimum size for the require table (must be power of 2) */
+#ifndef MINREQUIRETABSIZE
+#define MINREQUIRETABSIZE	32
+#endif
+
 /* starting size for ground environment hashtable */
 /* at last count, there were about 200 bindings in ground env */
 #define ENVTABSIZE	512

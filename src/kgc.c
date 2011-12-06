@@ -627,6 +627,9 @@ static void markroot (klisp_State *K) {
 
     markvalue(K, K->curr_port);
 
+    markvalue(K, K->require_path);
+    markvalue(K, K->require_table);
+
     /* Mark all objects in the auxiliary stack,
        (all valid indexes are below top) and all the objects in
        the two protected areas */

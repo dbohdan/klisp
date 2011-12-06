@@ -13,14 +13,15 @@
 ** problem. ASK John.
 */
 
+#include <stdlib.h>
 #include <stddef.h>
 #include <setjmp.h>
+#include <string.h>
 
 #include "klisp.h"
 #include "klimits.h"
 #include "kstate.h"
 #include "kobject.h"
-#include "kstring.h"
 #include "kpair.h"
 #include "kmem.h"
 #include "keval.h"
@@ -190,6 +191,21 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* initialize writer */
     K->write_displayp = false; /* set on each call to write */
+
+    /* initialize require facilities */ 
+    {
+	char *str = getenv(KLISP_PATH);
+	if (str == NULL)
+	    str = KLISP_PATH_DEFAULT;
+	
+	K->require_path = kstring_new_b_imm(K, str);
+	/* replace dirsep with forward slashes,
+	 windows will happily accept forward slashes */
+	str = kstring_buf(K->require_path);
+	while ((str = strchr(str, *KLISP_DIRSEP)) != NULL)
+	    *str++ = '/';
+    }
+    K->require_table = klispH_new(K, 0, MINREQUIRETABSIZE, 0);
 
     /* initialize temp stack */
     K->ssize = KS_ISSIZE;

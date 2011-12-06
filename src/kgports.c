@@ -4,11 +4,11 @@
 ** See Copyright Notice in klisp.h
 */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "kstate.h"
 #include "kobject.h"
@@ -770,8 +770,98 @@ void load(klisp_State *K)
     }
 }
 
-/* ?.? require, it's like load except in a standard environment */
-/* TODO check to see if the files was required before! */
+/* Helpers for require */
+static bool readable(const char *filename) {
+    FILE *f = fopen(filename, "r");  /* try to open file */
+    if (f == NULL) return false;  /* open failed */
+    fclose(f);
+    return true;
+}
+
+/* Path can't/shouldn't contain embedded zeros */
+static const char *get_next_template(klisp_State *K, const char *path, 
+				     TValue *next) {
+    const char *l;
+    while (*path == *KLISP_PATHSEP) path++;  /* skip separators */
+    if (*path == '\0') return NULL;  /* no more templates */
+    l = strchr(path, *KLISP_PATHSEP);  /* find next separator */
+    if (l == NULL) l = path + strlen(path);
+    *next = kstring_new_bs(K, path, l-path); /* template */
+    return l; /* pointer to the end of the template */
+}
+
+/* no strings should contains embedded zeroes */
+static TValue str_sub(klisp_State *K, TValue s, TValue p, TValue r)
+{
+    const char *sp = kstring_buf(s);
+    const char *pp = kstring_buf(p);
+    const char *rp = kstring_buf(r);
+
+    uint32_t size = kstring_size(s);
+    uint32_t psize = kstring_size(p);
+    uint32_t rsize = kstring_size(r);
+    int32_t diff_size = rsize - psize;
+
+    const char *wild;
+
+    /* first calculate needed size */
+    while ((wild = strstr(sp, pp)) != NULL) {
+	size += diff_size;
+	sp = wild + psize;
+    }
+
+    /* now construct result buffer and fill it */
+    TValue res = kstring_new_s(K, size);
+    char *resp = kstring_buf(res);
+    sp = kstring_buf(s);
+    while ((wild = strstr(sp, pp)) != NULL) {
+	ptrdiff_t l = wild - sp;
+	memcpy(resp, sp, l);
+	resp += l;
+	memcpy(resp, rp, rsize);
+	resp += rsize;
+	sp = wild + psize;
+    }
+    strcpy(resp, sp); /* the size was calculated beforehand */
+    return res;
+}
+
+static TValue find_file (klisp_State *K, TValue name, TValue pname) {
+  /* not used in klisp */
+  /* name = luaL_gsub(L, name, ".", LUA_DIRSEP); */
+  /* lua_getfield(L, LUA_ENVIRONINDEX, pname); */
+    klisp_assert(ttisstring(name) && !kstring_emptyp(name));
+    const char *path = kstring_buf(pname);
+    TValue next = K->empty_string;
+    krooted_vars_push(K, &next);
+    TValue wild = kstring_new_b(K, KLISP_PATH_MARK);
+    krooted_tvs_push(K, wild);
+
+    while ((path = get_next_template(K, path, &next)) != NULL) {
+	next = str_sub(K, next, wild, name);
+	if (readable(kstring_buf(next))) {  /* does file exist and is readable? */
+	    krooted_tvs_pop(K);
+	    krooted_vars_pop(K);
+	    return next;  /* return that file name */
+	}
+    }
+    
+    krooted_tvs_pop(K);
+    krooted_vars_pop(K);
+    return K->empty_string;  /* return empty_string */
+}
+
+/* ?.? require */
+/*
+** require is like load except that:
+**  - require first checks to see if the file was already required
+**    and if so, doesnt' do anything
+**  - require looks for the named file in a number of locations
+**    configurable via env var KLISP_PATH
+**  - When/if the file is found, evaluation happens in an initially
+**   standard environment
+*/
+/* TODO check if file was required */
 void require(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -780,13 +870,27 @@ void require(klisp_State *K)
     klisp_assert(ttisenvironment(K->next_env));
     UNUSED(denv);
     UNUSED(xparams);
-    bind_1tp(K, ptree, "string", ttisstring, filename);
+    bind_1tp(K, ptree, "string", ttisstring, name);
+
+    if (kstring_emptyp(name)) {
+	klispE_throw_simple(K, "Empty name");
+	return;
+    }
+    TValue filename = K->empty_string;
+    krooted_vars_push(K, &filename);
+    filename = find_file(K, name, K->require_path);
+    
+    if (kstring_emptyp(filename)) {
+	klispE_throw_simple_with_irritants(K, "Not found", 1, name);
+	return;
+    }
 
     /* the reads must be guarded to close the file if there is some error 
      this continuation also will return inert after the evaluation of the
      last expression is done */
     TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
+    krooted_vars_pop(K); /* filename already rooted */
 
     TValue inert_cont = kmake_continuation(K, kget_cc(K), do_return_value, 1, 
 					   KINERT);

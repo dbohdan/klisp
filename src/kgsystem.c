@@ -4,7 +4,6 @@
 ** See Copyright Notice in klisp.h
 */
 
-#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
