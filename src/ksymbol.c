@@ -38,21 +38,18 @@ TValue ksymbol_new_bs(klisp_State *K, const char *buf, int32_t size, TValue si)
 	       would always fall in the same bucket */
     /* look for it in the table only if it doesn't have source info */
     if (ttisnil(si)) {
-	GCObject *o;
-	for (o = K->strt.hash[lmod(h, K->strt.size)];
+	for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
 	     o != NULL; o = o->gch.next) {
-	    String *ts = NULL;
-	    if (o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR) {
-		continue; 
-	    } else if (o->gch.tt == K_TSYMBOL) {
-		ts = tv2str(((Symbol *) o)->str);
-	    } else {
-		/* only symbols, immutable bytevectors and immutable strings */
-		klisp_assert(0);
-	    }
+	    klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
+			 o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
+
+	    if (o->gch.tt != K_TSYMBOL) continue;
+
+	    String *ts = tv2str(((Symbol *) o)->str);
 	    if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
-		/* symbol may be dead */
+		/* symbol and/or string may be dead */
 		if (isdead(K, o)) changewhite(o);
+		if (isdead(K, (GCObject *) ts)) changewhite((GCObject *) ts);
 		return gc2sym(o);
 	    }
 	} 

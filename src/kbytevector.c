@@ -32,7 +32,6 @@ TValue kbytevector_new_bs_g(klisp_State *K, bool m, const uint8_t *buf,
 TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
 {
     /* first check to see if it's in the stringtable */
-    GCObject *o;
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if bytevector is too long, don't hash all 
 			       its bytes */
@@ -40,17 +39,14 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
 	h = h ^ ((h<<5)+(h>>2)+ buf[size1-1]);
 
-    for (o = K->strt.hash[lmod(h, K->strt.size)];
-	            o != NULL; o = o->gch.next) {
-	Bytevector *tb = NULL;
-	if (o->gch.tt == K_TBYTEVECTOR) {
-	    tb = (Bytevector *) o;
-	} else if (o->gch.tt == K_TSYMBOL || o->gch.tt == K_TSTRING) {
-	    continue; 
-	} else {
-	    /* only symbols, immutable bytevectors and immutable strings */
-	    klisp_assert(0);
-	}
+    for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
+	 o != NULL; o = o->gch.next) {
+	klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
+		     o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
+		     
+	if (o->gch.tt != K_TBYTEVECTOR) continue;
+
+	Bytevector *tb = (Bytevector *) o;
 	if (tb->size == size && (memcmp(buf, tb->b, size) == 0)) {
 	    /* bytevector may be dead */
 	    if (isdead(K, o)) changewhite(o);

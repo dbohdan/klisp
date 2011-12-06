@@ -33,17 +33,23 @@ void klispS_resize (klisp_State *K, int32_t newsize)
 	    /* imm string, imm bytevectors & symbols aren't chained with 
 	       all other objs, but with each other in strt */
 	    GCObject *next = p->gch.next;  /* save next */
-	    
 	    uint32_t h = 0;
+	    klisp_assert(p->gch.tt == K_TKEYWORD || p->gch.tt == K_TSYMBOL || 
+			 p->gch.tt == K_TSTRING || p->gch.tt == K_TBYTEVECTOR);
 
-	    if (p->gch.tt == K_TSYMBOL) {
+	    switch(p->gch.tt) {
+	    case K_TSYMBOL:
 		h = ((Symbol *) p)->hash;
-	    } else if (p->gch.tt == K_TSTRING) {
+		break;
+	    case K_TSTRING:
 		h = ((String *) p)->hash;
-	    } else if (p->gch.tt == K_TBYTEVECTOR) {
+		break;
+	    case K_TBYTEVECTOR:
 		h = ((Bytevector *) p)->hash;
-	    } else {
-		klisp_assert(0);
+		break;
+	    case K_TKEYWORD:
+		h = ((Keyword *) p)->hash;
+		break;
 	    }
 
 	    int32_t h1 = lmod(h, newsize);  /* new position */
@@ -74,7 +80,6 @@ TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf,
 TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
 {
     /* first check to see if it's in the stringtable */
-    GCObject *o;
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if string is too long, don't hash all 
 			       its chars */
@@ -82,17 +87,14 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
 	h = h ^ ((h<<5)+(h>>2)+ ((unsigned char) buf[size1-1]));
 
-    for (o = K->strt.hash[lmod(h, K->strt.size)];
-	            o != NULL; o = o->gch.next) {
-	String *ts = NULL;
-	if (o->gch.tt == K_TSTRING) {
-	    ts = (String *) o;
-	} else if (o->gch.tt == K_TSYMBOL || o->gch.tt == K_TBYTEVECTOR) {
-	    continue; 
-	} else {
-	    /* only symbols, immutable bytevectors and immutable strings */
-	    klisp_assert(0);
-	}
+    for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
+	 o != NULL; o = o->gch.next) {
+	klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
+		     o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
+
+	if (o->gch.tt != K_TSTRING) continue;
+
+	String *ts = (String *) o;
 	if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
 	    /* string may be dead */
 	    if (isdead(K, o)) changewhite(o);
