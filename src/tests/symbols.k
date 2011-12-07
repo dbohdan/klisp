@@ -28,11 +28,26 @@
 				  (enc #inert))))
 ($check-not-predicate (symbol? (memoize #inert)))
 ($check-not-predicate (symbol? 1))
-;($check-not-predicate (symbol? 1.0))
+($check-not-predicate (symbol? 1.0))
 ($check-not-predicate (symbol? #e+infinity))
-;($check-not-predicate (symbol? #i+infinity))
-;($check-not-predicate (symbol? #undefined))
-;($check-not-predicate (symbol? #real-with-no-primary-value))
+($check-not-predicate (symbol? #i+infinity))
+($check-not-predicate (symbol? #undefined))
+($check-not-predicate (symbol? #real))
 ($check-not-predicate (symbol? "string"))
 ($check-not-predicate (symbol? #\a))
 ($check-not-predicate (symbol? (get-current-input-port))) 
+
+;; symbol->string
+($check-predicate (applicative? symbol->string))
+($check equal? (symbol->string ((unwrap list) . symbol)) "symbol")
+
+;; string->symbol
+($check-predicate (applicative? string->symbol))
+($check equal? (string->symbol "symbol") ((unwrap list) . symbol))
+($check equal? (symbol->string (string->symbol "symbol")) "symbol")
+
+;;;
+;;; Eq?-ness & Equal?-ness
+;;;
+($check-predicate (eq? ((unwrap list) . symbol) ((unwrap list) . symbol)))
+($check-predicate (equal? ((unwrap list) . symbol) ((unwrap list) . symbol)))
