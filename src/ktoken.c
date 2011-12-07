@@ -28,6 +28,7 @@
 #include "kstring.h"
 #include "kbytevector.h"
 #include "ksymbol.h"
+#include "kkeyword.h"
 #include "kerror.h"
 #include "kport.h"
 
@@ -319,8 +320,8 @@ TValue ktok_read_number(klisp_State *K, char *buf, int32_t len,
 			bool has_exactp, bool exactp, bool has_radixp, 
 			int32_t radix);
 TValue ktok_read_maybe_signed_numeric(klisp_State *K);
-TValue ktok_read_identifier_or_dot(klisp_State *K);
-TValue ktok_read_bar_identifier(klisp_State *K);
+TValue ktok_read_identifier_or_dot(klisp_State *K, bool keywordp);
+TValue ktok_read_bar_identifier(klisp_State *K, bool keywordp);
 int ktok_read_until_delimiter(klisp_State *K);
 
 /*
@@ -360,7 +361,7 @@ TValue ktok_read_token(klisp_State *K)
 	case '"':
 	    return ktok_read_string(K);
 	case '|':
-	    return ktok_read_bar_identifier(K);
+	    return ktok_read_bar_identifier(K, false);
 /* TODO use read_until_delimiter in all these cases */
 	case '#': {
 	    ktok_getc(K);
@@ -368,8 +369,7 @@ TValue ktok_read_token(klisp_State *K)
 	    switch(chi) {
 	    case EOF:
 		ktok_error(K, "# constant is too short");
-		/* avoid warning */
-		return KINERT;
+		return KINERT; /* avoid warning */
 	    case '!': /* single line comment (alternative syntax) */
 		/* this handles the #! style script header too! */
 		ktok_ignore_single_line_comment(K);
@@ -383,6 +383,31 @@ TValue ktok_read_token(klisp_State *K)
 	    case ';': /* sexp comment */
 		ktok_getc(K); /* discard the ';' */
 		return K->ktok_sexp_comment;
+	    case ':': /* keyword */
+		ktok_getc(K); /* discard the ':' */
+		chi = ktok_peekc(K);
+		if (chi == EOF) {
+		    ktok_error(K, "# constant is too short");
+		    return KINERT; /* avoid warning */
+		} else if (chi == '|') {
+		    return ktok_read_bar_identifier(K, true);
+		} else if (chi == '\\' || ktok_is_initial(chi)) {
+		    return ktok_read_identifier_or_dot(K, true);
+		} else if (chi == '+' || chi == '-') {
+		    char ch = (char) chi;
+		    ktok_getc(K); /* discard the '+' or '-' */
+		    if (ktok_check_delimiter(K)) {
+			return kkeyword_new_bs(K, &ch, 1);
+		    } else {
+			ktok_error_extra(K, "invalid start in keyword", 
+					 ch2tv(ch));
+			return KINERT; /* avoid warning */
+		    }
+		} else {
+		    ktok_error_extra(K, "invalid char starting keyword",
+				     ch2tv((char) chi));
+		    return KINERT; /* avoid warning */
+		}
 	    default:
 		return ktok_read_special(K);
 	    }
@@ -416,7 +441,7 @@ TValue ktok_read_token(klisp_State *K)
 	    ** N.B.: the cases for '+', and '-', were already 
 	    ** considered 
 	    */
-	    return ktok_read_identifier_or_dot(K);
+	    return ktok_read_identifier_or_dot(K, false);
 	default:
 	    chi = ktok_getc(K);
 	    ktok_error_extra(K, "unrecognized token starting char", 
@@ -612,7 +637,6 @@ TValue ktok_read_maybe_signed_numeric(klisp_State *K)
 ** "#\xXXXXXX;"
 ** "#\x" already read
 */
-
 char ktok_read_hex_escape(klisp_State *K)
 {
     /* enough space for any unicode char + 2 */
@@ -1055,9 +1079,9 @@ TValue ktok_read_special(klisp_State *K)
 }
 
 /*
-** Identifiers (and dot token)
+** Identifiers & Keywords (and dot token)
 */
-TValue ktok_read_identifier_or_dot(klisp_State *K)
+TValue ktok_read_identifier_or_dot(klisp_State *K, bool keywordp)
 {
     bool seen_dot = false;
     int32_t i = 0;
@@ -1075,9 +1099,11 @@ TValue ktok_read_identifier_or_dot(klisp_State *K)
 	    /* should be inline hex escape */
 	    ch = ktok_getc(K);
 	    if (ch == EOF) {
-		ktok_error(K, "EOF found while reading character name");
+		ktok_error(K, "EOF found while reading character escape");
 	    } else if (ch != 'x') {
-		ktok_error_extra(K, "Invalid char in identifier after \\", 
+		ktok_error_extra(K, keywordp? 
+				 "Invalid char after \\ in keyword" :
+				 "Invalid char after \\ in identifier", 
 				 ch2tv((char)ch));
 	    }
 	    ch = ktok_read_hex_escape(K);
@@ -1085,28 +1111,38 @@ TValue ktok_read_identifier_or_dot(klisp_State *K)
 	    ks_tbadd(K, ch);
 	    ++i;
 	} else {
-	    ktok_error_extra(K, "Invalid char in identifier", 
-			     ch2tv((char)ch));
+	    ktok_error_extra(K, keywordp? "Invalid char in keyword" :
+			     "Invalid char in identifier", ch2tv((char)ch));
 	}
     }
 
     if (i == 1 && seen_dot) {
-	ks_tbclear(K);
-	return K->ktok_dot;
+	if (keywordp) {
+	    ktok_error(K, "Invalid syntax in keyword");
+	    return KINERT; /* avoid warning */
+	} else {
+	    ks_tbclear(K);
+	    return K->ktok_dot;
+	}
     }
 
     ks_tbadd(K, '\0');
-    TValue si = ktok_get_source_info(K);
-    krooted_tvs_push(K, si); /* will be popped by throw */
-    TValue new_sym = ksymbol_new_bs(K, ks_tbget_buffer(K), i, si);
-    krooted_tvs_pop(K); /* already in symbol */
-    krooted_tvs_push(K, new_sym);
+    TValue new_obj;
+    if (keywordp) {
+	new_obj = kkeyword_new_bs(K, ks_tbget_buffer(K), i);
+    } else {
+	TValue si = ktok_get_source_info(K);
+	krooted_tvs_push(K, si); /* will be popped by throw */
+	new_obj = ksymbol_new_bs(K, ks_tbget_buffer(K), i, si);
+	krooted_tvs_pop(K); /* already in symbol */
+    }
+    krooted_tvs_push(K, new_obj);
     ks_tbclear(K); /* this shouldn't cause gc, but just in case */
     krooted_tvs_pop(K);
-    return new_sym;
+    return new_obj;
 }
 
-TValue ktok_read_bar_identifier(klisp_State *K)
+TValue ktok_read_bar_identifier(klisp_State *K, bool keywordp)
 {
     /* discard opening bar */
     ktok_getc(K);
@@ -1118,10 +1154,14 @@ TValue ktok_read_bar_identifier(klisp_State *K)
     while(!done) {
 	int ch = ktok_getc(K);
 	if (ch == EOF) {
-	    ktok_error(K, "EOF found while reading an |identifier|");
+	    ktok_error(K, keywordp? 
+		       "EOF found while reading a #:|keyword|" :
+		       "EOF found while reading an |identifier|");
 	    return KINERT; /* avoid warning */
 	} else 	if (ch < 0 || ch > 127) {
-	    ktok_error(K, "Non ASCII char found while reading an identifier");
+	    ktok_error(K, keywordp? 
+		       "Non ASCII char found while reading a #:|keyword|" :
+		       "Non ASCII char found while reading an |identifier|");
 	    return KINERT; /* avoid warning */
 	}
 
@@ -1132,7 +1172,9 @@ TValue ktok_read_bar_identifier(klisp_State *K)
 	    ch = ktok_getc(K);
 	
 	    if (ch == EOF) {
-		ktok_error(K, "EOF found while reading an |identifier|");
+		ktok_error(K, keywordp? 
+			   "EOF found while reading a #:|keyword|" :
+			   "EOF found while reading an |identifier|");
 		return KINERT; /* avoid warning */
 	    }
 
@@ -1145,8 +1187,11 @@ TValue ktok_read_bar_identifier(klisp_State *K)
 		ch = ktok_read_hex_escape(K);
 		break;
 	    default:
-		ktok_error_extra(K, "Invalid char after '\\' " 
-				 "while reading a symbol", ch2tv(ch));
+		ktok_error_extra(K,  keywordp? 
+			   "Invalid char after '\\' while reading a "
+				 "#:|keyword|" :
+			   "Invalid char after '\\' while reading an "
+				 "|identifier|", ch2tv(ch));
 		return KINERT; /* avoid warning */
 	    }
 	    ks_tbadd(K, ch);
@@ -1156,13 +1201,18 @@ TValue ktok_read_bar_identifier(klisp_State *K)
 	    ++i;
 	}
     }
-    TValue si = ktok_get_source_info(K);
-    krooted_tvs_push(K, si); /* will be popped by throw */
-    TValue new_sym = ksymbol_new_bs(K, ks_tbget_buffer(K), i, si);
-    krooted_tvs_pop(K); /* already in symbol */
-    krooted_tvs_push(K, new_sym);
+    TValue new_obj;
+    if (keywordp) {
+	new_obj = kkeyword_new_bs(K, ks_tbget_buffer(K), i);
+    } else {
+	TValue si = ktok_get_source_info(K);
+	krooted_tvs_push(K, si); /* will be popped by throw */
+	new_obj = ksymbol_new_bs(K, ks_tbget_buffer(K), i, si);
+	krooted_tvs_pop(K); /* already in symbol */
+    }
+    krooted_tvs_push(K, new_obj);
     ks_tbclear(K); /* this shouldn't cause gc, but just in case */
     krooted_tvs_pop(K);
-    return new_sym;
+    return new_obj;
 }
 

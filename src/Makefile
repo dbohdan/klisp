@@ -299,7 +299,7 @@ ktable.o: ktable.c klisp.h kobject.h klimits.h klispconf.h kgc.h kstate.h \
  kerror.h kpair.h kcontinuation.h kenvironment.h ksymbol.h kstring.h
 ktoken.o: ktoken.c ktoken.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h kmem.h kinteger.h imath.h krational.h imrat.h kreal.h kpair.h \
- kgc.h kstring.h kbytevector.h ksymbol.h kerror.h kport.h
+ kgc.h kstring.h kbytevector.h ksymbol.h kerror.h kport.h kkeyword.h
 kvector.o: kvector.c kvector.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kgc.h
 kwrite.o: kwrite.c kwrite.h kobject.h klimits.h klisp.h klispconf.h \
