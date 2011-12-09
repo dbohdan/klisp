@@ -76,7 +76,6 @@ void symbol_to_keyword(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_1tp(K, ptree, "symbol", ttissymbol, sym);
-    /* If the symbol is mutable it is copied */
     TValue new_keyw = kkeyword_new_str(K, ksymbol_str(sym));
     kapply_cc(K, new_keyw);
 }

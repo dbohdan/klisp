@@ -1,58 +1,70 @@
-* refactor:
-** double check combiner names to be verbs 
-   (e.g. add get- where appropriate)
-** split kghelpers in appropriate parts
-  (e.g. create knumber.h knumber.c and move there kfinitep, kintegerp, etc
-  from kgnumbers)
-** use some convention for ground operative underlaying function names
-   maybe add "kgop_"
-** use a better convention for continuation underlaying function names
-** try to use krooted_vars_push more to save some lines and avoid
-   clutter (e.g. when creating continuations)
-** Study differrent c interfaces (maybe a stack like in lua would be
-   better than dealing with gc push/pop)
-** eliminate all remaining char * arguments where not needed
-** remove most of inline declarations, we may then add some
-   back after proper profiling
-** standarize either int32_t (now used in lists) or uint32_t (now used
-   in strings, vectors and bytevectors) for sizes (and maybe use a 
-   typedef like lua)
-* fix:
-** fix char-ready? and u8-ready? (r7rs)
-* documentation
-** update the manual with the current features
-** add a section to the manual with the interpreter usage
-* reader/writer
-** syntax support for complex numbers (Kernel report)
-* library
-** some simplified error guarding (r7rs)
-** $case (r7rs)
-** $case-lambda + $case-vau (r7rs)
-** $named-let + $do (r7rs)
-** $define-record-type (r7rs)
-** eager comprehensions (at least for check.k) see SRFIs 42 and 78
-   (srfi)
-* other
-** restarts (r7rs/common lisp)
-** add restart support to the repl/interpreter (r7rs)
-** simple modules (something inspired in r7rs) (r7rs)
-** add modules support to the interpreter (r7rs)
-** complex numbers (Kernel report)
-** interval arithmetic (Kernel report)
-* reduce binary size 
-** currently (2011/12/05) is 3megs... most of it from kg*.o
-** 1st culprite klisp_assert:
-** almost 1 meg comes from klisp_asserts, asserts also add
-   considerably to the compilation time
-** add a flag to enable assertions (maybe debug) and disable
-   it by default
-** fix warnings when assertions are turned off (probably unitialized 
-   uses, unused variables, etc)
-** 2nd culprite debugging symbols:
-** 1 meg and a half comes from debugging symbols, they also add to
-   the compilation time
-** add a flag (maybe the same as for asserts, maybe another one) to 
-   include debug symbols and disable it by default
-** After removing asserts & symbols the size is reduced to a more 
-   manageable 500k, however it would be nice to bring that even 
-   lower
+* Release 0.3
+** modules:
+*** simple modules (something inspired in r7rs) (r7rs)
+*** add modules support to the interpreter (r7rs)
+** documentation:
+*** update the manual with the current features
+*** add a section to the manual with the interpreter usage
+
+
+* Release 0.4+
+** refactor:
+*** clean stand alone interpreter
+*** double check combiner names to be verbs 
+    - add get- where appropriate
+*** split kghelpers 
+    - knumber.h knumber.c (kfinitep, kintegerp, etc)
+*** naming convention for ground operative functions
+    - maybe add "kgop_"
+*** naming convention for continuation functions
+    - intead of "do_"
+*** use krooted_vars_push more to avoid clutter
+    - when creating continuations
+*** Study differrent c interfaces 
+    - maybe a stack like in lua would be better than dealing with gc guarding
+*** eliminate all remaining char * arguments where not needed
+    - typep
+*** remove most of inline declarations
+*** standarize size type
+    - do a typedef
+    - currently
+      - int32_t (used in lists)
+      - uint32_t (used in strings, vectors and bytevectors)
+** fix:
+*** fix char-ready? and u8-ready? (r7rs)
+** reader/writer
+*** syntax support for complex numbers (Kernel report)
+*** unicode support
+*** add case sensitive option / compiler flag
+** library
+*** some simplified error guarding (r7rs)
+*** $case (r7rs)
+*** $case-lambda + $case-vau (r7rs)
+*** $named-let + $do (r7rs)
+*** $define-record-type (r7rs)
+*** eager comprehensions (at least for check.k) see SRFIs 42 and 78 (srfi)
+** other
+*** restarts (r7rs/common lisp)
+*** add restart support to the repl/interpreter (r7rs)
+*** complex numbers (Kernel report)
+*** interval arithmetic (Kernel report)
+** reduce binary size 
+*** currently (2011/12/05) is 3megs
+  - most of it from kg*.o
+  - klisp_assert:
+    - almost 1 meg comes from klisp_asserts
+    - adds considerably to the compilation time
+    - add a flag to enable assertions
+      - and disable it by default
+      - fix warnings when assertions are turned off 
+	- unitialized uses
+	- unused variables
+  - debugging symbols:
+    - 1 meg and a half comes from debugging symbols
+    - adds to the compilation time
+    - add a flag 
+      - maybe the same as for asserts
+      - maybe another one
+      - disable it by default
+  - Even after disabling these two, the size is 500k
+  - Continue investigating and try to make it lower

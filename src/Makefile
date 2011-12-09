@@ -170,7 +170,7 @@ kgenv_mut.o: kgenv_mut.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
 kgenvironments.o: kgenvironments.c kstate.h klimits.h klisp.h kobject.h \
  klispconf.h ktoken.h kmem.h kpair.h kgc.h kenvironment.h kcontinuation.h \
  ksymbol.h kstring.h kerror.h kghelpers.h kapplicative.h koperative.h \
- ktable.h kgenvironments.h
+ ktable.h kport.h kread.h kgenvironments.h
 kgeqp.o: kgeqp.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kpair.h kgc.h kcontinuation.h kerror.h kghelpers.h \
  kapplicative.h koperative.h kenvironment.h ksymbol.h kstring.h ktable.h \

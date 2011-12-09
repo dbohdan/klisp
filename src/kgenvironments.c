@@ -17,6 +17,8 @@
 #include "kcontinuation.h"
 #include "ksymbol.h"
 #include "kerror.h"
+#include "kport.h" /* for eval_string */
+#include "kread.h" /* for eval_string */
 
 #include "kghelpers.h"
 #include "kgenvironments.h"
@@ -27,6 +29,7 @@ void do_let_redirect(klisp_State *K);
 void do_bindsp(klisp_State *K);
 void do_remote_eval(klisp_State *K);
 void do_b_to_env(klisp_State *K);
+void do_eval_string(klisp_State *K);
 
 /* 4.8.1 environment? */
 /* uses typep */
@@ -690,6 +693,56 @@ void Sbindings_to_environment(klisp_State *K)
     ktail_eval(K, expr, denv);
 }
 
+void do_eval_string(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    /*
+    ** xparams[0]: environment
+    */
+    TValue env = xparams[0];
+    ktail_eval(K, obj, env);
+}
+
+/* ?.? eval-string */
+void eval_string(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+    
+    bind_2tp(K, ptree, "string", ttisstring, str,
+	     "environment", ttisenvironment, env);
+    
+    /* create a continuation for better stack traces
+       in case of error */
+    TValue port = kmake_mport(K, str, false, false);
+    krooted_tvs_push(K, port);
+    TValue cont = kmake_continuation(K, kget_cc(K), do_eval_string, 1, env);
+    kset_cc(K, cont);
+    krooted_tvs_pop(K);
+    
+    TValue obj = kread_from_port(K, port, true); /* read mutable pairs */ 
+    if (ttiseof(obj)) {
+	klispE_throw_simple_with_irritants(K, "No object found in string", 1,
+					   str);
+	return;
+    }
+    krooted_tvs_push(K, obj);
+    TValue second_obj = kread_from_port(K, port, true);
+    krooted_tvs_pop(K);
+    if (!ttiseof(second_obj)) {
+	klispE_throw_simple_with_irritants(K, "More than one object found "
+					   "in string", 1, str);
+	return;
+    }
+    kapply_cc(K, obj);
+}
+
 /* init ground */
 void kinit_environments_ground_env(klisp_State *K)
 {
@@ -731,6 +784,8 @@ void kinit_environments_ground_env(klisp_State *K)
     /* 6.7.10 $bindings->environment */
     add_operative(K, ground_env, "$bindings->environment", 
 		  Sbindings_to_environment, 1, symbol);
+    /* ?.? eval-string */
+    add_applicative(K, ground_env, "eval-string", eval_string, 0);
 }
 
 /* init continuation names */
@@ -742,5 +797,6 @@ void kinit_environments_cont_names(klisp_State *K)
     add_cont_name(K, t, do_let_redirect, "eval-let-redirect");
     add_cont_name(K, t, do_bindsp, "eval-$binds?-env");
     add_cont_name(K, t, do_remote_eval, "eval-remote-eval-env");
+    add_cont_name(K, t, do_eval_string, "eval-string");
     add_cont_name(K, t, do_b_to_env, "bindings-to-env");
 }
