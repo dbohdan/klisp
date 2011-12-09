@@ -12,8 +12,6 @@
 ** - Split dofile in dofile & dostdin
 ** - Merge dofile and dorfile with a boolean flat (load/require)
 **   (use dorfile as a model)
-** - Add string-eval to the ground environment and use that
-**   in dostring (use dorfile as a model)
 ** - Add get_ground_binding somewhere (probably kstate) and use it.
 */
 
@@ -170,49 +168,6 @@ static void print_version(void)
     printf("%s\n", KLISP_RELEASE "  " KLISP_COPYRIGHT);
 }
 
-/* REFACTOR maybe these should be moved to a general place to be used
-   from any program */
-void do_str_eval(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue obj = K->next_value;
-    klisp_assert(ttisnil(K->next_env));
-    /* 
-    ** xparams[0]: dynamic environment
-    */
-    TValue denv = xparams[0];
-    ktail_eval(K, obj, denv);
-}
-
-void do_str_read(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue obj = K->next_value;
-    klisp_assert(ttisnil(K->next_env));
-    /* 
-    ** xparams[0]: port
-    */
-    TValue port = xparams[0];
-    UNUSED(obj);
-    /* read just one value (as mutable data) */
-    TValue obj1 = kread_from_port(K, port, true);
-
-    /* obj may be eof, that's not a problem, it just won't do anything */
-
-    krooted_tvs_push(K, obj1);
-    TValue obj2 = kread_from_port(K, port, true);
-    krooted_tvs_pop(K);
-    
-    if (!ttiseof(obj2)) {
-	klispE_throw_simple_with_irritants(K, "More than one expression read", 
-					   1, port);
-	return;
-    }
-
-    /* all ok, just one exp read (or none and obj1 is eof) */
-    kapply_cc(K, obj1);
-}
-
 void do_int_mark_error(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -252,12 +207,6 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     bool rootp = true; /* may be set to false in continuation */
 
     UNUSED(name); /* could use as filename?? */
-    /* create a string input port */
-    TValue str = kstring_new_b(K, s);
-    krooted_tvs_push(K, str);
-    TValue port = kmake_mport(K, str, false, false);
-    krooted_tvs_pop(K);
-    krooted_tvs_push(K, port);
 
     /* create the guard set error flag after errors */
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
@@ -284,7 +233,6 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     kset_inner_cont(inner_cont);
     krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
 
-    /* only port remains in the root stack */
     krooted_tvs_push(K, inner_cont);
 
     /* This continuation will discard the result of the evaluation
@@ -297,20 +245,27 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     krooted_tvs_pop(K); /* pop inner cont */
     krooted_tvs_push(K, discard_cont);
 
-    /* XXX This should probably be an extra param to the function */
-    env = K->next_env; /* this is the standard env that should be used for 
-			  evaluation */
-    TValue eval_cont = kmake_continuation(K, discard_cont, do_str_eval, 
-					  1, env);
+    kset_cc(K, discard_cont);
     krooted_tvs_pop(K); /* pop discard cont */
-    krooted_tvs_push(K, eval_cont);
-    TValue read_cont = kmake_continuation(K, eval_cont, do_str_read, 
-					  1, port);
-    krooted_tvs_pop(K); /* pop eval cont */
-    krooted_tvs_pop(K); /* pop port */
-    kset_cc(K, read_cont); /* this will protect all conts from gc */
-    klispS_apply_cc(K, KINERT);
+    
+    /* create a string input port */
+    TValue str = kstring_new_b(K, s);
+    krooted_tvs_push(K, str);
 
+    /* prepare params (str still in the gc stack) */
+    env = K->next_env; /* this will be ignored anyways */
+    TValue ptree = klist(K, 2, str, env);
+    krooted_tvs_pop(K);
+    krooted_tvs_push(K, ptree);
+    /* TODO factor this out into a get_ground_binding(K, char *) */
+    TValue ev = ksymbol_new_b(K, "eval-string", KNIL);
+    krooted_vars_push(K, &ev);
+    klisp_assert(kbinds(K, K->ground_env, ev));
+    ev = kunwrap(kget_binding(K, K->ground_env, ev));
+    krooted_vars_pop(K);
+    krooted_tvs_pop(K);
+
+    klispS_tail_call_si(K, ev, ptree, env, KNIL);
     klispS_run(K);
 
     int status = errorp? STATUS_ERROR : 
