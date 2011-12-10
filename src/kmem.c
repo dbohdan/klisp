@@ -74,8 +74,9 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
   klisp_assert((osize == 0) == (block == NULL));
 
   /* TEMP: for now only Stop the world GC */
+  /* TEMP: prevent recursive call of klispC_fullgc() */
   #ifdef KUSE_GC
-  if (K->totalbytes - osize + nsize >= K->GCthreshold) {
+  if (nsize > 0 && K->totalbytes - osize + nsize >= K->GCthreshold) {
       #ifdef KDEBUG_GC
       printf("GC START, total_bytes: %d\n", K->totalbytes);
       #endif
