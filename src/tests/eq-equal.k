@@ -266,6 +266,35 @@
 ($check-not-predicate (equal? (vector 1 2 3) (vector 1 2)))
 ($check-not-predicate (equal? (vector 1 2 3) (vector 2 3)))
 
+($check equal?
+  ($let ((v (vector 1 2)) (w (vector 1 3)))
+    (list (equal? v w) (equal? v w) (equal? v w) (equal? v w)))
+  (list #f #f #f #f))
+
+($check-predicate
+  ($let* ((a (make-vector 100 1))
+          (b (make-vector 100 1))
+          (v (make-vector 100 a))
+          (w (make-vector 100 b)))
+    (equal? v w)))
+
+($check-not-predicate
+  ($let* ((a (make-vector 100 1))
+          (b (make-vector 100 1))
+          (c (make-vector 100 1))
+          (v (make-vector 100 a))
+          (w (make-vector 100 b)))
+    (vector-set! c 50 2)
+    (vector-set! v 50 c)
+    (equal? v w)))
+
+
+($check-not-predicate
+  ($let ((v (make-vector 100000 #f))
+         (w (make-vector 100000 #f)))
+      (vector-set! v 50000 #t)
+      (equal? v w)))
+
 ($check-predicate
   ($let* ((v1 (vector 1))
           (v2 (vector 1 v1))

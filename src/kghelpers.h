@@ -18,6 +18,7 @@
 #include "klisp.h"
 #include "kerror.h"
 #include "kpair.h"
+#include "kvector.h"
 #include "kapplicative.h"
 #include "koperative.h"
 #include "kcontinuation.h"
@@ -328,7 +329,13 @@ inline void unmark_tree(klisp_State *K, TValue obj)
 	    kunmark(obj);
 	    ks_spush(K, kcdr(obj));
 	    ks_spush(K, kcar(obj));
-	}
+	} else if (ttisvector(obj) && kis_marked(obj)) {
+            kunmark(obj);
+            uint32_t i = kvector_size(obj);
+            const TValue *array = kvector_buf(obj);
+            while(i-- > 0)
+                ks_spush(K, array[i]);
+        }
     }
 }
 
