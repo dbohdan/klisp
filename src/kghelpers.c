@@ -1012,7 +1012,7 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
 			if (!equal_find2_mergep(K, obj1, obj2)) {
 			    uint32_t i = kvector_size(obj1);
 			    TValue *array1 = kvector_buf(obj1);
-			    TValue *array2 = kvector_buf(obj1);
+			    TValue *array2 = kvector_buf(obj2);
 			    while(i-- > 0) {
 				ks_spush(K, array1[i]);
 				ks_spush(K, array2[i]);

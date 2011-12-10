@@ -229,7 +229,8 @@
 ;; XXX string->vector
 
 ($check equal? (string->vector "") (vector))
-($check equal? (string->vector "abc") (vector #\a #\B #\c))
+($check equal? (string->vector "abc") (vector #\a #\b #\c))
+($check-not-predicate (equal? (string->vector "abc") (vector #\a #\B #\c)))
 
 ($check-not-predicate
   ($let*
