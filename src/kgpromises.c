@@ -1,11 +1,9 @@
 /*
-** kgencapsulations.c
-** Encapsulations features for the ground environment
+** kgpromises.c
+** Promises features for the ground environment
 ** See Copyright Notice in klisp.h
 */
 
-#include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>

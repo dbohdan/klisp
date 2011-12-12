@@ -40,6 +40,7 @@
 #include "kgsystem.h"
 #include "kgerrors.h"
 #include "kgkeywords.h"
+#include "kgmodules.h"
 
 #if KUSE_LIBFFI
 #  include "kgffi.h"
@@ -84,6 +85,7 @@ void kinit_cont_names(klisp_State *K)
 #if KUSE_LIBFFI
     kinit_ffi_cont_names(K);
 #endif
+    kinit_modules_cont_names(K);
 }
 
 /*
@@ -118,6 +120,7 @@ void kinit_ground_env(klisp_State *K)
     kinit_system_ground_env(K);
     kinit_error_ground_env(K);
     kinit_keywords_ground_env(K);
+    kinit_modules_ground_env(K);
 #if KUSE_LIBFFI
     kinit_ffi_ground_env(K);
 #endif
