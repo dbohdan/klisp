@@ -112,6 +112,20 @@ check_oe()
     check_helper "$expected_stdout" "$expected_stderr" 0 "$o" "$e" "$s" "$*"
 }
 
+check_oes()
+{
+    expected_stdout="$1"
+    expected_stderr="$2"
+    expected_exitstatus="$3"
+    shift
+    shift
+    shift
+    o=`"$@" 2> $TMPERR`
+    s=$?
+    e=`cat $TMPERR`
+    check_helper "$expected_stdout" "$expected_stderr" "$expected_exitstatus" "$o" "$e" "$s" "$*"
+}
+
 report()
 {
     echo "Tests Passed: $npass"
@@ -143,6 +157,8 @@ check_oi '2' '(display (+ 1 1))' $KLISP -
 # option: -e
 
 check_o 'abcdef' $KLISP '-e (display "abc")' '-e' '(display "def")'
+check_oes '' '/.*No object found in string.*/' 1 $KLISP -e ''
+check_oes '' '/.*More than one object found in string.*/' 1 $KLISP -e '1 1'
 
 # option: -i
 # The interpreter always show name and version
@@ -180,7 +196,17 @@ check_os '' 1 $KLISP -e '(exit 1)' -e '(exit 0)'
 
 export KLISP_INIT='(display "init...")'
 check_o 'init...main' $KLISP -e '(display "main")'
-export KLISP_INIT=
+
+# it is an error to put empty string in KLISP_INIT,
+# even with interactive mode
+
+export KLISP_INIT=''
+check_oes '' '/.*No object found in string.*/' 1 $KLISP
+check_oes '' '/.*No object found in string.*/' 1 $KLISP -i
+
+# cleanup after tests with KLISP_INIT
+
+unset KLISP_INIT
 
 # other environment variables
 
