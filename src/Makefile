@@ -36,7 +36,8 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kcontinuation.o koperative.o kapplicative.o keval.o krepl.o \
 	kencapsulation.o kpromise.o kport.o kinteger.o krational.o ksystem.o \
 	kreal.o ktable.o kgc.o imath.o imrat.o kbytevector.o kvector.o \
-	kchar.o kkeyword.o kground.o kghelpers.o kgbooleans.o kgeqp.o \
+	kchar.o kkeyword.o kmodule.o \
+	kground.o kghelpers.o kgbooleans.o kgeqp.o \
 	kgequalp.o kgsymbols.o kgcontrol.o kgpairs_lists.o kgpair_mut.o \
 	kgenvironments.o kgenv_mut.o kgcombiners.o kgcontinuations.o \
 	kgencapsulations.o kgpromises.o kgkd_vars.o kgks_vars.o kgports.o \
@@ -266,6 +267,8 @@ kport.o: kport.c kport.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kerror.h kpair.h kgc.h kstring.h kbytevector.h
 kpromise.o: kpromise.c kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kpromise.h kpair.h kgc.h
+kmodule.o: kmodule.c kobject.h klimits.h klisp.h klispconf.h kstate.h \
+ ktoken.h kmem.h kmodule.h kgc.h
 krational.o: krational.c krational.h kobject.h klimits.h klisp.h \
  klispconf.h kstate.h ktoken.h kmem.h kinteger.h imath.h imrat.h kgc.h
 kread.o: kread.c kread.h kobject.h klimits.h klisp.h klispconf.h kstate.h \

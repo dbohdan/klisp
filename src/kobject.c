@@ -81,7 +81,9 @@ char *ktv_names[] = {
     [K_TERROR] = "error", 
     [K_TBYTEVECTOR] = "bytevector",
     [K_TFPORT] = "file port",
-    [K_TMPORT] = "mem port"
+    [K_TMPORT] = "mem port",
+    [K_TKEYWORD] = "keyword",
+    [K_TMODULE] = "module"
 };
 
 int32_t klispO_log2 (uint32_t x) {

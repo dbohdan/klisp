@@ -5,7 +5,8 @@
 ** documentation:
 *** update the manual with the current features
 *** add a section to the manual with the interpreter usage
-
+** refactor
+*** convert all tabs to spaces (use sed)
 
 * Release 0.4+
 ** refactor:

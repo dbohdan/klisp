@@ -114,6 +114,7 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TVECTOR:
     case K_TFPORT:
     case K_TMPORT:
+    case K_TMODULE:
 	o->gch.gclist = K->gray;
 	K->gray = o;
 	break;
@@ -347,6 +348,12 @@ static int32_t propagatemark (klisp_State *K) {
         markvaluearray(K, v->array, v->sizearray);
         return sizeof(Vector) + v->sizearray * sizeof(TValue);
     }
+    case K_TMODULE: {
+	Module *m = cast(Module *, o);
+	markvalue(K, m->env);
+	markvalue(K, m->exp_list);
+	return sizeof(Module);
+    }
     default: 
 	fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
 		type);
@@ -499,6 +506,9 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TVECTOR:
         klispM_freemem(K, o, sizeof(Vector) + sizeof(TValue) * o->vector.sizearray);
         break;
+    case K_TMODULE:
+	klispM_free(K, (Module *)o);
+	break;
     default:
 	/* shouldn't happen */
 	fprintf(stderr, "Unknown GCObject type (in GC free): %d\n", 

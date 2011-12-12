@@ -10,7 +10,7 @@
 **
 ** For starters:
 ** - Split dofile in dofile & dostdin
-** - Merge dofile and dorfile with a boolean flat (load/require)
+** - Merge dofile and dorfile with a boolean flag (load/require)
 **   (use dorfile as a model)
 ** - Add get_ground_binding somewhere (probably kstate) and use it.
 */
