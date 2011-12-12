@@ -862,7 +862,6 @@ static TValue find_file (klisp_State *K, TValue name, TValue pname) {
 **  - When/if the file is found, evaluation happens in an initially
 **   standard environment
 */
-/* TODO check if file was required */
 void require(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -886,7 +885,7 @@ void require(klisp_State *K)
 
     const TValue *node = klispH_getstr(tv2table(K->require_table), 
 				       tv2str(saved_name));
-    if (node != &kfree) {
+    if (!ttisfree(*node)) {
 	/* was required already, nothing to be done */
 	kapply_cc(K, KINERT);
     }
@@ -960,6 +959,75 @@ void require(klisp_State *K)
 	krooted_tvs_pop(K); /* port */
 	ktail_eval(K, kcar(ls), env);
     }
+}
+
+/* ?.? registered-requirement? */
+void registered_requirementP(klisp_State *K)
+{
+    bind_1tp(K, K->next_value, "string", ttisstring, name);
+    if (kstring_emptyp(name)) {
+	klispE_throw_simple(K, "Empty name");
+	return;
+    }
+    /* search for the named file in the table of already
+       required files. 
+       N.B. this will be fooled if the same file is accessed
+       through different names */
+    TValue saved_name = kstring_immutablep(name)? name :
+	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+
+    const TValue *node = klispH_getstr(tv2table(K->require_table), 
+				       tv2str(saved_name));
+    kapply_cc(K, ttisfree(*node)? KFALSE : KTRUE);
+}
+
+void register_requirementB(klisp_State *K)
+{
+    bind_1tp(K, K->next_value, "string", ttisstring, name);
+    if (kstring_emptyp(name)) {
+	klispE_throw_simple(K, "Empty name");
+	return;
+    }
+    TValue saved_name = kstring_immutablep(name)? name :
+	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+
+    /* don't throw error if already registered */
+    *(klispH_setstr(K, tv2table(K->require_table), 
+                    tv2str(saved_name))) = KTRUE;
+    kapply_cc(K, KINERT);
+}
+
+void unregister_requirementB(klisp_State *K)
+{
+    bind_1tp(K, K->next_value, "string", ttisstring, name);
+    if (kstring_emptyp(name)) {
+	klispE_throw_simple(K, "Empty name");
+	return;
+    }
+    TValue saved_name = kstring_immutablep(name)? name :
+	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+
+    /* don't throw error if not registered */
+    *(klispH_setstr(K, tv2table(K->require_table), 
+                    tv2str(saved_name))) = KFREE;
+    kapply_cc(K, KINERT);
+}
+
+/* will throw an error if not found */
+void find_required_filename(klisp_State *K)
+{
+    bind_1tp(K, K->next_value, "string", ttisstring, name);
+    if (kstring_emptyp(name)) {
+	klispE_throw_simple(K, "Empty name");
+	return;
+    }
+    TValue filename = find_file(K, name, K->require_path);
+    
+    if (kstring_emptyp(filename)) {
+	klispE_throw_simple_with_irritants(K, "Not found", 1, name);
+	return;
+    }
+    kapply_cc(K, filename);
 }
 
 /* 15.2.3 get-module */
@@ -1262,6 +1330,18 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "load", load, 0);
     /* 15.2.? require */
     add_applicative(K, ground_env, "require", require, 0);
+    /* 15.2.? registered-requirement? */
+    add_applicative(K, ground_env, "registered-requirement?", 
+                    registered_requirementP, 0);
+    /* 15.2.? register-requirement! */
+    add_applicative(K, ground_env, "register-requirement!", 
+                    register_requirementB, 0);
+    /* 15.2.? unregister-requirement! */
+    add_applicative(K, ground_env, "unregister-requirement!", 
+                    unregister_requirementB, 0);
+    /* 15.2.? find-required-filename */
+    add_applicative(K, ground_env, "find-required-filename", 
+                    find_required_filename, 0);
     /* 15.2.3 get-module */
     add_applicative(K, ground_env, "get-module", get_module, 0);
     /* 15.2.? display */
