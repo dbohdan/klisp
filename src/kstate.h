@@ -127,7 +127,6 @@ struct klisp_State {
 
     /* Vectors */
     TValue empty_vector;
-
     
     /* tokenizer */
     /* special tokens, see ktoken.c for rationale */
@@ -158,6 +157,11 @@ struct klisp_State {
     /* require */
     TValue require_path;
     TValue require_table;
+
+    /* modules */
+    TValue modules_registry; /* this is a list, because module names
+                                are list of symbols and numbers so 
+                                putting them in a table isn't easy */
 
     /* auxiliary stack (XXX this could be a vector) */
     int32_t ssize; /* total size of array */

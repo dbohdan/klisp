@@ -17,6 +17,7 @@
     - knumber.h knumber.c (kfinitep, kintegerp, etc)
 *** naming convention for ground operative functions
     - maybe add "kgop_"
+    - use 'P' instead of 'p' for ground predicates
 *** naming convention for continuation functions
     - intead of "do_"
 *** use krooted_vars_push more to avoid clutter
