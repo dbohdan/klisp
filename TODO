@@ -1,6 +1,4 @@
 * Release 0.3
-** modules:
-*** simple modules (something inspired in r7rs) (r7rs)
 ** documentation:
 *** update the manual with the current features
 *** add a section to the manual with the interpreter usage
@@ -28,6 +26,8 @@
     - currently
       - int32_t (used in lists)
       - uint32_t (used in strings, vectors and bytevectors)
+*** add static qualifiers (especially in all kg*.c files
+*** add const qualifiers where sensible
 ** fix:
 *** fix char-ready? and u8-ready? (r7rs)
 ** reader/writer
