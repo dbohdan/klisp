@@ -991,9 +991,17 @@ void register_requirementB(klisp_State *K)
     TValue saved_name = kstring_immutablep(name)? name :
         kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
-    /* don't throw error if already registered */
-    *(klispH_setstr(K, tv2table(K->require_table), 
-                    tv2str(saved_name))) = KTRUE;
+    TValue *node = klispH_setstr(K, tv2table(K->require_table), 
+                                 tv2str(saved_name));
+    
+    /* throw error if already registered */
+    if (!ttisfree(*node)) {
+        klispE_throw_simple_with_irritants(K, "Name already registered", 
+                                           1, name);
+        return;
+    }
+
+    *node = KTRUE;
     kapply_cc(K, KINERT);
 }
 
@@ -1007,9 +1015,16 @@ void unregister_requirementB(klisp_State *K)
     TValue saved_name = kstring_immutablep(name)? name :
         kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
-    /* don't throw error if not registered */
-    *(klispH_setstr(K, tv2table(K->require_table), 
-                    tv2str(saved_name))) = KFREE;
+    TValue *node = klispH_setstr(K, tv2table(K->require_table), 
+                                 tv2str(saved_name));
+
+    /* throw error if not registered */
+    if (ttisfree(*node)) {
+        klispE_throw_simple_with_irritants(K, "Unregistered name", 1, name);
+        return;
+    }
+
+    *node = KFREE;
     kapply_cc(K, KINERT);
 }
 
