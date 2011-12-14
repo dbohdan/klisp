@@ -17,12 +17,14 @@
 #include "kerror.h"
 #include "kpair.h"
 #include "kenvironment.h"
+#include "kkeyword.h"
 
 #include "kghelpers.h"
 #include "kgmodules.h"
 
 /* Continuations */
-void do_module_registration(klisp_State *K);
+void do_register_module(klisp_State *K);
+void do_provide_module(klisp_State *K);
 
 
 /* ?.? module? */
@@ -32,10 +34,8 @@ void do_module_registration(klisp_State *K);
 inline void unmark_symbol_list(klisp_State *K, TValue ls)
 {
     UNUSED(K);
-    while(ttispair(ls) && kis_symbol_marked(kcar(ls))) {
+    for(; ttispair(ls) && kis_symbol_marked(kcar(ls)); ls = kcdr(ls))
         kunmark_symbol(kcar(ls));
-        ls = kcdr(ls);
-    }
 }
 
 /* ?.? make-module */
@@ -156,7 +156,7 @@ void Sget_registered_module(klisp_State *K)
     kapply_cc(K, kcdr(entry));
 }
 
-void do_module_registration(klisp_State *K)
+void do_register_module(klisp_State *K)
 {
     /* 
     ** xparams[0]: name 
@@ -190,7 +190,7 @@ void Sregister_moduleB(klisp_State *K)
     /* XXX could use unchecked_copy_list if available */
     name = check_copy_list(K, name, false, NULL, NULL);
     krooted_tvs_push(K, name);
-    TValue cont = kmake_continuation(K, kget_cc(K), do_module_registration,
+    TValue cont = kmake_continuation(K, kget_cc(K), do_register_module,
                                      1, name);
     krooted_tvs_pop(K);
     kset_cc(K, cont);
@@ -217,6 +217,198 @@ void Sunregister_moduleB(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* Helpers for provide-module */
+void unmark_export_list(klisp_State *K, TValue exports, TValue last)
+{
+    /* exports shouldn't have the leading keyword */
+    UNUSED(K);
+    for (; !tv_equal(exports, last); exports = kcdr(exports)) {
+        TValue first = kcar(exports);
+        if (ttissymbol(first))
+            kunmark_symbol(first);
+        else
+            kunmark_symbol(kcar(kcdr(kcdr(first))));
+    }
+}
+
+void check_export_list(klisp_State *K, TValue exports)
+{
+    int32_t pairs;
+    check_list(K, false, exports, &pairs, NULL);
+    if (ttisnil(exports) || !ttiskeyword(kcar(exports)) ||
+        kkeyword_cstr_cmp(kcar(exports), "export") != 0) {
+
+        klispE_throw_simple_with_irritants(K, "missing #:export keyword",
+                                           1, exports);
+        return;
+    }
+    /* empty export list are allowed (but still need #:export) */
+    --pairs;
+    exports = kcdr(exports);
+    /* check that all entries are either a unique symbol or
+       a rename form: (#:rename int-s ext-s) with unique ext-s */
+    for (TValue tail = exports; pairs > 0; --pairs, tail = kcdr(tail)) {
+        TValue clause = kcar(tail);
+        TValue symbol;
+        if (ttissymbol(clause)) {
+            symbol = clause;
+        } else {
+            int32_t pairs;
+            /* this use of marks doesn't interfere with symbols */
+            check_list(K, false, clause, &pairs, NULL);
+            if (pairs != 3 || 
+                kkeyword_cstr_cmp(kcar(clause), "rename") != 0) {
+
+                unmark_export_list(K, exports, tail);
+                klispE_throw_simple_with_irritants(K, "Bad export clause "
+                                                   "syntax", 1, clause);
+                return;
+            } else if (!ttissymbol(kcar(kcdr(clause))) || 
+                       !ttissymbol(kcar(kcdr(kcdr(clause))))) {
+                unmark_export_list(K, exports, tail);
+                klispE_throw_simple_with_irritants(K, "Non symbol in #:rename "
+                                                   "export clause", 1, clause);
+                return;
+            } else {
+                symbol = kcar(kcdr(kcdr(clause)));
+            }
+        } 
+
+        if (kis_symbol_marked(symbol)) {
+            unmark_export_list(K, exports, tail);
+            klispE_throw_simple_with_irritants(K, "repeated symbol in export "
+                                               "list", 1, symbol);
+            return;
+        }
+        kmark_symbol(symbol);
+    }
+    unmark_export_list(K, exports, KNIL);
+}
+
+void do_provide_module(klisp_State *K)
+{
+    /* 
+    ** xparams[0]: name 
+    ** xparams[1]: inames
+    ** xparams[2]: enames
+    ** xparams[3]: env
+    */
+    TValue name = K->next_xparams[0];
+
+    if (!ttisnil(modules_registry_assoc(K, name, NULL))) {
+        klispE_throw_simple_with_irritants(K, "module name already registered",
+                                           1, name);
+        return;
+    }
+
+    TValue inames = K->next_xparams[1];
+    TValue enames = K->next_xparams[2];
+    TValue env = K->next_xparams[3];
+
+    TValue new_env = kmake_table_environment(K, KNIL);
+    krooted_tvs_push(K, new_env);
+
+    for (; !ttisnil(inames); inames = kcdr(inames), enames = kcdr(enames)) {
+        TValue iname = kcar(inames);
+        if (!kbinds(K, env, iname)) {
+            klispE_throw_simple_with_irritants(K, "unbound exported symbol in "
+                                               "module", 1, iname);
+            return;
+        }
+        kadd_binding(K, new_env, kcar(enames), kget_binding(K, env, iname));
+    }
+
+    enames = K->next_xparams[2];
+    TValue module = kmake_module(K, new_env, enames);
+    krooted_tvs_pop(K); /* new_env */
+    krooted_tvs_push(K, module);
+
+    TValue np = kcons(K, name, module);
+    krooted_tvs_pop(K); /* module */
+    krooted_tvs_push(K, np);
+    np = kcons(K, np, K->modules_registry);
+    K->modules_registry = np;
+    krooted_tvs_pop(K);
+    kapply_cc(K, KINERT);
+}
+
+/* ?.? $provide-module! */
+void Sprovide_moduleB(klisp_State *K)
+{
+    bind_al2p(K, K->next_value, name, exports, body);
+    check_module_name(K, name);
+    name = check_copy_list(K, name, false, NULL, NULL);
+    krooted_tvs_push(K, name);
+    check_export_list(K, exports);
+    TValue inames = kimm_cons(K, KNIL, KNIL);
+    TValue ilast = inames;
+    krooted_vars_push(K, &inames);
+    TValue enames = kimm_cons(K, KNIL, KNIL);
+    TValue elast = enames;
+    krooted_vars_push(K, &enames);
+
+    for (exports = kcdr(exports); !ttisnil(exports); exports = kcdr(exports)) {
+        TValue clause = kcar(exports);
+        TValue isym, esym;
+        if (ttissymbol(clause)) {
+            isym = esym = clause;
+        } else {
+            isym = kcar(kcdr(clause));
+            esym = kcar(kcdr(kcdr(clause)));
+        }
+        TValue np = kimm_cons(K, isym, KNIL);
+        kset_cdr_unsafe(K, ilast, np);
+        ilast = np;
+        np = kimm_cons(K, esym, KNIL);
+        kset_cdr_unsafe(K, elast, np);
+        elast = np;
+    }
+    inames = kcdr(inames);
+    enames = kcdr(enames);
+    
+    check_list(K, false, body, NULL, NULL);
+
+    body = copy_es_immutable_h(K, body, false);
+    krooted_tvs_push(K, body);
+
+    if (!ttisnil(modules_registry_assoc(K, name, NULL))) {
+        klispE_throw_simple_with_irritants(K, "module name already registered",
+                                           1, name);
+        return;
+    }
+    /* TODO add some continuation protection/additional checks */
+    /* TODO add cyclical definition handling */
+    // do cont
+
+    /* use a child of the dynamic environment to do evaluations */
+    TValue env = kmake_table_environment(K, K->next_env);
+    krooted_tvs_push(K, env);
+
+    kset_cc(K, kmake_continuation(K, kget_cc(K), do_provide_module,
+                                  4, name, inames, enames, env));
+
+    if (!ttisnil(body) && !ttisnil(kcdr(body))) {
+        TValue cont = kmake_continuation(K, kget_cc(K), do_seq, 2, 
+                                         kcdr(body), env);
+        kset_cc(K, cont);
+#if KTRACK_SI
+    /* put the source info of the list including the element
+       that we are about to evaluate */
+    kset_source_info(K, cont, ktry_get_si(K, body));
+#endif
+    }
+    
+    krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
+    krooted_vars_pop(K); krooted_vars_pop(K);
+    
+    if (ttisnil(body)) {
+        kapply_cc(K, KINERT);
+    } else {
+        ktail_eval(K, kcar(body), env);
+    }
+}
+
+
 /* init ground */
 void kinit_modules_ground_env(klisp_State *K)
 {
@@ -230,6 +422,7 @@ void kinit_modules_ground_env(klisp_State *K)
                     get_module_export_list, 0); 
     add_applicative(K, ground_env, "get-module-environment", 
                     get_module_environment, 0); 
+
     add_operative(K, ground_env, "$registered-module?", Sregistered_moduleP, 
                   0);
     add_operative(K, ground_env, "$get-registered-module", 
@@ -238,6 +431,9 @@ void kinit_modules_ground_env(klisp_State *K)
                   0);
     add_operative(K, ground_env, "$unregister-module!", Sunregister_moduleB, 
                   0);
+
+    add_operative(K, ground_env, "$provide-module!", Sprovide_moduleB, 0);
+
 }
 
 /* init continuation names */
@@ -245,5 +441,6 @@ void kinit_modules_cont_names(klisp_State *K)
 {
     Table *t = tv2table(K->cont_name_table);
 
-    add_cont_name(K, t, do_module_registration, "register-module"); 
+    add_cont_name(K, t, do_register_module, "register-module"); 
+    add_cont_name(K, t, do_provide_module, "provide-module"); 
 }

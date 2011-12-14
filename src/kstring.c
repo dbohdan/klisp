@@ -231,3 +231,13 @@ bool kmutable_stringp(TValue obj)
 { 
     return ttisstring(obj) && kis_mutable(obj); 
 }
+
+int32_t kstring_cstr_cmp(TValue str, const char *buf)
+{
+    int32_t len1 = kstring_size(str);
+    int32_t len2 = strlen(buf);
+    if (len1 != len2) 
+        return len1 < len2? -1 : 1;
+    else 
+        return memcmp(kstring_buf(str), buf, len1);
+}

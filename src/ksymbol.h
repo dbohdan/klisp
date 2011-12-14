@@ -32,5 +32,6 @@ TValue ksymbol_new_str(klisp_State *K, TValue str, TValue si);
 #define ksymbol_size(tv_) (kstring_size(tv2sym(tv_)->str))
 
 bool ksymbolp(TValue obj);
+int32_t ksymbol_cstr_cmp(TValue sym, const char *buf);
 
 #endif

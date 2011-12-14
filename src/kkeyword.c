@@ -96,3 +96,8 @@ TValue kkeyword_new_str(klisp_State *K, TValue str)
 }
 
 bool kkeywordp(TValue obj) { return ttiskeyword(obj); }
+
+int32_t kkeyword_cstr_cmp(TValue keyw, const char *buf)
+{
+    return kstring_cstr_cmp(kkeyword_str(keyw), buf);
+}

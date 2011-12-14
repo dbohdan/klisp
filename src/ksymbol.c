@@ -119,3 +119,8 @@ TValue ksymbol_new_str(klisp_State *K, TValue str, TValue si)
 }
 
 bool ksymbolp(TValue obj) { return ttissymbol(obj); }
+
+int32_t ksymbol_cstr_cmp(TValue sym, const char *buf)
+{
+    return kstring_cstr_cmp(ksymbol_str(sym), buf);
+}

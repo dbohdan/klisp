@@ -224,7 +224,7 @@ kgpromises.o: kgpromises.c kstate.h klimits.h klisp.h kobject.h \
 kgmodules.o: kgmodules.c kstate.h klimits.h klisp.h kobject.h \
  klispconf.h ktoken.h kmem.h kmodule.h kpair.h kgc.h kapplicative.h \
  koperative.h kcontinuation.h kerror.h kghelpers.h kenvironment.h \
- ksymbol.h kstring.h ktable.h kgmodules.h kpair.h
+ ksymbol.h kstring.h ktable.h kgmodules.h kpair.h kkeyword.h
 kground.o: kground.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kground.h kghelpers.h kerror.h kpair.h kgc.h \
  kapplicative.h koperative.h kcontinuation.h kenvironment.h ksymbol.h \

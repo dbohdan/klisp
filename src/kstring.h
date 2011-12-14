@@ -60,5 +60,6 @@ bool kstring_equalp(TValue obj1, TValue obj2);
 bool kstringp(TValue obj);
 bool kimmutable_stringp(TValue obj);
 bool kmutable_stringp(TValue obj);
+int32_t kstring_cstr_cmp(TValue str, const char *buf);
 
 #endif

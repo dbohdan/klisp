@@ -28,4 +28,6 @@ TValue kkeyword_new_str(klisp_State *K, TValue str);
 
 bool kkeywordp(TValue obj);
 
+int32_t kkeyword_cstr_cmp(TValue str, const char *buf);
+
 #endif
