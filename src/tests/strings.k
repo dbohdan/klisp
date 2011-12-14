@@ -39,13 +39,13 @@
 ($check-not-predicate (string<? "b" "a"))
 
 ($check-predicate ($true-for-all-combinations? string<=?
-  ("" "A") ("a" "A" "ab")))
+                                               ("" "A") ("a" "A" "ab")))
 
 ($check-predicate ($true-for-all-combinations? string>?
-  ("b" "c") ("" "a")))
+                                               ("b" "c") ("" "a")))
 
 ($check-predicate ($true-for-all-combinations? string>=?
-  ("b" "c") ("" "a" "b")))
+                                               ("b" "c") ("" "a" "b")))
 
 ($check-predicate (string-ci=? "" ""))
 ($check-predicate (string-ci=? "abcd" "AbCd"))
@@ -53,18 +53,18 @@
 ($check-not-predicate (string=? "aa" "AAA"))
 
 ($check-predicate ($true-for-all-combinations? string-ci<?
-  ("" "a" "A") ("ab" "AB" "b" "B")))
+                                               ("" "a" "A") ("ab" "AB" "b" "B")))
 ($check-predicate ($false-for-all-combinations? string-ci<?
-  ("b" "B") ("" "a" "A" "aa" "b" "B" "ab" "aB" "Ab" "AB")))
+                                                ("b" "B") ("" "a" "A" "aa" "b" "B" "ab" "aB" "Ab" "AB")))
 
 ($check-predicate ($true-for-all-combinations? string-ci<=?
-  ("" "A" "a") ("a" "A" "ab")))
+                                               ("" "A" "a") ("a" "A" "ab")))
 
 ($check-predicate ($true-for-all-combinations? string-ci>?
-  ("b" "B" "c" "C") ("" "a" "A")))
+                                               ("b" "B" "c" "C") ("" "a" "A")))
 
 ($check-predicate ($true-for-all-combinations? string-ci>=?
-  ("b" "B" "c" "C") ("" "a" "A" "b" "B")))
+                                               ("b" "B" "c" "C") ("" "a" "A" "b" "B")))
 
 ;; XXX make-string
 
@@ -88,13 +88,13 @@
 
 ;; XXX string-upcase string-downcase string-titlecase string-foldcase
 ($check equal? (string-upcase "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz")
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 ($check equal? (string-titlecase "this is a regular sentence. this 1 2!")
-	 "This Is A Regular Sentence. This 1 2!")
+        "This Is A Regular Sentence. This 1 2!")
 ($check equal? (string-downcase "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz")
-	"abcdefghijklmnopqrstuvwxyz01234567890abcdefghijklmnopqrstuvwxyz")
+        "abcdefghijklmnopqrstuvwxyz01234567890abcdefghijklmnopqrstuvwxyz")
 ($check equal? (string-foldcase "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz")
-	"abcdefghijklmnopqrstuvwxyz01234567890abcdefghijklmnopqrstuvwxyz")
+        "abcdefghijklmnopqrstuvwxyz01234567890abcdefghijklmnopqrstuvwxyz")
 ($check-predicate (mutable-string? (string-upcase (string-copy "A0a"))))
 ($check-predicate (mutable-string? (string-upcase "A0a")))
 ($check-predicate (mutable-string? (string-downcase (string-copy "A0a"))))
@@ -154,8 +154,8 @@
 ;; substring generates mutable strings
 ;; Andres Navarro
 ($check-predicate
-  ($let* ((p "abc") (q (string->immutable-string (substring p 0 3))))
-    (eq? p q)))
+ ($let* ((p "abc") (q (string->immutable-string (substring p 0 3))))
+   (eq? p q)))
 
 ;; string-copy always generate mutable strings
 ;; Andres Navarro
@@ -176,8 +176,8 @@
 ($check equal? (string-append "a" "b" "c") "abc")
 
 ($check-not-predicate
-  ($let* ((p "abc") (q (string-append p)))
-    (eq? p q)))
+ ($let* ((p "abc") (q (string-append p)))
+   (eq? p q)))
 
 ($check-predicate (nonempty-mutable-string? (string-append "a" "b")))
 
@@ -187,8 +187,8 @@
 ($check equal? (string-copy "abcd") "abcd")
 
 ($check-not-predicate
-  ($let* ((p "abc") (q (string-copy p)))
-    (eq? p q)))
+ ($let* ((p "abc") (q (string-copy p)))
+   (eq? p q)))
 
 ($check-predicate (nonempty-mutable-string? (string-copy "abc")))
 
@@ -198,8 +198,8 @@
 ($check equal? (string->immutable-string "abcd") "abcd")
 
 ($check-not-predicate
-  ($let* ((p "abc") (q (string-copy p)))
-    (eq? p q)))
+ ($let* ((p "abc") (q (string-copy p)))
+   (eq? p q)))
 
 ($check-predicate (immutable-string? (string->immutable-string "")))
 ($check-predicate (immutable-string? (string->immutable-string "abc")))
@@ -216,11 +216,11 @@
 ($check equal? (list->string (list #\a #\b #\c)) "abc")
 
 ($check-not-predicate
-  ($let*
-    ( (cs (list #\a #\b #\c))
-      (x (list->string cs))
-      (y (list->string cs)))
-  (eq? x y)))
+ ($let*
+     ( (cs (list #\a #\b #\c))
+       (x (list->string cs))
+       (y (list->string cs)))
+   (eq? x y)))
 
 ($check-predicate (nonempty-mutable-string? (list->string (list #\a #\b))))
 
@@ -233,11 +233,11 @@
 ($check-not-predicate (equal? (string->vector "abc") (vector #\a #\B #\c)))
 
 ($check-not-predicate
-  ($let*
-    ( (str "abc")
-      (x (string->vector str))
-      (y (string->vector str)))
-  (eq? x y)))
+ ($let*
+     ( (str "abc")
+       (x (string->vector str))
+       (y (string->vector str)))
+   (eq? x y)))
 
 ($check-predicate (mutable-vector? (string->vector "abc")))
 
@@ -247,11 +247,11 @@
 ($check equal? (vector->string (vector #\a #\b #\c)) "abc")
 
 ($check-not-predicate
-  ($let*
-    ( (cs (vector #\a #\b #\c))
-      (x (vector->string cs))
-      (y (vector->string cs)))
-  (eq? x y)))
+ ($let*
+     ( (cs (vector #\a #\b #\c))
+       (x (vector->string cs))
+       (y (vector->string cs)))
+   (eq? x y)))
 
 ($check-predicate (mutable-string? (vector->string (vector #\a #\b))))
 
@@ -263,16 +263,16 @@
 
 ($check equal? (string->bytevector "") (bytevector))
 ($check equal? (string->bytevector "aBc") 
-	(bytevector (char->integer #\a)
-		    (char->integer #\B) 
-		    (char->integer #\c)))
+        (bytevector (char->integer #\a)
+                    (char->integer #\B) 
+                    (char->integer #\c)))
 
 ($check-not-predicate
-  ($let*
-    ( (str "abc")
-      (x (string->bytevector str))
-      (y (string->bytevector str)))
-  (eq? x y)))
+ ($let*
+     ( (str "abc")
+       (x (string->bytevector str))
+       (y (string->bytevector str)))
+   (eq? x y)))
 
 ($check-predicate (mutable-bytevector? (string->bytevector "abc")))
 
@@ -280,22 +280,22 @@
 
 ($check equal? (bytevector->string (bytevector)) "")
 ($check equal? (bytevector->string (bytevector (char->integer #\a) 
-					       (char->integer #\b) 
-					       (char->integer #\c))) 
-	"abc")
+                                               (char->integer #\b) 
+                                               (char->integer #\c))) 
+        "abc")
 
 ($check-not-predicate
-  ($let*
-      ((cs (bytevector (char->integer #\a) 
-		       (char->integer #\b)
-		       (char->integer #\c)))
+ ($let*
+     ((cs (bytevector (char->integer #\a) 
+                      (char->integer #\b)
+                      (char->integer #\c)))
       (x (bytevector->string cs))
       (y (bytevector->string cs)))
-  (eq? x y)))
+   (eq? x y)))
 
 ($check-predicate (mutable-string? 
-		   (bytevector->string (bytevector (char->integer #\a)
-						   (char->integer #\b)))))
+                   (bytevector->string (bytevector (char->integer #\a)
+                                                   (char->integer #\b)))))
 
 ;; errors
 ($check-error (bytevector->string (bytevector 128))) ;; only ASCII
@@ -314,5 +314,5 @@
 ($check equal? (symbol->string ($quote abcd)) "abcd")
 
 ($check equal?
-  ($quote sym)
-  (string->symbol (symbol->string ($quote sym))))
+        ($quote sym)
+        (string->symbol (symbol->string ($quote sym))))

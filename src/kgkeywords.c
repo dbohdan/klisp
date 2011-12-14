@@ -93,7 +93,7 @@ void kinit_keywords_ground_env(klisp_State *K)
 
     /* ?.? keyword? */
     add_applicative(K, ground_env, "keyword?", typep, 2, symbol, 
-		    i2tv(K_TKEYWORD));
+                    i2tv(K_TKEYWORD));
     /* ?.? keyword->string, string->keyword */
     add_applicative(K, ground_env, "keyword->string", keyword_to_string, 0);
     add_applicative(K, ground_env, "string->keyword", string_to_keyword, 0);

@@ -17,8 +17,8 @@
 
 ;; copy-es-immutable
 ($let* ((orig (list (cons 1 2) (cons 3 4)))
-	(copy (copy-es-immutable orig))
-	(copy2 (copy-es-immutable copy)))
+        (copy (copy-es-immutable orig))
+        (copy2 (copy-es-immutable copy)))
   ($check equal? orig copy)
   ($check-predicate (mutable-pair? orig))
   ($check-predicate (immutable-pair? copy))
@@ -27,33 +27,33 @@
 
 ;; encycle!
 ($check equal? ($let ((l 1)) (encycle! l 0 0) l)
-	1)
+        1)
 ($check equal? ($let ((l (list 1 2 3 4 5))) (encycle! l 4 0) l)
-	(list 1 2 3 4 5))
+        (list 1 2 3 4 5))
 ($check equal? ($let ((l (list 1 2 3 4 5))) (encycle! l 2 3) l)
-	(list 1 2 . #0=(3 4 5 . #0#)))
+        (list 1 2 . #0=(3 4 5 . #0#)))
 ($check equal? ($let ((l (list* 1 2 3 4 5))) (encycle! l 0 3) l)
-	(list . #0=(1 2 3 . #0#)))
+        (list . #0=(1 2 3 . #0#)))
 
 ;; list-set!
 ($check-predicate (inert? (list-set! (list 0 1 2 3) 0 10)))
 ($check equal? ($let ((l (list 0 1 2 3))) 
-		 (list-set! l 1 10)
-		 (list-set! l 3 30)
-		 l) 
-	(list 0 10 2 30))
+                 (list-set! l 1 10)
+                 (list-set! l 3 30)
+                 l) 
+        (list 0 10 2 30))
 ($check equal? ($let ((l (list 0 . #1=(1 2 . #1#)))) 
-		 (list-set! l 1 10)
-		 (list-set! l 4 20)
-		 l) 
-	(list 0 . #2=(10 20 . #2#)))
+                 (list-set! l 1 10)
+                 (list-set! l 4 20)
+                 l) 
+        (list 0 . #2=(10 20 . #2#)))
 ;; see kgpair_mut.c for rationale on allowing
 ;; improper lists as argument to list-set!
 ($check equal? ($let ((l (list* 0 1 2 3)))
-		 (list-set! l 1 10)
-		 (list-set! l 2 20)
-		 l)
-	(list* 0 10 20 3))
+                 (list-set! l 1 10)
+                 (list-set! l 2 20)
+                 l)
+        (list* 0 10 20 3))
 
 ;; append!
 ($check-predicate (inert? (append! (list 1) (list 2))))
@@ -81,28 +81,28 @@
   ($define! l3 (list 5 6))
 
   ($check equal? 
-	  ($sequence (append! l1 . #3=(l2 l3 . #3#)) l1) 
-	  (list 1 2 . #4=(3 4 5 6 . #4#)))
+          ($sequence (append! l1 . #3=(l2 l3 . #3#)) l1) 
+          (list 1 2 . #4=(3 4 5 6 . #4#)))
 
   ($define! l1 (list 1 2))
   ($define! l2 (list 3 4))
   ($define! l3 (list 5 6))
 
   ($check equal? 
-   	  ($sequence (append! l1 l2 l3 . #5=(() () . #5#)) l1)
-   	  (list 1 2 3 4 5 6))
+          ($sequence (append! l1 l2 l3 . #5=(() () . #5#)) l1)
+          (list 1 2 3 4 5 6))
 
   ($define! l1 (list 1 2))
   ($define! l2 (list 3 4))
   ($define! l3 (list 5 6))
 
   ($check equal? 
-  	  ($sequence (append! l1 () . #6=(()  l2 () l3 () . #6#)) l1) 
-  	  (list 1 2 . #7=(3 4 5 6 . #7#))))
+          ($sequence (append! l1 () . #6=(()  l2 () l3 () . #6#)) l1) 
+          (list 1 2 . #7=(3 4 5 6 . #7#))))
 
 ;; copy-es
 ($let* ((orig (list (cons 1 2) (cons 3 4)))
-	(copy (copy-es orig)))
+        (copy (copy-es orig)))
   ($check equal? orig copy)
   ($check-predicate (mutable-pair? orig))
   ($check-predicate (mutable-pair? copy))
@@ -113,14 +113,14 @@
 ($check equal? (assq 3 (list (list 1 10) (list 2 20))) ())
 ($check equal? (assq 1 (list (list 1 10) (list 2 20))) (list 1 10))
 ($check equal?
-	(assq 1 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
-	(list 1 10))
+        (assq 1 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
+        (list 1 10))
 ($check equal?
-	(assq 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
-	())
+        (assq 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
+        ())
 ($check equal?
-	(assq (list 1) (list (list (list 1) 1) (list (list 2) 2)))
-	())
+        (assq (list 1) (list (list (list 1) 1) (list (list 2) 2)))
+        ())
 
 ;; memq
 ($check-predicate (memq? 1 (list 1 2)))
@@ -132,7 +132,7 @@
 ($check-predicate
  (memq? 3 (list . #0=(1 2 3 . #0#))))
 ($check-not-predicate
-	(memq? 4 (list . #0=(1 2 1 . #0#))))
+ (memq? 4 (list . #0=(1 2 1 . #0#))))
 
 
 ;;;
@@ -205,12 +205,12 @@
 ($check-error (append! (list 1 2) 3 ()))
 
 ($check-error (append! ((unwrap list) . (1 2 . #0=(3))) 
-		       ((unwrap list) . (4 5 . #0#)) 
-		       ()))
+                       ((unwrap list) . (4 5 . #0#)) 
+                       ()))
 
 ;; ASK if this is valid or not
 ;; ($check-error (append! ((unwrap list) . (1 2 . #0=(3)))
-;; 		       ((unwrap list) . (4 5 . #0#))))
+;; 		      ((unwrap list) . (4 5 . #0#))))
 
 
 ;; copy-es

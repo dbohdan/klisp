@@ -43,10 +43,10 @@ TValue klist_g(klisp_State *K, bool m, int32_t n, ...)
 
     va_start(argp, n);
     for (int i = 0; i < n; i++) {
-	TValue next_car = va_arg(argp, TValue);
-	TValue np = kcons_g(K, m, next_car, KNIL); 
-	kset_cdr_unsafe(K, tail, np);
-	tail = np;
+        TValue next_car = va_arg(argp, TValue);
+        TValue np = kcons_g(K, m, next_car, KNIL); 
+        kset_cdr_unsafe(K, tail, np);
+        tail = np;
     }
     va_end(argp);
 

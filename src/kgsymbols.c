@@ -64,7 +64,7 @@ void kinit_symbols_ground_env(klisp_State *K)
 
     /* 4.4.1 symbol? */
     add_applicative(K, ground_env, "symbol?", typep, 2, symbol, 
-		    i2tv(K_TSYMBOL));
+                    i2tv(K_TSYMBOL));
     /*
     ** This section is still missing from the report. The bindings here are
     ** taken from r5rs scheme and should not be considered standard. 

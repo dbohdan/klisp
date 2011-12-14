@@ -22,7 +22,7 @@ TValue ktok_read_token(klisp_State *K);
 /* return a fresh ilist of the form (filename line . col) */
 TValue ktok_get_source_info(klisp_State *K);
 void ktok_set_source_info(klisp_State *K, TValue filename, int32_t line,
-    int32_t col);
+                          int32_t col);
 
 /* This is needed here to allow cleanup of shared dict from tokenizer */
 void clear_shared_dict(klisp_State *K);
@@ -55,21 +55,21 @@ extern kcharset ktok_subsequent, ktok_initial;
 #define ktok_is_numeric(chi_) kcharset_contains(ktok_numeric, chi_)
 
 #define ktok_is_whitespace(chi_) kcharset_contains(ktok_whitespace, chi_)
-#define ktok_is_delimiter(chi_) ((chi_) == EOF ||			\
-				 kcharset_contains(ktok_delimiter, chi_))
+#define ktok_is_delimiter(chi_) ((chi_) == EOF ||                       \
+                                 kcharset_contains(ktok_delimiter, chi_))
 #define ktok_is_initial(chi_) kcharset_contains(ktok_initial, chi_)
 #define ktok_is_subsequent(chi_) kcharset_contains(ktok_subsequent, chi_)
 
-#define kcharset_contains(kch_, ch_) \
-    ({ unsigned char ch__ = (unsigned char) (ch_);	\
-	kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
+#define kcharset_contains(kch_, ch_)                    \
+    ({ unsigned char ch__ = (unsigned char) (ch_);      \
+        kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
 
 inline bool ktok_is_digit(char ch, int32_t radix)
 {
     ch = tolower(ch);
     return (ktok_is_numeric(ch) && (ch - '0') < radix) ||
-	(ktok_is_alphabetic(ch) && (10 + (ch - 'a')) < radix);
+        (ktok_is_alphabetic(ch) && (10 + (ch - 'a')) < radix);
 }
 
 inline int32_t ktok_digit_value(char ch)

@@ -21,7 +21,7 @@
 ($check-predicate (positive? (current-jiffy) (jiffies-per-second)))
 
 ($let* ((jiffy1 (current-jiffy)) (jiffy2 (current-jiffy)))
-    ($check-predicate (<=? jiffy1 jiffy2)))
+  ($check-predicate (<=? jiffy1 jiffy2)))
 
 ($let* ((jps1 (jiffies-per-second)) (jps2 (jiffies-per-second)))
-    ($check-predicate (=? jps1 jps2)))
+  ($check-predicate (=? jps1 jps2)))

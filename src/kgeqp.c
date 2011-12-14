@@ -41,14 +41,14 @@ void eqp(klisp_State *K)
     TValue tail = ptree;
     TValue res = KTRUE;
     while(comps-- > 0) {  /* comps could be -1 if ptree is nil */
-	TValue first = kcar(tail);
-	tail = kcdr(tail); /* tail only advances one place per iteration */
-	TValue second = kcar(tail);
+        TValue first = kcar(tail);
+        tail = kcdr(tail); /* tail only advances one place per iteration */
+        TValue second = kcar(tail);
 
-	if (!eq2p(K, first, second)) {
-	    res = KFALSE;
-	    break;
-	}
+        if (!eq2p(K, first, second)) {
+            res = KFALSE;
+            break;
+        }
     }
 
     kapply_cc(K, res);

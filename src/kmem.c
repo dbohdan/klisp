@@ -41,18 +41,18 @@
 */
 
 void *klispM_growaux_ (klisp_State *K, void *block, int *size, size_t size_elems,
-		       int32_t limit, const char *errormsg) {
+                       int32_t limit, const char *errormsg) {
     void *newblock;
     int32_t newsize;
     if (*size >= limit/2) {  /* cannot double it? */
-	if (*size >= limit)  /* cannot grow even a little? */
-	    klispE_throw_simple(K, (char *) errormsg); /* XXX */
-	newsize = limit;  /* still have at least one free place */
+        if (*size >= limit)  /* cannot grow even a little? */
+            klispE_throw_simple(K, (char *) errormsg); /* XXX */
+        newsize = limit;  /* still have at least one free place */
     }
     else {
-	newsize = (*size)*2;
-	if (newsize < MINSIZEARRAY)
-	    newsize = MINSIZEARRAY;  /* minimum size */
+        newsize = (*size)*2;
+        if (newsize < MINSIZEARRAY)
+            newsize = MINSIZEARRAY;  /* minimum size */
     }
     newblock = klispM_reallocv(K, block, *size, newsize, size_elems);
     *size = newsize;  /* update only when everything else is OK */
@@ -62,8 +62,8 @@ void *klispM_growaux_ (klisp_State *K, void *block, int *size, size_t size_elems
 
 void *klispM_toobig (klisp_State *K) {
     /* TODO better msg */
-  klispE_throw_simple(K, "(mem) block too big");
-  return NULL;  /* to avoid warnings */
+    klispE_throw_simple(K, "(mem) block too big");
+    return NULL;  /* to avoid warnings */
 }
 
 
@@ -71,31 +71,31 @@ void *klispM_toobig (klisp_State *K) {
 ** generic allocation routine.
 */
 void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) {
-  klisp_assert((osize == 0) == (block == NULL));
+    klisp_assert((osize == 0) == (block == NULL));
 
-  /* TEMP: for now only Stop the world GC */
-  /* TEMP: prevent recursive call of klispC_fullgc() */
-  #ifdef KUSE_GC
-  if (nsize > 0 && K->totalbytes - osize + nsize >= K->GCthreshold) {
-      #ifdef KDEBUG_GC
-      printf("GC START, total_bytes: %d\n", K->totalbytes);
-      #endif
-      klispC_fullgc(K);
-      #ifdef KDEBUG_GC
-      printf("GC END, total_bytes: %d\n", K->totalbytes);
-      #endif
-  }
-  #endif
+    /* TEMP: for now only Stop the world GC */
+    /* TEMP: prevent recursive call of klispC_fullgc() */
+#ifdef KUSE_GC
+    if (nsize > 0 && K->totalbytes - osize + nsize >= K->GCthreshold) {
+#ifdef KDEBUG_GC
+        printf("GC START, total_bytes: %d\n", K->totalbytes);
+#endif
+        klispC_fullgc(K);
+#ifdef KDEBUG_GC
+        printf("GC END, total_bytes: %d\n", K->totalbytes);
+#endif
+    }
+#endif
 
-  block = (*K->frealloc)(K->ud, block, osize, nsize);
+    block = (*K->frealloc)(K->ud, block, osize, nsize);
 
-  if (block == NULL && nsize > 0) {
-      /* TEMP: try GC if there is no more mem */
-      /* TODO: make this a catchable error */
-      fprintf(stderr, MEMERRMSG);
-      abort();
-  }
-  klisp_assert((nsize == 0) == (block == NULL));
-  K->totalbytes = (K->totalbytes - osize) + nsize;
-  return block;
+    if (block == NULL && nsize > 0) {
+        /* TEMP: try GC if there is no more mem */
+        /* TODO: make this a catchable error */
+        fprintf(stderr, MEMERRMSG);
+        abort();
+    }
+    klisp_assert((nsize == 0) == (block == NULL));
+    K->totalbytes = (K->totalbytes - osize) + nsize;
+    return block;
 }

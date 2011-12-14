@@ -72,11 +72,11 @@
   ($check-predicate (eof-object? (read-u8 p))))
 
 ($let*
-  ((v (make-bytevector 3 0))
-   (p ($sequence
-        (bytevector-u8-set! v 0 2)
-        (bytevector-u8-set! v 1 129)
-        (open-input-bytevector v))))
+    ((v (make-bytevector 3 0))
+     (p ($sequence
+          (bytevector-u8-set! v 0 2)
+          (bytevector-u8-set! v 1 129)
+          (open-input-bytevector v))))
   ($check equal? (read-u8 p) 2)
   ($check equal? (peek-u8 p) 129)
   ($check equal? (read-u8 p) 129)

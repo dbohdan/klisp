@@ -52,51 +52,51 @@ void kw_printf(klisp_State *K, const char *format, ...)
     TValue port = K->curr_port;
 
     if (ttisfport(port)) {
-	FILE *file = kfport_file(port);
-	va_start(argp, format);
-	int ret = vfprintf(file, format, argp);
-	va_end(argp);
+        FILE *file = kfport_file(port);
+        va_start(argp, format);
+        int ret = vfprintf(file, format, argp);
+        va_end(argp);
 
-	if (ret < 0) {
-	    clearerr(file); /* clear error for next time */
-	    kwrite_error(K, "error writing");
-	    return;
-	}
+        if (ret < 0) {
+            clearerr(file); /* clear error for next time */
+            kwrite_error(K, "error writing");
+            return;
+        }
     } else if (ttismport(port)) {
-	/* bytevector ports shouldn't write chars */
-	klisp_assert(kport_is_textual(port));
-	/* string port */
-	uint32_t size;
-	int written;
-	uint32_t off = kmport_off(port);
+        /* bytevector ports shouldn't write chars */
+        klisp_assert(kport_is_textual(port));
+        /* string port */
+        uint32_t size;
+        int written;
+        uint32_t off = kmport_off(port);
 
-	size = kstring_size(kmport_buf(port)) -
-	    kmport_off(port) + 1;
+        size = kstring_size(kmport_buf(port)) -
+            kmport_off(port) + 1;
 
-	/* size is always at least 1 (for the '\0') */
-	va_start(argp, format);
-	written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
-			    size, format, argp);
-	va_end(argp);
+        /* size is always at least 1 (for the '\0') */
+        va_start(argp, format);
+        written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
+                            size, format, argp);
+        va_end(argp);
 
-	if (written >= size) { /* space wasn't enough */
-	    kmport_resize_buffer(K, port, off + written);
-	    /* size may be greater than off + written, so get again */
-	    size = kstring_size(kmport_buf(port)) - off + 1;
-	    va_start(argp, format);
-	    written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
-				size, format, argp);
-	    va_end(argp);
-	    if (written < 0 || written >= size) {
-		/* shouldn't happen */
-		kwrite_error(K, "error writing");
-		return;
-	    }
-	}
-	kmport_off(port) = off + written;
+        if (written >= size) { /* space wasn't enough */
+            kmport_resize_buffer(K, port, off + written);
+            /* size may be greater than off + written, so get again */
+            size = kstring_size(kmport_buf(port)) - off + 1;
+            va_start(argp, format);
+            written = vsnprintf(kstring_buf(kmport_buf(port)) + off, 
+                                size, format, argp);
+            va_end(argp);
+            if (written < 0 || written >= size) {
+                /* shouldn't happen */
+                kwrite_error(K, "error writing");
+                return;
+            }
+        }
+        kmport_off(port) = off + written;
     } else {
-	kwrite_error(K, "unknown port type");
-	return;
+        kwrite_error(K, "unknown port type");
+        return;
     }
 }
 
@@ -174,67 +174,67 @@ void kw_print_string(klisp_State *K, TValue str)
     int i = 0;
 
     if (!K->write_displayp)
-	kw_printf(K, "\"");
+        kw_printf(K, "\"");
 
     while (i < size) {
-	/* find the longest printf-able substring to avoid calling printf
-	 for every char */
-	for (ptr = buf; 
-	     i < size && *ptr != '\0' &&
-		 (*ptr >= 32 && *ptr < 127) &&
-		 (K->write_displayp || (*ptr != '\\' && *ptr != '"')); 
-	     i++, ptr++)
-	    ;
+        /* find the longest printf-able substring to avoid calling printf
+           for every char */
+        for (ptr = buf; 
+             i < size && *ptr != '\0' &&
+                 (*ptr >= 32 && *ptr < 127) &&
+                 (K->write_displayp || (*ptr != '\\' && *ptr != '"')); 
+             i++, ptr++)
+            ;
 
-	/* NOTE: this work even if ptr == buf (which can only happen the 
-	 first or last time) */
-	char ch = *ptr;
-	*ptr = '\0';
-	kw_printf(K, "%s", buf);
-	*ptr = ch;
+        /* NOTE: this work even if ptr == buf (which can only happen the 
+           first or last time) */
+        char ch = *ptr;
+        *ptr = '\0';
+        kw_printf(K, "%s", buf);
+        *ptr = ch;
 
-	for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
-			   (!K->write_displayp && 
-			    (*ptr == '\\' || *ptr == '"')));
-    	      ++i, ptr++) {
-	    /* This are all ASCII printable characters (including space,
-	       and exceptuating '\' and '"' if !displayp) */
-	    char *fmt;
-	    /* must be uint32_t to support all unicode chars
-	     in the future */
-	    uint32_t arg;
-	    ch = *ptr;
-	    if (K->write_displayp) {
-		fmt = "%c";
-		/* in display only show tabs and newlines, 
-		 all other non printables are shown as spaces */
-		arg = (uint32_t) ((ch == '\r' || ch == '\n' || ch == '\t')? 
-				  ch : ' ');
-	    } else {
-		switch(*ptr) {
-		    /* regular \ escapes */
-		case '\"': fmt = "\\%c"; arg = (uint32_t) '"'; break;
-		case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
-		case '\0': fmt = "\\%c"; arg = (uint32_t) '0'; break;
-		case '\a': fmt = "\\%c"; arg = (uint32_t) 'a'; break;
-		case '\b': fmt = "\\%c"; arg = (uint32_t) 'b'; break;
-		case '\t': fmt = "\\%c"; arg = (uint32_t) 't'; break;
-		case '\n': fmt = "\\%c"; arg = (uint32_t) 'n'; break;
-		case '\r': fmt = "\\%c"; arg = (uint32_t) 'r'; break;
-		case '\v': fmt = "\\%c"; arg = (uint32_t) 'v'; break;
-		case '\f': fmt = "\\%c"; arg = (uint32_t) 'f'; break;
-		    /* for the rest of the non printable chars, 
-		       use hex escape */
-		default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
-		}
-	    }
-	    kw_printf(K, fmt, arg);
-	}
-	buf = ptr;
+        for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
+                           (!K->write_displayp && 
+                            (*ptr == '\\' || *ptr == '"')));
+            ++i, ptr++) {
+            /* This are all ASCII printable characters (including space,
+               and exceptuating '\' and '"' if !displayp) */
+            char *fmt;
+            /* must be uint32_t to support all unicode chars
+               in the future */
+            uint32_t arg;
+            ch = *ptr;
+            if (K->write_displayp) {
+                fmt = "%c";
+                /* in display only show tabs and newlines, 
+                   all other non printables are shown as spaces */
+                arg = (uint32_t) ((ch == '\r' || ch == '\n' || ch == '\t')? 
+                                  ch : ' ');
+            } else {
+                switch(*ptr) {
+                    /* regular \ escapes */
+                case '\"': fmt = "\\%c"; arg = (uint32_t) '"'; break;
+                case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
+                case '\0': fmt = "\\%c"; arg = (uint32_t) '0'; break;
+                case '\a': fmt = "\\%c"; arg = (uint32_t) 'a'; break;
+                case '\b': fmt = "\\%c"; arg = (uint32_t) 'b'; break;
+                case '\t': fmt = "\\%c"; arg = (uint32_t) 't'; break;
+                case '\n': fmt = "\\%c"; arg = (uint32_t) 'n'; break;
+                case '\r': fmt = "\\%c"; arg = (uint32_t) 'r'; break;
+                case '\v': fmt = "\\%c"; arg = (uint32_t) 'v'; break;
+                case '\f': fmt = "\\%c"; arg = (uint32_t) 'f'; break;
+                    /* for the rest of the non printable chars, 
+                       use hex escape */
+                default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
+                }
+            }
+            kw_printf(K, fmt, arg);
+        }
+        buf = ptr;
     }
 			
     if (!K->write_displayp)
-	kw_printf(K, "\"");
+        kw_printf(K, "\"");
 }
 
 /*
@@ -248,28 +248,28 @@ void kw_print_symbol_buf(klisp_State *K, char *buf, uint32_t size)
     /* first determine if it's a simple identifier */
     bool identifierp;
     if (size == 0)
-	identifierp = false;
+        identifierp = false;
     else if (size == 1 && *buf == '.')
-	identifierp = false;
+        identifierp = false;
     else if (size == 1 && (*buf == '+' || *buf == '-'))
-	identifierp = true;
+        identifierp = true;
     else if (*buf == tolower(*buf) && ktok_is_initial(*buf)) {
-	char *ptr = buf;
-	uint32_t i = 0;
-	identifierp = true;
-	while (identifierp && i < size) {
-	    char ch = *ptr++;
-	    ++i;
-	    if (tolower(ch) != ch || !ktok_is_subsequent(ch))
-		identifierp = false;
-	}
+        char *ptr = buf;
+        uint32_t i = 0;
+        identifierp = true;
+        while (identifierp && i < size) {
+            char ch = *ptr++;
+            ++i;
+            if (tolower(ch) != ch || !ktok_is_subsequent(ch))
+                identifierp = false;
+        }
     } else
-	identifierp = false;
+        identifierp = false;
 
     if (identifierp) {
-	/* no problem, just a simple string */
-	kw_printf(K, "%s", buf);
-	return;
+        /* no problem, just a simple string */
+        kw_printf(K, "%s", buf);
+        return;
     } 
 
     /*
@@ -281,43 +281,43 @@ void kw_print_symbol_buf(klisp_State *K, char *buf, uint32_t size)
     kw_printf(K, "|");
 
     while (i < size) {
-	/* find the longest printf-able substring to avoid calling printf
-	 for every char */
-	for (ptr = buf; 
-	     i < size && *ptr != '\0' &&
-		 (*ptr >= 32 && *ptr < 127) &&
-		 (*ptr != '\\' && *ptr != '|'); 
-	     i++, ptr++)
-	    ;
+        /* find the longest printf-able substring to avoid calling printf
+           for every char */
+        for (ptr = buf; 
+             i < size && *ptr != '\0' &&
+                 (*ptr >= 32 && *ptr < 127) &&
+                 (*ptr != '\\' && *ptr != '|'); 
+             i++, ptr++)
+            ;
 
-	/* NOTE: this work even if ptr == buf (which can only happen the 
-	 first or last time) */
-	char ch = *ptr;
-	*ptr = '\0';
-	kw_printf(K, "%s", buf);
-	*ptr = ch;
+        /* NOTE: this work even if ptr == buf (which can only happen the 
+           first or last time) */
+        char ch = *ptr;
+        *ptr = '\0';
+        kw_printf(K, "%s", buf);
+        *ptr = ch;
 
-	for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
-			   (*ptr == '\\' || *ptr == '|'));
-	      ++i, ptr++) {
-	    /* This are all ASCII printable characters (including space,
-	       and exceptuating '\' and '|') */
-	    char *fmt;
-	    /* must be uint32_t to support all unicode chars
-	     in the future */
-	    uint32_t arg;
-	    ch = *ptr;
-	    switch(*ptr) {
-		/* regular \ escapes */
-	    case '|': fmt = "\\%c"; arg = (uint32_t) '|'; break;
-	    case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
-		/* for the rest of the non printable chars, 
-		   use hex escape */
-	    default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
-	    }
-	    kw_printf(K, fmt, arg);
-	}
-	buf = ptr;
+        for(; i < size && (*ptr == '\0' || (*ptr < 32 || *ptr >= 127) ||
+                           (*ptr == '\\' || *ptr == '|'));
+            ++i, ptr++) {
+            /* This are all ASCII printable characters (including space,
+               and exceptuating '\' and '|') */
+            char *fmt;
+            /* must be uint32_t to support all unicode chars
+               in the future */
+            uint32_t arg;
+            ch = *ptr;
+            switch(*ptr) {
+                /* regular \ escapes */
+            case '|': fmt = "\\%c"; arg = (uint32_t) '|'; break;
+            case '\\': fmt = "\\%c"; arg = (uint32_t) '\\'; break;
+                /* for the rest of the non printable chars, 
+                   use hex escape */
+            default: fmt = "\\x%x;"; arg = (uint32_t) ch; break;
+            }
+            kw_printf(K, fmt, arg);
+        }
+        buf = ptr;
     }
 			
     kw_printf(K, "|");
@@ -344,18 +344,18 @@ void kw_clear_marks(klisp_State *K, TValue root)
     push_data(K, root);
 
     while(!data_is_empty(K)) {
-	TValue obj = get_data(K);
-	pop_data(K);
+        TValue obj = get_data(K);
+        pop_data(K);
 	
-	if (ttispair(obj)) {
-	    if (kis_marked(obj)) {
-		kunmark(obj);
-		push_data(K, kcdr(obj));
-		push_data(K, kcar(obj));
-	    }
-	} else if (ttisstring(obj) && (kis_marked(obj))) {
-	    kunmark(obj);
-	}
+        if (ttispair(obj)) {
+            if (kis_marked(obj)) {
+                kunmark(obj);
+                push_data(K, kcdr(obj));
+                push_data(K, kcar(obj));
+            }
+        } else if (ttisstring(obj) && (kis_marked(obj))) {
+            kunmark(obj);
+        }
     }
     assert(ks_sisempty(K));
 }
@@ -377,27 +377,27 @@ void kw_set_initial_marks(klisp_State *K, TValue root)
     push_data(K, root);
     
     while(!data_is_empty(K)) {
-	TValue obj = get_data(K);
-	pop_data(K);
+        TValue obj = get_data(K);
+        pop_data(K);
 
-	if (ttispair(obj)) {
-	    if (kis_unmarked(obj)) {
-		kmark(obj); /* this mark just means visited */
-		push_data(K, kcdr(obj));
-		push_data(K, kcar(obj));
-	    } else {
-		/* this mark means it will need a ref number */
-		kset_mark(obj, i2tv(-1));
-	    }
-	} else if (ttisstring(obj)) {
-	    if (kis_unmarked(obj)) {
-		kmark(obj); /* this mark just means visited */
-	    } else {
-		/* this mark means it will need a ref number */
-		kset_mark(obj, i2tv(-1));
-	    }
-	}
-	/* all other types of object don't matter */
+        if (ttispair(obj)) {
+            if (kis_unmarked(obj)) {
+                kmark(obj); /* this mark just means visited */
+                push_data(K, kcdr(obj));
+                push_data(K, kcar(obj));
+            } else {
+                /* this mark means it will need a ref number */
+                kset_mark(obj, i2tv(-1));
+            }
+        } else if (ttisstring(obj)) {
+            if (kis_unmarked(obj)) {
+                kmark(obj); /* this mark just means visited */
+            } else {
+                /* this mark means it will need a ref number */
+                kset_mark(obj, i2tv(-1));
+            }
+        }
+        /* all other types of object don't matter */
     }
     assert(ks_sisempty(K));
 }
@@ -442,14 +442,14 @@ void kw_print_cont_type(klisp_State *K, TValue obj)
 
     Continuation *cont = tv2cont(obj);
     const TValue *node = klispH_get(tv2table(K->cont_name_table),
-				    p2tv(cont->fn));
+                                    p2tv(cont->fn));
 
     char *type;
     if (node == &kfree) {
-	type = "?";
+        type = "?";
     } else {
-	klisp_assert(ttisstring(*node));
-	type = kstring_buf(*node);
+        klisp_assert(ttisstring(*node));
+        type = kstring_buf(*node);
     }
 
     kw_printf(K, " (%s)", type);
@@ -463,256 +463,256 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 {
     switch(ttype(obj)) {
     case K_TSTRING:
-	/* shouldn't happen */
-	klisp_assert(0);
-	/* avoid warning */
-	return;
+        /* shouldn't happen */
+        klisp_assert(0);
+        /* avoid warning */
+        return;
     case K_TFIXINT:
-	kw_printf(K, "%" PRId32, ivalue(obj));
-	break;
+        kw_printf(K, "%" PRId32, ivalue(obj));
+        break;
     case K_TBIGINT:
-	kw_print_bigint(K, obj);
-	break;
+        kw_print_bigint(K, obj);
+        break;
     case K_TBIGRAT:
-	kw_print_bigrat(K, obj);
-	break;
+        kw_print_bigrat(K, obj);
+        break;
     case K_TEINF:
-	kw_printf(K, "#e%cinfinity", tv_equal(obj, KEPINF)? '+' : '-');
-	break;
+        kw_printf(K, "#e%cinfinity", tv_equal(obj, KEPINF)? '+' : '-');
+        break;
     case K_TIINF:
-	kw_printf(K, "#i%cinfinity", tv_equal(obj, KIPINF)? '+' : '-');
-	break;
+        kw_printf(K, "#i%cinfinity", tv_equal(obj, KIPINF)? '+' : '-');
+        break;
     case K_TDOUBLE: {
-	kw_print_double(K, obj);
-	break;
+        kw_print_double(K, obj);
+        break;
     }
     case K_TRWNPV:
-	/* ASK John/TEMP: until John tells me what should this be... */
-	kw_printf(K, "#real");
-	break;
+        /* ASK John/TEMP: until John tells me what should this be... */
+        kw_printf(K, "#real");
+        break;
     case K_TUNDEFINED:
-	kw_printf(K, "#undefined");
-	break;
+        kw_printf(K, "#undefined");
+        break;
     case K_TNIL:
-	kw_printf(K, "()");
-	break;
+        kw_printf(K, "()");
+        break;
     case K_TCHAR: {
-	if (K->write_displayp) {
-	    kw_printf(K, "%c", chvalue(obj));
-	} else {
-	    char ch_buf[16]; /* should be able to contain hex escapes */
-	    char ch = chvalue(obj);
-	    char *ch_ptr;
+        if (K->write_displayp) {
+            kw_printf(K, "%c", chvalue(obj));
+        } else {
+            char ch_buf[16]; /* should be able to contain hex escapes */
+            char ch = chvalue(obj);
+            char *ch_ptr;
 
-	    switch (ch) {
-	    case '\0':
-		ch_ptr = "null";
-		break;
-	    case '\a':
-		ch_ptr = "alarm";
-		break;
-	    case '\b':
-		ch_ptr = "backspace";
-		break;
-	    case '\t':
-		ch_ptr = "tab";
-		break;
-	    case '\n':
-		ch_ptr = "newline";
-		break;
-	    case '\r':
-		ch_ptr = "return";
-		break;
-	    case '\x1b':
-		ch_ptr = "escape";
-		break;
-	    case ' ':
-		ch_ptr = "space";
-		break;
-	    case '\x7f':
-		ch_ptr = "delete";
-		break;
-	    case '\v':
-		ch_ptr = "vtab";
-		break;
-	    default: {
-		int i = 0;
-		if (ch >= 32 && ch < 127) {
-		    /* printable ASCII range */
-		    /* (del(127) and space(32) were already considered, 
-		       but it's clearer this way) */
-		    ch_buf[i++] = ch;
-		} else {
-		    /* use an hex escape for non printing, unnamed chars */
-		    ch_buf[i++] = 'x';
-		    int res = snprintf(ch_buf+i, sizeof(ch_buf) - i, 
-				       "%x", ch);
-		    if (res < 0) {
-			/* shouldn't happen, but for the sake of
-			   completeness... */
-			TValue port = K->curr_port;
-			if (ttisfport(port)) {
-			    FILE *file = kfport_file(port);
-			    clearerr(file); /* clear error for next time */
-			}
-			kwrite_error(K, "error writing");
-			return;
-		    } 
-		    i += res; /* res doesn't include the '\0' */
-		}
-		ch_buf[i++] = '\0';
-		ch_ptr = ch_buf;
-	    }
-	    }
-	    kw_printf(K, "#\\%s", ch_ptr);
-	}
-	break;
+            switch (ch) {
+            case '\0':
+                ch_ptr = "null";
+                break;
+            case '\a':
+                ch_ptr = "alarm";
+                break;
+            case '\b':
+                ch_ptr = "backspace";
+                break;
+            case '\t':
+                ch_ptr = "tab";
+                break;
+            case '\n':
+                ch_ptr = "newline";
+                break;
+            case '\r':
+                ch_ptr = "return";
+                break;
+            case '\x1b':
+                ch_ptr = "escape";
+                break;
+            case ' ':
+                ch_ptr = "space";
+                break;
+            case '\x7f':
+                ch_ptr = "delete";
+                break;
+            case '\v':
+                ch_ptr = "vtab";
+                break;
+            default: {
+                int i = 0;
+                if (ch >= 32 && ch < 127) {
+                    /* printable ASCII range */
+                    /* (del(127) and space(32) were already considered, 
+                       but it's clearer this way) */
+                    ch_buf[i++] = ch;
+                } else {
+                    /* use an hex escape for non printing, unnamed chars */
+                    ch_buf[i++] = 'x';
+                    int res = snprintf(ch_buf+i, sizeof(ch_buf) - i, 
+                                       "%x", ch);
+                    if (res < 0) {
+                        /* shouldn't happen, but for the sake of
+                           completeness... */
+                        TValue port = K->curr_port;
+                        if (ttisfport(port)) {
+                            FILE *file = kfport_file(port);
+                            clearerr(file); /* clear error for next time */
+                        }
+                        kwrite_error(K, "error writing");
+                        return;
+                    } 
+                    i += res; /* res doesn't include the '\0' */
+                }
+                ch_buf[i++] = '\0';
+                ch_ptr = ch_buf;
+            }
+            }
+            kw_printf(K, "#\\%s", ch_ptr);
+        }
+        break;
     }
     case K_TBOOLEAN:
-	kw_printf(K, "#%c", bvalue(obj)? 't' : 'f');
-	break;
+        kw_printf(K, "#%c", bvalue(obj)? 't' : 'f');
+        break;
     case K_TSYMBOL:
-	kw_print_symbol(K, obj);
-	break;
+        kw_print_symbol(K, obj);
+        break;
     case K_TKEYWORD:
-	kw_print_keyword(K, obj);
-	break;
+        kw_print_keyword(K, obj);
+        break;
     case K_TINERT:
-	kw_printf(K, "#inert");
-	break;
+        kw_printf(K, "#inert");
+        break;
     case K_TIGNORE:
-	kw_printf(K, "#ignore");
-	break;
+        kw_printf(K, "#ignore");
+        break;
 /* unreadable objects */
     case K_TEOF:
-	kw_printf(K, "#[eof]");
-	break;
+        kw_printf(K, "#[eof]");
+        break;
     case K_TENVIRONMENT:
-	kw_printf(K, "#[environment");
-	#if KTRACK_NAMES
-	if (khas_name(obj)) {
-	    kw_print_name(K, obj);
-	}
-	#endif
-	kw_printf(K, "]");
-	break;
-    case K_TCONTINUATION:
-	kw_printf(K, "#[continuation");
-	#if KTRACK_NAMES
-	if (khas_name(obj)) {
-	    kw_print_name(K, obj);
-	}
-	#endif
-
-	kw_print_cont_type(K, obj);
-
-	#if KTRACK_SI
-	if (khas_si(obj))
-	    kw_print_si(K, obj);
-	#endif
-	kw_printf(K, "]");
-	break;
-    case K_TOPERATIVE:
-	kw_printf(K, "#[operative");
-	#if KTRACK_NAMES
-	if (khas_name(obj)) {
-	    kw_print_name(K, obj);
-	}
-	#endif
-	#if KTRACK_SI
-	if (khas_si(obj))
-	    kw_print_si(K, obj);
-	#endif
-	kw_printf(K, "]");
-	break;
-    case K_TAPPLICATIVE:
-	kw_printf(K, "#[applicative");
-	#if KTRACK_NAMES
-	if (khas_name(obj)) {
-	    kw_print_name(K, obj);
-	}
-	#endif
-	#if KTRACK_SI
-	if (khas_si(obj))
-	    kw_print_si(K, obj);
-	#endif
-	kw_printf(K, "]");
-	break;
-    case K_TENCAPSULATION:
-	/* TODO try to get the name */
-	kw_printf(K, "#[encapsulation]");
-	break;
-    case K_TPROMISE:
-	/* TODO try to get the name */
-	kw_printf(K, "#[promise]");
-	break;
-    case K_TFPORT:
-	/* TODO try to get the filename */
-	kw_printf(K, "#[%s %s file port", 
-		  kport_is_binary(obj)? "binary" : "textual",
-		  kport_is_input(obj)? "input" : "output");
-	#if KTRACK_NAMES
-	if (khas_name(obj)) {
-	    kw_print_name(K, obj);
-	}
-	#endif
-	kw_printf(K, "]");
-	break;
-    case K_TMPORT:
-	kw_printf(K, "#[%s %s port", 
-		  kport_is_binary(obj)? "bytevector" : "string",
-		  kport_is_input(obj)? "input" : "output");
-	#if KTRACK_NAMES
-	if (khas_name(obj)) {
-	    kw_print_name(K, obj);
-	}
-	#endif
-	kw_printf(K, "]");
-	break;
-    case K_TERROR: {
-	kw_printf(K, "#[error: ");
-
-	/* TEMP for now show only msg */
-	bool saved_displayp = K->write_displayp; 
-	K->write_displayp = false; /* use "'s and escapes */
-	kw_print_string(K, tv2error(obj)->msg);
-	K->write_displayp = saved_displayp;
-
-	kw_printf(K, "]");
-	break;
-    }
-    case K_TBYTEVECTOR:
-	kw_printf(K, "#[bytevector");
-	#if KTRACK_NAMES
-	if (khas_name(obj)) {
-	    kw_print_name(K, obj);
-	}
-	#endif
-	kw_printf(K, "]");
-	break;
-    case K_TVECTOR:
-        kw_printf(K, "#[vector");
-        #if KTRACK_NAMES
+        kw_printf(K, "#[environment");
+#if KTRACK_NAMES
         if (khas_name(obj)) {
             kw_print_name(K, obj);
         }
-        #endif
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TCONTINUATION:
+        kw_printf(K, "#[continuation");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+
+        kw_print_cont_type(K, obj);
+
+#if KTRACK_SI
+        if (khas_si(obj))
+            kw_print_si(K, obj);
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TOPERATIVE:
+        kw_printf(K, "#[operative");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+#if KTRACK_SI
+        if (khas_si(obj))
+            kw_print_si(K, obj);
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TAPPLICATIVE:
+        kw_printf(K, "#[applicative");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+#if KTRACK_SI
+        if (khas_si(obj))
+            kw_print_si(K, obj);
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TENCAPSULATION:
+        /* TODO try to get the name */
+        kw_printf(K, "#[encapsulation]");
+        break;
+    case K_TPROMISE:
+        /* TODO try to get the name */
+        kw_printf(K, "#[promise]");
+        break;
+    case K_TFPORT:
+        /* TODO try to get the filename */
+        kw_printf(K, "#[%s %s file port", 
+                  kport_is_binary(obj)? "binary" : "textual",
+                  kport_is_input(obj)? "input" : "output");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TMPORT:
+        kw_printf(K, "#[%s %s port", 
+                  kport_is_binary(obj)? "bytevector" : "string",
+                  kport_is_input(obj)? "input" : "output");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TERROR: {
+        kw_printf(K, "#[error: ");
+
+        /* TEMP for now show only msg */
+        bool saved_displayp = K->write_displayp; 
+        K->write_displayp = false; /* use "'s and escapes */
+        kw_print_string(K, tv2error(obj)->msg);
+        K->write_displayp = saved_displayp;
+
+        kw_printf(K, "]");
+        break;
+    }
+    case K_TBYTEVECTOR:
+        kw_printf(K, "#[bytevector");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TVECTOR:
+        kw_printf(K, "#[vector");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
         kw_printf(K, "]");
         break;
     case K_TMODULE:
         kw_printf(K, "#[module");
-        #if KTRACK_NAMES
+#if KTRACK_NAMES
         if (khas_name(obj)) {
             kw_print_name(K, obj);
         }
-        #endif
+#endif
         kw_printf(K, "]");
         break;
     default:
-	/* shouldn't happen */
-	kwrite_error(K, "unknown object type");
-	/* avoid warning */
-	return;
+        /* shouldn't happen */
+        kwrite_error(K, "unknown object type");
+        /* avoid warning */
+        return;
     }
 }
 
@@ -728,78 +728,78 @@ void kwrite_fsm(klisp_State *K, TValue obj)
 
     bool middle_list = false;
     while (!data_is_empty(K)) {
-	TValue obj = get_data(K);
-	pop_data(K);
+        TValue obj = get_data(K);
+        pop_data(K);
 
-	if (middle_list) {
-	    if (ttisnil(obj)) { /* end of list */
-		kw_printf(K, ")");
-		/* middle_list = true; */
-	    } else if (ttispair(obj) && ttisboolean(kget_mark(obj))) {
-		push_data(K, kcdr(obj));
-		push_data(K, kcar(obj));
-		kw_printf(K, " ");
-		middle_list = false;
-	    } else { /* improper list is the same as shared ref */
-		kw_printf(K, " . ");
-		push_data(K, KNIL);
-		push_data(K, obj);
-		middle_list = false;
-	    }
-	} else { /* if (middle_list) */
-	    switch(ttype(obj)) {
-	    case K_TPAIR: {
-		TValue mark = kget_mark(obj);
-		if (ttisboolean(mark)) { /* simple pair (only once) */
-		    kw_printf(K, "(");
-		    push_data(K, kcdr(obj));
-		    push_data(K, kcar(obj));
-		    middle_list = false;
-		} else if (ivalue(mark) < 0) { /* pair with no assigned # */
-		    /* TEMP: for now only fixints in shared refs */
-		    assert(kw_shared_count >= 0);
+        if (middle_list) {
+            if (ttisnil(obj)) { /* end of list */
+                kw_printf(K, ")");
+                /* middle_list = true; */
+            } else if (ttispair(obj) && ttisboolean(kget_mark(obj))) {
+                push_data(K, kcdr(obj));
+                push_data(K, kcar(obj));
+                kw_printf(K, " ");
+                middle_list = false;
+            } else { /* improper list is the same as shared ref */
+                kw_printf(K, " . ");
+                push_data(K, KNIL);
+                push_data(K, obj);
+                middle_list = false;
+            }
+        } else { /* if (middle_list) */
+            switch(ttype(obj)) {
+            case K_TPAIR: {
+                TValue mark = kget_mark(obj);
+                if (ttisboolean(mark)) { /* simple pair (only once) */
+                    kw_printf(K, "(");
+                    push_data(K, kcdr(obj));
+                    push_data(K, kcar(obj));
+                    middle_list = false;
+                } else if (ivalue(mark) < 0) { /* pair with no assigned # */
+                    /* TEMP: for now only fixints in shared refs */
+                    assert(kw_shared_count >= 0);
 
-		    kset_mark(obj, i2tv(kw_shared_count));
-		    kw_printf(K, "#%" PRId32 "=(", kw_shared_count);
-		    kw_shared_count++;
-		    push_data(K, kcdr(obj));
-		    push_data(K, kcar(obj));
-		    middle_list = false;
-		} else { /* pair with an assigned number */
-		    kw_printf(K, "#%" PRId32 "#", ivalue(mark));
-		    middle_list = true;
-		}
-		break;
-	    }
-	    case K_TSTRING: {
-		if (kstring_emptyp(obj)) {
+                    kset_mark(obj, i2tv(kw_shared_count));
+                    kw_printf(K, "#%" PRId32 "=(", kw_shared_count);
+                    kw_shared_count++;
+                    push_data(K, kcdr(obj));
+                    push_data(K, kcar(obj));
+                    middle_list = false;
+                } else { /* pair with an assigned number */
+                    kw_printf(K, "#%" PRId32 "#", ivalue(mark));
+                    middle_list = true;
+                }
+                break;
+            }
+            case K_TSTRING: {
+                if (kstring_emptyp(obj)) {
                     if (!K->write_displayp)
-		        kw_printf(K, "\"\"");
-		} else {
-		    TValue mark = kget_mark(obj);
-		    if (K->write_displayp || ttisboolean(mark)) { 
+                        kw_printf(K, "\"\"");
+                } else {
+                    TValue mark = kget_mark(obj);
+                    if (K->write_displayp || ttisboolean(mark)) { 
                         /* simple string (only once) or in display
-			   (show all strings) */
-			kw_print_string(K, obj);
-		    } else if (ivalue(mark) < 0) { /* string with no assigned # */
-			/* TEMP: for now only fixints in shared refs */
-			assert(kw_shared_count >= 0);
-			kset_mark(obj, i2tv(kw_shared_count));
-			kw_printf(K, "#%" PRId32 "=", kw_shared_count);
-			kw_shared_count++;
-			kw_print_string(K, obj);
-		    } else { /* string with an assigned number */
-			kw_printf(K, "#%" PRId32 "#", ivalue(mark));
-		    }
-		}
-		middle_list = true;
-		break;
-	    }
-	    default:
-		kwrite_scalar(K, obj);
-		middle_list = true;
-	    }
-	}
+                           (show all strings) */
+                        kw_print_string(K, obj);
+                    } else if (ivalue(mark) < 0) { /* string with no assigned # */
+                        /* TEMP: for now only fixints in shared refs */
+                        assert(kw_shared_count >= 0);
+                        kset_mark(obj, i2tv(kw_shared_count));
+                        kw_printf(K, "#%" PRId32 "=", kw_shared_count);
+                        kw_shared_count++;
+                        kw_print_string(K, obj);
+                    } else { /* string with an assigned number */
+                        kw_printf(K, "#%" PRId32 "#", ivalue(mark));
+                    }
+                }
+                middle_list = true;
+                break;
+            }
+            default:
+                kwrite_scalar(K, obj);
+                middle_list = true;
+            }
+        }
     }
 
     assert(ks_sisempty(K));
@@ -838,7 +838,7 @@ void kwrite_simple(klisp_State *K, TValue obj)
 ** Writer Interface
 */
 void kwrite_display_to_port(klisp_State *K, TValue port, TValue obj, 
-			    bool displayp)
+                            bool displayp)
 {
     klisp_assert(ttisport(port));
     klisp_assert(kport_is_output(port));
@@ -869,7 +869,7 @@ void kwrite_newline_to_port(klisp_State *K, TValue port)
     klisp_assert(kport_is_open(port));
     klisp_assert(kport_is_textual(port));
     K->curr_port = port; /* this isn't needed but all other 
-			    i/o functions set it */
+                            i/o functions set it */
     kwrite_char_to_port(K, port, ch2tv('\n'));
 }
 
@@ -880,35 +880,35 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
     klisp_assert(kport_is_open(port));
     klisp_assert(kport_is_textual(port));
     K->curr_port = port; /* this isn't needed but all other 
-			    i/o functions set it */
+                            i/o functions set it */
 
     if (ttisfport(port)) {
-	FILE *file = kfport_file(port);
-	int res = fputc(chvalue(ch), file);
+        FILE *file = kfport_file(port);
+        int res = fputc(chvalue(ch), file);
 
-	if (res == EOF) {
-	    clearerr(file); /* clear error for next time */
-	    kwrite_error(K, "error writing char");
-	}
+        if (res == EOF) {
+            clearerr(file); /* clear error for next time */
+            kwrite_error(K, "error writing char");
+        }
     } else if (ttismport(port)) {
-	if (kport_is_binary(port)) {
-	    /* bytebuffer port */
-	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
-		kmport_resize_buffer(K, port, kmport_off(port) + 1);
-	    }
-	    kbytevector_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
-	    ++kmport_off(port);
-	} else {
-	    /* string port */
-	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
-		kmport_resize_buffer(K, port, kmport_off(port) + 1);
-	    }
-	    kstring_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
-	    ++kmport_off(port);
-	}
+        if (kport_is_binary(port)) {
+            /* bytebuffer port */
+            if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+                kmport_resize_buffer(K, port, kmport_off(port) + 1);
+            }
+            kbytevector_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
+            ++kmport_off(port);
+        } else {
+            /* string port */
+            if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+                kmport_resize_buffer(K, port, kmport_off(port) + 1);
+            }
+            kstring_buf(kmport_buf(port))[kmport_off(port)] = chvalue(ch);
+            ++kmport_off(port);
+        }
     } else {
-	kwrite_error(K, "unknown port type");
-	return;
+        kwrite_error(K, "unknown port type");
+        return;
     }
 }
 
@@ -919,36 +919,36 @@ void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
     klisp_assert(kport_is_open(port));
     klisp_assert(kport_is_binary(port));
     K->curr_port = port; /* this isn't needed but all other 
-			    i/o functions set it */
+                            i/o functions set it */
     if (ttisfport(port)) {
-	FILE *file = kfport_file(port);
-	int res = fputc(ivalue(u8), file);
+        FILE *file = kfport_file(port);
+        int res = fputc(ivalue(u8), file);
 
-	if (res == EOF) {
-	    clearerr(file); /* clear error for next time */
-	    kwrite_error(K, "error writing u8");
-	}
+        if (res == EOF) {
+            clearerr(file); /* clear error for next time */
+            kwrite_error(K, "error writing u8");
+        }
     } else if (ttismport(port)) {
-	if (kport_is_binary(port)) {
-	    /* bytebuffer port */
-	    if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
-		kmport_resize_buffer(K, port, kmport_off(port) + 1);
-	    }
-	    kbytevector_buf(kmport_buf(port))[kmport_off(port)] = 
-		(uint8_t) ivalue(u8);
-	    ++kmport_off(port);
-	} else {
-	    /* string port */
-	    if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
-		kmport_resize_buffer(K, port, kmport_off(port) + 1);
-	    }
-	    kstring_buf(kmport_buf(port))[kmport_off(port)] = 
-		(char) ivalue(u8);
-	    ++kmport_off(port);
-	}
+        if (kport_is_binary(port)) {
+            /* bytebuffer port */
+            if (kmport_off(port) >= kbytevector_size(kmport_buf(port))) {
+                kmport_resize_buffer(K, port, kmport_off(port) + 1);
+            }
+            kbytevector_buf(kmport_buf(port))[kmport_off(port)] = 
+                (uint8_t) ivalue(u8);
+            ++kmport_off(port);
+        } else {
+            /* string port */
+            if (kmport_off(port) >= kstring_size(kmport_buf(port))) {
+                kmport_resize_buffer(K, port, kmport_off(port) + 1);
+            }
+            kstring_buf(kmport_buf(port))[kmport_off(port)] = 
+                (char) ivalue(u8);
+            ++kmport_off(port);
+        }
     } else {
-	kwrite_error(K, "unknown port type");
-	return;
+        kwrite_error(K, "unknown port type");
+        return;
     }
 }
 
@@ -958,13 +958,13 @@ void kwrite_flush_port(klisp_State *K, TValue port)
     klisp_assert(kport_is_output(port));
     klisp_assert(kport_is_open(port));
     K->curr_port = port; /* this isn't needed but all other 
-			    i/o functions set it */
+                            i/o functions set it */
     if (ttisfport(port)) { /* only necessary for file ports */
-	FILE *file = kfport_file(port);
-	klisp_assert(file);
-	if ((fflush(file)) == EOF) {
-	    clearerr(file); /* clear error for next time */
-	    kwrite_error(K, "error writing");
-	}
+        FILE *file = kfport_file(port);
+        klisp_assert(file);
+        if ((fflush(file)) == EOF) {
+            clearerr(file); /* clear error for next time */
+            kwrite_error(K, "error writing");
+        }
     }
 }

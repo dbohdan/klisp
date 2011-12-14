@@ -22,17 +22,17 @@
 ;; TODO: endianess
 ($define! u16
   ($let
-    ((decompose ($lambda (w) (list (mod w 256) (div w 256)))))
+      ((decompose ($lambda (w) (list (mod w 256) (div w 256)))))
     ($lambda words
       (list->bytevector (apply append (map decompose words))))))
 
 ;; TODO: endianess
 ($define! u32
   ($let
-    ((decompose
-      ($lambda (w)
-        (list (mod w 256) (mod (div w 256) 256)
-              (mod (div w 65536) 256) (div w 16777216)))))
+      ((decompose
+        ($lambda (w)
+          (list (mod w 256) (mod (div w 256) 256)
+                (mod (div w 65536) 256) (div w 16777216)))))
     ($lambda words
       (list->bytevector (apply append (map decompose words))))))
 
@@ -66,15 +66,15 @@
 ($check equal? (list->bytevector (list 1 2 3 4)) (u8 1 2 3 4))
 ($check-predicate (mutable-bytevector? (list->bytevector (list 1 2 3))))
 ($check-predicate (mutable-bytevector? (list->bytevector 
-					(copy-es-immutable (list 1 2 3)))))
+                                        (copy-es-immutable (list 1 2 3)))))
 
 ;; XXX bytevector->list
 ($check-predicate (null? (bytevector->list (u8))))
 ($check equal? (bytevector->list (u8 1 2 3 4)) (list 1 2 3 4))
 ($check-predicate (mutable-pair? (bytevector->list (u8 1 2))))
 ($check-predicate (mutable-pair? (bytevector->list 
-				  (bytevector->immutable-bytevector 
-				   (u8 1 2)))))
+                                  (bytevector->immutable-bytevector 
+                                   (u8 1 2)))))
 
 ;; (R7RS 3rd draft, section 6.3.7) make-bytevector bytevector-length
 
@@ -95,8 +95,8 @@
 ;; additional property: destination must be mutable
 ;;
 ($let*
-  ((v (make-bytevector 10))
-   (w (bytevector->immutable-bytevector v)))
+    ((v (make-bytevector 10))
+     (w (bytevector->immutable-bytevector v)))
   ($check equal? (bytevector-u8-set! v 0 1) #inert)
   ($check equal? (bytevector-u8-ref v 0) 1)
   ($check equal? (bytevector-u8-set! v 0 32) #inert)
@@ -121,8 +121,8 @@
 ($check-predicate (mutable-bytevector? (bytevector-copy (u8 1 2 3))))
 
 ($check-predicate
-  (mutable-bytevector?
-    (bytevector-copy (bytevector->immutable-bytevector (u8 1 2 3)))))
+ (mutable-bytevector?
+  (bytevector-copy (bytevector->immutable-bytevector (u8 1 2 3)))))
 
 ;; XXX bytevector-copy!
 ;; additional property: returns #inert
@@ -135,9 +135,9 @@
   ($check equal? v (u8 9 9 3 4 5))
   ($check-error (bytevector-copy! (u8 1 2 3 4 5 6) v))
   ($check-error
-    (bytevector-copy!
-      (u8 1)
-      (bytevector->immutable-bytevector (u8 1)))))
+   (bytevector-copy!
+    (u8 1)
+    (bytevector->immutable-bytevector (u8 1)))))
 
 ;; (R7RS 3rd draft, section 6.3.7) bytevector-copy-partial
 
@@ -153,8 +153,8 @@
 ;; additional property: destination must be mutable
 ;;
 ($let*
-  ((v (make-bytevector 5 9))
-   (w (bytevector->immutable-bytevector v)))
+    ((v (make-bytevector 5 9))
+     (w (bytevector->immutable-bytevector v)))
   ($check equal? (bytevector-copy-partial! (u8 1 2) 0 2 v 0) #inert)
   ($check equal? v (u8 1 2 9 9 9))
   ($check equal? (bytevector-copy-partial! (u8 5 6) 1 2 v 4) #inert)
@@ -168,13 +168,13 @@
 ;; XXX bytevector-u8-fill!
 ($check-predicate (inert? (bytevector-u8-fill! (u8 1 2) 0)))
 ($check equal? ($let ((b (u8 1 2 3)))
-		 (bytevector-u8-fill! b 0)
-		 b)
-	(u8 0 0 0))
+                 (bytevector-u8-fill! b 0)
+                 b)
+        (u8 0 0 0))
 
 ;; XXX bytevector->immutable-bytevector
 
 ($check-predicate
-  (immutable-bytevector? (bytevector->immutable-bytevector (u8 1 2))))
+ (immutable-bytevector? (bytevector->immutable-bytevector (u8 1 2))))
 ($check-not-predicate
-  (mutable-bytevector? (bytevector->immutable-bytevector (u8 1 2))))
+ (mutable-bytevector? (bytevector->immutable-bytevector (u8 1 2))))

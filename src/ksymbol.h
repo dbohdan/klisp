@@ -21,7 +21,7 @@
 
 /* buffer + size, may contain nulls */
 TValue ksymbol_new_bs(klisp_State *K, const char *buf, int32_t size,
-    TValue si);
+                      TValue si);
 /* null terminated buffer */
 TValue ksymbol_new_b(klisp_State *K, const char *buf, TValue si);
 /* copies str if not immutable */

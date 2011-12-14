@@ -72,16 +72,16 @@ void extend_continuation(klisp_State *K)
     UNUSED(xparams);
 
     bind_al2tp(K, ptree, 
-	       "continuation", ttiscontinuation, cont, 
-	       "applicative", ttisapplicative, app, 
-	       maybe_env);
+               "continuation", ttiscontinuation, cont, 
+               "applicative", ttisapplicative, app, 
+               maybe_env);
 
     TValue env = (get_opt_tpar(K, maybe_env, "environment", ttisenvironment))?
-	maybe_env : kmake_empty_environment(K);
+        maybe_env : kmake_empty_environment(K);
 
     krooted_tvs_push(K, env);
     TValue new_cont = kmake_continuation(K, cont, 
-					 do_extended_cont, 2, app, env);
+                                         do_extended_cont, 2, app, env);
     krooted_tvs_pop(K);
     kapply_cc(K, new_cont);
 }
@@ -96,24 +96,24 @@ void guard_continuation(klisp_State *K)
     UNUSED(xparams);
 
     bind_3tp(K, ptree, "any", anytype, entry_guards,
-	     "continuation", ttiscontinuation, cont,
-	     "any", anytype, exit_guards);
+             "continuation", ttiscontinuation, cont,
+             "any", anytype, exit_guards);
 
     entry_guards = check_copy_guards(K, "guard-continuation: entry guards", 
-				     entry_guards);
+                                     entry_guards);
     krooted_tvs_push(K, entry_guards);
 
     exit_guards = check_copy_guards(K, "guard-continuation: exit guards", 
-				     exit_guards);
+                                    exit_guards);
     krooted_tvs_push(K, exit_guards);
 
     TValue outer_cont = kmake_continuation(K, cont, do_pass_value, 
-					   2, entry_guards, denv);
+                                           2, entry_guards, denv);
     krooted_tvs_push(K, outer_cont);
     /* mark it as an outer continuation */
     kset_outer_cont(outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, 
-					   do_pass_value, 2, exit_guards, denv);
+                                           do_pass_value, 2, exit_guards, denv);
     /* mark it as an outer continuation */
     kset_inner_cont(inner_cont);
 
@@ -137,7 +137,7 @@ void continuation_applicative(klisp_State *K)
     UNUSED(denv);
 
     bind_1tp(K, ptree, "continuation",
-	     ttiscontinuation, cont);
+             ttiscontinuation, cont);
     /* cont_app is from kstate, it handles dynamic vars &
        interceptions */
     TValue app = kmake_applicative(K, cont_app, 1, cont);
@@ -165,7 +165,7 @@ void apply_continuation(klisp_State *K)
     UNUSED(denv);
 
     bind_2tp(K, ptree, "continuation", ttiscontinuation,
-	     cont, "any", anytype, obj);
+             cont, "any", anytype, obj);
 
     /* kcall_cont is from kstate, it handles dynamic vars &
        interceptions */
@@ -184,34 +184,34 @@ void Slet_cc(klisp_State *K)
     bind_al1tp(K, ptree, "symbol", ttissymbol, sym, objs);
 
     if (ttisnil(objs)) {
-	/* we don't even bother creating the environment */
-	kapply_cc(K, KINERT);
+        /* we don't even bother creating the environment */
+        kapply_cc(K, KINERT);
     } else {
-	TValue new_env = kmake_environment(K, denv);
+        TValue new_env = kmake_environment(K, denv);
 	
-	/* add binding may allocate, protect env, 
-	  keep in stack until continuation is allocated */
-	krooted_tvs_push(K, new_env); 
-	kadd_binding(K, new_env, sym, kget_cc(K));
+        /* add binding may allocate, protect env, 
+           keep in stack until continuation is allocated */
+        krooted_tvs_push(K, new_env); 
+        kadd_binding(K, new_env, sym, kget_cc(K));
 	
-	/* the list of instructions is copied to avoid mutation */
-	/* MAYBE: copy the evaluation structure, ASK John */
-	TValue ls = check_copy_list(K, objs, false, NULL, NULL);
+        /* the list of instructions is copied to avoid mutation */
+        /* MAYBE: copy the evaluation structure, ASK John */
+        TValue ls = check_copy_list(K, objs, false, NULL, NULL);
         krooted_tvs_push(K, ls);
 
-	/* this is needed because seq continuation doesn't check for 
-	   nil sequence */
-	TValue tail = kcdr(ls);
-	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K),
-					     do_seq, 2, tail, new_env);
-	    kset_cc(K, new_cont);
-	} 
+        /* this is needed because seq continuation doesn't check for 
+           nil sequence */
+        TValue tail = kcdr(ls);
+        if (ttispair(tail)) {
+            TValue new_cont = kmake_continuation(K, kget_cc(K),
+                                                 do_seq, 2, tail, new_env);
+            kset_cc(K, new_cont);
+        } 
 
-	krooted_tvs_pop(K); 
+        krooted_tvs_pop(K); 
         krooted_tvs_pop(K);
 
-	ktail_eval(K, kcar(ls), new_env);
+        ktail_eval(K, kcar(ls), new_env);
     }
 }
 
@@ -232,7 +232,7 @@ void kgexit(klisp_State *K)
 
     TValue obj = ptree;
     if (!get_opt_tpar(K, obj, "any", anytype))
-	obj = KINERT;
+        obj = KINERT;
 
     /* TODO: look out for guards and dynamic variables */
     /* should be probably handled in kcall_cont() */
@@ -247,38 +247,38 @@ void kinit_continuations_ground_env(klisp_State *K)
 
     /* 7.1.1 continuation? */
     add_applicative(K, ground_env, "continuation?", typep, 2, symbol, 
-		    i2tv(K_TCONTINUATION));
+                    i2tv(K_TCONTINUATION));
     /* 7.2.2 call/cc */
     add_applicative(K, ground_env, "call/cc", call_cc, 0);
     /* 7.2.3 extend-continuation */
     add_applicative(K, ground_env, "extend-continuation", extend_continuation, 
-		    0);
+                    0);
     /* 7.2.4 guard-continuation */
     add_applicative(K, ground_env, "guard-continuation", guard_continuation, 
-		    0);
+                    0);
     /* 7.2.5 continuation->applicative */
     add_applicative(K, ground_env, "continuation->applicative",
-		    continuation_applicative, 0);
+                    continuation_applicative, 0);
     /* 7.2.6 root-continuation */
     klisp_assert(ttiscontinuation(K->root_cont));
     add_value(K, ground_env, "root-continuation",
-	      K->root_cont);
+              K->root_cont);
     /* 7.2.7 error-continuation */
     klisp_assert(ttiscontinuation(K->error_cont));
     add_value(K, ground_env, "error-continuation",
-	      K->error_cont);
+              K->error_cont);
     /* 7.3.1 apply-continuation */
     add_applicative(K, ground_env, "apply-continuation", apply_continuation, 
-		    0);
+                    0);
     /* 7.3.2 $let/cc */
     add_operative(K, ground_env, "$let/cc", Slet_cc, 
-		    0);
+                  0);
     /* 7.3.3 guard-dynamic-extent */
     add_applicative(K, ground_env, "guard-dynamic-extent", 
-		    guard_dynamic_extent, 0);
+                    guard_dynamic_extent, 0);
     /* 7.3.4 exit */    
     add_applicative(K, ground_env, "exit", kgexit, 
-		    0);
+                    0);
 }
 
 /* init continuation names */

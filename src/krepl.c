@@ -65,21 +65,21 @@ void do_repl_eval(klisp_State *K)
     TValue denv = xparams[0];
     
     if (ttiseof(obj)) {
-	/* read [EOF], should terminate the repl */
-	/* this will in turn call main_cont */
-	/* print a newline to allow the shell a fresh line */
-	printf("\n");
-	/* This is ok because there is no interception possible */
-	kset_cc(K, K->root_cont);
-	kapply_cc(K, KINERT);
+        /* read [EOF], should terminate the repl */
+        /* this will in turn call main_cont */
+        /* print a newline to allow the shell a fresh line */
+        printf("\n");
+        /* This is ok because there is no interception possible */
+        kset_cc(K, K->root_cont);
+        kapply_cc(K, KINERT);
     } else {
-	/* save the source code info of the object in loop_cont
-	   before evaling */
+        /* save the source code info of the object in loop_cont
+           before evaling */
 #if KTRACK_SI
-	kset_source_info(K, kget_cc(K), ktry_get_si(K, obj));
+        kset_source_info(K, kget_cc(K), ktry_get_si(K, obj));
 #endif
 
-	ktail_eval(K, obj, denv);
+        ktail_eval(K, obj, denv);
     }
 }
 
@@ -106,11 +106,11 @@ void create_loop(klisp_State *K, TValue denv)
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
     TValue outer_cont = kmake_continuation(K, K->root_cont, 
-					   do_pass_value, 2, entry_guards, env);
+                                           do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, 
-					   do_pass_value, 2, exit_guards, env);
+                                           do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
     krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
 
@@ -118,7 +118,7 @@ void create_loop(klisp_State *K, TValue denv)
     krooted_tvs_push(K, inner_cont);
 
     TValue loop_cont = 
-	kmake_continuation(K, inner_cont, do_repl_loop, 1, denv);
+        kmake_continuation(K, inner_cont, do_repl_loop, 1, denv);
     krooted_tvs_pop(K); /* in loop cont */
     krooted_tvs_push(K, loop_cont);
     TValue eval_cont = kmake_continuation(K, loop_cont, do_repl_eval, 1, denv);
@@ -176,66 +176,66 @@ void do_repl_int_error(klisp_State *K)
 
     /* TEMP: obj should be an error obj */
     if (ttiserror(obj)) {
-	Error *err_obj = tv2error(obj);
-	TValue who = err_obj->who;
-	char *who_str;
-	/* TEMP? */
-	if (ttiscontinuation(who))
-	    who = tv2cont(who)->comb;
+        Error *err_obj = tv2error(obj);
+        TValue who = err_obj->who;
+        char *who_str;
+        /* TEMP? */
+        if (ttiscontinuation(who))
+            who = tv2cont(who)->comb;
 
-	if (ttisstring(who)) {
-	    who_str = kstring_buf(who);
+        if (ttisstring(who)) {
+            who_str = kstring_buf(who);
 #if KTRACK_NAMES
-	} else if (khas_name(who)) {
-	    TValue name = kget_name(K, who);
-	    who_str = ksymbol_buf(name);
+        } else if (khas_name(who)) {
+            TValue name = kget_name(K, who);
+            who_str = ksymbol_buf(name);
 #endif
-	} else {
-	    who_str = "?";
-	}
-	char *msg = kstring_buf(err_obj->msg);
-	fprintf(stderr, "\n*ERROR*: \n");
-	fprintf(stderr, "%s: %s", who_str, msg);
+        } else {
+            who_str = "?";
+        }
+        char *msg = kstring_buf(err_obj->msg);
+        fprintf(stderr, "\n*ERROR*: \n");
+        fprintf(stderr, "%s: %s", who_str, msg);
 
-	krooted_tvs_push(K, obj);
+        krooted_tvs_push(K, obj);
 
-	/* Msg + irritants */
-	/* TODO move to a new function */
-	if (!ttisnil(err_obj->irritants)) {
-	    fprintf(stderr, ": ");
-	    kwrite_display_to_port(K, port, err_obj->irritants, false);
-	}
-	kwrite_newline_to_port(K, port);
+        /* Msg + irritants */
+        /* TODO move to a new function */
+        if (!ttisnil(err_obj->irritants)) {
+            fprintf(stderr, ": ");
+            kwrite_display_to_port(K, port, err_obj->irritants, false);
+        }
+        kwrite_newline_to_port(K, port);
 
 #if KTRACK_NAMES
 #if KTRACK_SI
-	/* Location */
-	/* TODO move to a new function */
-	/* MAYBE: remove */
-	if (khas_name(who) || khas_si(who)) {
-	    fprintf(stderr, "Location: ");
-	    kwrite_display_to_port(K, port, who, false);
-	    kwrite_newline_to_port(K, port);
-	}
+        /* Location */
+        /* TODO move to a new function */
+        /* MAYBE: remove */
+        if (khas_name(who) || khas_si(who)) {
+            fprintf(stderr, "Location: ");
+            kwrite_display_to_port(K, port, who, false);
+            kwrite_newline_to_port(K, port);
+        }
 
-	/* Backtrace */
-	/* TODO move to a new function */
-	TValue tv_cont = err_obj->cont;
-	fprintf(stderr, "Backtrace: \n");
-	while(ttiscontinuation(tv_cont)) {
-	    kwrite_display_to_port(K, port, tv_cont, false);
-	    kwrite_newline_to_port(K, port);
-	    Continuation *cont = tv2cont(tv_cont);
-	    tv_cont = cont->parent;
-	}
-	/* add extra newline at the end */
-	kwrite_newline_to_port(K, port);
+        /* Backtrace */
+        /* TODO move to a new function */
+        TValue tv_cont = err_obj->cont;
+        fprintf(stderr, "Backtrace: \n");
+        while(ttiscontinuation(tv_cont)) {
+            kwrite_display_to_port(K, port, tv_cont, false);
+            kwrite_newline_to_port(K, port);
+            Continuation *cont = tv2cont(tv_cont);
+            tv_cont = cont->parent;
+        }
+        /* add extra newline at the end */
+        kwrite_newline_to_port(K, port);
 #endif
 #endif
-	krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
     } else {
-	fprintf(stderr, "\n*ERROR*: not an error object passed to " 
-		"error continuation\n\n");
+        fprintf(stderr, "\n*ERROR*: not an error object passed to " 
+                "error continuation\n\n");
     }
 
     UNUSED(divert);
@@ -250,12 +250,12 @@ void kinit_repl(klisp_State *K)
 {
     TValue std_env = K->next_env;
 
-    #if KTRACK_SI
+#if KTRACK_SI
     /* save the root cont in next_si to let the loop continuations have 
        source info, this is hackish but works */
     
     K->next_si = ktry_get_si(K, K->root_cont);
-    #endif
+#endif
 
     /* GC: create_loop will root std_env */
     create_loop(K, std_env);

@@ -74,7 +74,7 @@ inline void kset_cdr(TValue p, TValue v)
 }
 
 /* These two are the same but can write immutable pairs,
- use with care */
+   use with care */
 inline void kset_car_unsafe(klisp_State *K, TValue p, TValue v)
 {
     klisp_assert(kpairp(p));

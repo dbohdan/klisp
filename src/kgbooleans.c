@@ -58,12 +58,12 @@ void andp(klisp_State *K)
     TValue res = KTRUE;
     TValue tail = ptree;
     while(pairs--) {
-	TValue first = kcar(tail);
-	tail = kcdr(tail);
-	if (kis_false(first)) {
-	    res = KFALSE;
-	    break;
-	}
+        TValue first = kcar(tail);
+        tail = kcdr(tail);
+        if (kis_false(first)) {
+            res = KFALSE;
+            break;
+        }
     }
     kapply_cc(K, res);
 }
@@ -83,12 +83,12 @@ void orp(klisp_State *K)
     TValue res = KFALSE;
     TValue tail = ptree;
     while(pairs--) {
-	TValue first = kcar(tail);
-	tail = kcdr(tail);
-	if (kis_true(first)) {
-	    res = KTRUE;
-	    break;
-	}
+        TValue first = kcar(tail);
+        tail = kcdr(tail);
+        if (kis_true(first)) {
+            res = KTRUE;
+            break;
+        }
     }
     kapply_cc(K, res);
 }
@@ -121,41 +121,41 @@ void do_Sandp_Sorp(klisp_State *K)
     TValue denv = xparams[3];
 
     if (!ttisboolean(obj)) {
-	klispE_throw_simple_with_irritants(K, "expected boolean", 1, 
-	    obj);
-	return;
+        klispE_throw_simple_with_irritants(K, "expected boolean", 1, 
+                                           obj);
+        return;
     } else if (ttisnil(ls) || tv_equal(obj, term_bool)) {
-	/* in both cases the value to be returned is obj:
-	   if there are no more operands it is obvious otherwise, if
-	   the termination bool is found:
-	   $and? returns #f when it finds #f and $or? returns #t when it 
-	   finds #t */
-	kapply_cc(K, obj);
+        /* in both cases the value to be returned is obj:
+           if there are no more operands it is obvious otherwise, if
+           the termination bool is found:
+           $and? returns #f when it finds #f and $or? returns #t when it 
+           finds #t */
+        kapply_cc(K, obj);
     } else {
-	TValue first = kcar(ls);
-	TValue tail = kcdr(ls);
-	/* This is the important part of tail context + bool check */
-	if (!ttisnil(tail) || !kis_bool_check_cont(kget_cc(K))) {
-	    TValue new_cont = 
-		kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 
-				   4, sname, term_bool, tail, denv);
-	    /* 
-	    ** Mark as a bool checking cont this is needed in the last operand
-	    ** to allow both tail recursive behaviour and boolean checking.
-	    ** While it is not necessary if this is not the last operand it
-	    ** avoids a continuation in the last evaluation of the inner form 
-	    ** in the common use of 
-	    ** ($and?/$or? ($or?/$and? ...) ...)
-	    */
-	    kset_bool_check_cont(new_cont);
-	    kset_cc(K, new_cont);
+        TValue first = kcar(ls);
+        TValue tail = kcdr(ls);
+        /* This is the important part of tail context + bool check */
+        if (!ttisnil(tail) || !kis_bool_check_cont(kget_cc(K))) {
+            TValue new_cont = 
+                kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 
+                                   4, sname, term_bool, tail, denv);
+            /* 
+            ** Mark as a bool checking cont this is needed in the last operand
+            ** to allow both tail recursive behaviour and boolean checking.
+            ** While it is not necessary if this is not the last operand it
+            ** avoids a continuation in the last evaluation of the inner form 
+            ** in the common use of 
+            ** ($and?/$or? ($or?/$and? ...) ...)
+            */
+            kset_bool_check_cont(new_cont);
+            kset_cc(K, new_cont);
 #if KTRACK_SI
-	    /* put the source info of the list including the element
-	       that we are about to evaluate */
-	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+            /* put the source info of the list including the element
+               that we are about to evaluate */
+            kset_source_info(K, new_cont, ktry_get_si(K, ls));
 #endif
-	}
-	ktail_eval(K, first, denv);
+        }
+        ktail_eval(K, first, denv);
     }
 }
 
@@ -176,11 +176,11 @@ void Sandp_Sorp(klisp_State *K)
     /* This will work even if ls is empty */
     krooted_tvs_push(K, ls);
     TValue new_cont = kmake_continuation(K, kget_cc(K), do_Sandp_Sorp, 4, 
-					 sname, term_bool, ls, denv);
+                                         sname, term_bool, ls, denv);
     krooted_tvs_pop(K);
     /* there's no need to mark it as bool checking, no evaluation
        is done in the dynamic extent of this cont, no need for 
-    source info either */
+       source info either */
     kset_cc(K, new_cont);
     kapply_cc(K, knegp(term_bool)); /* pass dummy value to start */
 }
@@ -199,7 +199,7 @@ void kinit_booleans_ground_env(klisp_State *K)
 
     /* 4.1.1 boolean? */
     add_applicative(K, ground_env, "boolean?", typep, 2, symbol, 
-		    i2tv(K_TBOOLEAN));
+                    i2tv(K_TBOOLEAN));
     /* 6.1.1 not? */
     add_applicative(K, ground_env, "not?", notp, 0);
     /* 6.1.2 and? */

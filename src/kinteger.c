@@ -53,12 +53,12 @@ TValue kbigint_copy(klisp_State *K, TValue src)
 
 /* this works for bigints & fixints, returns true if ok */
 bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
-		   char **end)
+                   char **end)
 {
     TValue res = kbigint_make_simple(K);
     krooted_tvs_push(K, res);
     bool ret_val = (mp_int_read_cstring(K, tv2bigint(res), base, 
-					buf, end) == MP_OK);
+                                        buf, end) == MP_OK);
     krooted_tvs_pop(K);
     *out = kbigint_try_fixint(K, res);
     return ret_val;
@@ -74,11 +74,11 @@ int32_t kbigint_print_size(TValue tv_bigint, int32_t base)
 
 /* this is used by write */
 void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
-			   char *buf, int32_t limit)
+                           char *buf, int32_t limit)
 {
     klisp_assert(ttisbigint(tv_bigint));
     mp_result res = mp_int_to_string(K, tv2bigint(tv_bigint), base, buf, 
-				     limit);
+                                     limit);
     /* only possible error is truncation */
     klisp_assert(res == MP_OK);
 }
@@ -87,31 +87,31 @@ void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base,
 bool kbigint_eqp(TValue tv_bigint1, TValue tv_bigint2)
 {
     return (mp_int_compare(tv2bigint(tv_bigint1), 
-			   tv2bigint(tv_bigint2)) == 0);
+                           tv2bigint(tv_bigint2)) == 0);
 }
 
 bool kbigint_ltp(TValue tv_bigint1, TValue tv_bigint2)
 {
     return (mp_int_compare(tv2bigint(tv_bigint1), 
-			   tv2bigint(tv_bigint2)) < 0);
+                           tv2bigint(tv_bigint2)) < 0);
 }
 
 bool kbigint_lep(TValue tv_bigint1, TValue tv_bigint2)
 {
     return (mp_int_compare(tv2bigint(tv_bigint1), 
-			   tv2bigint(tv_bigint2)) <= 0);
+                           tv2bigint(tv_bigint2)) <= 0);
 }
 
 bool kbigint_gtp(TValue tv_bigint1, TValue tv_bigint2)
 {
     return (mp_int_compare(tv2bigint(tv_bigint1), 
-			   tv2bigint(tv_bigint2)) > 0);
+                           tv2bigint(tv_bigint2)) > 0);
 }
 
 bool kbigint_gep(TValue tv_bigint1, TValue tv_bigint2)
 {
     return (mp_int_compare(tv2bigint(tv_bigint1), 
-			   tv2bigint(tv_bigint2)) >= 0);
+                           tv2bigint(tv_bigint2)) >= 0);
 }
 
 /*
@@ -162,13 +162,13 @@ TValue kbigint_div_mod(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 
     /* Adjust q & r so that 0 <= r < |d| */
     if (mp_int_compare_zero(r) < 0) {
-	if (mp_int_compare_zero(d) < 0) {
-	    mp_int_sub(K, r, d, r);
-	    mp_int_add_value(K, q, 1, q);
-	} else {
-	    mp_int_add(K, r, d, r);
-	    mp_int_sub_value(K, q, 1, q);
-	}
+        if (mp_int_compare_zero(d) < 0) {
+            mp_int_sub(K, r, d, r);
+            mp_int_add_value(K, q, 1, q);
+        } else {
+            mp_int_add(K, r, d, r);
+            mp_int_sub_value(K, q, 1, q);
+        }
     }
 
     krooted_tvs_pop(K);
@@ -210,25 +210,25 @@ TValue kbigint_div0_mod0(klisp_State *K, TValue n1, TValue n2, TValue *res_r)
 
     /* this checks 2r >= |d| (which is the same r >= |d/2|) */
     if (mp_int_compare(two_r, abs_d) >= 0) {
-	if (mp_int_compare_zero(d) < 0) {
-	    mp_int_add(K, r, d, r);
-	    mp_int_sub_value(K, q, 1, q);
-	} else {
-	    mp_int_sub(K, r, d, r);
-	    mp_int_add_value(K, q, 1, q);
-	}
+        if (mp_int_compare_zero(d) < 0) {
+            mp_int_add(K, r, d, r);
+            mp_int_sub_value(K, q, 1, q);
+        } else {
+            mp_int_sub(K, r, d, r);
+            mp_int_add_value(K, q, 1, q);
+        }
     } else {
-	UNUSED(mp_int_neg(K, abs_d, abs_d));
-	/* this checks 2r < -|d| (which is the same r < |d/2|) */
-	if (mp_int_compare(two_r, abs_d) < 0) {
-	    if (mp_int_compare_zero(d) < 0) {
-		mp_int_sub(K, r, d, r);
-		mp_int_add_value(K, q, 1, q);
-	    } else {
-		mp_int_add(K, r, d, r);
-		mp_int_sub_value(K, q, 1, q);
-	    }
-	}
+        UNUSED(mp_int_neg(K, abs_d, abs_d));
+        /* this checks 2r < -|d| (which is the same r < |d/2|) */
+        if (mp_int_compare(two_r, abs_d) < 0) {
+            if (mp_int_compare_zero(d) < 0) {
+                mp_int_sub(K, r, d, r);
+                mp_int_add_value(K, q, 1, q);
+            } else {
+                mp_int_add(K, r, d, r);
+                mp_int_sub_value(K, q, 1, q);
+            }
+        }
     }
 
     krooted_tvs_pop(K);
@@ -263,14 +263,14 @@ bool kbigint_evenp(TValue tv_bigint)
 TValue kbigint_abs(klisp_State *K, TValue tv_bigint)
 {
     if (kbigint_negativep(tv_bigint)) {
-	TValue copy = kbigint_make_simple(K);
-	krooted_tvs_push(K, copy);
-	UNUSED(mp_int_abs(K, tv2bigint(tv_bigint), tv2bigint(copy)));
-	krooted_tvs_pop(K);
-	/* NOTE: this can never be a fixint if the parameter was a bigint */
-	return copy;
+        TValue copy = kbigint_make_simple(K);
+        krooted_tvs_push(K, copy);
+        UNUSED(mp_int_abs(K, tv2bigint(tv_bigint), tv2bigint(copy)));
+        krooted_tvs_pop(K);
+        /* NOTE: this can never be a fixint if the parameter was a bigint */
+        return copy;
     } else {
-	return tv_bigint;
+        return tv_bigint;
     }
 }
 
@@ -306,8 +306,8 @@ TValue kinteger_new_uint64(klisp_State *K, uint64_t x)
 
         uint8_t d[8];
         for (int i = 7; i >= 0; i--) {
-          d[i] = (x & 0xFF);
-          x >>= 8;
+            d[i] = (x & 0xFF);
+            x >>= 8;
         }
 
         mp_int_read_unsigned(K, tv2bigint(res), d, 8);

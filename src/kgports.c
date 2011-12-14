@@ -82,13 +82,13 @@ void with_file(klisp_State *K)
     TValue key = xparams[2];
 
     bind_2tp(K, ptree, "string", ttisstring, filename,
-	     "combiner", ttiscombiner, comb);
+             "combiner", ttiscombiner, comb);
 
     TValue new_port = kmake_fport(K, filename, writep, false);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
-					 do_close_file_ret, 1, new_port);
+                                         do_close_file_ret, 1, new_port);
     kset_cc(K, new_cont); /* cont implicitly rooted */
     krooted_tvs_pop(K); /* new_port is in cont */
 
@@ -169,14 +169,14 @@ void open_mport(klisp_State *K)
     
     /* This is kinda ugly but... */
     if (writep) {
-	check_0p(K, ptree);
-	buffer = KINERT;
+        check_0p(K, ptree);
+        buffer = KINERT;
     } else if (binaryp) {
-	bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
-	buffer = bb;
+        bind_1tp(K, ptree, "bytevector", ttisbytevector, bb);
+        buffer = bb;
     } else {
-	bind_1tp(K, ptree, "string", ttisstring, str);
-	buffer = str;
+        bind_1tp(K, ptree, "string", ttisstring, str);
+        buffer = str;
     }
 
     TValue new_port = kmake_mport(K, buffer, writep, binaryp);
@@ -203,11 +203,11 @@ void close_file(klisp_State *K)
     bool dir_ok = writep? kport_is_output(port) : kport_is_input(port);
 
     if (dir_ok) {
-	kclose_port(K, port);
-	kapply_cc(K, KINERT);
+        kclose_port(K, port);
+        kapply_cc(K, KINERT);
     } else {
-	klispE_throw_simple(K, "wrong input/output direction");
-	return;
+        klispE_throw_simple(K, "wrong input/output direction");
+        return;
     }
 }
 
@@ -229,14 +229,14 @@ void close_port(klisp_State *K)
     bind_1tp(K, ptree, "port", ttisport, port);
 
     bool dir_ok = !((writep && !kport_is_output(port)) ||
-		    (readp && !kport_is_input(port)));
+                    (readp && !kport_is_input(port)));
 
     if (dir_ok) {
-	kclose_port(K, port);
-	kapply_cc(K, KINERT);
+        kclose_port(K, port);
+        kapply_cc(K, KINERT);
     } else {
-	klispE_throw_simple(K, "wrong input/output direction");
-	return;
+        klispE_throw_simple(K, "wrong input/output direction");
+        return;
     }
 }
 
@@ -255,21 +255,21 @@ void get_output_buffer(klisp_State *K)
     bind_1tp(K, ptree, "port", ttismport, port);
 
     if (binaryp && !kport_is_binary(port)) {
-	klispE_throw_simple(K, "the port should be a bytevector port");
-	return;
+        klispE_throw_simple(K, "the port should be a bytevector port");
+        return;
     } else if (!binaryp && !kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a string port");
-	return;
+        klispE_throw_simple(K, "the port should be a string port");
+        return;
     } else if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     }
     
     TValue ret = binaryp? 
-	kbytevector_new_bs(K, 
-			   kbytevector_buf(kmport_buf(port)), 
-			   kmport_off(port)) :
-	kstring_new_bs(K, kstring_buf(kmport_buf(port)), kmport_off(port));
+        kbytevector_new_bs(K, 
+                           kbytevector_buf(kmport_buf(port)), 
+                           kmport_off(port)) :
+        kstring_new_bs(K, kstring_buf(kmport_buf(port)), kmport_off(port));
     kapply_cc(K, ret);
 }
 
@@ -285,18 +285,18 @@ void gread(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(K->kd_in_port_key); /* access directly */
     } 
 
     if (!kport_is_input(port)) {
-	klispE_throw_simple(K, "the port should be an input port");
-	return;
+        klispE_throw_simple(K, "the port should be an input port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     /* this may throw an error, that's ok */
@@ -315,21 +315,21 @@ void gwrite(klisp_State *K)
     UNUSED(denv);
     
     bind_al1tp(K, ptree, "any", anytype, obj,
-	       port);
+               port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(K->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     /* false: quote strings, escape chars */
@@ -348,21 +348,21 @@ void gwrite_simple(klisp_State *K)
     UNUSED(denv);
     
     bind_al1tp(K, ptree, "any", anytype, obj,
-	       port);
+               port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(K->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     kwrite_simple_to_port(K, port, obj); 
@@ -384,18 +384,18 @@ void newline(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(K->kd_out_port_key); /* access directly */
     }
 
     if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
     
     kwrite_newline_to_port(K, port);
@@ -413,21 +413,21 @@ void write_char(klisp_State *K)
     UNUSED(denv);
     
     bind_al1tp(K, ptree, "char", ttischar, ch,
-	       port);
+               port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(K->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
     
     kwrite_char_to_port(K, port, ch);
@@ -450,18 +450,18 @@ void read_peek_char(klisp_State *K)
 
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(K->kd_in_port_key); /* access directly */
     } 
     
     if (!kport_is_input(port)) {
-	klispE_throw_simple(K, "the port should be an input port");
-	return;
+        klispE_throw_simple(K, "the port should be an input port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     TValue obj = kread_peek_char_from_port(K, port, ret_charp);
@@ -491,18 +491,18 @@ void char_readyp(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(K->kd_in_port_key); /* access directly */
     } 
 
     if (!kport_is_input(port)) {
-	klispE_throw_simple(K, "the port should be an input port");
-	return;
+        klispE_throw_simple(K, "the port should be an input port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     /* TODO: check if there are pending chars */
@@ -522,18 +522,18 @@ void write_u8(klisp_State *K)
     bind_al1tp(K, ptree, "u8", ttisu8, u8, port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(K->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     } else if (!kport_is_binary(port)) {
-	klispE_throw_simple(K, "the port should be a binary port");
-	return;
+        klispE_throw_simple(K, "the port should be a binary port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
     
     kwrite_u8_to_port(K, port, u8);
@@ -556,18 +556,18 @@ void read_peek_u8(klisp_State *K)
 
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(K->kd_in_port_key); /* access directly */
     }
 
     if (!kport_is_input(port)) {
-	klispE_throw_simple(K, "the port should be an input port");
-	return;
+        klispE_throw_simple(K, "the port should be an input port");
+        return;
     } else if (!kport_is_binary(port)) {
-	klispE_throw_simple(K, "the port should be a binary port");
-	return;
+        klispE_throw_simple(K, "the port should be a binary port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     TValue obj = kread_peek_u8_from_port(K, port, ret_u8p);
@@ -597,18 +597,18 @@ void u8_readyp(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(K->kd_in_port_key); /* access directly */
     }
     
     if (!kport_is_input(port)) {
-	klispE_throw_simple(K, "the port should be an input port");
-	return;
+        klispE_throw_simple(K, "the port should be an input port");
+        return;
     } else if (!kport_is_binary(port)) {
-	klispE_throw_simple(K, "the port should be a binary port");
-	return;
+        klispE_throw_simple(K, "the port should be a binary port");
+        return;
     }  else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     /* TODO: check if there are pending chars */
@@ -630,13 +630,13 @@ void call_with_file(klisp_State *K)
     UNUSED(denv);
 
     bind_2tp(K, ptree, "string", ttisstring, filename,
-	     "combiner", ttiscombiner, comb);
+             "combiner", ttiscombiner, comb);
 
     TValue new_port = kmake_fport(K, filename, writep, false);
     krooted_tvs_push(K, new_port);
     /* make the continuation to close the file before returning */
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
-					 do_close_file_ret, 1, new_port);
+                                         do_close_file_ret, 1, new_port);
     kset_cc(K, new_cont); /* implicit rooting  */
     krooted_tvs_pop(K); /* new_port is in new_cont */
     TValue empty_env = kmake_empty_environment(K);
@@ -679,7 +679,7 @@ TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
 {
     /* create the guard to close file after read errors */
     TValue exit_int = kmake_operative(K, do_int_close_file, 
-				      1, port);
+                                      1, port);
     krooted_tvs_push(K, exit_int);
     TValue exit_guard = kcons(K, K->error_cont, exit_int);
     krooted_tvs_pop(K); /* alread in guard */
@@ -694,11 +694,11 @@ TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
     TValue outer_cont = kmake_continuation(K, parent, 
-					   do_pass_value, 2, entry_guards, env);
+                                           do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, 
-					   do_pass_value, 2, exit_guards, env);
+                                           do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
     krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
     return inner_cont;
@@ -725,20 +725,20 @@ void load(klisp_State *K)
     bind_1tp(K, ptree, "string", ttisstring, filename);
 
     /* the reads must be guarded to close the file if there is some error 
-     this continuation also will return inert after the evaluation of the
-     last expression is done */
+       this continuation also will return inert after the evaluation of the
+       last expression is done */
     TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
 
     TValue inert_cont = kmake_continuation(K, kget_cc(K), do_return_value, 1, 
-					   KINERT);
+                                           KINERT);
     
     krooted_tvs_push(K, inert_cont);
 
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
     /* this will be used later, but contruct it now to use the 
        current continuation as parent 
-    GC: root this obj */
+       GC: root this obj */
     kset_cc(K, guarded_cont); /* implicit rooting */
     /* any error will close the port */
     TValue ls = kread_list_from_port(K, port, false);  /* immutable pairs */
@@ -750,24 +750,24 @@ void load(klisp_State *K)
 
 
     if (ttisnil(ls)) {
-	krooted_tvs_pop(K); /* port */
-	kapply_cc(K, KINERT);
+        krooted_tvs_pop(K); /* port */
+        kapply_cc(K, KINERT);
     } else {
-	TValue tail = kcdr(ls);
-	if (ttispair(tail)) {
-	    krooted_tvs_push(K, ls);
-	    TValue new_cont = kmake_continuation(K, kget_cc(K),
-						 do_seq, 2, tail, denv);
-	    kset_cc(K, new_cont);
+        TValue tail = kcdr(ls);
+        if (ttispair(tail)) {
+            krooted_tvs_push(K, ls);
+            TValue new_cont = kmake_continuation(K, kget_cc(K),
+                                                 do_seq, 2, tail, denv);
+            kset_cc(K, new_cont);
 #if KTRACK_SI
-	    /* put the source info of the list including the element
-	       that we are about to evaluate */
-	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+            /* put the source info of the list including the element
+               that we are about to evaluate */
+            kset_source_info(K, new_cont, ktry_get_si(K, ls));
 #endif
-	    krooted_tvs_pop(K); /* ls */
-	} 
-	krooted_tvs_pop(K); /* port */
-	ktail_eval(K, kcar(ls), denv);
+            krooted_tvs_pop(K); /* ls */
+        } 
+        krooted_tvs_pop(K); /* port */
+        ktail_eval(K, kcar(ls), denv);
     }
 }
 
@@ -781,7 +781,7 @@ static bool readable(const char *filename) {
 
 /* Path can't/shouldn't contain embedded zeros */
 static const char *get_next_template(klisp_State *K, const char *path, 
-				     TValue *next) {
+                                     TValue *next) {
     const char *l;
     while (*path == *KLISP_PATHSEP) path++;  /* skip separators */
     if (*path == '\0') return NULL;  /* no more templates */
@@ -807,8 +807,8 @@ static TValue str_sub(klisp_State *K, TValue s, TValue p, TValue r)
 
     /* first calculate needed size */
     while ((wild = strstr(sp, pp)) != NULL) {
-	size += diff_size;
-	sp = wild + psize;
+        size += diff_size;
+        sp = wild + psize;
     }
 
     /* now construct result buffer and fill it */
@@ -816,21 +816,21 @@ static TValue str_sub(klisp_State *K, TValue s, TValue p, TValue r)
     char *resp = kstring_buf(res);
     sp = kstring_buf(s);
     while ((wild = strstr(sp, pp)) != NULL) {
-	ptrdiff_t l = wild - sp;
-	memcpy(resp, sp, l);
-	resp += l;
-	memcpy(resp, rp, rsize);
-	resp += rsize;
-	sp = wild + psize;
+        ptrdiff_t l = wild - sp;
+        memcpy(resp, sp, l);
+        resp += l;
+        memcpy(resp, rp, rsize);
+        resp += rsize;
+        sp = wild + psize;
     }
     strcpy(resp, sp); /* the size was calculated beforehand */
     return res;
 }
 
 static TValue find_file (klisp_State *K, TValue name, TValue pname) {
-  /* not used in klisp */
-  /* name = luaL_gsub(L, name, ".", LUA_DIRSEP); */
-  /* lua_getfield(L, LUA_ENVIRONINDEX, pname); */
+    /* not used in klisp */
+    /* name = luaL_gsub(L, name, ".", LUA_DIRSEP); */
+    /* lua_getfield(L, LUA_ENVIRONINDEX, pname); */
     klisp_assert(ttisstring(name) && !kstring_emptyp(name));
     const char *path = kstring_buf(pname);
     TValue next = K->empty_string;
@@ -839,12 +839,12 @@ static TValue find_file (klisp_State *K, TValue name, TValue pname) {
     krooted_tvs_push(K, wild);
 
     while ((path = get_next_template(K, path, &next)) != NULL) {
-	next = str_sub(K, next, wild, name);
-	if (readable(kstring_buf(next))) {  /* does file exist and is readable? */
-	    krooted_tvs_pop(K);
-	    krooted_vars_pop(K);
-	    return next;  /* return that file name */
-	}
+        next = str_sub(K, next, wild, name);
+        if (readable(kstring_buf(next))) {  /* does file exist and is readable? */
+            krooted_tvs_pop(K);
+            krooted_vars_pop(K);
+            return next;  /* return that file name */
+        }
     }
     
     krooted_tvs_pop(K);
@@ -873,21 +873,21 @@ void require(klisp_State *K)
     bind_1tp(K, ptree, "string", ttisstring, name);
 
     if (kstring_emptyp(name)) {
-	klispE_throw_simple(K, "Empty name");
-	return;
+        klispE_throw_simple(K, "Empty name");
+        return;
     }
     /* search for the named file in the table of already
        required files. 
        N.B. this will be fooled if the same file is accessed
        through different names */
     TValue saved_name = kstring_immutablep(name)? name :
-	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+        kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
     const TValue *node = klispH_getstr(tv2table(K->require_table), 
-				       tv2str(saved_name));
+                                       tv2str(saved_name));
     if (!ttisfree(*node)) {
-	/* was required already, nothing to be done */
-	kapply_cc(K, KINERT);
+        /* was required already, nothing to be done */
+        kapply_cc(K, KINERT);
     }
 
     krooted_tvs_push(K, saved_name);
@@ -896,8 +896,8 @@ void require(klisp_State *K)
     filename = find_file(K, name, K->require_path);
     
     if (kstring_emptyp(filename)) {
-	klispE_throw_simple_with_irritants(K, "Not found", 1, name);
-	return;
+        klispE_throw_simple_with_irritants(K, "Not found", 1, name);
+        return;
     }
 
     /* the file was found, save it in the table */
@@ -907,25 +907,25 @@ void require(klisp_State *K)
        sate of the require in the table, so we could have: error, required,
        requiring, etc */
     *(klispH_setstr(K, tv2table(K->require_table), tv2str(saved_name))) = 
-	KTRUE;
+        KTRUE;
     krooted_tvs_pop(K); /* saved_name no longer necessary */
 
     /* the reads must be guarded to close the file if there is some error 
-     this continuation also will return inert after the evaluation of the
-     last expression is done */
+       this continuation also will return inert after the evaluation of the
+       last expression is done */
     TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
     krooted_vars_pop(K); /* filename already rooted */
 
     TValue inert_cont = kmake_continuation(K, kget_cc(K), do_return_value, 1, 
-					   KINERT);
+                                           KINERT);
     
     krooted_tvs_push(K, inert_cont);
 
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
     /* this will be used later, but contruct it now to use the 
        current continuation as parent 
-    GC: root this obj */
+       GC: root this obj */
     kset_cc(K, guarded_cont); /* implicit rooting */
     /* any error will close the port */
     TValue ls = kread_list_from_port(K, port, false);  /* immutable pairs */
@@ -936,28 +936,28 @@ void require(klisp_State *K)
     krooted_tvs_pop(K); /* already rooted */
 
     if (ttisnil(ls)) {
-	krooted_tvs_pop(K); /* port */
-	kapply_cc(K, KINERT);
+        krooted_tvs_pop(K); /* port */
+        kapply_cc(K, KINERT);
     } else {
-	TValue tail = kcdr(ls);
-	/* std environments have hashtable for bindings */
-	TValue env = kmake_table_environment(K, K->ground_env);
-	if (ttispair(tail)) {
-	    krooted_tvs_push(K, ls);
-	    krooted_tvs_push(K, env);
-	    TValue new_cont = kmake_continuation(K, kget_cc(K),
-						 do_seq, 2, tail, env);
-	    kset_cc(K, new_cont);
+        TValue tail = kcdr(ls);
+        /* std environments have hashtable for bindings */
+        TValue env = kmake_table_environment(K, K->ground_env);
+        if (ttispair(tail)) {
+            krooted_tvs_push(K, ls);
+            krooted_tvs_push(K, env);
+            TValue new_cont = kmake_continuation(K, kget_cc(K),
+                                                 do_seq, 2, tail, env);
+            kset_cc(K, new_cont);
 #if KTRACK_SI
-	    /* put the source info of the list including the element
-	       that we are about to evaluate */
-	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+            /* put the source info of the list including the element
+               that we are about to evaluate */
+            kset_source_info(K, new_cont, ktry_get_si(K, ls));
 #endif
-	    krooted_tvs_pop(K); /* env */
-	    krooted_tvs_pop(K); /* ls */
-	} 
-	krooted_tvs_pop(K); /* port */
-	ktail_eval(K, kcar(ls), env);
+            krooted_tvs_pop(K); /* env */
+            krooted_tvs_pop(K); /* ls */
+        } 
+        krooted_tvs_pop(K); /* port */
+        ktail_eval(K, kcar(ls), env);
     }
 }
 
@@ -966,18 +966,18 @@ void registered_requirementP(klisp_State *K)
 {
     bind_1tp(K, K->next_value, "string", ttisstring, name);
     if (kstring_emptyp(name)) {
-	klispE_throw_simple(K, "Empty name");
-	return;
+        klispE_throw_simple(K, "Empty name");
+        return;
     }
     /* search for the named file in the table of already
        required files. 
        N.B. this will be fooled if the same file is accessed
        through different names */
     TValue saved_name = kstring_immutablep(name)? name :
-	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+        kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
     const TValue *node = klispH_getstr(tv2table(K->require_table), 
-				       tv2str(saved_name));
+                                       tv2str(saved_name));
     kapply_cc(K, ttisfree(*node)? KFALSE : KTRUE);
 }
 
@@ -985,11 +985,11 @@ void register_requirementB(klisp_State *K)
 {
     bind_1tp(K, K->next_value, "string", ttisstring, name);
     if (kstring_emptyp(name)) {
-	klispE_throw_simple(K, "Empty name");
-	return;
+        klispE_throw_simple(K, "Empty name");
+        return;
     }
     TValue saved_name = kstring_immutablep(name)? name :
-	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+        kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
     /* don't throw error if already registered */
     *(klispH_setstr(K, tv2table(K->require_table), 
@@ -1001,11 +1001,11 @@ void unregister_requirementB(klisp_State *K)
 {
     bind_1tp(K, K->next_value, "string", ttisstring, name);
     if (kstring_emptyp(name)) {
-	klispE_throw_simple(K, "Empty name");
-	return;
+        klispE_throw_simple(K, "Empty name");
+        return;
     }
     TValue saved_name = kstring_immutablep(name)? name :
-	kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
+        kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
     /* don't throw error if not registered */
     *(klispH_setstr(K, tv2table(K->require_table), 
@@ -1018,14 +1018,14 @@ void find_required_filename(klisp_State *K)
 {
     bind_1tp(K, K->next_value, "string", ttisstring, name);
     if (kstring_emptyp(name)) {
-	klispE_throw_simple(K, "Empty name");
-	return;
+        klispE_throw_simple(K, "Empty name");
+        return;
     }
     TValue filename = find_file(K, name, K->require_path);
     
     if (kstring_emptyp(filename)) {
-	klispE_throw_simple_with_irritants(K, "Not found", 1, name);
-	return;
+        klispE_throw_simple_with_irritants(K, "Not found", 1, name);
+        return;
     }
     kapply_cc(K, filename);
 }
@@ -1040,7 +1040,7 @@ void get_module(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_al1tp(K, ptree, "string", ttisstring, filename, 
-	maybe_env);
+               maybe_env);
 
     TValue port = kmake_fport(K, filename, false, false);
     krooted_tvs_push(K, port);
@@ -1051,17 +1051,17 @@ void get_module(klisp_State *K)
     krooted_tvs_push(K, env);
 
     if (get_opt_tpar(K, maybe_env, "environment", ttisenvironment)) {
-	kadd_binding(K, env, K->module_params_sym, maybe_env);
+        kadd_binding(K, env, K->module_params_sym, maybe_env);
     }
 
     TValue ret_env_cont = kmake_continuation(K, kget_cc(K), do_return_value, 
-					     1, env);
+                                             1, env);
     krooted_tvs_pop(K); /* env alread in cont */
     krooted_tvs_push(K, ret_env_cont);
 
     /* the reads must be guarded to close the file if there is some error 
-     this continuation also will return inert after the evaluation of the
-     last expression is done */
+       this continuation also will return inert after the evaluation of the
+       last expression is done */
     TValue guarded_cont = make_guarded_read_cont(K, kget_cc(K), port);
     kset_cc(K, guarded_cont); /* implicit roooting */
 
@@ -1075,24 +1075,24 @@ void get_module(klisp_State *K)
     krooted_tvs_pop(K); /* implicitly rooted */
 
     if (ttisnil(ls)) {
-	krooted_tvs_pop(K); /* port */
-	kapply_cc(K, KINERT);
+        krooted_tvs_pop(K); /* port */
+        kapply_cc(K, KINERT);
     } else {
-	TValue tail = kcdr(ls);
-	if (ttispair(tail)) {
-	    krooted_tvs_push(K, ls);
-	    TValue new_cont = kmake_continuation(K, kget_cc(K),
-					     do_seq, 2, tail, env);
-	    kset_cc(K, new_cont);
+        TValue tail = kcdr(ls);
+        if (ttispair(tail)) {
+            krooted_tvs_push(K, ls);
+            TValue new_cont = kmake_continuation(K, kget_cc(K),
+                                                 do_seq, 2, tail, env);
+            kset_cc(K, new_cont);
 #if KTRACK_SI
-	    /* put the source info of the list including the element
-	       that we are about to evaluate */
-	    kset_source_info(K, new_cont, ktry_get_si(K, ls));
+            /* put the source info of the list including the element
+               that we are about to evaluate */
+            kset_source_info(K, new_cont, ktry_get_si(K, ls));
 #endif
-	    krooted_tvs_pop(K);
-	} 
-	krooted_tvs_pop(K); /* port */
-	ktail_eval(K, kcar(ls), env);
+            krooted_tvs_pop(K);
+        } 
+        krooted_tvs_pop(K); /* port */
+        ktail_eval(K, kcar(ls), env);
     }
 }
 
@@ -1107,21 +1107,21 @@ void display(klisp_State *K)
     UNUSED(denv);
     
     bind_al1tp(K, ptree, "any", anytype, obj,
-	       port);
+               port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(K->kd_out_port_key); /* access directly */
     }
 
     if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
     
     /* true: don't quote strings, don't escape chars */
@@ -1141,18 +1141,18 @@ void read_line(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(K->kd_in_port_key); /* access directly */
     }
 
     if (!kport_is_input(port)) {
-	klispE_throw_simple(K, "the port should be an input port");
-	return;
+        klispE_throw_simple(K, "the port should be an input port");
+        return;
     } else if (!kport_is_textual(port)) {
-	klispE_throw_simple(K, "the port should be a textual port");
-	return;
+        klispE_throw_simple(K, "the port should be a textual port");
+        return;
     } else if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     TValue obj = kread_line_from_port(K, port);
@@ -1172,17 +1172,17 @@ void flush(klisp_State *K)
     TValue port = ptree;
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-	port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(K->kd_out_port_key); /* access directly */
     }
 
     if (!kport_is_output(port)) {
-	klispE_throw_simple(K, "the port should be an output port");
-	return;
+        klispE_throw_simple(K, "the port should be an output port");
+        return;
     } 
 
     if (kport_is_closed(port)) {
-	klispE_throw_simple(K, "the port is already closed");
-	return;
+        klispE_throw_simple(K, "the port is already closed");
+        return;
     }
 
     kwrite_flush_port(K, port);
@@ -1201,85 +1201,85 @@ void kinit_ports_ground_env(klisp_State *K)
 
     /* 15.1.1 port? */
     add_applicative(K, ground_env, "port?", ftypep, 2, symbol, 
-		    p2tv(kportp));
+                    p2tv(kportp));
     /* 15.1.2 input-port?, output-port? */
     add_applicative(K, ground_env, "input-port?", ftypep, 2, symbol, 
-		    p2tv(kinput_portp));
+                    p2tv(kinput_portp));
     add_applicative(K, ground_env, "output-port?", ftypep, 2, symbol, 
-		    p2tv(koutput_portp));
+                    p2tv(koutput_portp));
     /* 15.1.? binary-port?, textual-port? */
     add_applicative(K, ground_env, "binary-port?", ftypep, 2, symbol, 
-		    p2tv(kbinary_portp));
+                    p2tv(kbinary_portp));
     add_applicative(K, ground_env, "textual-port?", ftypep, 2, symbol, 
-		    p2tv(ktextual_portp));
+                    p2tv(ktextual_portp));
     /* 15.1.2 file-port?, string-port?, bytevector-port? */
     add_applicative(K, ground_env, "file-port?", ftypep, 2, symbol, 
-		    p2tv(kfile_portp));
+                    p2tv(kfile_portp));
     add_applicative(K, ground_env, "string-port?", ftypep, 2, symbol, 
-		    p2tv(kstring_portp));
+                    p2tv(kstring_portp));
     add_applicative(K, ground_env, "bytevector-port?", ftypep, 2, symbol, 
-		    p2tv(kbytevector_portp));
+                    p2tv(kbytevector_portp));
     /* 15.1.? port-open? */
     add_applicative(K, ground_env, "port-open?", ftyped_predp, 3, symbol, 
-		    p2tv(kportp), p2tv(kport_openp));
+                    p2tv(kportp), p2tv(kport_openp));
 
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
     /* 15.1.? with-error-to-file */
     add_applicative(K, ground_env, "with-input-from-file", with_file, 
-		    3, symbol, b2tv(false), K->kd_in_port_key);
+                    3, symbol, b2tv(false), K->kd_in_port_key);
     add_applicative(K, ground_env, "with-output-to-file", with_file, 
-		    3, symbol, b2tv(true), K->kd_out_port_key);
+                    3, symbol, b2tv(true), K->kd_out_port_key);
     add_applicative(K, ground_env, "with-error-to-file", with_file, 
-		    3, symbol, b2tv(true), K->kd_error_port_key);
+                    3, symbol, b2tv(true), K->kd_error_port_key);
     /* 15.1.4 get-current-input-port, get-current-output-port */
     /* 15.1.? get-current-error-port */
     add_applicative(K, ground_env, "get-current-input-port", get_current_port, 
-		    2, symbol, K->kd_in_port_key);
+                    2, symbol, K->kd_in_port_key);
     add_applicative(K, ground_env, "get-current-output-port", get_current_port, 
-		    2, symbol, K->kd_out_port_key);
+                    2, symbol, K->kd_out_port_key);
     add_applicative(K, ground_env, "get-current-error-port", get_current_port, 
-		    2, symbol, K->kd_error_port_key);
+                    2, symbol, K->kd_error_port_key);
     /* 15.1.5 open-input-file, open-output-file */
     add_applicative(K, ground_env, "open-input-file", open_file, 2, 
-		    b2tv(false), b2tv(false));
+                    b2tv(false), b2tv(false));
     add_applicative(K, ground_env, "open-output-file", open_file, 2, 
-		    b2tv(true), b2tv(false));
+                    b2tv(true), b2tv(false));
     /* 15.1.? open-binary-input-file, open-binary-output-file */
     add_applicative(K, ground_env, "open-binary-input-file", open_file, 2, 
-		    b2tv(false), b2tv(true));
+                    b2tv(false), b2tv(true));
     add_applicative(K, ground_env, "open-binary-output-file", open_file, 2, 
-		    b2tv(true), b2tv(true));
+                    b2tv(true), b2tv(true));
     /* 15.1.? open-input-string, open-output-string */
     /* 15.1.? open-input-bytevector, open-output-bytevector */
     add_applicative(K, ground_env, "open-input-string", open_mport, 2, 
-		    b2tv(false), b2tv(false));
+                    b2tv(false), b2tv(false));
     add_applicative(K, ground_env, "open-output-string", open_mport, 2, 
-		    b2tv(true), b2tv(false));
+                    b2tv(true), b2tv(false));
     add_applicative(K, ground_env, "open-input-bytevector", open_mport, 2, 
-		    b2tv(false), b2tv(true));
+                    b2tv(false), b2tv(true));
     add_applicative(K, ground_env, "open-output-bytevector", open_mport, 2, 
-		    b2tv(true), b2tv(true));
+                    b2tv(true), b2tv(true));
 
     /* 15.1.6 close-input-file, close-output-file */
     /* ASK John: should this be called close-input-port & close-ouput-port 
        like in r5rs? that doesn't seem consistent with open thou */
     add_applicative(K, ground_env, "close-input-file", close_file, 1,
-		    b2tv(false));
+                    b2tv(false));
     add_applicative(K, ground_env, "close-output-file", close_file, 1,
-		    b2tv(true));
+                    b2tv(true));
     /* 15.1.? Use the r7rs names, in preparation for other kind of ports */
     add_applicative(K, ground_env, "close-input-port", close_port, 2, 
-		    b2tv(true), b2tv(false));
+                    b2tv(true), b2tv(false));
     add_applicative(K, ground_env, "close-output-port", close_port, 2, 
-		    b2tv(false), b2tv(true));
+                    b2tv(false), b2tv(true));
     add_applicative(K, ground_env, "close-port", close_port, 2, 
-		    b2tv(false), b2tv(false));
+                    b2tv(false), b2tv(false));
 
     /* 15.1.? get-output-string, get-output-bytevector */
     add_applicative(K, ground_env, "get-output-string", get_output_buffer, 1, 
-		    b2tv(false));
+                    b2tv(false));
     add_applicative(K, ground_env, "get-output-bytevector", get_output_buffer, 
-		    1, b2tv(true));
+                    1, b2tv(true));
 
     /* 15.1.7 read */
     add_applicative(K, ground_env, "read", gread, 0);
@@ -1290,17 +1290,17 @@ void kinit_ports_ground_env(klisp_State *K)
 
     /* 15.1.? eof-object? */
     add_applicative(K, ground_env, "eof-object?", typep, 2, symbol, 
-		    i2tv(K_TEOF));
+                    i2tv(K_TEOF));
     /* 15.1.? newline */
     add_applicative(K, ground_env, "newline", newline, 0);
     /* 15.1.? write-char */
     add_applicative(K, ground_env, "write-char", write_char, 0);
     /* 15.1.? read-char */
     add_applicative(K, ground_env, "read-char", read_peek_char, 1, 
-		    b2tv(false));
+                    b2tv(false));
     /* 15.1.? peek-char */
     add_applicative(K, ground_env, "peek-char", read_peek_char, 1,
-		    b2tv(true));
+                    b2tv(true));
     /* 15.1.? char-ready? */
     /* XXX: this always return #t, proper behaviour requires platform 
        specific code (probably select for posix, a thread for windows
@@ -1311,10 +1311,10 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "write-u8", write_u8, 0);
     /* 15.1.? read-u8 */
     add_applicative(K, ground_env, "read-u8", read_peek_u8, 1, 
-		    b2tv(false));
+                    b2tv(false));
     /* 15.1.? peek-u8 */
     add_applicative(K, ground_env, "peek-u8", read_peek_u8, 1, 
-		    b2tv(true));
+                    b2tv(true));
     /* 15.1.? u8-ready? */
     /* XXX: this always return #t, proper behaviour requires platform 
        specific code (probably select for posix, a thread for windows
@@ -1323,9 +1323,9 @@ void kinit_ports_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "u8-ready?", u8_readyp, 0);
     /* 15.2.1 call-with-input-file, call-with-output-file */
     add_applicative(K, ground_env, "call-with-input-file", call_with_file, 
-		    2, symbol, b2tv(false));
+                    2, symbol, b2tv(false));
     add_applicative(K, ground_env, "call-with-output-file", call_with_file, 
-		    2, symbol, b2tv(true));
+                    2, symbol, b2tv(true));
     /* 15.2.2 load */
     add_applicative(K, ground_env, "load", load, 0);
     /* 15.2.? require */

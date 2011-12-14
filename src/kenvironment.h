@@ -19,7 +19,7 @@ bool kbinds(klisp_State *K, TValue env, TValue sym);
 /* keyed dynamic vars */
 /* GC: Assumes parents, key & val are rooted */
 TValue kmake_keyed_static_env(klisp_State *K, TValue parent, TValue key, 
-			      TValue val);
+                              TValue val);
 TValue kget_keyed_static_var(klisp_State *K, TValue env, TValue key);
 
 /* environments with hashtable bindings */

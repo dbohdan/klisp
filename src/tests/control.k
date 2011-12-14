@@ -22,8 +22,8 @@
 ($check-not-predicate (inert? wrap))
 ($check-not-predicate (inert? (call/cc ($lambda (c) c))))
 ($check-not-predicate (inert? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                      (make-encapsulation-type)))
+                                (enc #inert))))
 ($check-not-predicate (inert? (memoize #inert)))
 ($check-not-predicate (inert? 1))
 ($check-not-predicate (inert? 1.0))
@@ -49,9 +49,9 @@
 ($check eq? ($if #f #t (get-current-environment)) (get-current-environment))
 ($let ((p (cons () ())))
   ($check eq? ($if (($vau #ignore env
-		      (set-car! p env)
-		      #t)) (car p) #f) 
-	  (get-current-environment)))
+                      (set-car! p env)
+                      #t)) (car p) #f) 
+          (get-current-environment)))
 
 ;; $sequence
 ($check-predicate (operative? $sequence))
@@ -60,16 +60,16 @@
 ($check eq? ($sequence 1 2 3) 3)
 ($check eq? ($sequence (get-current-environment)) (get-current-environment))
 ($check eq? ($sequence #inert #inert (get-current-environment)) 
-	(get-current-environment))
+        (get-current-environment))
 
 ($let ((p (cons 0 ())))
   ($check eq? 
-	  ($let/cc cont
-	    ($sequence . #0=(($if (=? (car p) 3)
-				  (apply-continuation cont #t)
-				  (set-car! p (+ (car p) 1)))
-			     . #0#)))
-	  #t))
+          ($let/cc cont
+            ($sequence . #0=(($if (=? (car p) 3)
+                                  (apply-continuation cont #t)
+                                  (set-car! p (+ (car p) 1)))
+                             . #0#)))
+          #t))
 
 ;; $cond
 ($check-predicate (operative? $cond))
@@ -80,22 +80,22 @@
 ($check eq? ($cond (#t (get-current-environment))) (get-current-environment))
 ($let ((p (cons () ())))
   ($check eq? 
-	  ($cond (#f)
-		 (($sequence (set-car! p (get-current-environment))
-			     #t)
-		  (car p))
-		 (#f))
-	  (get-current-environment)))
+          ($cond (#f)
+                 (($sequence (set-car! p (get-current-environment))
+                             #t)
+                  (car p))
+                 (#f))
+          (get-current-environment)))
 ($check eq? ($cond . #0=((#f) (#t 1) . #0#)) 1)
 ($let ((p (cons 0 ())))
   ($check eq? 
-	  ($cond . #0=(((=? (car p) 3) 3)
-		       (($sequence (set-car! p (+ (car p) 1))
-				   #f)
-			0)
-		       (#f)
-		       . #0#))
-	  3))
+          ($cond . #0=(((=? (car p) 3) 3)
+                       (($sequence (set-car! p (+ (car p) 1))
+                                   #f)
+                        0)
+                       (#f)
+                       . #0#))
+          3))
 
 
 ;; for-each
@@ -104,46 +104,46 @@
 ($check eq? (for-each cons (list 1 2 3 4) (list 10 20 30 40)) #inert)
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (for-each (wrap ($vau #ignore env
-				       (set-car! p env)))
-			       (list 1))
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (for-each (wrap ($vau #ignore env
+                                       (set-car! p env)))
+                               (list 1))
+                     (car p))
+          (get-current-environment)))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (for-each ($lambda (x)
-				 (set-car! p (+ (car p) x)))
-			       (list 1 2 3 4))
-		     (car p))
-	  10))
+          ($sequence (for-each ($lambda (x)
+                                 (set-car! p (+ (car p) x)))
+                               (list 1 2 3 4))
+                     (car p))
+          10))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (for-each ($lambda (x y )
-				 (set-car! p (+ (car p) x y)))
-			       (list 1 2 3 4)
-			       (list 10 20 30 40))
-		     (car p))
-	  110))
+          ($sequence (for-each ($lambda (x y )
+                                 (set-car! p (+ (car p) x y)))
+                               (list 1 2 3 4)
+                               (list 10 20 30 40))
+                     (car p))
+          110))
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($let/cc cont
-	    (for-each ($lambda (x)
-			($if (=? (car p) 10)
-			     (apply-continuation cont 10)
-			     (set-car! p (+ (car p) 1))))
-		      (list 1 . #0=(2 3 4 . #0#))))
-	  #inert))
+          ($let/cc cont
+            (for-each ($lambda (x)
+                        ($if (=? (car p) 10)
+                             (apply-continuation cont 10)
+                             (set-car! p (+ (car p) 1))))
+                      (list 1 . #0=(2 3 4 . #0#))))
+          #inert))
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (for-each ($lambda ls
-				 (set-car! p (finite-list? ls)))
-		     . #0=((list 1 2 3 4)
-			   (list 10 20 30 40)
-			   . #0#))
-		     (car p))
-	  #f))
+          ($sequence (for-each ($lambda ls
+                                 (set-car! p (finite-list? ls)))
+                               . #0=((list 1 2 3 4)
+                                     (list 10 20 30 40)
+                                     . #0#))
+                     (car p))
+          #f))
 
 
 ;; string-for-each
@@ -153,120 +153,120 @@
 
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (string-for-each (wrap ($vau #ignore env
-				       (set-car! p env)))
-			       "a")
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (string-for-each (wrap ($vau #ignore env
+                                              (set-car! p env)))
+                                      "a")
+                     (car p))
+          (get-current-environment)))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (string-for-each ($lambda (x)
-					(set-car! p (+ (car p) 
-						       (char->integer x))))
-			       "abcd")
-		     (car p))
-	  (apply + (map char->integer (string->list "abcd")))))
+          ($sequence (string-for-each ($lambda (x)
+                                        (set-car! p (+ (car p) 
+                                                       (char->integer x))))
+                                      "abcd")
+                     (car p))
+          (apply + (map char->integer (string->list "abcd")))))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (string-for-each ($lambda (x y )
-				 (set-car! p (+ (car p) 
-						 (char->integer x) 
-						 (char->integer y))))
-			       "abc"
-			       "def")
-		     (car p))
-	  (apply + (map char->integer (string->list "abcdef")))))
+          ($sequence (string-for-each ($lambda (x y )
+                                        (set-car! p (+ (car p) 
+                                                       (char->integer x) 
+                                                       (char->integer y))))
+                                      "abc"
+                                      "def")
+                     (car p))
+          (apply + (map char->integer (string->list "abcdef")))))
 
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (string-for-each ($lambda ls
-				 (set-car! p (finite-list? ls)))
-		     . #0=("abc"
-			   "def"
-			   . #0#))
-		     (car p))
-	  #f))
+          ($sequence (string-for-each ($lambda ls
+                                        (set-car! p (finite-list? ls)))
+                                      . #0=("abc"
+                                            "def"
+                                            . #0#))
+                     (car p))
+          #f))
 
 
 ;; vector-for-each
 ($check-predicate (applicative? vector-for-each))
 ($check eq? (vector-for-each + (vector 1 2 3)) #inert)
 ($check eq? (vector-for-each <? (vector 1 2) (vector 3 4)) 
-	#inert)
+        #inert)
 
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (vector-for-each (wrap ($vau #ignore env
-				       (set-car! p env)))
-			       (vector 1))
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (vector-for-each (wrap ($vau #ignore env
+                                              (set-car! p env)))
+                                      (vector 1))
+                     (car p))
+          (get-current-environment)))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (vector-for-each ($lambda (x)
-					(set-car! p (+ (car p) x)))
-			       (vector 1 2 3 4))
-		     (car p))
-	  10))
+          ($sequence (vector-for-each ($lambda (x)
+                                        (set-car! p (+ (car p) x)))
+                                      (vector 1 2 3 4))
+                     (car p))
+          10))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (vector-for-each ($lambda (x y )
-				 (set-car! p (+ (car p) x y)))
-			       (vector 1 2 3 4)
-			       (vector 10 20 30 40))
-		     (car p))
-	  110))
+          ($sequence (vector-for-each ($lambda (x y )
+                                        (set-car! p (+ (car p) x y)))
+                                      (vector 1 2 3 4)
+                                      (vector 10 20 30 40))
+                     (car p))
+          110))
 
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (vector-for-each ($lambda ls
-				 (set-car! p (finite-list? ls)))
-		     . #0=((vector 1 2)
-			   (vector 3 4)
-			   . #0#))
-		     (car p))
-	  #f))
+          ($sequence (vector-for-each ($lambda ls
+                                        (set-car! p (finite-list? ls)))
+                                      . #0=((vector 1 2)
+                                            (vector 3 4)
+                                            . #0#))
+                     (car p))
+          #f))
 
 ;; bytevector-for-each
 ($check-predicate (applicative? bytevector-for-each))
 ($check eq? (bytevector-for-each + (bytevector 1 2 3)) #inert)
 ($check eq? (bytevector-for-each <? (bytevector 1 2) (bytevector 3 4)) 
-	#inert)
+        #inert)
 
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (bytevector-for-each (wrap ($vau #ignore env
-				       (set-car! p env)))
-			       (bytevector 1))
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (bytevector-for-each (wrap ($vau #ignore env
+                                                  (set-car! p env)))
+                                          (bytevector 1))
+                     (car p))
+          (get-current-environment)))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (bytevector-for-each ($lambda (x)
-					(set-car! p (+ (car p) x)))
-			       (bytevector 1 2 3 4))
-		     (car p))
-	  10))
+          ($sequence (bytevector-for-each ($lambda (x)
+                                            (set-car! p (+ (car p) x)))
+                                          (bytevector 1 2 3 4))
+                     (car p))
+          10))
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (bytevector-for-each ($lambda (x y )
-				 (set-car! p (+ (car p) x y)))
-			       (bytevector 1 2 3 4)
-			       (bytevector 10 20 30 40))
-		     (car p))
-	  110))
+          ($sequence (bytevector-for-each ($lambda (x y )
+                                            (set-car! p (+ (car p) x y)))
+                                          (bytevector 1 2 3 4)
+                                          (bytevector 10 20 30 40))
+                     (car p))
+          110))
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (bytevector-for-each ($lambda ls
-				 (set-car! p (finite-list? ls)))
-		     . #0=((bytevector 1 2)
-			   (bytevector 3 4)
-			   . #0#))
-		     (car p))
-	  #f))
+          ($sequence (bytevector-for-each ($lambda ls
+                                            (set-car! p (finite-list? ls)))
+                                          . #0=((bytevector 1 2)
+                                                (bytevector 3 4)
+                                                . #0#))
+                     (car p))
+          #f))
 
 ;; $when
 ($check-predicate (operative? $when))
@@ -279,29 +279,29 @@
 
 ($let ((p (cons () ())))
   ($check equal? ($sequence ($when #f (set-car! p 1))
-			    (car p))
-	  ()))
+                            (car p))
+          ()))
 
 ($let ((p (cons () ())))
   ($check eq? ($sequence ($when ($sequence 
-				  (set-car! p (get-current-environment)) 
-				  #f))
-			(car p))
-	 (get-current-environment)))
+                                  (set-car! p (get-current-environment)) 
+                                  #f))
+                         (car p))
+          (get-current-environment)))
 
 ($let ((p (cons () ())))
   ($check eq? ($sequence ($when #t (set-car! p (get-current-environment)))
-			 (car p))
-	  (get-current-environment)))
+                         (car p))
+          (get-current-environment)))
 
 ;; check tail recursiveness
 ($let ((p (cons 1 2)))
   ($check-predicate ($sequence ($when #t ($let/cc cont1
-					   (set-car! p cont1)
-					   ($when #t
-						  ($let/cc cont2
-						    (set-cdr! p cont2)))))
-			       (eq? (car p) (cdr p)))))
+                                           (set-car! p cont1)
+                                           ($when #t
+                                             ($let/cc cont2
+                                               (set-cdr! p cont2)))))
+                               (eq? (car p) (cdr p)))))
 
 ;; $unless
 ($check-predicate (operative? $unless))
@@ -314,29 +314,29 @@
 
 ($let ((p (cons () ())))
   ($check equal? ($sequence ($unless #t (set-car! p 1))
-			    (car p))
-	  ()))
+                            (car p))
+          ()))
 
 ($let ((p (cons () ())))
   ($check eq? ($sequence ($unless ($sequence 
-				  (set-car! p (get-current-environment)) 
-				  #t))
-			(car p))
-	 (get-current-environment)))
+                                    (set-car! p (get-current-environment)) 
+                                    #t))
+                         (car p))
+          (get-current-environment)))
 
 ($let ((p (cons () ())))
   ($check eq? ($sequence ($unless #f (set-car! p (get-current-environment)))
-			 (car p))
-	  (get-current-environment)))
+                         (car p))
+          (get-current-environment)))
 
 ;; check tail recursiveness
 ($let ((p (cons 1 2)))
   ($check-predicate ($sequence ($unless #f ($let/cc cont1
-					   (set-car! p cont1)
-					   ($unless #f
-						  ($let/cc cont2
-						    (set-cdr! p cont2)))))
-			       (eq? (car p) (cdr p)))))
+                                             (set-car! p cont1)
+                                             ($unless #f
+                                               ($let/cc cont2
+                                                 (set-cdr! p cont2)))))
+                               (eq? (car p) (cdr p)))))
 
 ;;;
 ;;; Error Checking and Robustness
@@ -421,16 +421,16 @@
 ($check-error (bytevector-for-each +)) ; the list can't be empty
 
 ($check-error (bytevector-for-each <? (bytevector 1 2) 
-				   (bytevector 1 2 3)))
+                                   (bytevector 1 2 3)))
 
 ($check-error (bytevector-for-each + #inert))
 ($check-error (bytevector-for-each #inert (bytevector 1 2 3)))
 ($check-error (bytevector-for-each (unwrap char-upcase) 
-				   (bytevector 1 2)))
+                                   (bytevector 1 2)))
 
 ($check-error (bytevector-for-each <? (bytevector 1 2) #inert))
 ($check-error (bytevector-for-each cons
-			       (bytevector 1 2 3)))
+                                   (bytevector 1 2 3)))
 
 
 ;; $when

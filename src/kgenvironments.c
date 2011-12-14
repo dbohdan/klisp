@@ -48,7 +48,7 @@ void eval(klisp_State *K)
     UNUSED(xparams);
 
     bind_2tp(K, ptree, "any", anytype, expr,
-	     "environment", ttisenvironment, env);
+             "environment", ttisenvironment, env);
     /* TODO: track source code info */
     ktail_eval(K, expr, env);
 }
@@ -65,27 +65,27 @@ void make_environment(klisp_State *K)
 
     TValue new_env;
     if (ttisnil(ptree)) {
-	new_env = kmake_empty_environment(K);
-	kapply_cc(K, new_env);
+        new_env = kmake_empty_environment(K);
+        kapply_cc(K, new_env);
     } else if (ttispair(ptree) && ttisnil(kcdr(ptree))) {
-	/* special common case of one parent, don't keep a list */
-	TValue parent = kcar(ptree);
-	if (ttisenvironment(parent)) {
-	    new_env = kmake_environment(K, parent);
-	    kapply_cc(K, new_env);
-	} else {
-	    klispE_throw_simple(K, "not an environment in "
-			 "parent list");
-	    return;
-	}
+        /* special common case of one parent, don't keep a list */
+        TValue parent = kcar(ptree);
+        if (ttisenvironment(parent)) {
+            new_env = kmake_environment(K, parent);
+            kapply_cc(K, new_env);
+        } else {
+            klispE_throw_simple(K, "not an environment in "
+                                "parent list");
+            return;
+        }
     } else {
-	/* this is the general case, copy the list but without the
-	   cycle if there is any */
-	TValue parents = check_copy_env_list(K, ptree);
-	krooted_tvs_push(K, parents);
-	new_env = kmake_environment(K, parents);
-	krooted_tvs_pop(K);
-	kapply_cc(K, new_env);
+        /* this is the general case, copy the list but without the
+           cycle if there is any */
+        TValue parents = check_copy_env_list(K, ptree);
+        krooted_tvs_push(K, parents);
+        new_env = kmake_environment(K, parents);
+        krooted_tvs_pop(K);
+        kapply_cc(K, new_env);
     }
 }
 
@@ -105,7 +105,7 @@ void make_environment(klisp_State *K)
 
 /* GC: assume bindings is rooted */
 TValue split_check_let_bindings(klisp_State *K, TValue bindings, 
-				TValue *exprs, bool starp)
+                                TValue *exprs, bool starp)
 {
     TValue cars = kcons(K, KNIL, KNIL);
     krooted_vars_push(K, &cars);
@@ -117,54 +117,54 @@ TValue split_check_let_bindings(klisp_State *K, TValue bindings,
     TValue tail = bindings;
 
     while(ttispair(tail) && !kis_marked(tail)) {
-	kmark(tail);
-	TValue first = kcar(tail);
-	if (!ttispair(first) || !ttispair(kcdr(first)) ||
-	        !ttisnil(kcddr(first))) {
-	    unmark_list(K, bindings);
-	    klispE_throw_simple(K, "bad structure in bindings");
-	    return KNIL;
-	}
+        kmark(tail);
+        TValue first = kcar(tail);
+        if (!ttispair(first) || !ttispair(kcdr(first)) ||
+            !ttisnil(kcddr(first))) {
+            unmark_list(K, bindings);
+            klispE_throw_simple(K, "bad structure in bindings");
+            return KNIL;
+        }
 	
-	TValue new_car = kcons(K, kcar(first), KNIL);
-	kset_cdr(last_car_pair, new_car);
-	last_car_pair = new_car;
-	TValue new_cadr = kcons(K, kcadr(first), KNIL);
-	kset_cdr(last_cadr_pair, new_cadr);
-	last_cadr_pair = new_cadr;
+        TValue new_car = kcons(K, kcar(first), KNIL);
+        kset_cdr(last_car_pair, new_car);
+        last_car_pair = new_car;
+        TValue new_cadr = kcons(K, kcadr(first), KNIL);
+        kset_cdr(last_cadr_pair, new_cadr);
+        last_cadr_pair = new_cadr;
 
-	tail = kcdr(tail);
+        tail = kcdr(tail);
     }
 
     unmark_list(K, bindings);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
-	klispE_throw_simple(K, "expected list");
-	return KNIL;
+        klispE_throw_simple(K, "expected list");
+        return KNIL;
     } else if(ttispair(tail)) {
-	klispE_throw_simple(K, "expected finite list"); 
-	return KNIL;
+        klispE_throw_simple(K, "expected finite list"); 
+        return KNIL;
     } else {
-	TValue res;
-	if (starp) {
-	    /* all bindings are consider individual ptrees in these 'let's,
-	       replace each ptree with its copy (after checking of course) */
-	    tail = kcdr(cars);
-	    while(!ttisnil(tail)) {
-		TValue first = kcar(tail);
-		TValue copy = check_copy_ptree(K, first, KIGNORE);
-		kset_car(tail, copy);
-		tail = kcdr(tail);
-	    }
-	    res = kcdr(cars);
-	} else {
-	    /* all bindings are consider one ptree in these 'let's */
-	    res = check_copy_ptree(K, kcdr(cars), KIGNORE);
-	}
-	*exprs = kcdr(cadrs);
-	krooted_vars_pop(K);
-	krooted_vars_pop(K);
-	return res;
+        TValue res;
+        if (starp) {
+            /* all bindings are consider individual ptrees in these 'let's,
+               replace each ptree with its copy (after checking of course) */
+            tail = kcdr(cars);
+            while(!ttisnil(tail)) {
+                TValue first = kcar(tail);
+                TValue copy = check_copy_ptree(K, first, KIGNORE);
+                kset_car(tail, copy);
+                tail = kcdr(tail);
+            }
+            res = kcdr(cars);
+        } else {
+            /* all bindings are consider one ptree in these 'let's */
+            res = check_copy_ptree(K, kcdr(cars), KIGNORE);
+        }
+        *exprs = kcdr(cadrs);
+        krooted_vars_pop(K);
+        krooted_vars_pop(K);
+        return res;
     }
 }
 
@@ -198,34 +198,34 @@ void do_let(klisp_State *K)
     match(K, env, ptree, obj);
     
     if (ttisnil(bindings)) {
-	if (ttisnil(body)) {
-	    kapply_cc(K, KINERT);
-	} else {
-	    /* this is needed because seq continuation doesn't check for 
-	       nil sequence */
-	    TValue tail = kcdr(body);
-	    if (ttispair(tail)) {
-		TValue new_cont = kmake_continuation(K, kget_cc(K),
-						     do_seq, 2, tail, env);
-		kset_cc(K, new_cont);
+        if (ttisnil(body)) {
+            kapply_cc(K, KINERT);
+        } else {
+            /* this is needed because seq continuation doesn't check for 
+               nil sequence */
+            TValue tail = kcdr(body);
+            if (ttispair(tail)) {
+                TValue new_cont = kmake_continuation(K, kget_cc(K),
+                                                     do_seq, 2, tail, env);
+                kset_cc(K, new_cont);
 #if KTRACK_SI
-		/* put the source info of the list including the element
-		   that we are about to evaluate */
-		kset_source_info(K, new_cont, ktry_get_si(K, body));
+                /* put the source info of the list including the element
+                   that we are about to evaluate */
+                kset_source_info(K, new_cont, ktry_get_si(K, body));
 #endif
-	    } 
-	    ktail_eval(K, kcar(body), env);
-	}
+            } 
+            ktail_eval(K, kcar(body), env);
+        }
     } else {
-	TValue new_env = kmake_environment(K, env);
-	krooted_tvs_push(K, new_env);
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			       kcar(bindings), kcdr(bindings), kcdr(exprs), 
-			       new_env, b2tv(recp), body);
-	krooted_tvs_pop(K);
-	kset_cc(K, new_cont);
-	ktail_eval(K, kcar(exprs), recp? new_env : env);
+        TValue new_env = kmake_environment(K, env);
+        krooted_tvs_push(K, new_env);
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                               kcar(bindings), kcdr(bindings), kcdr(exprs), 
+                               new_env, b2tv(recp), body);
+        krooted_tvs_pop(K);
+        kset_cc(K, new_cont);
+        ktail_eval(K, kcar(exprs), recp? new_env : env);
     }
 }
 
@@ -255,8 +255,8 @@ void Slet(klisp_State *K)
     TValue new_env = kmake_environment(K, denv);
     krooted_tvs_push(K, new_env);
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
+        kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                           bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
     TValue expr = kcons(K, K->list_app, exprs);
@@ -283,20 +283,20 @@ void do_bindsp(klisp_State *K)
     int32_t count = ivalue(xparams[1]);
     
     if (!ttisenvironment(obj)) {
-	klispE_throw_simple(K, "expected environment as first argument");
-	return;
+        klispE_throw_simple(K, "expected environment as first argument");
+        return;
     }
     TValue env = obj;
     TValue res = KTRUE;
 
     while(count--) {
-	TValue first = kcar(symbols);
-	symbols = kcdr(symbols);
+        TValue first = kcar(symbols);
+        symbols = kcdr(symbols);
 
-	if (!kbinds(K, env, first)) {
-	    res = KFALSE;
-	    break;
-	}
+        if (!kbinds(K, env, first)) {
+            res = KFALSE;
+            break;
+        }
     }
 
     kapply_cc(K, res);
@@ -319,7 +319,7 @@ void Sbindsp(klisp_State *K)
 
     krooted_tvs_push(K, symbols);
     TValue new_cont = kmake_continuation(K, kget_cc(K), do_bindsp, 
-					 2, symbols, i2tv(count));
+                                         2, symbols, i2tv(count));
     krooted_tvs_pop(K);
     kset_cc(K, new_cont);
     ktail_eval(K, env_expr, denv);
@@ -379,30 +379,30 @@ void SletS(klisp_State *K)
     krooted_tvs_push(K, new_env);
 
     if (ttisnil(bptree)) {
-	/* same as $let */
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			       bptree, KNIL, KNIL, new_env, b2tv(false), body);
-	kset_cc(K, new_cont);
+        /* same as $let */
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                               bptree, KNIL, KNIL, new_env, b2tv(false), body);
+        kset_cc(K, new_cont);
 
-	TValue expr = kcons(K, K->list_app, exprs);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	ktail_eval(K, expr, denv);
+        TValue expr = kcons(K, K->list_app, exprs);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        ktail_eval(K, expr, denv);
     } else {
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			       kcar(bptree), kcdr(bptree), kcdr(exprs), 
-			       new_env, b2tv(false), body);
-	kset_cc(K, new_cont);
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                               kcar(bptree), kcdr(bptree), kcdr(exprs), 
+                               new_env, b2tv(false), body);
+        kset_cc(K, new_cont);
 
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	ktail_eval(K, kcar(exprs), denv);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        ktail_eval(K, kcar(exprs), denv);
     }
 }
 
@@ -432,8 +432,8 @@ void Sletrec(klisp_State *K)
     krooted_tvs_push(K, new_env);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			   bptree, KNIL, KNIL, new_env, b2tv(true), body);
+        kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                           bptree, KNIL, KNIL, new_env, b2tv(true), body);
     kset_cc(K, new_cont);
     
     TValue expr = kcons(K, K->list_app, exprs);
@@ -471,31 +471,31 @@ void SletrecS(klisp_State *K)
     krooted_tvs_push(K, new_env);
 
     if (ttisnil(bptree)) {
-	/* same as $letrec */
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			       bptree, KNIL, KNIL, new_env, b2tv(true), body);
-	kset_cc(K, new_cont);
+        /* same as $letrec */
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                               bptree, KNIL, KNIL, new_env, b2tv(true), body);
+        kset_cc(K, new_cont);
 
-	TValue expr = kcons(K, K->list_app, exprs);
+        TValue expr = kcons(K, K->list_app, exprs);
 
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	ktail_eval(K, expr, new_env);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        ktail_eval(K, expr, new_env);
     } else {
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			       kcar(bptree), kcdr(bptree), kcdr(exprs), 
-			       new_env, b2tv(true), body);
-	kset_cc(K, new_cont);
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                               kcar(bptree), kcdr(bptree), kcdr(exprs), 
+                               new_env, b2tv(true), body);
+        kset_cc(K, new_cont);
 
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	ktail_eval(K, kcar(exprs), new_env);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        ktail_eval(K, kcar(exprs), new_env);
     }
 }
 
@@ -519,14 +519,14 @@ void do_let_redirect(klisp_State *K)
     TValue body = xparams[4];
     
     if (!ttisenvironment(obj)) {
-	klispE_throw_simple(K, "expected environment"); 
-	return;
+        klispE_throw_simple(K, "expected environment"); 
+        return;
     }
     TValue new_env = kmake_environment(K, obj);
     krooted_tvs_push(K, new_env);
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
+        kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                           bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
     krooted_tvs_pop(K);
@@ -559,8 +559,8 @@ void Slet_redirect(klisp_State *K)
     krooted_tvs_push(K, eexpr);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), do_let_redirect, 5, sname, 
-			   bptree, eexpr, denv, body);
+        kmake_continuation(K, kget_cc(K), do_let_redirect, 5, sname, 
+                           bptree, eexpr, denv, body);
     kset_cc(K, new_cont);
 
     krooted_tvs_pop(K);
@@ -600,8 +600,8 @@ void Slet_safe(klisp_State *K)
     TValue new_env = kmake_environment(K, K->ground_env);
     krooted_tvs_push(K, new_env);
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
-			   bptree, KNIL, KNIL, new_env, b2tv(false), body);
+        kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
+                           bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
     TValue expr = kcons(K, K->list_app, exprs);
@@ -626,7 +626,7 @@ void Sremote_eval(klisp_State *K)
     bind_2p(K, ptree, obj, env_exp);
 
     TValue new_cont = kmake_continuation(K, kget_cc(K),
-					 do_remote_eval, 1, obj);
+                                         do_remote_eval, 1, obj);
     kset_cc(K, new_cont);
 
     ktail_eval(K, env_exp, denv);
@@ -639,12 +639,12 @@ void do_remote_eval(klisp_State *K)
     TValue obj = K->next_value;
     klisp_assert(ttisnil(K->next_env));
     if (!ttisenvironment(obj)) {
-	klispE_throw_simple(K, "bad type from second operand "
-		     "evaluation (expected environment)");
-	return;
+        klispE_throw_simple(K, "bad type from second operand "
+                            "evaluation (expected environment)");
+        return;
     } else {
-	TValue eval_exp = xparams[0];
-	ktail_eval(K, eval_exp, obj);
+        TValue eval_exp = xparams[0];
+        ktail_eval(K, eval_exp, obj);
     }
 }
 
@@ -682,7 +682,7 @@ void Sbindings_to_environment(klisp_State *K)
     krooted_tvs_push(K, new_env);
 
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
-					 do_b_to_env, 2, bptree, new_env);
+                                         do_b_to_env, 2, bptree, new_env);
     kset_cc(K, new_cont);
     TValue expr = kcons(K, K->list_app, exprs);
 
@@ -716,7 +716,7 @@ void eval_string(klisp_State *K)
     UNUSED(denv);
     
     bind_2tp(K, ptree, "string", ttisstring, str,
-	     "environment", ttisenvironment, env);
+             "environment", ttisenvironment, env);
     
     /* create a continuation for better stack traces
        in case of error */
@@ -728,17 +728,17 @@ void eval_string(klisp_State *K)
     
     TValue obj = kread_from_port(K, port, true); /* read mutable pairs */ 
     if (ttiseof(obj)) {
-	klispE_throw_simple_with_irritants(K, "No object found in string", 1,
-					   str);
-	return;
+        klispE_throw_simple_with_irritants(K, "No object found in string", 1,
+                                           str);
+        return;
     }
     krooted_tvs_push(K, obj);
     TValue second_obj = kread_from_port(K, port, true);
     krooted_tvs_pop(K);
     if (!ttiseof(second_obj)) {
-	klispE_throw_simple_with_irritants(K, "More than one object found "
-					   "in string", 1, str);
-	return;
+        klispE_throw_simple_with_irritants(K, "More than one object found "
+                                           "in string", 1, str);
+        return;
     }
     kapply_cc(K, obj);
 }
@@ -751,10 +751,10 @@ void kinit_environments_ground_env(klisp_State *K)
 
     /* 4.8.1 environment? */
     add_applicative(K, ground_env, "environment?", typep, 2, symbol, 
-		    i2tv(K_TENVIRONMENT));
+                    i2tv(K_TENVIRONMENT));
     /* 4.8.2 ignore? */
     add_applicative(K, ground_env, "ignore?", typep, 2, symbol, 
-		    i2tv(K_TIGNORE));
+                    i2tv(K_TIGNORE));
     /* 4.8.3 eval */
     add_applicative(K, ground_env, "eval", eval, 0);
     /* 4.8.4 make-environment */
@@ -765,10 +765,10 @@ void kinit_environments_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$binds?", Sbindsp, 0);
     /* 6.7.2 get-current-environment */
     add_applicative(K, ground_env, "get-current-environment", 
-		    get_current_environment, 0);
+                    get_current_environment, 0);
     /* 6.7.3 make-kernel-standard-environment */
     add_applicative(K, ground_env, "make-kernel-standard-environment", 
-		    make_kernel_standard_environment, 0);
+                    make_kernel_standard_environment, 0);
     /* 6.7.4 $let* */
     add_operative(K, ground_env, "$let*", SletS, 1, symbol);
     /* 6.7.5 $letrec */
@@ -783,7 +783,7 @@ void kinit_environments_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$remote-eval", Sremote_eval, 0);
     /* 6.7.10 $bindings->environment */
     add_operative(K, ground_env, "$bindings->environment", 
-		  Sbindings_to_environment, 1, symbol);
+                  Sbindings_to_environment, 1, symbol);
     /* ?.? eval-string */
     add_applicative(K, ground_env, "eval-string", eval_string, 0);
 }

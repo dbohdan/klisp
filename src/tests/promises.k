@@ -26,7 +26,7 @@
 ($check-error ($lazy))
 ($check-error ($lazy "too" "many"))
 ($check equal? (force ($lazy (get-current-environment))) 
-	(get-current-environment))
+        (get-current-environment))
 
 ;; Test cases from R(-1)RK
 ($define! lazy-test-1
@@ -37,28 +37,28 @@
       ($define! p
         ($let ((self (get-current-environment)))
           ($lazy
-            ($if (<=? count 0)
-              count
-              ($sequence
-                ($set! self count (- count 1))
-                (force p)
-                ($set! self count (+ count 2))
-                count))))))
+           ($if (<=? count 0)
+                count
+                ($sequence
+                  ($set! self count (- count 1))
+                  (force p)
+                  ($set! self count (+ count 2))
+                  count))))))
     ($check equal? (get-count) 5)
     ($check equal? (force p) 0)
     ($check equal? (get-count) 10)))
 
 ($define! lazy-test-2
   ($let
-    ((temp-file "klisp-ports-test.txt"))
+      ((temp-file "klisp-ports-test.txt"))
     (with-output-to-file temp-file
-      ($lambda ()
-        ($define! p1 ($lazy (display "*")))
-        ($define! p2 ($lazy p1))
-        (force p2)
-        (force p1)))
+                         ($lambda ()
+                           ($define! p1 ($lazy (display "*")))
+                           ($define! p2 ($lazy p1))
+                           (force p2)
+                           (force p1)))
     ($let
-      ((result (with-input-from-file temp-file read)))
+        ((result (with-input-from-file temp-file read)))
       (delete-file temp-file)
       result)))
 
@@ -76,19 +76,19 @@
     ($define! stream-filter
       ($lambda (p? s)
         ($lazy
-          ($let ((v (force s)))
-            ($if (null? v)
-              v
-              ($let ((s (stream-filter p? (cdr v))))
-                ($if (p? (car v))
-                  (cons (car v) s)
-                  s)))))))
+         ($let ((v (force s)))
+           ($if (null? v)
+                v
+                ($let ((s (stream-filter p? (cdr v))))
+                  ($if (p? (car v))
+                       (cons (car v) s)
+                       s)))))))
     ($define! from
       ($lambda (n)
         ($lazy (cons n (from (+ n 1))))))
     (force
-      (stream-filter ($lambda (n) (=? n 100))
-        (from 0)))))
+     (stream-filter ($lambda (n) (=? n 100))
+                    (from 0)))))
 
 ($check equal? (car lazy-test-3) 100)
 
@@ -114,6 +114,6 @@
 ($check equal? (force ($delay 0)) 0)
 ($check equal? (force (force ($delay 0))) 0)
 ($check equal? (force ($delay (get-current-environment))) 
-	(get-current-environment))
+        (get-current-environment))
 ($check-predicate (promise? (force ($delay (memoize 0)))))
 ($check equal? (force (force ($delay (memoize 0)))) 0)

@@ -19,7 +19,7 @@ TValue kmake_module(klisp_State *K, TValue env, TValue exp_list)
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_mod, K_TMODULE, 
-        K_FLAG_CAN_HAVE_NAME);
+                K_FLAG_CAN_HAVE_NAME);
 
     /* module specific fields */
     new_mod->env = env;

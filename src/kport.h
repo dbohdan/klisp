@@ -13,7 +13,7 @@
 #include "kstate.h"
 
 /* can't be inline because we also use pointers to them,
- (at least gcc doesn't bother to create them and the linker fails) */
+   (at least gcc doesn't bother to create them and the linker fails) */
 bool kportp(TValue o);
 bool kinput_portp(TValue o);
 bool koutput_portp(TValue o);
@@ -29,10 +29,10 @@ bool kport_closedp(TValue o);
 TValue kmake_fport(klisp_State *K, TValue filename, bool writep, bool binaryp);
 
 /* this is for creating ports for stdin/stdout/stderr &
- helper for the one above */
+   helper for the one above */
 /* GC: Assumes filename, name & si are rooted */
 TValue kmake_std_fport(klisp_State *K, TValue filename, bool writep, 
-		       bool binaryp, FILE *file);
+                       bool binaryp, FILE *file);
 
 /* GC: buffer doesn't need to be rooted, but should probably do it anyways */
 TValue kmake_mport(klisp_State *K, TValue buffer, bool writep, bool binaryp);

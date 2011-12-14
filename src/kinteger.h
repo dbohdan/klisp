@@ -27,15 +27,15 @@ inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
     UNUSED(K);
     Bigint *b = tv2bigint(n);
     if (MP_USED(b) != 1)
-	return n;
+        return n;
 
     int64_t digit = (int64_t) *(MP_DIGITS(b));
     if (MP_SIGN(b) == MP_NEG) digit = -digit;
     if (kfit_int32_t(digit)) {
-	/* n shouln't be reachable but the let the gc do its job */
-	return i2tv((int32_t) digit); 
+        /* n shouln't be reachable but the let the gc do its job */
+        return i2tv((int32_t) digit); 
     } else {
-	return n;
+        return n;
     }
 }
 
@@ -50,39 +50,39 @@ TValue kbigint_copy(klisp_State *K, TValue src);
 /* Create a stack allocated bigints from a fixint,
    useful for mixed operations, relatively light weight compared
    to creating it in the heap and burdening the gc */
-#define kbind_bigint(name, fixint)					\
-    int32_t (KUNIQUE_NAME(i)) = ivalue(fixint);				\
-    Bigint KUNIQUE_NAME(bigint);					\
-    (KUNIQUE_NAME(bigint)).single = ({					\
-	    int64_t temp = (KUNIQUE_NAME(i));				\
-	    (uint32_t) ((temp < 0)? -temp : temp);			\
-	});								\
+#define kbind_bigint(name, fixint)                                      \
+    int32_t (KUNIQUE_NAME(i)) = ivalue(fixint);                         \
+    Bigint KUNIQUE_NAME(bigint);                                        \
+    (KUNIQUE_NAME(bigint)).single = ({                                  \
+            int64_t temp = (KUNIQUE_NAME(i));                           \
+            (uint32_t) ((temp < 0)? -temp : temp);                      \
+        });                                                             \
     (KUNIQUE_NAME(bigint)).digits = &((KUNIQUE_NAME(bigint)).single);	\
-    (KUNIQUE_NAME(bigint)).alloc = 1;					\
-    (KUNIQUE_NAME(bigint)).used = 1;					\
-    (KUNIQUE_NAME(bigint)).sign = (KUNIQUE_NAME(i)) < 0?		\
-	MP_NEG : MP_ZPOS;						\
+    (KUNIQUE_NAME(bigint)).alloc = 1;                                   \
+    (KUNIQUE_NAME(bigint)).used = 1;                                    \
+    (KUNIQUE_NAME(bigint)).sign = (KUNIQUE_NAME(i)) < 0?                \
+        MP_NEG : MP_ZPOS;                                               \
     Bigint *name = &(KUNIQUE_NAME(bigint))
     
 /* This can be used prior to calling a bigint functions
    to automatically convert fixints to bigints.
    NOTE: calls to this macro should go in different lines! */
-#define kensure_bigint(n)						\
-    /* must use goto, no block should be entered before calling		\
-       kbind_bigint */							\
-    if (!ttisfixint(n))							\
-	goto KUNIQUE_NAME(exit_lbl);					\
-    kbind_bigint(KUNIQUE_NAME(bint), (n));				\
-    (n) = gc2bigint(KUNIQUE_NAME(bint));				\
-    KUNIQUE_NAME(exit_lbl):
+#define kensure_bigint(n)                                       \
+    /* must use goto, no block should be entered before calling \
+       kbind_bigint */                                          \
+    if (!ttisfixint(n))                                         \
+        goto KUNIQUE_NAME(exit_lbl);                            \
+    kbind_bigint(KUNIQUE_NAME(bint), (n));                      \
+    (n) = gc2bigint(KUNIQUE_NAME(bint));                        \
+KUNIQUE_NAME(exit_lbl):
 
 /* This is used by the reader to destructively add digits to a number 
- tv_bigint must be positive */
+   tv_bigint must be positive */
 void kbigint_add_digit(klisp_State *K, TValue tv_bigint, int32_t base, 
-		       int32_t digit);
+                       int32_t digit);
 
 /* This is used by the writer to get the digits of a number 
- tv_bigint must be positive */
+   tv_bigint must be positive */
 int32_t kbigint_remove_digit(klisp_State *K, TValue tv_bigint, int32_t base);
 
 /* This is used by write to test if there is any digit left to print */
@@ -96,7 +96,7 @@ void kbigint_invert_sign(klisp_State *K, TValue tv_bigint);
 /* this works for bigints & fixints, returns true if ok */
 /* only positive numbers? */
 bool kinteger_read(klisp_State *K, char *buf, int32_t base, TValue *out, 
-		   char **end);
+                   char **end);
 
 /* this is used by write to estimate the number of chars necessary to
    print the number */
@@ -104,7 +104,7 @@ int32_t kbigint_print_size(TValue tv_bigint, int32_t base);
 
 /* this is used by write */
 void  kbigint_print_string(klisp_State *K, TValue tv_bigint, int32_t base, 
-			   char *buf, int32_t limit);
+                           char *buf, int32_t limit);
 
 /* Interface for kgnumbers */
 bool kbigint_eqp(TValue bigint1, TValue bigint2);

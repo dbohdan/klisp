@@ -43,18 +43,18 @@ void make_string(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_al1tp(K, ptree, "exact integer", keintegerp, tv_s, 
-	       maybe_char);
+               maybe_char);
 
     char fill = ' ';
     if (get_opt_tpar(K, maybe_char, "char", ttischar))
-	fill = chvalue(maybe_char);
+        fill = chvalue(maybe_char);
 
     if (knegativep(tv_s)) {
-	klispE_throw_simple(K, "negative size");    
-	return;
+        klispE_throw_simple(K, "negative size");    
+        return;
     } else if (!ttisfixint(tv_s)) {
-	klispE_throw_simple(K, "size is too big");    
-	return;
+        klispE_throw_simple(K, "size is too big");    
+        return;
     }
 
     TValue new_str = kstring_new_sf(K, ivalue(tv_s), fill);
@@ -86,19 +86,19 @@ void string_ref(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "string", ttisstring, str,
-	     "exact integer", keintegerp, tv_i);
+             "exact integer", keintegerp, tv_i);
 
     if (!ttisfixint(tv_i)) {
-	/* TODO show index */
-	klispE_throw_simple(K, "index out of bounds");
-	return;
+        /* TODO show index */
+        klispE_throw_simple(K, "index out of bounds");
+        return;
     }
     int32_t i = ivalue(tv_i);
     
     if (i < 0 || i >= kstring_size(str)) {
-	/* TODO show index */
-	klispE_throw_simple(K, "index out of bounds");
-	return;
+        /* TODO show index */
+        klispE_throw_simple(K, "index out of bounds");
+        return;
     }
 
     TValue res = ch2tv(kstring_buf(str)[i]);
@@ -115,23 +115,23 @@ void string_setB(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
-	     "exact integer", keintegerp, tv_i, "char", ttischar, tv_ch);
+             "exact integer", keintegerp, tv_i, "char", ttischar, tv_ch);
 
     if (!ttisfixint(tv_i)) {
-	/* TODO show index */
-	klispE_throw_simple(K, "index out of bounds");
-	return;
+        /* TODO show index */
+        klispE_throw_simple(K, "index out of bounds");
+        return;
     } else if (kstring_immutablep(str)) {
-	klispE_throw_simple(K, "immutable string");
-	return;
+        klispE_throw_simple(K, "immutable string");
+        return;
     }
 
     int32_t i = ivalue(tv_i);
     
     if (i < 0 || i >= kstring_size(str)) {
-	/* TODO show index */
-	klispE_throw_simple(K, "index out of bounds");
-	return;
+        /* TODO show index */
+        klispE_throw_simple(K, "index out of bounds");
+        return;
     }
 
     kstring_buf(str)[i] = chvalue(tv_ch);
@@ -173,7 +173,7 @@ void kstring_change_case(klisp_State *K)
     TValue res = kstring_new_bs(K, kstring_buf(str), size);
     char *buf = kstring_buf(res);
     for(int32_t i = 0; i < size; ++i, buf++) {
-	*buf = fn(*buf);
+        *buf = fn(*buf);
     }
     kapply_cc(K, res);
 }
@@ -192,17 +192,17 @@ void kstring_title_case(klisp_State *K)
     char *buf = kstring_buf(res);
     bool first = true;
     while(size-- > 0) {
-	char ch = *buf;
-	if (ch == ' ')
-	    first = true;
-	else if (!first)
-	    *buf = tolower(ch);
-	else if (isalpha(ch)) { 
+        char ch = *buf;
+        if (ch == ' ')
+            first = true;
+        else if (!first)
+            *buf = tolower(ch);
+        else if (isalpha(ch)) { 
             /* only count as first letter something that can be capitalized */
-	    *buf = toupper(ch);
-	    first = false;
-	} 
-	++buf;
+            *buf = toupper(ch);
+            first = false;
+        } 
+        ++buf;
     }
     kapply_cc(K, res);
 }
@@ -227,17 +227,17 @@ bool kstring_ci_eqp(TValue str1, TValue str2)
 {
     int32_t size = kstring_size(str1);
     if (kstring_size(str2) != size)
-	return false;
+        return false;
     else {
-	char *buf1 = kstring_buf(str1);
-	char *buf2 = kstring_buf(str2);
+        char *buf1 = kstring_buf(str1);
+        char *buf2 = kstring_buf(str2);
 
-	while(size--) {
-	    if (tolower(*buf1) != tolower(*buf2))
-		return false;
-	    buf1++, buf2++;
-	}
-	return true;
+        while(size--) {
+            if (tolower(*buf1) != tolower(*buf2))
+                return false;
+            buf1++, buf2++;
+        }
+        return true;
     }
 }
 
@@ -266,12 +266,12 @@ bool kstring_ci_ltp(TValue str1, TValue str2)
     char *buf2 = kstring_buf(str2);
 
     while(min_size--) {
-	int diff = (int) tolower(*buf1) - (int) tolower(*buf2);
-	if (diff > 0)
-	    return false;
-	else if (diff < 0)
-	    return true;
-	buf1++, buf2++;
+        int diff = (int) tolower(*buf1) - (int) tolower(*buf2);
+        if (diff > 0)
+            return false;
+        else if (diff < 0)
+            return true;
+        buf1++, buf2++;
     }
     return size1 < size2;
 }
@@ -304,40 +304,40 @@ void substring(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_3tp(K, ptree, "string", ttisstring, str,
-	     "exact integer", keintegerp, tv_start,
-	     "exact integer", keintegerp, tv_end);
+             "exact integer", keintegerp, tv_start,
+             "exact integer", keintegerp, tv_end);
 
     if (!ttisfixint(tv_start) || ivalue(tv_start) < 0 ||
-	  ivalue(tv_start) > kstring_size(str)) {
-	/* TODO show index */
-	klispE_throw_simple(K, "start index out of bounds");
-	return;
+        ivalue(tv_start) > kstring_size(str)) {
+        /* TODO show index */
+        klispE_throw_simple(K, "start index out of bounds");
+        return;
     } 
 
     int32_t start = ivalue(tv_start);
 
     if (!ttisfixint(tv_end) || ivalue(tv_end) < 0 || 
-	  ivalue(tv_end) > kstring_size(str)) {
-	klispE_throw_simple(K, "end index out of bounds");
-	return;
+        ivalue(tv_end) > kstring_size(str)) {
+        klispE_throw_simple(K, "end index out of bounds");
+        return;
     }
 
     int32_t end = ivalue(tv_end);
 
     if (start > end) {
-	/* TODO show indexes */
-	klispE_throw_simple(K, "end index is smaller than start index");
-	return;
+        /* TODO show indexes */
+        klispE_throw_simple(K, "end index is smaller than start index");
+        return;
     }
 
     int32_t size = end - start;
     TValue new_str;
     /* the if isn't strictly necessary but it's clearer this way */
     if (size == 0) {
-	new_str = K->empty_string;
+        new_str = K->empty_string;
     } else {
-	/* always returns mutable strings */
-	new_str = kstring_new_bs(K, kstring_buf(str)+start, size);
+        /* always returns mutable strings */
+        new_str = kstring_new_bs(K, kstring_buf(str)+start, size);
     }
     kapply_cc(K, new_str);
 }
@@ -363,32 +363,32 @@ void string_append(klisp_State *K)
     int32_t saved_pairs = pairs; /* save pairs for next loop */
     TValue tail = ptree;
     while(pairs--) {
-	total_size += kstring_size(kcar(tail));
-	if (total_size > INT32_MAX) {
-	    klispE_throw_simple(K, "resulting string is too big");
-	    return;
-	}
-	tail = kcdr(tail);
+        total_size += kstring_size(kcar(tail));
+        if (total_size > INT32_MAX) {
+            klispE_throw_simple(K, "resulting string is too big");
+            return;
+        }
+        tail = kcdr(tail);
     }
     /* this is safe */
     int32_t size = (int32_t) total_size;
 
     if (size == 0) {
-	new_str = K->empty_string; 
+        new_str = K->empty_string; 
     } else {
-	new_str = kstring_new_s(K, size);
-	char *buf = kstring_buf(new_str);
-	/* loop again to copy the chars of each string */
-	tail = ptree;
-	pairs = saved_pairs;
+        new_str = kstring_new_s(K, size);
+        char *buf = kstring_buf(new_str);
+        /* loop again to copy the chars of each string */
+        tail = ptree;
+        pairs = saved_pairs;
 
-	while(pairs--) {
-	    TValue first = kcar(tail);
-	    int32_t first_size = kstring_size(first);
-	    memcpy(buf, kstring_buf(first), first_size);
-	    buf += first_size;
-	    tail = kcdr(tail);
-	}
+        while(pairs--) {
+            TValue first = kcar(tail);
+            int32_t first_size = kstring_size(first);
+            memcpy(buf, kstring_buf(first), first_size);
+            buf += first_size;
+            tail = kcdr(tail);
+        }
     }
 
     kapply_cc(K, new_str);
@@ -442,19 +442,19 @@ void string_to_vector(klisp_State *K)
     TValue res;
 
     if (kstring_emptyp(str)) {
-	res = K->empty_vector;
+        res = K->empty_vector;
     } else {
-	uint32_t size = kstring_size(str);
+        uint32_t size = kstring_size(str);
 
-	/* MAYBE add vector constructor without fill */
-	/* no need to root this */
-	res = kvector_new_sf(K, size, KINERT);
-	char *src = kstring_buf(str);
-	TValue *dst = kvector_buf(res);
-	while(size--) {
-	    char ch = *src++; /* not needed but just in case */
-	    *dst++ = ch2tv(ch); 
-	}
+        /* MAYBE add vector constructor without fill */
+        /* no need to root this */
+        res = kvector_new_sf(K, size, KINERT);
+        char *src = kstring_buf(str);
+        TValue *dst = kvector_buf(res);
+        while(size--) {
+            char ch = *src++; /* not needed but just in case */
+            *dst++ = ch2tv(ch); 
+        }
     }
     kapply_cc(K, res);
 }
@@ -473,22 +473,22 @@ void vector_to_string(klisp_State *K)
     TValue res;
 
     if (kvector_emptyp(vec)) {
-	res = K->empty_string;
+        res = K->empty_string;
     } else {
-	uint32_t size = kvector_size(vec);
+        uint32_t size = kvector_size(vec);
 
-	res = kstring_new_s(K, size); /* no need to root this */
-	TValue *src = kvector_buf(vec);
-	char *dst = kstring_buf(res);
-	while(size--) {
-	    TValue tv = *src++;
-	    if (!ttischar(tv)) {
-		klispE_throw_simple_with_irritants(K, "Non char object found", 
-						   1, tv);
-		return;
-	    }
-	    *dst++ = chvalue(tv);
-	}
+        res = kstring_new_s(K, size); /* no need to root this */
+        TValue *src = kvector_buf(vec);
+        char *dst = kstring_buf(res);
+        while(size--) {
+            TValue tv = *src++;
+            if (!ttischar(tv)) {
+                klispE_throw_simple_with_irritants(K, "Non char object found", 
+                                                   1, tv);
+                return;
+            }
+            *dst++ = chvalue(tv);
+        }
     }
     kapply_cc(K, res);
 }
@@ -507,19 +507,19 @@ void string_to_bytevector(klisp_State *K)
     TValue res;
 
     if (kstring_emptyp(str)) {
-	res = K->empty_bytevector;
+        res = K->empty_bytevector;
     } else {
-	uint32_t size = kstring_size(str);
+        uint32_t size = kstring_size(str);
 
-	/* MAYBE add bytevector constructor without fill */
-	/* no need to root this */
-	res = kbytevector_new_s(K, size);
-	char *src = kstring_buf(str);
-	uint8_t *dst = kbytevector_buf(res);
+        /* MAYBE add bytevector constructor without fill */
+        /* no need to root this */
+        res = kbytevector_new_s(K, size);
+        char *src = kstring_buf(str);
+        uint8_t *dst = kbytevector_buf(res);
 	
-	while(size--) {
-	    *dst++ = (uint8_t)*src++; 
-	}
+        while(size--) {
+            *dst++ = (uint8_t)*src++; 
+        }
     }
     kapply_cc(K, res);
 }
@@ -538,21 +538,21 @@ void bytevector_to_string(klisp_State *K)
     TValue res;
 
     if (kbytevector_emptyp(bb)) {
-	res = K->empty_string;
+        res = K->empty_string;
     } else {
-	uint32_t size = kbytevector_size(bb);
-	res = kstring_new_s(K, size); /* no need to root this */
-	uint8_t *src = kbytevector_buf(bb);
-	char *dst = kstring_buf(res);
-	while(size--) {
-	    uint8_t u8 = *src++;
-	    if (u8 >= 128) {
-		klispE_throw_simple_with_irritants(K, "Char out of range", 
-						   1, i2tv(u8));
-		return;
-	    }
-	    *dst++ = (char) u8;
-	}
+        uint32_t size = kbytevector_size(bb);
+        res = kstring_new_s(K, size); /* no need to root this */
+        uint8_t *src = kbytevector_buf(bb);
+        char *dst = kstring_buf(res);
+        while(size--) {
+            uint8_t u8 = *src++;
+            if (u8 >= 128) {
+                klispE_throw_simple_with_irritants(K, "Char out of range", 
+                                                   1, i2tv(u8));
+                return;
+            }
+            *dst++ = (char) u8;
+        }
     }
     kapply_cc(K, res);
 }
@@ -572,9 +572,9 @@ void string_copy(klisp_State *K)
     TValue new_str;
     /* the if isn't strictly necessary but it's clearer this way */
     if (tv_equal(str, K->empty_string)) {
-	new_str = str; 
+        new_str = str; 
     } else {
-	new_str = kstring_new_bs(K, kstring_buf(str), kstring_size(str));
+        new_str = kstring_new_bs(K, kstring_buf(str), kstring_size(str));
     }
     kapply_cc(K, new_str);
 }
@@ -592,9 +592,9 @@ void string_to_immutable_string(klisp_State *K)
 
     TValue res_str;
     if (kstring_immutablep(str)) {/* this includes the empty list */
-	res_str = str;
+        res_str = str;
     } else {
-	res_str = kstring_new_bs_imm(K, kstring_buf(str), kstring_size(str));
+        res_str = kstring_new_bs_imm(K, kstring_buf(str), kstring_size(str));
     }
     kapply_cc(K, res_str);
 }
@@ -609,11 +609,11 @@ void string_fillB(klisp_State *K)
     UNUSED(xparams);
     UNUSED(denv);
     bind_2tp(K, ptree, "string", ttisstring, str,
-	     "char", ttischar, tv_ch);
+             "char", ttischar, tv_ch);
 
     if (kstring_immutablep(str)) {
-	klispE_throw_simple(K, "immutable string");
-	return;
+        klispE_throw_simple(K, "immutable string");
+        return;
     } 
 
     memset(kstring_buf(str), chvalue(tv_ch), kstring_size(str));
@@ -626,7 +626,7 @@ void kinit_strings_ground_env(klisp_State *K)
     TValue ground_env = K->ground_env;
     TValue symbol, value;
 
-   /*
+    /*
     ** This section is still missing from the report. The bindings here are
     ** taken from r5rs scheme and should not be considered standard. They are
     ** provided in the meantime to allow programs to use string features
@@ -635,12 +635,12 @@ void kinit_strings_ground_env(klisp_State *K)
 
     /* 13.1.1? string? */
     add_applicative(K, ground_env, "string?", typep, 2, symbol, 
-		    i2tv(K_TSTRING));
+                    i2tv(K_TSTRING));
     /* 13.? immutable-string?, mutable-string? */
     add_applicative(K, ground_env, "immutable-string?", ftypep, 2, symbol, 
-		    p2tv(kimmutable_stringp));
+                    p2tv(kimmutable_stringp));
     add_applicative(K, ground_env, "mutable-string?", ftypep, 2, symbol, 
-		    p2tv(kmutable_stringp));
+                    p2tv(kmutable_stringp));
     /* 13.1.2? make-string */
     add_applicative(K, ground_env, "make-string", make_string, 0);
     /* 13.1.3? string-length */
@@ -654,35 +654,35 @@ void kinit_strings_ground_env(klisp_State *K)
     /* 13.?? string-upcase, string-downcase, string-titlecase, 
        string-foldcase */
     add_applicative(K, ground_env, "string-upcase", kstring_change_case, 1,
-		    p2tv(toupper));
+                    p2tv(toupper));
     add_applicative(K, ground_env, "string-downcase", kstring_change_case, 1,
-		    p2tv(tolower));
+                    p2tv(tolower));
     add_applicative(K, ground_env, "string-titlecase", kstring_title_case, 0);
     add_applicative(K, ground_env, "string-foldcase", kstring_change_case, 1,
-		    p2tv(tolower));
+                    p2tv(tolower));
     /* 13.2.2? string=?, string-ci=? */
     add_applicative(K, ground_env, "string=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_eqp));
+                    symbol, p2tv(kstringp), p2tv(kstring_eqp));
     add_applicative(K, ground_env, "string-ci=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_eqp));
+                    symbol, p2tv(kstringp), p2tv(kstring_ci_eqp));
     /* 13.2.3? string<?, string<=?, string>?, string>=? */
     add_applicative(K, ground_env, "string<?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ltp));
+                    symbol, p2tv(kstringp), p2tv(kstring_ltp));
     add_applicative(K, ground_env, "string<=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_lep));
+                    symbol, p2tv(kstringp), p2tv(kstring_lep));
     add_applicative(K, ground_env, "string>?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_gtp));
+                    symbol, p2tv(kstringp), p2tv(kstring_gtp));
     add_applicative(K, ground_env, "string>=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_gep));
+                    symbol, p2tv(kstringp), p2tv(kstring_gep));
     /* 13.2.4? string-ci<?, string-ci<=?, string-ci>?, string-ci>=? */
     add_applicative(K, ground_env, "string-ci<?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_ltp));
+                    symbol, p2tv(kstringp), p2tv(kstring_ci_ltp));
     add_applicative(K, ground_env, "string-ci<=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_lep));
+                    symbol, p2tv(kstringp), p2tv(kstring_ci_lep));
     add_applicative(K, ground_env, "string-ci>?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_gtp));
+                    symbol, p2tv(kstringp), p2tv(kstring_ci_gtp));
     add_applicative(K, ground_env, "string-ci>=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kstringp), p2tv(kstring_ci_gep));
+                    symbol, p2tv(kstringp), p2tv(kstring_ci_gep));
     /* 13.2.5? substring */
     add_applicative(K, ground_env, "substring", substring, 0);
     /* 13.2.6? string-append */
@@ -695,14 +695,14 @@ void kinit_strings_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "vector->string", vector_to_string, 0);
     /* 13.?? string->bytevector, bytevector->string */
     add_applicative(K, ground_env, "string->bytevector", 
-		    string_to_bytevector, 0);
+                    string_to_bytevector, 0);
     add_applicative(K, ground_env, "bytevector->string", 
-		    bytevector_to_string, 0);
+                    bytevector_to_string, 0);
     /* 13.2.8? string-copy */
     add_applicative(K, ground_env, "string-copy", string_copy, 0);
     /* 13.2.9? string->immutable-string */
     add_applicative(K, ground_env, "string->immutable-string", 
-		    string_to_immutable_string, 0);
+                    string_to_immutable_string, 0);
 
     /* 13.2.10? string-fill! */
     add_applicative(K, ground_env, "string-fill!", string_fillB, 0);

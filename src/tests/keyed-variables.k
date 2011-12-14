@@ -8,10 +8,10 @@
 ($check-error (make-keyed-dynamic-variable #f))
 
 ($let*
-  ( ((b1 a1) (make-keyed-dynamic-variable))
-    ((b2 a2) (make-keyed-dynamic-variable))
-    (r1 ($lambda () (a1)))
-    (r2 ($lambda () (a2))))
+    ( ((b1 a1) (make-keyed-dynamic-variable))
+      ((b2 a2) (make-keyed-dynamic-variable))
+      (r1 ($lambda () (a1)))
+      (r2 ($lambda () (a2))))
   ($check-predicate (applicative? b1))
   ($check-predicate (applicative? a1))
   ($check-error (b1 1 "not-a-combiner"))
@@ -22,9 +22,9 @@
   ($check-not-predicate (equal? b1 b2))
   ($check-not-predicate (equal? a1 a2))
   ($check-predicate
-    (b1 1 ($vau () denv (not? ($binds? denv +)))))
+   (b1 1 ($vau () denv (not? ($binds? denv +)))))
   ($check-not-predicate
-    (b1 1 ($vau () e1 (b2 2 ($vau () e2 (equal? e1 e2))))))
+   (b1 1 ($vau () e1 (b2 2 ($vau () e2 (equal? e1 e2))))))
 
   ($check equal? (b1 "value" ($lambda () "result")) "result")
   ($check equal? (b1 0 r1) 0)
@@ -40,26 +40,26 @@
 ($check-error (make-keyed-static-variable #f))
 
 ($let*
-  ( ((b1 a1) (make-keyed-static-variable))
-    ((b2 a2) (make-keyed-static-variable))
-    (e11 (b1 1 (get-current-environment)))
-    (e12 (b1 2 (get-current-environment)))
-    (e21 (b2 1 (get-current-environment)))
-    (e22 (b2 2 (get-current-environment)))
-    (e11* (b1 1 (get-current-environment)))
-    (r11 (eval ($quote ($lambda (a) (a))) e11))
-    (r12 (eval ($quote ($lambda (a) (a))) e12))
-    (r11_13
-      (eval
+    ( ((b1 a1) (make-keyed-static-variable))
+      ((b2 a2) (make-keyed-static-variable))
+      (e11 (b1 1 (get-current-environment)))
+      (e12 (b1 2 (get-current-environment)))
+      (e21 (b2 1 (get-current-environment)))
+      (e22 (b2 2 (get-current-environment)))
+      (e11* (b1 1 (get-current-environment)))
+      (r11 (eval ($quote ($lambda (a) (a))) e11))
+      (r12 (eval ($quote ($lambda (a) (a))) e12))
+      (r11_13
+       (eval
         ($quote
-          ($let ((e13 (b1 3 (get-current-environment))))
-            (eval ($quote ($lambda (a) (a))) e13)))
+         ($let ((e13 (b1 3 (get-current-environment))))
+           (eval ($quote ($lambda (a) (a))) e13)))
         e11))
-    (r11_22
-      (eval
+      (r11_22
+       (eval
         ($quote
-          ($let ((e22 (b2 2 (get-current-environment))))
-            (eval ($quote ($lambda (a) (a))) e22)))
+         ($let ((e22 (b2 2 (get-current-environment))))
+           (eval ($quote ($lambda (a) (a))) e22)))
         e11)))
   ($check-predicate (applicative? b1))
   ($check-predicate (applicative? a1))

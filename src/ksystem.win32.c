@@ -57,7 +57,7 @@ bool ksystem_isatty(klisp_State *K, TValue port)
      *    - does not work on output handles
      *    - does not work in plain wine (works in wineconsole)
      *    - probably won't work if Windows Console is replaced
-     *      a terminal emulator
+     *         a terminal emulator
      *
      * TEMP: use GetConsoleMode()
      */

@@ -53,7 +53,7 @@ void do_sv_bind(klisp_State *K)
     ** xparams[0]: static key 
     */
     bind_2tp(K, ptree, "any", anytype, obj,
-	      "environment", ttisenvironment, env);
+	         "environment", ttisenvironment, env);
     UNUSED(denv); 
     TValue key = xparams[0];
     /* GC: all objs are rooted in ptree, or xparams */
@@ -95,5 +95,5 @@ void kinit_kgks_vars_ground_env(klisp_State *K)
 
     /* 11.1.1 make-keyed-static-variable */
     add_applicative(K, ground_env, "make-keyed-static-variable", 
-		    make_keyed_static_variable, 0); 
+                    make_keyed_static_variable, 0); 
 }

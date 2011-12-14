@@ -41,11 +41,11 @@ void current_second(klisp_State *K)
     check_0p(K, ptree);
     time_t now = time(NULL);
     if (now == -1) {
-	klispE_throw_simple(K, "couldn't get time");
-	return;
+        klispE_throw_simple(K, "couldn't get time");
+        return;
     } else {
-	TValue res = kinteger_new_uint64(K, (uint64_t) now);
-	kapply_cc(K, res);
+        TValue res = kinteger_new_uint64(K, (uint64_t) now);
+        kapply_cc(K, res);
     }
 }
 
@@ -82,8 +82,8 @@ void file_existsp(klisp_State *K)
     TValue res = KFALSE;
     FILE *file = fopen(kstring_buf(filename), "r");
     if (file) {
-	res = KTRUE;
-	UNUSED(fclose(file));
+        res = KTRUE;
+        UNUSED(fclose(file));
     }
     kapply_cc(K, res);
 }
@@ -108,8 +108,8 @@ void delete_file(klisp_State *K)
         klispE_throw_errno_with_irritants(K, "remove", 1, filename);
         return;
     } else {
-	kapply_cc(K, KINERT);
-	return;
+        kapply_cc(K, KINERT);
+        return;
     }
 }
 
@@ -124,7 +124,7 @@ void rename_file(klisp_State *K)
     UNUSED(denv);
 
     bind_2tp(K, ptree, "string", ttisstring, old_filename, 
-	     "string", ttisstring, new_filename);
+             "string", ttisstring, new_filename);
 
     /* TEMP: this should probably be done in a operating system specific
        manner, but this will do for now */
@@ -134,8 +134,8 @@ void rename_file(klisp_State *K)
         klispE_throw_errno_with_irritants(K, "rename", 2, old_filename, new_filename);
         return;
     } else {
-	kapply_cc(K, KINERT);
-	return;
+        kapply_cc(K, KINERT);
+        return;
     }
 }
 
@@ -144,7 +144,7 @@ void get_arguments(klisp_State *K)
 {
     /*
     ** xparams[0]: immutable argument list
-     */
+    */
     TValue ptree = K->next_value;
     TValue *xparams = K->next_xparams;
     TValue denv = K->next_env;
@@ -171,9 +171,9 @@ void get_environment_variable(klisp_State *K)
     /* I follow r7rs here, but should probably throw error */
     TValue res;
     if (str == NULL) {
-	res = KFALSE;
+        res = KFALSE;
     } else {
-	res = kstring_new_b_imm(K, str);
+        res = kstring_new_b_imm(K, str);
     }
     kapply_cc(K, res);
 }
@@ -182,7 +182,7 @@ void get_environment_variables(klisp_State *K)
 {
     /*
     ** xparams[0]: immutable variable list
-     */
+    */
     TValue ptree = K->next_value;
     TValue *xparams = K->next_xparams;
     TValue denv = K->next_env;
@@ -197,14 +197,14 @@ void get_environment_variables(klisp_State *K)
 /* TODO test, if that doesn't work, try to find a way
    avoiding taking extra params in main */
 /* I think it's defined in unistd, but it needs to have __USE_GNU 
- defined. The correct way to do that would be to define _GNU_SOURCE
- before including any system files... That's not so good for an 
- embeddable interpreter, but it could be done in the makefile I guess */
+   defined. The correct way to do that would be to define _GNU_SOURCE
+   before including any system files... That's not so good for an 
+   embeddable interpreter, but it could be done in the makefile I guess */
 extern
 #ifdef _WIN32
-  __declspec(dllimport)
+__declspec(dllimport)
 #endif
-  char **environ;
+char **environ;
 
 /* Helper for get-environment-variables */
 TValue create_env_var_list(klisp_State *K)
@@ -217,15 +217,15 @@ TValue create_env_var_list(klisp_State *K)
     /* TODO test, if that doesn't work, try to find a way
        avoiding taking extra params in main */
     for(char **env = environ; *env != NULL; ++env) {
-	/* *env is of the form: "<name>=<value>", presumably, name can't have
-	   an equal sign! */
-	char *eq = strchr(*env, '=');
-	int name_len = eq - *env;
-	klisp_assert(eq != NULL); /* shouldn't happen */
-	var_name = kstring_new_bs_imm(K, *env, name_len);
-	var_value = kstring_new_b_imm(K, *env + name_len + 1);
-	TValue new_entry = kimm_cons(K, var_name, var_value);
-	tail = kimm_cons(K, new_entry, tail);
+        /* *env is of the form: "<name>=<value>", presumably, name can't have
+           an equal sign! */
+        char *eq = strchr(*env, '=');
+        int name_len = eq - *env;
+        klisp_assert(eq != NULL); /* shouldn't happen */
+        var_name = kstring_new_bs_imm(K, *env, name_len);
+        var_value = kstring_new_b_imm(K, *env + name_len + 1);
+        TValue new_entry = kimm_cons(K, var_name, var_value);
+        tail = kimm_cons(K, new_entry, tail);
     }
     return tail;
 }
@@ -242,7 +242,7 @@ void kinit_system_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "current-jiffy", current_jiffy, 0);
     /* ??.?.? jiffies-per-second */
     add_applicative(K, ground_env, "jiffies-per-second", jiffies_per_second, 
-		    0);
+                    0);
     /* ?.? file-exists? */
     add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
     /* ?.? delete-file */
@@ -253,12 +253,12 @@ void kinit_system_ground_env(klisp_State *K)
     /* The value for these two will get set later by the interpreter */
     /* ?.? get-script-arguments, get-interpreter-arguments */
     add_applicative(K, ground_env, "get-script-arguments", get_arguments, 
-		    1, KNIL);
+                    1, KNIL);
     add_applicative(K, ground_env, "get-interpreter-arguments", get_arguments, 
-		    1, KNIL);
+                    1, KNIL);
     /* ?.? get-environment-variable, get-environment-variables */
     add_applicative(K, ground_env, "get-environment-variable", 
-		    get_environment_variable, 0);
+                    get_environment_variable, 0);
     add_applicative(K, ground_env, "get-environment-variables", 
-		    get_environment_variables, 1, create_env_var_list(K));
+                    get_environment_variables, 1, create_env_var_list(K));
 }

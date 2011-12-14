@@ -56,15 +56,15 @@ void kinteger_to_char(klisp_State *K)
     bind_1tp(K, ptree, "exact integer", ttiseinteger, itv);
     
     if (ttisbigint(itv)) {
-	klispE_throw_simple(K, "integer out of ASCII range [0 - 127]");
-	return;
+        klispE_throw_simple(K, "integer out of ASCII range [0 - 127]");
+        return;
     }
     int32_t i = ivalue(itv);
 
     /* for now only allow ASCII */
     if (i < 0 || i > 127) {
-	klispE_throw_simple(K, "integer out of ASCII range [0 - 127]");
-	return;
+        klispE_throw_simple(K, "integer out of ASCII range [0 - 127]");
+        return;
     }
     kapply_cc(K, ch2tv((char) i));
 }
@@ -114,11 +114,11 @@ void char_digitp(klisp_State *K)
     int base = 10; /* default */
 
     if (get_opt_tpar(K, basetv, "base [2-36]", ttisbase)) {
-	base = ivalue(basetv); 
+        base = ivalue(basetv); 
     }
     char ch = tolower(chvalue(chtv));
     bool b = (isdigit(ch) && (ch - '0') < base) || 
-	(isalpha(ch) && (ch - 'a' + 10) < base);
+        (isalpha(ch) && (ch - 'a' + 10) < base);
     kapply_cc(K, b2tv(b));
 }
 
@@ -136,19 +136,19 @@ void char_to_digit(klisp_State *K)
     int base = 10; /* default */
 
     if (get_opt_tpar(K, basetv, "base [2-36]", ttisbase)) {
-	base = ivalue(basetv); 
+        base = ivalue(basetv); 
     }
     char ch = tolower(chvalue(chtv));
     int digit = 0;
 
     if (isdigit(ch) && (ch - '0') < base)
-	digit = ch - '0';
+        digit = ch - '0';
     else if (isalpha(ch) && (ch - 'a' + 10) < base)
-	digit = ch - 'a' + 10;
+        digit = ch - 'a' + 10;
     else {
-	klispE_throw_simple_with_irritants(K, "Not a digit in this base", 
-					  2, ch2tv(ch), i2tv(base));
-	return;
+        klispE_throw_simple_with_irritants(K, "Not a digit in this base", 
+                                           2, ch2tv(ch), i2tv(base));
+        return;
     }
     kapply_cc(K, i2tv(digit));
 }
@@ -167,19 +167,19 @@ void digit_to_char(klisp_State *K)
     int base = 10; /* default */
 
     if (get_opt_tpar(K, basetv, "base [2-36]", ttisbase)) {
-	base = ivalue(basetv); 
+        base = ivalue(basetv); 
     }
 
     if (ttisbigint(digittv) || ivalue(digittv) < 0 || 
-            ivalue(digittv) >= base) {
-	klispE_throw_simple_with_irritants(K, "Not a digit in this base",
-					   2, digittv, i2tv(base));
-	return;
+        ivalue(digittv) >= base) {
+        klispE_throw_simple_with_irritants(K, "Not a digit in this base",
+                                           2, digittv, i2tv(base));
+        return;
     }
     int digit = ivalue(digittv);
     char ch = digit <= 9? 
-	'0' + digit : 
-	'a' + (digit - 10);
+        '0' + digit : 
+        'a' + (digit - 10);
     kapply_cc(K, ch2tv(ch));
 }
 
@@ -198,59 +198,59 @@ void kinit_chars_ground_env(klisp_State *K)
 
     /* 14.1.1? char? */
     add_applicative(K, ground_env, "char?", typep, 2, symbol, 
-		    i2tv(K_TCHAR));
+                    i2tv(K_TCHAR));
     /* 14.1.2? char-alphabetic?, char-numeric?, char-whitespace? */
     /* unlike in r5rs these take an arbitrary number of chars
        (even cyclical list) */
     add_applicative(K, ground_env, "char-alphabetic?", ftyped_predp, 3, 
-		    symbol, p2tv(kcharp), p2tv(kchar_alphabeticp));
+                    symbol, p2tv(kcharp), p2tv(kchar_alphabeticp));
     add_applicative(K, ground_env, "char-numeric?", ftyped_predp, 3, 
-		    symbol, p2tv(kcharp), p2tv(kchar_numericp));
+                    symbol, p2tv(kcharp), p2tv(kchar_numericp));
     add_applicative(K, ground_env, "char-whitespace?", ftyped_predp, 3, 
-		    symbol, p2tv(kcharp), p2tv(kchar_whitespacep));
+                    symbol, p2tv(kcharp), p2tv(kchar_whitespacep));
     /* 14.1.3? char-upper-case?, char-lower-case? */
     /* unlike in r5rs these take an arbitrary number of chars
        (even cyclical list) */
     add_applicative(K, ground_env, "char-upper-case?", ftyped_predp, 3, 
-		    symbol, p2tv(kcharp), p2tv(kchar_upper_casep));
+                    symbol, p2tv(kcharp), p2tv(kchar_upper_casep));
     add_applicative(K, ground_env, "char-lower-case?", ftyped_predp, 3, 
-		    symbol, p2tv(kcharp), p2tv(kchar_lower_casep));
+                    symbol, p2tv(kcharp), p2tv(kchar_lower_casep));
     /* 14.1.4? char->integer, integer->char */
     add_applicative(K, ground_env, "char->integer", kchar_to_integer, 0);
     add_applicative(K, ground_env, "integer->char", kinteger_to_char, 0);
     /* 14.1.4? char-upcase, char-downcase, char-titlecase, char-foldcase */
     add_applicative(K, ground_env, "char-upcase", kchar_change_case, 1,
-		    p2tv(toupper));
+                    p2tv(toupper));
     add_applicative(K, ground_env, "char-downcase", kchar_change_case, 1,
-		    p2tv(tolower));
+                    p2tv(tolower));
     add_applicative(K, ground_env, "char-titlecase", kchar_change_case, 1,
-		    p2tv(toupper));
+                    p2tv(toupper));
     add_applicative(K, ground_env, "char-foldcase", kchar_change_case, 1,
-		    p2tv(tolower));
+                    p2tv(tolower));
     /* 14.2.1? char=? */
     add_applicative(K, ground_env, "char=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_eqp));
+                    symbol, p2tv(kcharp), p2tv(kchar_eqp));
     /* 14.2.2? char<?, char<=?, char>?, char>=? */
     add_applicative(K, ground_env, "char<?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_ltp));
+                    symbol, p2tv(kcharp), p2tv(kchar_ltp));
     add_applicative(K, ground_env, "char<=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp),  p2tv(kchar_lep));
+                    symbol, p2tv(kcharp),  p2tv(kchar_lep));
     add_applicative(K, ground_env, "char>?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_gtp));
+                    symbol, p2tv(kcharp), p2tv(kchar_gtp));
     add_applicative(K, ground_env, "char>=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_gep));
+                    symbol, p2tv(kcharp), p2tv(kchar_gep));
     /* 14.2.3? char-ci=? */
     add_applicative(K, ground_env, "char-ci=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_ci_eqp));
+                    symbol, p2tv(kcharp), p2tv(kchar_ci_eqp));
     /* 14.2.4? char-ci<?, char-ci<=?, char-ci>?, char-ci>=? */
     add_applicative(K, ground_env, "char-ci<?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_ci_ltp));
+                    symbol, p2tv(kcharp), p2tv(kchar_ci_ltp));
     add_applicative(K, ground_env, "char-ci<=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp),  p2tv(kchar_ci_lep));
+                    symbol, p2tv(kcharp),  p2tv(kchar_ci_lep));
     add_applicative(K, ground_env, "char-ci>?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_ci_gtp));
+                    symbol, p2tv(kcharp), p2tv(kchar_ci_gtp));
     add_applicative(K, ground_env, "char-ci>=?", ftyped_bpredp, 3,
-		    symbol, p2tv(kcharp), p2tv(kchar_ci_gep));
+                    symbol, p2tv(kcharp), p2tv(kchar_ci_gep));
     /* 14.2.? char-digit?, char->digit, digit->char */
     add_applicative(K, ground_env, "char-digit?", char_digitp, 0);
     add_applicative(K, ground_env, "char->digit", char_to_digit, 0);

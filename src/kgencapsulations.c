@@ -57,9 +57,9 @@ void enc_unwrap(klisp_State *K)
     TValue key = xparams[0];
 
     if (!kis_encapsulation_type(enc, key)) {
-	klispE_throw_simple(K, "object doesn't belong to this "
-		     "encapsulation type");
-	return;
+        klispE_throw_simple(K, "object doesn't belong to this "
+                            "encapsulation type");
+        return;
     }
     TValue obj = kget_enc_val(enc);
     kapply_cc(K, obj);
@@ -103,5 +103,5 @@ void kinit_encapsulations_ground_env(klisp_State *K)
 
     /* 8.1.1 make-encapsulation-type */
     add_applicative(K, ground_env, "make-encapsulation-type", 
-		    make_encapsulation_type, 0); 
+                    make_encapsulation_type, 0); 
 }

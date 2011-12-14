@@ -4,5 +4,5 @@
 ;;; Basic Functionality
 ;;;
 
-;; environmen mutation
+;; environment mutation
 ;; ....

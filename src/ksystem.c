@@ -45,7 +45,7 @@ TValue ksystem_current_jiffy(klisp_State *K)
         klispE_throw_simple(K, "couldn't get time");
         return KFALSE;
     } else {
-	return kinteger_new_uint64(K, (uint64_t) now);
+        return kinteger_new_uint64(K, (uint64_t) now);
     }
 }
 

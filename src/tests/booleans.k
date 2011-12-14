@@ -22,8 +22,8 @@
 ($check-not-predicate (boolean? wrap))
 ($check-not-predicate (boolean? (call/cc ($lambda (c) c))))
 ($check-not-predicate (boolean? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                        (make-encapsulation-type)))
+                                  (enc #inert))))
 ($check-not-predicate (boolean? (memoize #inert)))
 ($check-not-predicate (boolean? 1))
 ($check-not-predicate (boolean? -1/2))
@@ -87,11 +87,11 @@
 ;; check tail recursiveness
 ($let ((p (cons 1 2)))
   ($check-predicate ($sequence ($and? ($let/cc cont1
-					(set-car! p cont1)
-					($and? ($let/cc cont2
-						(set-cdr! p cont2)
-						#t))))
-			       (eq? (car p) (cdr p)))))
+                                        (set-car! p cont1)
+                                        ($and? ($let/cc cont2
+                                                 (set-cdr! p cont2)
+                                                 #t))))
+                               (eq? (car p) (cdr p)))))
 
 ($check-predicate (operative? $or?))
 ($check-predicate ($or? #t))
@@ -104,27 +104,27 @@
 
 ($let ((p (cons 1 2)))
   ($check-predicate ($sequence ($or? ($let/cc cont1
-					(set-car! p cont1)
-					($or? ($let/cc cont2
-						(set-cdr! p cont2)
-						#t))))
-			       (eq? (car p) (cdr p)))))
+                                       (set-car! p cont1)
+                                       ($or? ($let/cc cont2
+                                               (set-cdr! p cont2)
+                                               #t))))
+                               (eq? (car p) (cdr p)))))
 
 ($let ((p (cons 1 2)))
   ($check-predicate ($sequence ($and? ($let/cc cont1
-					(set-car! p cont1)
-					($or? ($let/cc cont2
-						(set-cdr! p cont2)
-						#t))))
-			       (eq? (car p) (cdr p)))))
+                                        (set-car! p cont1)
+                                        ($or? ($let/cc cont2
+                                                (set-cdr! p cont2)
+                                                #t))))
+                               (eq? (car p) (cdr p)))))
 
 ($let ((p (cons 1 2)))
   ($check-predicate ($sequence ($or? ($let/cc cont1
-					(set-car! p cont1)
-					($and? ($let/cc cont2
-						(set-cdr! p cont2)
-						#t))))
-			       (eq? (car p) (cdr p)))))
+                                       (set-car! p cont1)
+                                       ($and? ($let/cc cont2
+                                                (set-cdr! p cont2)
+                                                #t))))
+                               (eq? (car p) (cdr p)))))
 
 ;;;
 ;;; Error Checking and Robustness

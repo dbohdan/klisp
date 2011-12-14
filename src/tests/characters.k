@@ -64,7 +64,7 @@
 
 ($check-predicate (char-whitespace? #\space #\newline))
 ($check-predicate ($false-for-all? char-whitespace? #\0 #\a #\A #\:))
-; TODO ($check-predicate (char-whitespace? #\tab #\return ....))
+                                        ; TODO ($check-predicate (char-whitespace? #\tab #\return ....))
 
 ;; XXX char-upper-case? char-lower-case?
 

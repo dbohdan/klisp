@@ -82,35 +82,35 @@ TValue kmake_fport(klisp_State *K, TValue filename, bool writep, bool binaryp)
     /* for now always use text mode */
     char *mode;
     if (binaryp)
-	mode = writep? "wb": "rb";
+        mode = writep? "wb": "rb";
     else
-	mode = writep? "w": "r";
+        mode = writep? "w": "r";
 	    
     FILE *f = fopen(kstring_buf(filename), mode);
     if (f == NULL) {
-	TValue mode_str = kstring_new_b(K, mode);
-	krooted_tvs_push(K, mode_str);
+        TValue mode_str = kstring_new_b(K, mode);
+        krooted_tvs_push(K, mode_str);
         klispE_throw_errno_with_irritants(K, "fopen", 2, filename, mode_str);
-	return KINERT;
+        return KINERT;
     } else {
-	return kmake_std_fport(K, filename, writep, binaryp, f);
+        return kmake_std_fport(K, filename, writep, binaryp, f);
     }
 }
 
 /* this is for creating ports for stdin/stdout/stderr &
- also a helper for the above */
+   also a helper for the above */
 
 /* GC: Assumes filename, name & si are rooted */
 TValue kmake_std_fport(klisp_State *K, TValue filename, bool writep, 
-		      bool binaryp, FILE *file)
+                       bool binaryp, FILE *file)
 {
     FPort *new_port = klispM_new(K, FPort);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_port, K_TFPORT, 
-		K_FLAG_CAN_HAVE_NAME | 
-		(writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT) |
-		(binaryp? K_FLAG_BINARY_PORT : 0));
+                K_FLAG_CAN_HAVE_NAME | 
+                (writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT) |
+                (binaryp? K_FLAG_BINARY_PORT : 0));
 
     /* port specific fields */
     new_port->filename = filename;
@@ -127,11 +127,11 @@ TValue kmake_mport(klisp_State *K, TValue buffer, bool writep, bool binaryp)
 {
     klisp_assert(!writep || ttisinert(buffer));
     klisp_assert(writep || (ttisbytevector(buffer) && binaryp) ||
-		 (ttisstring(buffer) && !binaryp));
+                 (ttisstring(buffer) && !binaryp));
 
     if (writep) {
-	buffer = binaryp? kbytevector_new_s(K, MINBYTEVECTORPORTBUFFER) :
-	    kstring_new_s(K, MINSTRINGPORTBUFFER);
+        buffer = binaryp? kbytevector_new_s(K, MINBYTEVECTORPORTBUFFER) :
+            kstring_new_s(K, MINSTRINGPORTBUFFER);
     }
 
     krooted_tvs_push(K, buffer);
@@ -140,9 +140,9 @@ TValue kmake_mport(klisp_State *K, TValue buffer, bool writep, bool binaryp)
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_port, K_TMPORT, 
-		K_FLAG_CAN_HAVE_NAME | 
-		(writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT) |
-		(binaryp? K_FLAG_BINARY_PORT : 0));
+                K_FLAG_CAN_HAVE_NAME | 
+                (writep? K_FLAG_OUTPUT_PORT : K_FLAG_INPUT_PORT) |
+                (binaryp? K_FLAG_BINARY_PORT : 0));
 
     /* port specific fields */
     TValue tv_port = gc2mport(new_port);
@@ -163,12 +163,12 @@ void kclose_port(klisp_State *K, TValue port)
     assert(ttisport(port));
 
     if (!kport_is_closed(port)) {
-	if (ttisfport(port)) {
-	    FILE *f = tv2fport(port)->file;
-	    if (f != stdin && f != stderr && f != stdout)
-		fclose(f); /* it isn't necessary to check the close ret val */
-	}
-	kport_set_closed(port);
+        if (ttisfport(port)) {
+            FILE *f = tv2fport(port)->file;
+            if (f != stdin && f != stderr && f != stdout)
+                fclose(f); /* it isn't necessary to check the close ret val */
+        }
+        kport_set_closed(port);
     }
 
     return;
@@ -195,36 +195,36 @@ void kmport_resize_buffer(klisp_State *K, TValue port, size_t min_size)
     klisp_assert(kport_is_output(port));
 
     uint32_t old_size = (kport_is_binary(port))?
-	kbytevector_size(kmport_buf(port)) :
-	kstring_size(kmport_buf(port));
+        kbytevector_size(kmport_buf(port)) :
+        kstring_size(kmport_buf(port));
     uint64_t new_size = old_size;
     
     while (new_size < min_size) {
-	new_size *= 2;
-	if (new_size > SIZE_MAX)
-	    klispM_toobig(K);
+        new_size *= 2;
+        if (new_size > SIZE_MAX)
+            klispM_toobig(K);
     }
     
     if (new_size == old_size)
-	return;
+        return;
 
     if (kport_is_binary(port)) {
-	TValue new_bb = kbytevector_new_s(K, new_size);
-	uint32_t off = kmport_off(port);
-	if (off != 0) {
-	    memcpy(kbytevector_buf(new_bb), 
-		   kbytevector_buf(kmport_buf(port)), 
-		   off);
-	}
-	kmport_buf(port) = new_bb; 	
+        TValue new_bb = kbytevector_new_s(K, new_size);
+        uint32_t off = kmport_off(port);
+        if (off != 0) {
+            memcpy(kbytevector_buf(new_bb), 
+                   kbytevector_buf(kmport_buf(port)), 
+                   off);
+        }
+        kmport_buf(port) = new_bb; 	
     } else {
-	TValue new_str = kstring_new_s(K, new_size);
-	uint32_t off = kmport_off(port);
-	if (off != 0) {
-	    memcpy(kstring_buf(new_str), 
-		   kstring_buf(kmport_buf(port)), 
-		   off);
-	}
-	kmport_buf(port) = new_str; 	
+        TValue new_str = kstring_new_s(K, new_size);
+        uint32_t off = kmport_off(port);
+        if (off != 0) {
+            memcpy(kstring_buf(new_str), 
+                   kstring_buf(kmport_buf(port)), 
+                   off);
+        }
+        kmport_buf(port) = new_str; 	
     }
 }

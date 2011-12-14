@@ -16,7 +16,7 @@
 
 /* GC: assumes all objs passed are rooted */
 TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg, 
-		  TValue irritants) 
+                  TValue irritants) 
 {
     Error *new_error = klispM_new(K, Error);
 
@@ -33,7 +33,7 @@ TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg,
 }
 
 TValue klispE_new_with_errno_irritants(klisp_State *K, const char *service, 
-			     int errnum, TValue irritants)
+                                       int errnum, TValue irritants)
 {
     TValue error_description = klispE_describe_errno(K, service, errnum);
     krooted_tvs_push(K, error_description);
@@ -58,7 +58,7 @@ void klispE_free(klisp_State *K, Error *error)
 void clear_buffers(klisp_State *K)
 {
     /* These shouldn't cause GC, but just in case do them first,
-     an object may be protected in tvs or vars */
+       an object may be protected in tvs or vars */
     ks_sclear(K);
     ks_tbclear(K);
     K->shared_dict = KNIL;
@@ -70,10 +70,10 @@ void clear_buffers(klisp_State *K)
 /*
 ** Throw a simple error obj with:
 ** {
-**     who: current operative/continuation, 
-**     cont: current continuation, 
-**     message: msg, 
-**     irritants: ()
+**        who: current operative/continuation, 
+**        cont: current continuation, 
+**        message: msg, 
+**        irritants: ()
 ** }
 */
 /* GC: assumes all objs passed are rooted */
@@ -82,8 +82,8 @@ void klispE_throw_simple(klisp_State *K, char *msg)
     TValue error_msg = kstring_new_b_imm(K, msg);
     krooted_tvs_push(K, error_msg);
     TValue error_obj = 
-	klispE_new(K, K->next_obj, K->curr_cont, error_msg, KNIL);
-     /* clear buffer shouldn't cause GC, but just in case... */
+        klispE_new(K, K->next_obj, K->curr_cont, error_msg, KNIL);
+    /* clear buffer shouldn't cause GC, but just in case... */
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
     /* call_cont protects error from gc */
@@ -93,10 +93,10 @@ void klispE_throw_simple(klisp_State *K, char *msg)
 /*
 ** Throw an error obj with:
 ** {
-**     who: current operative/continuation, 
-**     cont: current continuation, 
-**     message: msg, 
-**     irritants: irritants
+**        who: current operative/continuation, 
+**        cont: current continuation, 
+**        message: msg, 
+**        irritants: irritants
 ** }
 */
 /* GC: assumes all objs passed are rooted */
@@ -107,8 +107,8 @@ void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
     TValue error_msg = kstring_new_b_imm(K, msg);
     krooted_tvs_push(K, error_msg);
     TValue error_obj = 
-	klispE_new(K, K->next_obj, K->curr_cont, error_msg, irritants);
-     /* clear buffer shouldn't cause GC, but just in case... */
+        klispE_new(K, K->next_obj, K->curr_cont, error_msg, irritants);
+    /* clear buffer shouldn't cause GC, but just in case... */
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
     /* call_cont protects error from gc */
@@ -119,7 +119,7 @@ void klispE_throw_system_error_with_irritants(
     klisp_State *K, const char *service, int errnum, TValue irritants)
 {
     TValue error_obj = klispE_new_with_errno_irritants(K, service, errnum, 
-						       irritants);
+                                                       irritants);
     krooted_tvs_push(K, error_obj);
     clear_buffers(K);
     kcall_cont(K, K->system_error_cont, error_obj);
@@ -200,7 +200,7 @@ TValue klispE_describe_errno(klisp_State *K, const char *service, int errnum)
 {
     const char *code = NULL;
     int tabsize = sizeof(symbolic_error_codes) / 
-	sizeof(symbolic_error_codes[0]);
+        sizeof(symbolic_error_codes[0]);
     if (0 <= errnum && errnum < tabsize)
         code = symbolic_error_codes[errnum];
     if (code == NULL)

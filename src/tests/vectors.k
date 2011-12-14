@@ -63,8 +63,8 @@
 ($check-predicate (applicative? vector-set!))
 
 ($let*
-  ((v (make-vector 10))
-   (w (vector->immutable-vector v)))
+    ((v (make-vector 10))
+     (w (vector->immutable-vector v)))
   ($check equal? (vector-set! v 0 1) #inert)
   ($check equal? (vector-ref v 0) 1)
   ($check equal? (vector-set! v 0 "abc") #inert)
@@ -88,12 +88,12 @@
 ;; (R7RS 3rd draft, section 6.3.6) vector-copy
 ($check equal? (vector-copy (vector 1 2 3)) (vector 1 2 3))
 ($check equal? (vector-copy (vector (vector 1 2 3) (vector 4 5 6)))
-	(vector (vector 1 2 3) (vector 4 5 6)))
+        (vector (vector 1 2 3) (vector 4 5 6)))
 ($check-predicate (mutable-vector? (vector-copy (vector 1 2 3))))
 
 ($check-predicate
-  (mutable-vector?
-    (vector-copy (vector->immutable-vector (vector 1 2 3)))))
+ (mutable-vector?
+  (vector-copy (vector->immutable-vector (vector 1 2 3)))))
 
 ;; XXX bytevector->vector
 
@@ -101,11 +101,11 @@
 ($check equal? (bytevector->vector (u8 0 1 2)) (vector 0 1 2))
 
 ($check-not-predicate
-  ($let*
-      ((bb (u8 0 1 2))
-       (x (bytevector->vector bb))
-       (y (bytevector->vector bb)))
-  (eq? x y)))
+ ($let*
+     ((bb (u8 0 1 2))
+      (x (bytevector->vector bb))
+      (y (bytevector->vector bb)))
+   (eq? x y)))
 
 ($check-predicate (mutable-vector? (bytevector->vector (u8 0 1 2))))
 
@@ -115,11 +115,11 @@
 ($check equal? (vector->bytevector (vector 0 1 2)) (u8 0 1 2))
 
 ($check-not-predicate
-  ($let*
-    ((cs (vector 0 1 2))
-     (x (vector->bytevector cs))
-     (y (vector->bytevector cs)))
-  (eq? x y)))
+ ($let*
+     ((cs (vector 0 1 2))
+      (x (vector->bytevector cs))
+      (y (vector->bytevector cs)))
+   (eq? x y)))
 
 ($check-predicate (mutable-bytevector? (vector->bytevector (vector 0 1))))
 
@@ -140,9 +140,9 @@
   ($check equal? v (vector 9 9 3 4 5))
   ($check-error (vector-copy! (vector 1 2 3 4 5 6) v))
   ($check-error
-    (vector-copy!
-      (vector 1)
-      (vector->immutable-vector (vector 1)))))
+   (vector-copy!
+    (vector 1)
+    (vector->immutable-vector (vector 1)))))
 
 ;; (R7RS 3rd draft, ) vector-copy-partial
 
@@ -158,8 +158,8 @@
 ;; additional property: destination must be mutable
 ;;
 ($let*
-  ((v (make-vector 5 9))
-   (w (vector->immutable-vector v)))
+    ((v (make-vector 5 9))
+     (w (vector->immutable-vector v)))
   ($check equal? (vector-copy-partial! (vector 1 2) 0 2 v 0) #inert)
   ($check equal? v (vector 1 2 9 9 9))
   ($check equal? (vector-copy-partial! (vector 5 6) 1 2 v 4) #inert)
@@ -174,15 +174,15 @@
 ;; XXX vector-fill!
 ($check-predicate (inert? (vector-fill! (vector 1 2) 0)))
 ($check equal? ($let ((v (vector 1 2 3)))
-		 (vector-fill! v "str")
-		 v)
-	(vector "str" "str" "str"))
+                 (vector-fill! v "str")
+                 v)
+        (vector "str" "str" "str"))
 
 ;; XXX vector->immutable-vector
 
 ($check-predicate (applicative? vector->immutable-vector))
 
 ($check-predicate
-  (immutable-vector? (vector->immutable-vector (vector 1 2))))
+ (immutable-vector? (vector->immutable-vector (vector 1 2))))
 ($check-not-predicate
-  (mutable-vector? (vector->immutable-vector (vector 1 2))))
+ (mutable-vector? (vector->immutable-vector (vector 1 2))))

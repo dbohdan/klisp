@@ -49,5 +49,5 @@ TValue ksystem_jiffies_per_second(klisp_State *K)
 bool ksystem_isatty(klisp_State *K, TValue port)
 {
     return ttisfport(port) && kport_is_open(port)
-           && isatty(fileno(kfport_file(port)));
+        && isatty(fileno(kfport_file(port)));
 }

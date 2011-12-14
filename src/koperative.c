@@ -18,11 +18,11 @@ TValue kmake_operative(klisp_State *K, klisp_CFunction fn, int32_t xcount, ...)
     va_list argp;
 
     Operative *new_op = (Operative *) 
-	klispM_malloc(K, sizeof(Operative) + sizeof(TValue) * xcount);
+        klispM_malloc(K, sizeof(Operative) + sizeof(TValue) * xcount);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_op, K_TOPERATIVE, 
-		K_FLAG_CAN_HAVE_NAME);
+                K_FLAG_CAN_HAVE_NAME);
 
     /* operative specific fields */
     new_op->fn = fn;
@@ -30,7 +30,7 @@ TValue kmake_operative(klisp_State *K, klisp_CFunction fn, int32_t xcount, ...)
 
     va_start(argp, xcount);
     for (int i = 0; i < xcount; i++) {
-	new_op->extra[i] = va_arg(argp, TValue);
+        new_op->extra[i] = va_arg(argp, TValue);
     }
     va_end(argp);
 

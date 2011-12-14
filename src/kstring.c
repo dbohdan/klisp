@@ -22,42 +22,42 @@ void klispS_resize (klisp_State *K, int32_t newsize)
     stringtable *tb;
     int32_t i;
     if (K->gcstate == GCSsweepstring)
-	return;  /* cannot resize during GC traverse */
+        return;  /* cannot resize during GC traverse */
     newhash = klispM_newvector(K, newsize, GCObject *);
     tb = &K->strt;
     for (i = 0; i < newsize; i++) newhash[i] = NULL;
     /* rehash */
     for (i = 0; i < tb->size; i++) {
-	GCObject *p = tb->hash[i];
-	while (p) {  /* for each node in the list */
-	    /* imm string, imm bytevectors & symbols aren't chained with 
-	       all other objs, but with each other in strt */
-	    GCObject *next = p->gch.next;  /* save next */
-	    uint32_t h = 0;
-	    klisp_assert(p->gch.tt == K_TKEYWORD || p->gch.tt == K_TSYMBOL || 
-			 p->gch.tt == K_TSTRING || p->gch.tt == K_TBYTEVECTOR);
+        GCObject *p = tb->hash[i];
+        while (p) {  /* for each node in the list */
+            /* imm string, imm bytevectors & symbols aren't chained with 
+               all other objs, but with each other in strt */
+            GCObject *next = p->gch.next;  /* save next */
+            uint32_t h = 0;
+            klisp_assert(p->gch.tt == K_TKEYWORD || p->gch.tt == K_TSYMBOL || 
+                         p->gch.tt == K_TSTRING || p->gch.tt == K_TBYTEVECTOR);
 
-	    switch(p->gch.tt) {
-	    case K_TSYMBOL:
-		h = ((Symbol *) p)->hash;
-		break;
-	    case K_TSTRING:
-		h = ((String *) p)->hash;
-		break;
-	    case K_TBYTEVECTOR:
-		h = ((Bytevector *) p)->hash;
-		break;
-	    case K_TKEYWORD:
-		h = ((Keyword *) p)->hash;
-		break;
-	    }
+            switch(p->gch.tt) {
+            case K_TSYMBOL:
+                h = ((Symbol *) p)->hash;
+                break;
+            case K_TSTRING:
+                h = ((String *) p)->hash;
+                break;
+            case K_TBYTEVECTOR:
+                h = ((Bytevector *) p)->hash;
+                break;
+            case K_TKEYWORD:
+                h = ((Keyword *) p)->hash;
+                break;
+            }
 
-	    int32_t h1 = lmod(h, newsize);  /* new position */
-	    klisp_assert((int32_t) (h%newsize) == lmod(h, newsize));
-	    p->gch.next = newhash[h1];  /* chain it */
-	    newhash[h1] = p;
-	    p = next;
-	}
+            int32_t h1 = lmod(h, newsize);  /* new position */
+            klisp_assert((int32_t) (h%newsize) == lmod(h, newsize));
+            p->gch.next = newhash[h1];  /* chain it */
+            newhash[h1] = p;
+            p = next;
+        }
     }
     klispM_freearray(K, tb->hash, tb->size, GCObject *);
     tb->size = newsize;
@@ -66,10 +66,10 @@ void klispS_resize (klisp_State *K, int32_t newsize)
 
 /* General constructor for strings */
 TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf, 
-			uint32_t size)
+                        uint32_t size)
 {
     return m? kstring_new_bs(K, buf, size) :
-	kstring_new_bs_imm(K, buf, size);
+        kstring_new_bs_imm(K, buf, size);
 }
 
 /* 
@@ -82,24 +82,24 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     /* first check to see if it's in the stringtable */
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if string is too long, don't hash all 
-			       its chars */
+                                  its chars */
     size_t size1;
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
-	h = h ^ ((h<<5)+(h>>2)+ ((unsigned char) buf[size1-1]));
+        h = h ^ ((h<<5)+(h>>2)+ ((unsigned char) buf[size1-1]));
 
     for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
-	 o != NULL; o = o->gch.next) {
-	klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
-		     o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
+         o != NULL; o = o->gch.next) {
+        klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
+                     o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
 
-	if (o->gch.tt != K_TSTRING) continue;
+        if (o->gch.tt != K_TSTRING) continue;
 
-	String *ts = (String *) o;
-	if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
-	    /* string may be dead */
-	    if (isdead(K, o)) changewhite(o);
-	    return gc2str(o);
-	}
+        String *ts = (String *) o;
+        if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
+            /* string may be dead */
+            if (isdead(K, o)) changewhite(o);
+            return gc2str(o);
+        }
     } 
 
     /* If it exits the loop, it means it wasn't found, hash is still in h */
@@ -107,7 +107,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     String *new_str;
 
     if (size > (SIZE_MAX - sizeof(String) - 1))
-	klispM_toobig(K);
+        klispM_toobig(K);
 
     new_str = (String *) klispM_malloc(K, sizeof(String) + size + 1);
 
@@ -123,7 +123,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     new_str->mark = KFALSE;
     new_str->size = size;
     if (size != 0) {
-	memcpy(new_str->b, buf, size);
+        memcpy(new_str->b, buf, size);
     }
     new_str->b[size] = '\0'; /* final 0 for printing */
 
@@ -136,9 +136,9 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     tb->nuse++;
     TValue ret_tv = gc2str(new_str);
     if (tb->nuse > ((uint32_t) tb->size) && tb->size <= INT32_MAX / 2) {
-	krooted_tvs_push(K, ret_tv); /* save in case of gc */
-	klispS_resize(K, tb->size*2);  /* too crowded */
-	krooted_tvs_pop(K);
+        krooted_tvs_push(K, ret_tv); /* save in case of gc */
+        klispS_resize(K, tb->size*2);  /* too crowded */
+        krooted_tvs_pop(K);
     }
     
     return ret_tv;
@@ -161,8 +161,8 @@ TValue kstring_new_s(klisp_State *K, uint32_t size)
     String *new_str;
 
     if (size == 0) {
-	klisp_assert(ttisstring(K->empty_string));
-	return K->empty_string;
+        klisp_assert(ttisstring(K->empty_string));
+        return K->empty_string;
     }
 
     new_str = klispM_malloc(K, sizeof(String) + size + 1);
@@ -215,10 +215,10 @@ bool kstring_equalp(TValue obj1, TValue obj2)
     String *str2 = tv2str(obj2);
 
     if (str1->size == str2->size) {
-	return (str1->size == 0) ||
-	    (memcmp(str1->b, str2->b, str1->size) == 0);
+        return (str1->size == 0) ||
+            (memcmp(str1->b, str2->b, str1->size) == 0);
     } else {
-	return false;
+        return false;
     }
 }
 

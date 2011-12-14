@@ -45,7 +45,7 @@ typedef union GCObject GCObject;
 ** Common Header for all collectible objects (in macro form, to be
 ** included in other objects)
 */
-#define CommonHeader GCObject *next; uint8_t tt; uint8_t kflags; \
+#define CommonHeader GCObject *next; uint8_t tt; uint8_t kflags;    \
     uint16_t gct; GCObject *si; GCObject *gclist
     
 /* NOTE: the gc flags are called marked in lua, but we reserve that them
@@ -78,7 +78,7 @@ typedef union GCObject GCObject;
 ** Common header in struct form
 */
 typedef struct __attribute__ ((__packed__)) GCheader {
-  CommonHeader;
+    CommonHeader;
 } GCheader;
 
 /*
@@ -131,16 +131,16 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 ** The name strings for all TValue types are in kobject.c
 ** Thoseshould be updated if types here are modified
 */
-#define K_TFIXINT       0
-#define K_TBIGINT       1
-#define K_TFIXRAT       2
-#define K_TBIGRAT       3
-#define K_TDOUBLE       4
-#define K_TBDOUBLE      5
-#define K_TEINF         6
-#define K_TIINF         7
-#define K_TRWNPV        8
-#define K_TCOMPLEX      9
+#define K_TFIXINT          0
+#define K_TBIGINT          1
+#define K_TFIXRAT          2
+#define K_TBIGRAT          3
+#define K_TDOUBLE          4
+#define K_TBDOUBLE         5
+#define K_TEINF            6
+#define K_TIINF            7
+#define K_TRWNPV           8
+#define K_TCOMPLEX         9
 #define K_TUNDEFINED    10
 
 #define K_TNIL 		20
@@ -153,7 +153,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 /* user pointer */
 #define K_TUSER 	29
 
-#define K_TPAIR        	30
+#define K_TPAIR           	30
 #define K_TSTRING	31
 #define K_TSYMBOL	32
 #define K_TENVIRONMENT  33
@@ -161,18 +161,18 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TOPERATIVE    35
 #define K_TAPPLICATIVE  36
 #define K_TENCAPSULATION 37
-#define K_TPROMISE      38
-#define K_TTABLE        39
-#define K_TERROR        40
+#define K_TPROMISE         38
+#define K_TTABLE           39
+#define K_TERROR           40
 #define K_TBYTEVECTOR   41
-#define K_TFPORT        42
-#define K_TMPORT        43
-#define K_TVECTOR       44
+#define K_TFPORT           42
+#define K_TMPORT           43
+#define K_TVECTOR          44
 #define K_TKEYWORD	45
 #define K_TMODULE	46
 
 /* for tables */
-#define K_TDEADKEY        60
+#define K_TDEADKEY           60
 
 /* this is used to test for numbers, as returned by ttype */
 #define K_LAST_NUMBER_TYPE K_TUNDEFINED
@@ -233,8 +233,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 */
 
 /* NOTE: This is intended for use in switch statements */
-#define ttype(o) ({ TValue tto_ = (o);			\
-	    ttisdouble(tto_)? K_TDOUBLE : ttype_(tto_); })
+#define ttype(o) ({ TValue tto_ = (o);                      \
+            ttisdouble(tto_)? K_TDOUBLE : ttype_(tto_); })
 
 /* This is intended for internal use below. DON'T USE OUTSIDE THIS FILE */
 #define ttag(o) ((o).tv.t)
@@ -246,51 +246,51 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 /* Simple types (value in TValue struct) */
 #define ttisfixint(o)	(tbasetype_(o) == K_TAG_FIXINT)
 #define ttisbigint(o)	(tbasetype_(o) == K_TAG_BIGINT)
-#define ttiseinteger(o_) ({ int32_t t_ = tbasetype_(o_); \
-	    t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
+#define ttiseinteger(o_) ({ int32_t t_ = tbasetype_(o_);    \
+            t_ == K_TAG_FIXINT || t_ == K_TAG_BIGINT;})
 /* for items in bytevectors */
-#define ttisu8(o) ({							\
-	TValue o__ = (o);						\
-	(ttisfixint(o__) && ivalue(o__) >= 0 && ivalue(o__) < 256); })		
+#define ttisu8(o) ({                                                    \
+            TValue o__ = (o);                                           \
+            (ttisfixint(o__) && ivalue(o__) >= 0 && ivalue(o__) < 256); })		
 /* for radixes in string<->number */
-#define ttisradix(o) ({							\
-	TValue o__ = (o);						\
-	(ttisfixint(o__) &&						\
-	 (ivalue(o__) == 2 || ivalue(o__) == 8 ||			\
-	  ivalue(o__) == 10 || ivalue(o__) == 16)); })
+#define ttisradix(o) ({                                     \
+            TValue o__ = (o);                               \
+            (ttisfixint(o__) &&                             \
+             (ivalue(o__) == 2 || ivalue(o__) == 8 ||       \
+              ivalue(o__) == 10 || ivalue(o__) == 16)); })
 /* for bases in char->digit and related functions */
-#define ttisbase(o) ({							\
-	TValue o__ = (o);						\
-	(ttisfixint(o__) && ivalue(o__) >= 2 && ivalue(o__) <= 36); })		
-#define ttisinteger(o) ({ TValue o__ = (o);				\
-	    (ttiseinteger(o__) ||					\
-	     (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})
+#define ttisbase(o) ({                                                  \
+            TValue o__ = (o);                                           \
+            (ttisfixint(o__) && ivalue(o__) >= 2 && ivalue(o__) <= 36); })		
+#define ttisinteger(o) ({ TValue o__ = (o);                             \
+            (ttiseinteger(o__) ||                                       \
+             (ttisdouble(o__) && (floor(dvalue(o__)) == dvalue(o__))));})
 #define ttisbigrat(o)	(tbasetype_(o) == K_TAG_BIGRAT)
-#define ttisrational(o_)				\
-    ({ TValue t_ = o_;					\
-	(ttype(t_) <= K_TBIGRAT) || ttisdouble(t_); })
+#define ttisrational(o_)                                \
+    ({ TValue t_ = o_;                                  \
+        (ttype(t_) <= K_TBIGRAT) || ttisdouble(t_); })
 #define ttisdouble(o)	((ttag(o) & K_TAG_BASE_MASK) != K_TAG_TAGGED)
 #define ttisreal(o) (ttype(o) < K_TCOMPLEX)
-#define ttisexact(o_)					\
-    ({ TValue t_ = o_;					\
-	(ttiseinf(t_) || ttype(t_) <= K_TBIGRAT); })
+#define ttisexact(o_)                                   \
+    ({ TValue t_ = o_;                                  \
+        (ttiseinf(t_) || ttype(t_) <= K_TBIGRAT); })
 /* MAYBE this is ugly..., maybe add exact/inexact flag, real, rational flag */
-#define ttisinexact(o_)					\
-    ({ TValue t_ = o_;					\
-	(ttisundef(t_) || ttisdouble(t_) || ttisrwnpv(t_) || ttisiinf(t_)); })
+#define ttisinexact(o_)                                                 \
+    ({ TValue t_ = o_;                                                  \
+        (ttisundef(t_) || ttisdouble(t_) || ttisrwnpv(t_) || ttisiinf(t_)); })
 /* For now, all inexact numbers are not robust and have -inf & +inf bounds */
 #define ttisrobust(o)	(ttisexact(o))
 #define ttisnumber(o) (ttype(o) <= K_LAST_NUMBER_TYPE)
 #define ttiseinf(o)	(tbasetype_(o) == K_TAG_EINF)
 #define ttisiinf(o)	(tbasetype_(o) == K_TAG_IINF)
-#define ttisinf(o_)				\
-    ({ TValue t_ = o_;				\
-	(ttiseinf(t_) || ttisiinf(t_)); })
+#define ttisinf(o_)                             \
+    ({ TValue t_ = o_;                          \
+        (ttiseinf(t_) || ttisiinf(t_)); })
 #define ttisrwnpv(o)	(tbasetype_(o) == K_TAG_RWNPV)
 #define ttisundef(o)	(tbasetype_(o) == K_TAG_UNDEFINED)
-#define ttisnwnpv(o_)				     \
-    ({ TValue t_ = o_;				     \
-	(ttisundef(t_) || ttisrwnpv(t_)); })
+#define ttisnwnpv(o_)                           \
+    ({ TValue t_ = o_;                          \
+        (ttisundef(t_) || ttisrwnpv(t_)); })
 
 #define ttisnil(o)	(tbasetype_(o) == K_TAG_NIL)
 #define ttisignore(o)	(tbasetype_(o) == K_TAG_IGNORE)
@@ -304,16 +304,16 @@ typedef struct __attribute__ ((__packed__)) GCheader {
    (bigints, rationals, etc could be collectable)
    maybe we should use a better way for this, to speed up checks, maybe use
    a flag? */
-#define iscollectable(o)  ({ uint8_t t = ttype(o);			\
-	    (t == K_TBIGINT || t == K_TBIGRAT || t >= K_FIRST_GC_TYPE); })
+#define iscollectable(o)  ({ uint8_t t = ttype(o);                      \
+            (t == K_TBIGINT || t == K_TBIGRAT || t >= K_FIRST_GC_TYPE); })
 
 #define ttisstring(o)	(tbasetype_(o) == K_TAG_STRING)
 #define ttissymbol(o)	(tbasetype_(o) == K_TAG_SYMBOL)
 #define ttispair(o)	(tbasetype_(o) == K_TAG_PAIR)
 #define ttisoperative(o) (tbasetype_(o) == K_TAG_OPERATIVE)
 #define ttisapplicative(o) (tbasetype_(o) == K_TAG_APPLICATIVE)
-#define ttiscombiner(o_) ({ int32_t t_ = tbasetype_(o_); \
-	    t_ == K_TAG_OPERATIVE || t_ == K_TAG_APPLICATIVE;})
+#define ttiscombiner(o_) ({ int32_t t_ = tbasetype_(o_);        \
+            t_ == K_TAG_OPERATIVE || t_ == K_TAG_APPLICATIVE;})
 #define ttisenvironment(o) (tbasetype_(o) == K_TAG_ENVIRONMENT)
 #define ttiscontinuation(o) (tbasetype_(o) == K_TAG_CONTINUATION)
 #define ttisencapsulation(o) (tbasetype_(o) == K_TAG_ENCAPSULATION)
@@ -323,8 +323,8 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisbytevector(o) (tbasetype_(o) == K_TAG_BYTEVECTOR)
 #define ttisfport(o) (tbasetype_(o) == K_TAG_FPORT)
 #define ttismport(o) (tbasetype_(o) == K_TAG_MPORT)
-#define ttisport(o_) ({ int32_t t_ = tbasetype_(o_); \
-	    t_ == K_TAG_FPORT || t_ == K_TAG_MPORT;})
+#define ttisport(o_) ({ int32_t t_ = tbasetype_(o_);    \
+            t_ == K_TAG_FPORT || t_ == K_TAG_MPORT;})
 #define ttisvector(o) (tbasetype_(o) == K_TAG_VECTOR)
 #define ttiskeyword(o)	(tbasetype_(o) == K_TAG_KEYWORD)
 #define ttismodule(o)	(tbasetype_(o) == K_TAG_MODULE)
@@ -385,7 +385,7 @@ typedef struct __attribute__ ((__packed__)) {
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader; 
 /* This is from IMath */
-    Bigint num; /* Numerator         */
+    Bigint num; /* Numerator            */
     Bigint den; /* Denominator, <> 0 */
 } Bigrat;
 
@@ -407,8 +407,8 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader; /* symbols are marked via their strings */
     TValue str; /* could use String * here, but for now... */
     uint32_t hash; /* this is different from the str hash to
-		      avoid having both the string and the symbol
-		      from always falling in the same bucket */
+                      avoid having both the string and the symbol
+                      from always falling in the same bucket */
 } Symbol;
 
 typedef struct __attribute__ ((__packed__)) {
@@ -491,16 +491,16 @@ typedef struct __attribute__ ((__packed__)) {
 */
 
 typedef union TKey {
-  struct {
-      TValue this; /* different from lua because of the tagging scheme */
-      struct Node *next;  /* for chaining */
-  } nk;
-  TValue tvk;
+    struct {
+        TValue this; /* different from lua because of the tagging scheme */
+        struct Node *next;  /* for chaining */
+    } nk;
+    TValue tvk;
 } TKey;
 
 typedef struct Node {
-  TValue i_val;
-  TKey i_key;
+    TValue i_val;
+    TKey i_key;
 } Node;
 
 typedef struct __attribute__ ((__packed__)) {
@@ -549,8 +549,8 @@ typedef struct __attribute__ ((__packed__)) {
     TValue mark; /* for cycle/sharing aware algorithms */
     TValue str; /* could use String * here, but for now... */
     uint32_t hash; /* this is different from the symbol & string hash 
-		      to avoid having the string, the symbol, and the
-		      keyword always falling in the same bucket */
+                      to avoid having the string, the symbol, and the
+                      keyword always falling in the same bucket */
 } Keyword;
 
 typedef struct __attribute__ ((__packed__)) {
@@ -562,7 +562,7 @@ typedef struct __attribute__ ((__packed__)) {
 /*
 ** `module' operation for hashing (size is always a power of 2)
 */
-#define lmod(s,size) \
+#define lmod(s,size)                                                    \
 	(check_exp((size&(size-1))==0, (cast(int32_t, (s) & ((size)-1)))))
 
 
@@ -595,8 +595,8 @@ typedef struct __attribute__ ((__packed__)) {
 ** Common header for markable objects
 */
 typedef struct __attribute__ ((__packed__)) {
-  CommonHeader;
-  TValue mark;
+    CommonHeader;
+    TValue mark;
 } MGCheader;
 
 /*
@@ -696,16 +696,16 @@ const TValue kfree;
 #define b2tv_(b_) {.tv = {.t = K_TAG_BOOLEAN, .v = { .b = (b_) }}}
 #define p2tv_(p_) {.tv = {.t = K_TAG_USER, .v = { .p = (p_) }}}
 #define d2tv_(d_) {.d = d_}
-#define ktag_double(d_)							\
-    ({ double d__ = d_;							\
-	TValue res__;							\
-	if (isnan(d__)) res__ = KRWNPV;					\
-	else if (isinf(d__)) res__ = (d__ == INFINITY)?			\
-				 KIPINF : KIMINF;			\
-	/* +0.0 == -0.0 too, but that doesn't hurt */			\
-	else if (d__ == -0.0) res__ = d2tv(+0.0);			\
-	else res__ = d2tv(d__);						\
-	res__;})
+#define ktag_double(d_)                                 \
+    ({ double d__ = d_;                                 \
+        TValue res__;                                   \
+        if (isnan(d__)) res__ = KRWNPV;					\
+        else if (isinf(d__)) res__ = (d__ == INFINITY)? \
+                                 KIPINF : KIMINF;       \
+        /* +0.0 == -0.0 too, but that doesn't hurt */   \
+        else if (d__ == -0.0) res__ = d2tv(+0.0);       \
+        else res__ = d2tv(d__);                         \
+        res__;})
 
 /* Macros to create TValues of non-heap allocated types */
 #define ch2tv(ch_) ((TValue) ch2tv_(ch_))
@@ -718,8 +718,8 @@ const TValue kfree;
 /* TODO: add assertions */
 /* REFACTOR: change names to bigint2tv, pair2tv, etc */
 /* LUA NOTE: the corresponding defines are in lstate.h */
-#define gc2tv(t_, o_) ((TValue) {.tv = {.t = (t_),			\
-					.v = { .gc = obj2gco(o_)}}})
+#define gc2tv(t_, o_) ((TValue) {.tv = {.t = (t_),                      \
+                                        .v = { .gc = obj2gco(o_)}}})
 #define gc2bigint(o_) (gc2tv(K_TAG_BIGINT, o_))
 #define gc2bigrat(o_) (gc2tv(K_TAG_BIGRAT, o_))
 #define gc2pair(o_) (gc2tv(K_TAG_PAIR, o_))
@@ -795,14 +795,14 @@ extern char *ktv_names[];
 /* XXX: marking macros should take a klisp_State parameter and
    keep track of marks in the klisp_State */
 int32_t kmark_count;
-#define kset_mark(p_, m_) ({ TValue new_mark_ = (m_); \
-	TValue obj_ = (p_); \
-	TValue old_mark_ = kget_mark(p_);	\
-	if (kis_false(old_mark_) && !kis_false(new_mark_)) \
-	    ++kmark_count; \
-	else if (kis_false(new_mark_) && !kis_false(old_mark_)) \
-	    --kmark_count; \
-	kget_mark(obj_) = new_mark_; })
+#define kset_mark(p_, m_) ({ TValue new_mark_ = (m_);               \
+            TValue obj_ = (p_);                                     \
+            TValue old_mark_ = kget_mark(p_);                       \
+            if (kis_false(old_mark_) && !kis_false(new_mark_))      \
+                ++kmark_count;                                      \
+            else if (kis_false(new_mark_) && !kis_false(old_mark_)) \
+                --kmark_count;                                      \
+            kget_mark(obj_) = new_mark_; })
 #define kcheck_mark_balance() (assert(kmark_count == 0))
 #else
 #define kset_mark(p_, m_) (kget_mark(p_) = (m_))
@@ -840,17 +840,17 @@ int32_t kmark_count;
 #define K_FLAG_HAS_NAME 0x40
 
 /* evaluates o_ more than once */
-#define kcan_have_name(o_) \
+#define kcan_have_name(o_)                                              \
     (iscollectable(o_) && ((tv_get_kflags(o_)) & K_FLAG_CAN_HAVE_NAME) != 0)
 
-#define khas_name(o_) \
+#define khas_name(o_)                                               \
     (iscollectable(o_) && (tv_get_kflags(o_)) & K_FLAG_HAS_NAME)
 
 #define K_FLAG_HAS_SI 0x20
 
 #define kcan_have_si(o_) (iscollectable(o_))
-#define khas_si(o_) ((iscollectable(o_) &&			\
-		      (tv_get_kflags(o_)) & K_FLAG_HAS_SI))
+#define khas_si(o_) ((iscollectable(o_) &&                  \
+                      (tv_get_kflags(o_)) & K_FLAG_HAS_SI))
 
 #define K_FLAG_IMMUTABLE 0x10
 
@@ -901,27 +901,27 @@ int32_t kmark_count;
 #define K_FLAG_WEAK_VALUES 0x02
 #define K_FLAG_WEAK_NOTHING 0x00
 
-#define ktable_has_weak_keys(o_) \
+#define ktable_has_weak_keys(o_)                    \
     ((tv_get_kflags(o_) & K_FLAG_WEAK_KEYS) != 0)
-#define ktable_has_weak_values(o_) \
+#define ktable_has_weak_values(o_)                  \
     ((tv_get_kflags(o_) & K_FLAG_WEAK_VALUES) != 0)
 
 /* Macro to test the most basic equality on TValues */
 #define tv_equal(tv1_, tv2_) ((tv1_).raw == (tv2_).raw)
 
 /* Symbols could be eq? but not tv_equal? because of source info */
-#define tv_sym_equal(sym1_, sym2_) \
+#define tv_sym_equal(sym1_, sym2_)                      \
     (tv_equal(tv2sym(sym1_)->str, tv2sym(sym2_)->str))
 
 /*
 ** for internal debug only
 */
-#define checkconsistency(obj) \
-  klisp_assert(!iscollectable(obj) || (ttype_(obj) == gcvalue(obj)->gch.tt))
+#define checkconsistency(obj)                                           \
+    klisp_assert(!iscollectable(obj) || (ttype_(obj) == gcvalue(obj)->gch.tt))
 
-#define checkliveness(k,obj) \
-  klisp_assert(!iscollectable(obj) || \
-  ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(k, gcvalue(obj))))
+#define checkliveness(k,obj)                                            \
+    klisp_assert(!iscollectable(obj) ||                                 \
+                 ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(k, gcvalue(obj))))
 
 
 #endif

@@ -33,21 +33,21 @@
 ($define! prepare-input
   ($lambda (text)
     (with-output-to-file temp-file
-			 ($lambda () ($if (string? text) 
-					  (display text) 
-					  #inert)))))
+                         ($lambda () ($if (string? text) 
+                                          (display text) 
+                                          #inert)))))
 
 ($define! read-string-until-eof
   ($lambda ()
     ($letrec
-      ( (loop ($lambda (prefix)
-          ($let ((c (read-char)))
-            ($if (eof-object? c)
-              #inert
-              ($sequence
-                (set-cdr! prefix (cons c ()))
-                (loop (cdr prefix)))))))
-        (buf (cons () ())))
+        ( (loop ($lambda (prefix)
+                  ($let ((c (read-char)))
+                    ($if (eof-object? c)
+                         #inert
+                         ($sequence
+                           (set-cdr! prefix (cons c ()))
+                           (loop (cdr prefix)))))))
+          (buf (cons () ())))
       (loop buf)
       (list->string (cdr buf)))))
 
@@ -118,16 +118,16 @@
 ($check-error (with-output-to-file invalid-file ($lambda () 1)))
 
 ($check equal?
-  ($let ((orig (get-current-input-port)))
-    (with-input-from-file test-input-file
-      ($lambda () (equal? orig (get-current-input-port)))))
-  #f)
+        ($let ((orig (get-current-input-port)))
+          (with-input-from-file test-input-file
+                                ($lambda () (equal? orig (get-current-input-port)))))
+        #f)
 
 ($check equal?
-  ($let ((orig (get-current-output-port)))
-    (with-output-to-file temp-file
-      ($lambda () (equal? orig (get-current-output-port)))))
-  #f)
+        ($let ((orig (get-current-output-port)))
+          (with-output-to-file temp-file
+                               ($lambda () (equal? orig (get-current-output-port)))))
+        #f)
 
 ;; 15.1.4 get-current-input-port? get-current-output-port?
 ;;   Functionality covered by other tests
@@ -177,30 +177,30 @@
 ($check equal? ($output-test #inert) "")
 
 ($check equal?
-  ($output-test (write (list 123 12345678901234567890 1/2 -3.14)))
-  "(123 12345678901234567890 1/2 -3.14)")
+        ($output-test (write (list 123 12345678901234567890 1/2 -3.14)))
+        "(123 12345678901234567890 1/2 -3.14)")
 ($check equal?
-  ($output-test (write (list #e+infinity #e-infinity #i+infinity #i-infinity #real #undefined)))
-  "(#e+infinity #e-infinity #i+infinity #i-infinity #real #undefined)")
+        ($output-test (write (list #e+infinity #e-infinity #i+infinity #i-infinity #real #undefined)))
+        "(#e+infinity #e-infinity #i+infinity #i-infinity #real #undefined)")
 ($check equal?
-  ($output-test (write (list #\x #\newline #\space)))
-  "(#\\x #\\newline #\\space)")
+        ($output-test (write (list #\x #\newline #\space)))
+        "(#\\x #\\newline #\\space)")
 ($check equal?
-  ($output-test (write (list #t #f)))
-  "(#t #f)")
+        ($output-test (write (list #t #f)))
+        "(#t #f)")
 ($check equal?
-  ($output-test (write (list #inert #ignore)))
-  "(#inert #ignore)")
+        ($output-test (write (list #inert #ignore)))
+        "(#inert #ignore)")
 
 ($check equal? ($output-test (write "")) "\"\"")
 ($check equal? ($output-test (write "a\\b\"")) "\"a\\\\b\\\"\"")
 
 ($check equal?
-  ($output-test (write (list 1 2 (list 3 4 5) () (list* 6 7))))
-  "(1 2 (3 4 5) () (6 . 7))")
+        ($output-test (write (list 1 2 (list 3 4 5) () (list* 6 7))))
+        "(1 2 (3 4 5) () (6 . 7))")
 ($check equal?
-  ($output-test (write ($quote #0=(1 2 #1=(3 4 . #0#) #2="abc" #3=(5 6 #1# #2# #3# . #0#)))))
-  "#0=(1 2 #1=(3 4 . #0#) #2=\"abc\" #3=(5 6 #1# #2# #3# . #0#))")
+        ($output-test (write ($quote #0=(1 2 #1=(3 4 . #0#) #2="abc" #3=(5 6 #1# #2# #3# . #0#)))))
+        "#0=(1 2 #1=(3 4 . #0#) #2=\"abc\" #3=(5 6 #1# #2# #3# . #0#))")
 
 ($check-error (write 0 (get-current-input-port)))
 ($check-error (call-with-closed-output-port ($lambda (p) (write 0 p))))
@@ -215,7 +215,7 @@
 ;; Additional input functions: eof-object? read-char peek-char
 
 ($check-predicate ($false-for-all? eof-object?
-  0 -1 #t #f () "" (get-current-input-port)))
+                                   0 -1 #t #f () "" (get-current-input-port)))
 
 ($check-predicate (eof-object? ($input-test "" (read-char))))
 ($check-predicate (eof-object? ($input-test "" (peek-char))))
@@ -269,27 +269,27 @@
 ;;
 ;; ($define! colliding-output-test
 ;;   ($lambda (combiner)
-;;     (call-with-output-file temp-file
-;;       ($lambda (p1)
-;;         (call-with-output-file temp-file
-;;           ($lambda (p2)
-;;             (combiner p1 p2)))))
-;;     (with-input-from-file temp-file read-string-until-eof)))
+;;    (call-with-output-file temp-file
+;;      ($lambda (p1)
+;;        (call-with-output-file temp-file
+;;         ($lambda (p2)
+;;           (combiner p1 p2)))))
+;;    (with-input-from-file temp-file read-string-until-eof)))
 ;; 
 ;; ($check equal?
 ;;   (colliding-output-test ($lambda (p1 p2)
-;;     (display "1" p1)
-;;     (display "2" p2)
-;;     (flush-output-port p1)
-;;     (flush-output-port p2)))
+;;    (display "1" p1)
+;;    (display "2" p2)
+;;    (flush-output-port p1)
+;;    (flush-output-port p2)))
 ;;   "12")
 ;; 
 ;; ($check equal?
 ;;   (colliding-output-test ($lambda (p1 p2)
-;;     (display "1" p1)
-;;     (display "2" p2)
-;;     (flush-output-port p2)
-;;     (flush-output-port p1)))
+;;    (display "1" p1)
+;;    (display "2" p2)
+;;    (flush-output-port p2)
+;;    (flush-output-port p1)))
 ;;   "21")
 
 

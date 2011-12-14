@@ -45,8 +45,8 @@ void SdefineB(klisp_State *K)
     krooted_tvs_push(K, dptree);
 	
     TValue new_cont = kmake_continuation(K, kget_cc(K),
-					 do_match, 3, dptree, denv, 
-					 def_sym);
+                                         do_match, 3, dptree, denv, 
+                                         def_sym);
     kset_cc(K, new_cont);
     krooted_tvs_pop(K);
     ktail_eval(K, expr, denv);
@@ -87,8 +87,8 @@ void SsetB(klisp_State *K)
     krooted_tvs_push(K, formals);
 
     TValue new_cont = 
-	kmake_continuation(K, kget_cc(K), do_set_eval_obj, 4, 
-			   sname, formals, eval_exp, denv);
+        kmake_continuation(K, kget_cc(K), do_set_eval_obj, 4, 
+                           sname, formals, eval_exp, denv);
     kset_cc(K, new_cont);
 
     krooted_tvs_pop(K);
@@ -113,17 +113,17 @@ void do_set_eval_obj(klisp_State *K)
     TValue denv = xparams[3];
     
     if (!ttisenvironment(obj)) {
-	klispE_throw_simple(K, "bad type from first "
-			   "operand evaluation (expected environment)");
-	return;
+        klispE_throw_simple(K, "bad type from first "
+                            "operand evaluation (expected environment)");
+        return;
     } else {
-	TValue env = obj;
+        TValue env = obj;
 
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_match, 3, 
-			       formals, env, sname);
-	kset_cc(K, new_cont);
-	ktail_eval(K, eval_exp, denv);
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_match, 3, 
+                               formals, env, sname);
+        kset_cc(K, new_cont);
+        ktail_eval(K, eval_exp, denv);
     }
 }
 
@@ -133,11 +133,11 @@ inline void unmark_maybe_symbol_list(klisp_State *K, TValue ls)
 {
     UNUSED(K);
     while(ttispair(ls) && kis_marked(ls)) {
-	TValue first = kcar(ls);
-	if (ttissymbol(first))
-	    kunmark_symbol(first);
-	kunmark(ls);
-	ls = kcdr(ls);
+        TValue first = kcar(ls);
+        if (ttissymbol(first))
+            kunmark_symbol(first);
+        kunmark(ls);
+        ls = kcdr(ls);
     }
 }
 
@@ -156,33 +156,33 @@ TValue check_copy_symbol_list(klisp_State *K, TValue obj)
     TValue last_pair = slist;
 
     while(ttispair(tail) && !kis_marked(tail)) {
-	/* even if there is a type error continue checking the structure */
-	TValue first = kcar(tail);
-	if (ttissymbol(first)) {
-	    repeated_errorp |= kis_symbol_marked(first);
-	    kmark_symbol(first);
-	} else {
-	    type_errorp = true;
-	}
-	kmark(tail);
+        /* even if there is a type error continue checking the structure */
+        TValue first = kcar(tail);
+        if (ttissymbol(first)) {
+            repeated_errorp |= kis_symbol_marked(first);
+            kmark_symbol(first);
+        } else {
+            type_errorp = true;
+        }
+        kmark(tail);
 
-	TValue new_pair = kcons(K, first, KNIL);
-	kset_cdr(last_pair, new_pair);
-	last_pair = new_pair;
+        TValue new_pair = kcons(K, first, KNIL);
+        kset_cdr(last_pair, new_pair);
+        last_pair = new_pair;
 
-	tail = kcdr(tail);
+        tail = kcdr(tail);
     }
     unmark_maybe_symbol_list(K, obj);
 
     if (!ttisnil(tail)) {
-	klispE_throw_simple(K, "expected finite list"); 
-	return KNIL;
+        klispE_throw_simple(K, "expected finite list"); 
+        return KNIL;
     } else if (type_errorp) {
-	klispE_throw_simple(K, "bad operand type (expected list of "
-			   "symbols)"); 
-	return KNIL;
+        klispE_throw_simple(K, "bad operand type (expected list of "
+                            "symbols)"); 
+        return KNIL;
     } else if (repeated_errorp) {
-	klispE_throw_simple(K, "repeated symbols");
+        klispE_throw_simple(K, "repeated symbols");
     }
     krooted_vars_pop(K);
     return kcdr(slist);
@@ -203,16 +203,16 @@ void do_import(klisp_State *K)
     TValue denv = xparams[2];
     
     if (!ttisenvironment(obj)) {
-	klispE_throw_simple(K, "bad type from first "
-			    "operand evaluation (expected environment)");
-	return;
+        klispE_throw_simple(K, "bad type from first "
+                            "operand evaluation (expected environment)");
+        return;
     } else {
-	TValue env = obj;
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_match, 3, 
-			       symbols, denv, sname);
-	kset_cc(K, new_cont);
-	ktail_eval(K, kcons(K, K->list_app, symbols), env);
+        TValue env = obj;
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_match, 3, 
+                               symbols, denv, sname);
+        kset_cc(K, new_cont);
+        ktail_eval(K, kcons(K, K->list_app, symbols), env);
     }
 }
 
@@ -239,39 +239,39 @@ void SprovideB(klisp_State *K)
     /* this will copy the bindings from new_env to denv */
     krooted_tvs_push(K, new_env);
     TValue import_cont =
-	kmake_continuation(K, kget_cc(K), do_import, 3, 
-			   sname, symbols, denv);
+        kmake_continuation(K, kget_cc(K), do_import, 3, 
+                           sname, symbols, denv);
     kset_cc(K, import_cont); /* this implicitly roots import_cont */
     /* this will ignore the last value and pass the env to the 
        above continuation */
     TValue ret_exp_cont = 
-	kmake_continuation(K, import_cont, do_return_value, 
-			   1, new_env);
+        kmake_continuation(K, import_cont, do_return_value, 
+                           1, new_env);
     kset_cc(K, ret_exp_cont); /* this implicitly roots ret_exp_cont */
 
     if (ttisnil(body)) {
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	kapply_cc(K, KINERT);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        kapply_cc(K, KINERT);
     } else {
-	/* this is needed because seq continuation doesn't check for 
-	   nil sequence */
-	TValue tail = kcdr(body);
-	if (ttispair(tail)) {
-	    TValue new_cont = kmake_continuation(K, kget_cc(K),
-						 do_seq, 2, tail, new_env);
-	    kset_cc(K, new_cont);
+        /* this is needed because seq continuation doesn't check for 
+           nil sequence */
+        TValue tail = kcdr(body);
+        if (ttispair(tail)) {
+            TValue new_cont = kmake_continuation(K, kget_cc(K),
+                                                 do_seq, 2, tail, new_env);
+            kset_cc(K, new_cont);
 #if KTRACK_SI
-	    /* put the source info of the list including the element
-	       that we are about to evaluate */
-	    kset_source_info(K, new_cont, ktry_get_si(K, body));
+            /* put the source info of the list including the element
+               that we are about to evaluate */
+            kset_source_info(K, new_cont, ktry_get_si(K, body));
 #endif
-	} 
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	krooted_tvs_pop(K);
-	ktail_eval(K, kcar(body), new_env);
+        } 
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
+        ktail_eval(K, kcar(body), new_env);
     }
 }
 
@@ -310,7 +310,7 @@ void SimportB(klisp_State *K)
     krooted_tvs_push(K, symbols);
     TValue new_cont =
 	    kmake_continuation(K, kget_cc(K), do_import, 3, 
-			       sname, symbols, denv);
+                           sname, symbols, denv);
     kset_cc(K, new_cont);
     krooted_tvs_pop(K);
     ktail_eval(K, env_expr, denv);

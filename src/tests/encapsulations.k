@@ -5,17 +5,15 @@
 
 ;; 8.1.1 make-encapsulation-type
 
-($let*
-  ( ((e1 p1? d1) (make-encapsulation-type))
-    ((e2 p2? d2) (make-encapsulation-type))
-    (v1 "test")
-    (v2 (list 1 2 3))
-    (r11 (e1 v1))
-    (r12 (e1 v2))
-    (r21 (e2 v1))
-    (r22 (e2 v2))
-    (r11* (e1 v1)))
-
+($let* (((e1 p1? d1) (make-encapsulation-type))
+        ((e2 p2? d2) (make-encapsulation-type))
+        (v1 "test")
+        (v2 (list 1 2 3))
+        (r11 (e1 v1))
+        (r12 (e1 v2))
+        (r21 (e2 v1))
+        (r22 (e2 v2))
+        (r11* (e1 v1)))
   ($check-not-predicate (equal? e1 e2))
   ($check-not-predicate (equal? p1? p2?))
   ($check-not-predicate (equal? d1 d2))

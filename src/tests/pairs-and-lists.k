@@ -14,8 +14,10 @@
 
 ($check-predicate (pair?))
 ($check-predicate (pair? (cons () ())))
-($check-predicate (pair? (cons () ()) (copy-es-immutable (cons () ())) (cons () ())))
-($check-predicate (pair? (cons () ()) . #0=((copy-es-immutable (cons () ())) . #0#)))
+($check-predicate (pair? (cons () ()) 
+                         (copy-es-immutable (cons () ())) (cons () ())))
+($check-predicate (pair? (cons () ()) . 
+                         #0=((copy-es-immutable (cons () ())) . #0#)))
 
 ($check-not-predicate (null? #t))
 ($check-not-predicate (null? ((unwrap list) . symbol)))
@@ -27,8 +29,8 @@
 ($check-not-predicate (null? wrap))
 ($check-not-predicate (null? (call/cc ($lambda (c) c))))
 ($check-not-predicate (null? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                     (make-encapsulation-type)))
+                               (enc #inert))))
 ($check-not-predicate (null? (memoize #inert)))
 ($check-not-predicate (null? 1))
 ($check-not-predicate (null? 1.0))
@@ -50,8 +52,8 @@
 ($check-not-predicate (pair? wrap))
 ($check-not-predicate (pair? (call/cc ($lambda (c) c))))
 ($check-not-predicate (pair? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                     (make-encapsulation-type)))
+                               (enc #inert))))
 ($check-not-predicate (pair? (memoize #inert)))
 ($check-not-predicate (pair? 1))
 ($check-not-predicate (pair? 1.0))
@@ -90,10 +92,10 @@
 ($check equal? (cdr (cons 1 2)) 2)
 
 ($let* ((tree2 (cons 1 2))
-	(tree4 (cons tree2 (cons 3 4)))
-	(tree8 (cons tree4 (cons (cons 5 6) (cons 7 8))))
-	(tree16 (cons tree8 (cons (cons (cons 9 10) (cons 11 12))
-				  (cons (cons 13 14) (cons 15 16))))))
+        (tree4 (cons tree2 (cons 3 4)))
+        (tree8 (cons tree4 (cons (cons 5 6) (cons 7 8))))
+        (tree16 (cons tree8 (cons (cons (cons 9 10) (cons 11 12))
+                                  (cons (cons 13 14) (cons 15 16))))))
   ($check eq? (car tree2) 1)
   ($check eq? (cdr tree2) 2)
 
@@ -190,28 +192,28 @@
 ($let ((l1 (list 1 2)) (l2 (list 3 4))) ; here the last list is copied
   ($check not-eq? (cddr (append l1 l2 ())) l2))
 ($check equal?
-	(append (list 1 2) (list 3 4) . #0=((list 5 6) . #0#))
-	(list 1 2 3 4 . #1=(5 6 . #1#)))
+        (append (list 1 2) (list 3 4) . #0=((list 5 6) . #0#))
+        (list 1 2 3 4 . #1=(5 6 . #1#)))
 ($check equal?
-	(append () () . #0=(() (list 1 2) () . #0#))
-	(list . #1=(1 2 . #1#)))
+        (append () () . #0=(() (list 1 2) () . #0#))
+        (list . #1=(1 2 . #1#)))
 ($check equal?
-	(append (list 1 2) (list 3 4) . #0=(() () . #0#))
-	(list 1 2 3 4))
+        (append (list 1 2) (list 3 4) . #0=(() () . #0#))
+        (list 1 2 3 4))
 
 ;; list-neighbors
 ($check equal? (list-neighbors ()) ())
 ($check equal? (list-neighbors (list 1)) ())
 ($check equal? (list-neighbors (list 1 2)) (list (list 1 2)))
 ($check equal? 
-	(list-neighbors (list 1 2 3 4))
-	(list (list 1 2) (list 2 3) (list 3 4)))
+        (list-neighbors (list 1 2 3 4))
+        (list (list 1 2) (list 2 3) (list 3 4)))
 ($check equal? 
-	(list-neighbors (list . #0=(1 2 3 4 . #0#)))
-	(list . #1=((list 1 2) (list 2 3) (list 3 4) (list 4 1) . #1#)))
+        (list-neighbors (list . #0=(1 2 3 4 . #0#)))
+        (list . #1=((list 1 2) (list 2 3) (list 3 4) (list 4 1) . #1#)))
 ($check equal? 
-	(list-neighbors (list 1 2 . #0=(3 4 . #0#)))
-	(list (list 1 2) (list 2 3) . #1=((list 3 4) (list 4 3) . #1#)))
+        (list-neighbors (list 1 2 . #0=(3 4 . #0#)))
+        (list (list 1 2) (list 2 3) . #1=((list 3 4) (list 4 3) . #1#)))
 
 ;; filter
 ($check equal? (filter number? ()) ())
@@ -219,19 +221,19 @@
 ($check equal? (filter number? (list 1 2 3)) (list 1 2 3))
 ($check equal? (filter number? (list 1 #t 2 #f)) (list 1 2))
 ($check equal? 
-	(filter number? (list 1 #t . #0=(2 #f . #0#)))
-	(list 1 . #1=(2 . #1#)))
+        (filter number? (list 1 #t . #0=(2 #f . #0#)))
+        (list 1 . #1=(2 . #1#)))
 ($check equal? 
-	(filter number? (list #t 1 #f . #0=(#t #f . #0#)))
-	(list 1))
+        (filter number? (list #t 1 #f . #0=(#t #f . #0#)))
+        (list 1))
 ($check equal? 
-	(filter number? (list #t #f . #0=(#t #f . #0#)))
-	())
+        (filter number? (list #t #f . #0=(#t #f . #0#)))
+        ())
 
 ($check equal? ; filter should use an empty environment
-	(filter (wrap ($vau #ignore denv ($binds? denv $if)))
-		(list 1 2 3))
-	())
+        (filter (wrap ($vau #ignore denv ($binds? denv $if)))
+                (list 1 2 3))
+        ())
 
 ;; assoc
 ($check equal? (assoc #inert ()) ())
@@ -239,19 +241,19 @@
 ($check equal? (assoc 1 (list (list 1 10) (list 2 20))) (list 1 10))
 ($check equal? (assoc 1 (list (list 1 10) (list 2 20)) =?) (list 1 10))
 ($check equal?
-	(assoc 1 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
-	(list 1 10))
+        (assoc 1 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
+        (list 1 10))
 ($check equal?
-	(assoc 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
-	())
+        (assoc 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#)))
+        ())
 ($check equal?
-	(assoc (list 1) (list (list (list 1) 1) (list (list 2) 2)))
-	(list (list 1) 1))
+        (assoc (list 1) (list (list (list 1) 1) (list (list 2) 2)))
+        (list (list 1) 1))
 
 ($check equal?
-	(assoc 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#))
-	       =?)
-	())
+        (assoc 4 (list . #0=((list 1 10) (list 2 20) (list 1 15) . #0#))
+               =?)
+        ())
 ;; member?
 ($check-predicate (member? 1 (list 1 2)))
 ($check-predicate (member? 2 (list 1 2)))
@@ -260,13 +262,13 @@
 ($check-predicate (member? (list 1) (list (list 1) 2)))
 ($check-predicate (member? (list 2) (list 1 (list 2))))
 ($check-predicate
-	(member? (list 1 3) (list . #0=(1 2 (list 1 3) . #0#))))
+ (member? (list 1 3) (list . #0=(1 2 (list 1 3) . #0#))))
 ($check-not-predicate
-	(member? 4 (list . #0=(1 2 1 . #0#))))
+ (member? 4 (list . #0=(1 2 1 . #0#))))
 
 ($check-predicate (member? -1 (list 1 2) ($lambda (x y) (=? x (- 0 y)))))
 ($check-not-predicate (member? 1 (list 1 2 . #0=(3 4 . #0#)) 
-			       ($lambda (x y) (=? x (- 0 y)))))
+                               ($lambda (x y) (=? x (- 0 y)))))
 
 ;; finite-list?
 ($check-predicate (finite-list? ()))
@@ -285,33 +287,33 @@
 ($check-predicate (countable-list? (list 1 . #0=(2 . #0#))))
 ($check-predicate (countable-list? (list 1 2) (list 1 . #0=(2 . #0#)) ()))
 ($check-predicate (countable-list? 
-		   () . #0=((list 1 . #1=(2 . #1#)) () . #0#)))
+                   () . #0=((list 1 . #1=(2 . #1#)) () . #0#)))
 
 ($check-not-predicate (countable-list? 1))
 ($check-not-predicate (countable-list? () 1))
 ($check-not-predicate (countable-list? (list 1 2) . #0=(#inert () . #0#)))
 ($check-not-predicate (countable-list? 
-		       () . #0=((list 1 . #1=(2 . #1#)) 3 . #0#)))
+                       () . #0=((list 1 . #1=(2 . #1#)) 3 . #0#)))
 
 ;; reduce
 ($let ((ac-+ ($lambda ls (reduce ls + 0)))
        (c-+
-;; the idea of the cycle treatment is to carry a flag indicating
-;; if all elements so far in the cycle were actually zero, if so
-;; the sum of the cycle is zero otherwise it can be undefined or
-;; (* +infinity (acyclic-sum)) which in the integer case is +infinity 
-;; or -infinity
-	($let ((precycle ($lambda (x)
-			   (cons x (zero? x))))
-	       (incycle ($lambda ((x . x-zero?) (y . y-zero?))
-			  (cons (+ x y) 
-				(and? x-zero? y-zero?))))
-	       (postcycle ($lambda ((result . all-zero?))
-			    ($if all-zero?
-				 0
-				 (* #e+infinity result)))))
-	  ($lambda ls
-	    (reduce ls + 0 precycle incycle postcycle)))))
+        ;; the idea of the cycle treatment is to carry a flag indicating
+        ;; if all elements so far in the cycle were actually zero, if so
+        ;; the sum of the cycle is zero otherwise it can be undefined or
+        ;; (* +infinity (acyclic-sum)) which in the integer case is +infinity 
+        ;; or -infinity
+        ($let ((precycle ($lambda (x)
+                           (cons x (zero? x))))
+               (incycle ($lambda ((x . x-zero?) (y . y-zero?))
+                          (cons (+ x y) 
+                                (and? x-zero? y-zero?))))
+               (postcycle ($lambda ((result . all-zero?))
+                            ($if all-zero?
+                                 0
+                                 (* #e+infinity result)))))
+          ($lambda ls
+            (reduce ls + 0 precycle incycle postcycle)))))
   ($check equal? (ac-+) 0)
   ($check equal? (ac-+ 1) 1)
   ($check equal? (ac-+ 1 2) 3)
@@ -349,8 +351,8 @@
 ($check-error (cdr (cons 1 2) (cons 3 4)))
 
 ($let* ((tree2 (cons 1 2))
-	(tree4 (cons tree2 (cons 3 4)))
-	(tree8 (cons tree4 (cons (cons 5 6) (cons 7 8)))))
+        (tree4 (cons tree2 (cons 3 4)))
+        (tree8 (cons tree4 (cons (cons 5 6) (cons 7 8)))))
   ($check-error (caar tree2))
   ($check-error (cdar tree2))
   ($check-error (cadr tree2))
@@ -413,7 +415,7 @@
 ($check-error (list-tail (list 1 2 3) 3 4))
 ($check-error (list-tail (list 1 2 3) 4))
 ($check-error (list-tail (list 1 2 3) #e+infinity))
-;($check-error (list-tail (list 1 2 3) 3.4))
+                                        ;($check-error (list-tail (list 1 2 3) 3.4))
 ($check-error (list-tail (list 1 2 3) -1))
 ($check-error (list-tail (list 1 2 3) #f))
 
@@ -428,7 +430,7 @@
 ($check-error (list-ref (list 1 2 3) 3 4))
 ($check-error (list-ref (list 1 2 3) 4))
 ($check-error (list-ref (list 1 2 3) #e+infinity))
-;($check-error (list-ref (list 1 2 3) 3.4))
+                                        ;($check-error (list-ref (list 1 2 3) 3.4))
 ($check-error (list-ref (list 1 2 3) -1))
 ($check-error (list-ref (list 1 2 3) #f))
 
@@ -468,7 +470,7 @@
 ($check-error (assoc 4 (list (list 1 1) (list 2 2) #inert (list 4 4))))
 ($check-error (assoc 2 (list (list 1 1) (list 2 2) #inert (list 4 4))))
 ($check-error (assoc 2 (list (list 1 1) (list 2 2) #inert (list 4 4)) 
-		     equal?))
+                     equal?))
 
 ;; member?
 ($check-error (member?))

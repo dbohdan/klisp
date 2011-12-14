@@ -43,17 +43,17 @@ void do_eval_ls(klisp_State *K)
     /* save the result of last evaluation and continue with next pair */
     kset_car(apair, obj); 
     if (ttisnil(rest)) {
-	/* argument evaluation complete */
-	/* this is necessary to recreate the cycle in operand list */
-	kset_cdr(apair, tail);
-	kapply_cc(K, combiner);
+        /* argument evaluation complete */
+        /* this is necessary to recreate the cycle in operand list */
+        kset_cdr(apair, tail);
+        kapply_cc(K, combiner);
     } else {
-	/* more arguments need to be evaluated */
-	/* GC: all objects are rooted at this point */
-	TValue new_cont = kmake_continuation(K, kget_cc(K), do_eval_ls, 4, 
-					     rest, env, tail, combiner);
-	kset_cc(K, new_cont);
-	ktail_eval(K, kcar(rest), env);
+        /* more arguments need to be evaluated */
+        /* GC: all objects are rooted at this point */
+        TValue new_cont = kmake_continuation(K, kget_cc(K), do_eval_ls, 4, 
+                                             rest, env, tail, combiner);
+        kset_cc(K, new_cont);
+        ktail_eval(K, kcar(rest), env);
     }
 }
 
@@ -61,8 +61,8 @@ void do_eval_ls(klisp_State *K)
 inline void clear_ls_marks(TValue ls)
 {
     while (ttispair(ls) && kis_marked(ls)) {
-	kunmark(ls);
-	ls = kcdr(ls);
+        kunmark(ls);
+        ls = kcdr(ls);
     }
 }
 
@@ -77,24 +77,24 @@ inline TValue make_arg_ls(klisp_State *K, TValue operands, TValue *tail)
     TValue rem_op = kcdr(operands);
     
     while(ttispair(rem_op) && kis_unmarked(rem_op)) {
-	TValue new_pair = kcons(K, kcar(rem_op), KNIL);
-	kset_mark(rem_op, new_pair);
-	kset_cdr(last_pair, new_pair);
-	last_pair = new_pair;
-	rem_op = kcdr(rem_op);
+        TValue new_pair = kcons(K, kcar(rem_op), KNIL);
+        kset_mark(rem_op, new_pair);
+        kset_cdr(last_pair, new_pair);
+        last_pair = new_pair;
+        rem_op = kcdr(rem_op);
     }
     
     krooted_tvs_pop(K);
 
     if (ttispair(rem_op)) {
-	/* cyclical list */
-	*tail = kget_mark(rem_op);
+        /* cyclical list */
+        *tail = kget_mark(rem_op);
     } else if (ttisnil(rem_op)) {
-	*tail = KNIL;
+        *tail = KNIL;
     } else {
-	clear_ls_marks(operands);
-	klispE_throw_simple(K, "Not a list in applicative combination");
-	return KINERT;
+        clear_ls_marks(operands);
+        klispE_throw_simple(K, "Not a list in applicative combination");
+        return KINERT;
     }
     clear_ls_marks(operands);
     return arg_ls;
@@ -116,38 +116,38 @@ void do_combine(klisp_State *K)
 
     switch(ttype(obj)) {
     case K_TAPPLICATIVE: {
-	if (ttisnil(operands)) {
-	    /* no arguments => no evaluation, just call the operative */
-	    /* NOTE: the while is needed because it may be multiply wrapped */
-	    while(ttisapplicative(obj))
-		obj = tv2app(obj)->underlying;
-	    ktail_call_si(K, obj, operands, env, si);
-	} else if (ttispair(operands)) {
-	    /* make a copy of the operands (for storing arguments) */
-	    TValue tail;
-	    TValue arg_ls = make_arg_ls(K, operands, &tail);
-	    krooted_tvs_push(K, arg_ls);
-	    TValue comb_cont = kmake_continuation(K, kget_cc(K), do_combine, 
-						  3, arg_ls, env, si);
+        if (ttisnil(operands)) {
+            /* no arguments => no evaluation, just call the operative */
+            /* NOTE: the while is needed because it may be multiply wrapped */
+            while(ttisapplicative(obj))
+                obj = tv2app(obj)->underlying;
+            ktail_call_si(K, obj, operands, env, si);
+        } else if (ttispair(operands)) {
+            /* make a copy of the operands (for storing arguments) */
+            TValue tail;
+            TValue arg_ls = make_arg_ls(K, operands, &tail);
+            krooted_tvs_push(K, arg_ls);
+            TValue comb_cont = kmake_continuation(K, kget_cc(K), do_combine, 
+                                                  3, arg_ls, env, si);
 
-	    krooted_tvs_pop(K); /* already in cont */
-	    krooted_tvs_push(K, comb_cont);
-	    TValue els_cont = 
-		kmake_continuation(K, comb_cont, do_eval_ls, 4, arg_ls, env, 
-				   tail, tv2app(obj)->underlying);
-	    kset_cc(K, els_cont);
-	    krooted_tvs_pop(K);
-	    ktail_eval(K, kcar(arg_ls), env);
-	} else {
-	    klispE_throw_simple(K, "Not a list in applicative combination");
-	    return;
-	}
+            krooted_tvs_pop(K); /* already in cont */
+            krooted_tvs_push(K, comb_cont);
+            TValue els_cont = 
+                kmake_continuation(K, comb_cont, do_eval_ls, 4, arg_ls, env, 
+                                   tail, tv2app(obj)->underlying);
+            kset_cc(K, els_cont);
+            krooted_tvs_pop(K);
+            ktail_eval(K, kcar(arg_ls), env);
+        } else {
+            klispE_throw_simple(K, "Not a list in applicative combination");
+            return;
+        }
     }
     case K_TOPERATIVE:
-	ktail_call_si(K, obj, operands, env, si);
+        ktail_call_si(K, obj, operands, env, si);
     default:
-	klispE_throw_simple(K, "Not a combiner in combiner position");
-	return;
+        klispE_throw_simple(K, "Not a combiner in combiner position");
+        return;
     }
 }
 
@@ -165,19 +165,19 @@ void keval_ofn(klisp_State *K)
 
     switch(ttype(obj)) {
     case K_TPAIR: {
-	TValue new_cont = 
-	    kmake_continuation(K, kget_cc(K), do_combine, 3, kcdr(obj), 
-			       denv, ktry_get_si(K, obj));
-	kset_cc(K, new_cont);
-	ktail_eval(K, kcar(obj), denv);
-	break;
+        TValue new_cont = 
+            kmake_continuation(K, kget_cc(K), do_combine, 3, kcdr(obj), 
+                               denv, ktry_get_si(K, obj));
+        kset_cc(K, new_cont);
+        ktail_eval(K, kcar(obj), denv);
+        break;
     }
     case K_TSYMBOL:
-	/* error handling happens in kget_binding */
-	kapply_cc(K, kget_binding(K, denv, obj));
-	break;
+        /* error handling happens in kget_binding */
+        kapply_cc(K, kget_binding(K, denv, obj));
+        break;
     default:
-	kapply_cc(K, obj);
+        kapply_cc(K, obj);
     }
 }
 

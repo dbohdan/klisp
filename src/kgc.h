@@ -25,7 +25,7 @@
 #define GCSfinalize	4
 
 /* NOTE: unlike in lua the gc flags have 16 bits in klisp,
- so resetbits is slightly different */
+   so resetbits is slightly different */
 
 /*
 ** some useful bit tricks
@@ -69,8 +69,8 @@
 #define WHITEBITS	bit2mask(WHITE0BIT, WHITE1BIT)
 
 
-#define iswhite(x)      test2bits((x)->gch.gct, WHITE0BIT, WHITE1BIT)
-#define isblack(x)      testbit((x)->gch.gct, BLACKBIT)
+#define iswhite(x)         test2bits((x)->gch.gct, WHITE0BIT, WHITE1BIT)
+#define isblack(x)         testbit((x)->gch.gct, BLACKBIT)
 
 #define isgray(x)	(!isblack(x) && !iswhite(x))
 
@@ -85,23 +85,23 @@
 #define klispC_white(K)	cast(uint16_t, (K)->currentwhite & WHITEBITS)
 
 
-#define klispC_checkGC(K) {			\
-	if (K->totalbytes >= K->GCthreshold)	\
-	klispC_step(K); }
+#define klispC_checkGC(K) {                     \
+        if (K->totalbytes >= K->GCthreshold)	\
+            klispC_step(K); }
 
 
-#define klispC_barrier(K,p,v) { if (valiswhite(v) && isblack(obj2gco(p)))  \
-	klispC_barrierf(K,obj2gco(p),gcvalue(v)); }
+#define klispC_barrier(K,p,v) { if (valiswhite(v) && isblack(obj2gco(p))) \
+            klispC_barrierf(K,obj2gco(p),gcvalue(v)); }
 
-#define klispC_barriert(K,t,v) { if (valiswhite(v) && isblack(obj2gco(t)))  \
-	klispC_barrierback(K,t); }
+#define klispC_barriert(K,t,v) { if (valiswhite(v) && isblack(obj2gco(t))) \
+            klispC_barrierback(K,t); }
 
-#define klispC_objbarrier(K,p,o)  \
-	{ if (iswhite(obj2gco(o)) && isblack(obj2gco(p))) \
-		klispC_barrierf(K,obj2gco(p),obj2gco(o)); }
+#define klispC_objbarrier(K,p,o)                        \
+	{ if (iswhite(obj2gco(o)) && isblack(obj2gco(p)))   \
+            klispC_barrierf(K,obj2gco(p),obj2gco(o)); }
 
-#define klispC_objbarriert(K,t,o)  \
-   { if (iswhite(obj2gco(o)) && isblack(obj2gco(t))) klispC_barrierback(K,t); }
+#define klispC_objbarriert(K,t,o)                                       \
+    { if (iswhite(obj2gco(o)) && isblack(obj2gco(t))) klispC_barrierback(K,t); }
 
 /* size_t klispC_separateudata (klisp_State *K, int all); */
 /* void klispC_callGCTM (klisp_State *K); */

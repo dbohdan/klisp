@@ -35,8 +35,8 @@
 ($check-not-predicate (operative? wrap))
 ($check-not-predicate (operative? (call/cc ($lambda (c) c))))
 ($check-not-predicate (operative? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                          (make-encapsulation-type)))
+                                    (enc #inert))))
 ($check-not-predicate (operative? (memoize #inert)))
 ($check-not-predicate (operative? 1))
 ($check-not-predicate (operative? 1.0))
@@ -59,8 +59,8 @@
 ($check-not-predicate (applicative? $vau))
 ($check-not-predicate (applicative? (call/cc ($lambda (c) c))))
 ($check-not-predicate (applicative? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                            (make-encapsulation-type)))
+                                      (enc #inert))))
 ($check-not-predicate (applicative? (memoize #inert)))
 ($check-not-predicate (applicative? 1))
 ($check-not-predicate (applicative? 1.0))
@@ -82,8 +82,8 @@
 ($check-not-predicate (combiner? #inert))
 ($check-not-predicate (combiner? (call/cc ($lambda (c) c))))
 ($check-not-predicate (combiner? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                         (make-encapsulation-type)))
+                                   (enc #inert))))
 ($check-not-predicate (combiner? (memoize #inert)))
 ($check-not-predicate (combiner? 1))
 ($check-not-predicate (combiner? 1.0))
@@ -106,21 +106,21 @@
 ($check equal? (($vau ((x . y) (z)) #ignore (list z y x)) (1 . 2) (3)) (list 3 2 1))
 ($check equal? (($vau ((x y z)) #ignore (list z y x)) (1 2 3)) (list 3 2 1))
 ($check equal? (($vau ((x y . z)) #ignore (finite-list? z)) 
-		#0=(1 2 3 . #0#)) #f)
+                #0=(1 2 3 . #0#)) #f)
 
 ;; test static scope of $vau, define an "inverted" $if and use it in the body
 ($let (($if ($vau (test a b) denv
-	      (eval (list $if test b a)
-		    denv))))
+              (eval (list $if test b a)
+                    denv))))
   ($check eq? 
-	  (($vau () #ignore 
-	     ($if #t 1 2))) 
-	  2))
+          (($vau () #ignore 
+             ($if #t 1 2))) 
+          2))
 
 ;; shared structure in ptree (but no shared symbols and no cycles)
 ($check equal?
-	(($vau ((x . #0=(#ignore)) (y . #0#)) #ignore (list x y)) (1 4) (2 5))
-	(list 1 2))
+        (($vau ((x . #0=(#ignore)) (y . #0#)) #ignore (list x y)) (1 4) (2 5))
+        (list 1 2))
 
 ;; wrap
 ($check-predicate (applicative? wrap))
@@ -131,13 +131,13 @@
 ;; unwrap
 ($check-predicate (applicative? unwrap))
 ($check-predicate (operative? 
-		  (unwrap (wrap ($vau #ignore #ignore #inert)))))
+                   (unwrap (wrap ($vau #ignore #ignore #inert)))))
 ($check-predicate (applicative? 
-		  (unwrap (wrap (wrap ($vau #ignore #ignore #inert))))))
+                   (unwrap (wrap (wrap ($vau #ignore #ignore #inert))))))
 ($check-predicate (operative? 
-		  (unwrap list)))
+                   (unwrap list)))
 ($check-predicate (applicative? 
-		  (unwrap (wrap list))))
+                   (unwrap (wrap list))))
 
 ;; $lambda
 ($check-predicate (applicative? ($lambda #ignore #inert)))
@@ -147,28 +147,28 @@
 ($check equal? (($lambda (x y) (list y x)) 1 2) (list 2 1))
 ;; arguments should be eval'ed in the current environment
 ($check eq? 
-	(($lambda (x) x) (get-current-environment)) 
-	(get-current-environment))
+        (($lambda (x) x) (get-current-environment)) 
+        (get-current-environment))
 ;; parameter trees (generalized parameter lists)
 ($check equal? (($lambda ((x . y) (z)) (list z y x)) 
-		(cons 1 2) (list 3)) (list 3 2 1))
+                (cons 1 2) (list 3)) (list 3 2 1))
 ($check equal? (($lambda ((x y z)) (list z y x)) (list 1 2 3)) (list 3 2 1))
 ($check equal? (($lambda ((x y . z)) (finite-list? z)) 
-		(list . #0=(1 2 3 . #0#))) #f)
+                (list . #0=(1 2 3 . #0#))) #f)
 
 ;; test static scope of $lambda, define an "inverted" $if and use it in the body
 ($let (($if ($vau (test a b) denv
-	      (eval (list $if test b a)
-		    denv))))
+              (eval (list $if test b a)
+                    denv))))
   ($check eq? 
-	  (($lambda ()
-	     ($if #t 1 2)))
-	  2))
+          (($lambda ()
+             ($if #t 1 2)))
+          2))
 ;; shared structure in ptree (but no shared symbols and no cycles)
 ($check equal?
-	(($lambda ((x . #0=(#ignore)) (y . #0#)) (list x y)) 
-	 (list 1 4) (list 2 5))
-	(list 1 2))
+        (($lambda ((x . #0=(#ignore)) (y . #0#)) (list x y)) 
+         (list 1 4) (list 2 5))
+        (list 1 2))
 
 ;; apply
 ($check-predicate (applicative? apply))
@@ -178,136 +178,136 @@
 ($check eq? (apply list 3) 3)
 ;; the two argument case uses an empty environment
 ($check eq? (apply (wrap ($vau #ignore env ($binds? env $vau))) 
-		   #inert) 
-	#f)
+                   #inert) 
+        #f)
 
 ($let ((empty-env (make-environment)))
   ($check eq? 
-	  (apply (wrap ($vau #ignore env env)) #inert empty-env)
-	  empty-env))
+          (apply (wrap ($vau #ignore env env)) #inert empty-env)
+          empty-env))
 
 ;; map
 ($check-predicate (applicative? map))
 ($check equal? (map + (list 1 2 3 4)) (list 1 2 3 4))
 ($check equal? (map cons (list 1 2 3 4) (list 10 20 30 40)) 
-	(list (cons 1 10) (cons 2 20) (cons 3 30) (cons 4 40)))
+        (list (cons 1 10) (cons 2 20) (cons 3 30) (cons 4 40)))
 
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (map (wrap ($vau #ignore env
-				       (set-car! p env)))
-			       (list 1))
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (map (wrap ($vau #ignore env
+                                  (set-car! p env)))
+                          (list 1))
+                     (car p))
+          (get-current-environment)))
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (map ($lambda (x)
-				 (set-car! p (+ (car p) x)))
-			       (list 1 2 3 4))
-		     (car p))
-	  10))
+          ($sequence (map ($lambda (x)
+                            (set-car! p (+ (car p) x)))
+                          (list 1 2 3 4))
+                     (car p))
+          10))
 
 
 ($check equal?
-	(map ($lambda (x)
-	       (- 0 x))
-	     (list 1 . #0=(2 3 4 . #0#)))
-	(list -1 . #1=(-2 -3 -4 . #1#)))
+        (map ($lambda (x)
+               (- 0 x))
+             (list 1 . #0=(2 3 4 . #0#)))
+        (list -1 . #1=(-2 -3 -4 . #1#)))
 
 ($check equal?
-	(map ($lambda ls
-	       (finite-list? ls))
-	     . #0=((list 1 2 3 4)
-		   (list 10 20 30 40)
-		   . #0#))
-	(list #f #f #f #f))
+        (map ($lambda ls
+               (finite-list? ls))
+             . #0=((list 1 2 3 4)
+                   (list 10 20 30 40)
+                   . #0#))
+        (list #f #f #f #f))
 
 ;; string-map
 ($check-predicate (applicative? string-map))
 ($check equal? (string-map char-downcase "") "")
 ($check equal? (string-map char-upcase "abc") "ABC")
 ($let ((char-max ($lambda chars 
-		   (integer->char 
-		    (apply max
-			   (map char->integer chars))))))
+                   (integer->char 
+                    (apply max
+                           (map char->integer chars))))))
   ($check equal? (string-map char-max "abc" "ABC" "xyz" "XYZ")
-	  "xyz")
+          "xyz")
   ($check equal? (string-map char-max "abc" "ABC" . #0=("xyz" "XYZ". #0#))
-	  "xyz"))
+          "xyz"))
 
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (string-map (wrap ($vau #ignore env
-					 (set-car! p env)
-					 #\a))
-			       "a")
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (string-map (wrap ($vau #ignore env
+                                         (set-car! p env)
+                                         #\a))
+                                 "a")
+                     (car p))
+          (get-current-environment)))
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (string-map ($lambda (x)
-				   (set-car! p (+ (car p) (char->integer x)))
-				   #\a)
-				 "abcd")
-		     (car p))
-	  (apply + (map char->integer (string->list "abcd")))))
+          ($sequence (string-map ($lambda (x)
+                                   (set-car! p (+ (car p) (char->integer x)))
+                                   #\a)
+                                 "abcd")
+                     (car p))
+          (apply + (map char->integer (string->list "abcd")))))
 
 ;; vector-map
 ($check-predicate (applicative? vector-map))
 ($check equal? (vector-map inert? (vector #inert #ignore #inert))
-	(vector #t #f #t))
+        (vector #t #f #t))
 ($check equal? (vector-map inert? (vector)) (vector))
 ($check equal? (vector-map max (vector 1 2) . 
-			   #0=((vector 3 4) (vector 5 6). #0#))
-	  (vector 5 6))
+                           #0=((vector 3 4) (vector 5 6). #0#))
+        (vector 5 6))
 
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (vector-map (wrap ($vau #ignore env
-					 (set-car! p env)))
-			       (vector 1))
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (vector-map (wrap ($vau #ignore env
+                                         (set-car! p env)))
+                                 (vector 1))
+                     (car p))
+          (get-current-environment)))
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (vector-map ($lambda (x)
-				   (set-car! p (+ (car p) x)))
-				 (vector 1 2 3 4))
-		     (car p))
-	  10))
+          ($sequence (vector-map ($lambda (x)
+                                   (set-car! p (+ (car p) x)))
+                                 (vector 1 2 3 4))
+                     (car p))
+          10))
 
 ;; bytevector-map
 ($check-predicate (applicative? bytevector-map))
 ($check equal? (bytevector-map + (bytevector)) (bytevector))
 ($check equal? (bytevector-map ($lambda (x) (+ x 1)) (bytevector 1 2 3)) 
-	(bytevector 2 3 4))
+        (bytevector 2 3 4))
 ($check equal? (bytevector-map max (bytevector 1 2) (bytevector 3 4) 
-			       (bytevector 5 6))
-	(bytevector 5 6))
+                               (bytevector 5 6))
+        (bytevector 5 6))
 ($check equal? (bytevector-map max (bytevector 1 2) . #0=((bytevector 3 4) 
-			       (bytevector 5 6) . #0#))
-	(bytevector 5 6))
+                                                          (bytevector 5 6) . #0#))
+        (bytevector 5 6))
 
 ($let ((p (cons () ())))
   ($check eq?
-	  ($sequence (bytevector-map (wrap ($vau #ignore env
-					 (set-car! p env)
-					 1))
-			       (bytevector 1))
-		     (car p))
-	  (get-current-environment)))
+          ($sequence (bytevector-map (wrap ($vau #ignore env
+                                             (set-car! p env)
+                                             1))
+                                     (bytevector 1))
+                     (car p))
+          (get-current-environment)))
 
 ($let ((p (cons 0 ())))
   ($check eq?
-	  ($sequence (bytevector-map ($lambda (x)
-				       (set-car! p (+ (car p) x))
-				       1)
-				     (bytevector 1 2 3 4))
-		     (car p))
-	  10))
+          ($sequence (bytevector-map ($lambda (x)
+                                       (set-car! p (+ (car p) x))
+                                       1)
+                                     (bytevector 1 2 3 4))
+                     (car p))
+          10))
 
 ;;;
 ;;; Error Checking and Robustness
@@ -432,16 +432,16 @@
 ($check-error (vector-map #inert (vector)))
 ($check-error (vector-map (unwrap +) (vector 1 2 3)))
 ($check-error (vector-map ($lambda (x) (+ x 1)) 
-			  (vector 1 2) (vector 1 2)))
+                          (vector 1 2) (vector 1 2)))
 ($check-error (vector-map ($lambda (x) (+ x 1)) . 
-			  #0=((vector 1 2) . #0#)))
+                          #0=((vector 1 2) . #0#)))
 
 ;; bytevector-map
 ($check-error (bytevector-map)) 
 ($check-error (bytevector-map +)) ; the list can't be empty
 ($check-error (bytevector-map + (bytevector 1 2) (bytevector 1 2 3)))
 ($check-error (bytevector-map + (bytevector 1 2) . 
-			      #0=((bytevector 1 2 3) . #0#)))
+                              #0=((bytevector 1 2 3) . #0#)))
 
 ($check-error (bytevector-map number->char (bytevector 41 42 43)))
 ($check-error (bytevector-map + (bytevector 100 200) (bytevector 300 400)))
@@ -452,6 +452,6 @@
 ($check-error (bytevector-map #inert (bytevector 1 2 3)))
 ($check-error (bytevector-map (unwrap char-upcase) (bytevector 1 2 3)))
 ($check-error (bytevector-map ($lambda (x) (+ x 1)) 
-			      (bytevector 1 2 3) (bytevector 1 2 3)))
+                              (bytevector 1 2 3) (bytevector 1 2 3)))
 ($check-error (bytevector-map ($lambda (x) (+ x 1)) . 
-			      #0=((bytevector 1 2 3) . #0#)))
+                              #0=((bytevector 1 2 3) . #0#)))

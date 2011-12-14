@@ -94,7 +94,7 @@ void kinit_error_hierarchy(klisp_State *K)
     klisp_assert(ttisinert(K->system_error_cont));
 
     K->system_error_cont = kmake_continuation(K, K->error_cont, 
-					      do_exception_cont, 0);
+                                              do_exception_cont, 0);
 }
 
 /* init ground */
@@ -104,14 +104,14 @@ void kinit_error_ground_env(klisp_State *K)
     TValue symbol, value;
 
     add_applicative(K, ground_env, "error-object?", typep, 2, symbol, 
-		    i2tv(K_TERROR));
+                    i2tv(K_TERROR));
     add_applicative(K, ground_env, "error", kgerror, 0);
     add_applicative(K, ground_env, "raise", kgraise, 0);
     /* MAYBE add get- and remove object from these names */
     add_applicative(K, ground_env, "error-object-message", 
-		    error_object_message, 0);
+                    error_object_message, 0);
     add_applicative(K, ground_env, "error-object-irritants", 
-		    error_object_irritants, 0);
+                    error_object_irritants, 0);
     /* TODO raise-continuable from r7rs doesn't make sense in the Kernel 
        system of handling continuations.
        What we could have is a more sofisticated system

@@ -53,14 +53,14 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     if (k == NULL) return NULL;
     void *s = (*f)(ud, NULL, 0, KS_ISSIZE * sizeof(TValue));
     if (s == NULL) { 
-	(*f)(ud, k, state_size(), 0); 
-	return NULL;
+        (*f)(ud, k, state_size(), 0); 
+        return NULL;
     }
     void *b = (*f)(ud, NULL, 0, KS_ITBSIZE);
     if (b == NULL) {
-	(*f)(ud, k, state_size(), 0); 
-	(*f)(ud, s, KS_ISSIZE * sizeof(TValue), 0); 
-	return NULL;
+        (*f)(ud, k, state_size(), 0); 
+        (*f)(ud, s, KS_ISSIZE * sizeof(TValue), 0); 
+        return NULL;
     }
 
     K = (klisp_State *) k;
@@ -110,10 +110,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->weak = NULL;
     K->tmudata = NULL;
     K->totalbytes = state_size() + KS_ISSIZE * sizeof(TValue) +
-	KS_ITBSIZE;
+        KS_ITBSIZE;
     K->GCthreshold = UINT32_MAX; /* we still have a lot of allocation
-				    to do, put a very high value to 
-				    avoid collection */
+                                    to do, put a very high value to 
+                                    avoid collection */
     K->estimate = 0; /* doesn't matter, it is set by gc later */
     K->gcdept = 0;
     K->gcpause = KLISPI_GCPAUSE;
@@ -123,8 +123,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* do nothing for now */
 
     /* init the stacks used to protect variables & values from gc,
-     this should be done before any new object is created because
-     they are used by them */
+       this should be done before any new object is created because
+       they are used by them */
     K->rooted_tvs_top = 0;
     K->rooted_vars_top = 0;
 
@@ -140,10 +140,10 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     /* needs weak keys, otherwise every named object would
        be fixed! */
     K->name_table = klispH_new(K, 0, MINNAMETABSIZE, 
-	K_FLAG_WEAK_KEYS);
+                               K_FLAG_WEAK_KEYS);
     /* here the keys are uncollectable */
     K->cont_name_table = klispH_new(K, 0, MINCONTNAMETABSIZE, 
-	K_FLAG_WEAK_NOTHING);
+                                    K_FLAG_WEAK_NOTHING);
 
     /* Empty string */
     /* MAYBE: fix it so we can remove empty_string from roots */
@@ -194,16 +194,16 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* initialize require facilities */ 
     {
-	char *str = getenv(KLISP_PATH);
-	if (str == NULL)
-	    str = KLISP_PATH_DEFAULT;
+        char *str = getenv(KLISP_PATH);
+        if (str == NULL)
+            str = KLISP_PATH_DEFAULT;
 	
-	K->require_path = kstring_new_b_imm(K, str);
-	/* replace dirsep with forward slashes,
-	 windows will happily accept forward slashes */
-	str = kstring_buf(K->require_path);
-	while ((str = strchr(str, *KLISP_DIRSEP)) != NULL)
-	    *str++ = '/';
+        K->require_path = kstring_new_b_imm(K, str);
+        /* replace dirsep with forward slashes,
+           windows will happily accept forward slashes */
+        str = kstring_buf(K->require_path);
+        while ((str = strchr(str, *KLISP_DIRSEP)) != NULL)
+            *str++ = '/';
     }
     K->require_table = klispH_new(K, 0, MINREQUIRETABSIZE, 0);
 
@@ -217,11 +217,11 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
 
     /* the dynamic ports and the keys for the dynamic ports */
     TValue in_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDIN*"),
-				    false, false,  stdin);
+                                     false, false,  stdin);
     TValue out_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDOUT*"),
-				     true, false, stdout);
+                                      true, false, stdout);
     TValue error_port = kmake_std_fport(K, kstring_new_b_imm(K, "*STDERR*"),
-				       true, false, stderr);
+                                        true, false, stderr);
     K->kd_in_port_key = kcons(K, KTRUE, in_port);
     K->kd_out_port_key = kcons(K, KTRUE, out_port);
     K->kd_error_port_key = kcons(K, KTRUE, error_port);
@@ -235,7 +235,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->eval_op = kmake_operative(K, keval_ofn, 0), line_number = __LINE__;
 #if KTRACK_SI
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
-		      kcons(K, i2tv(line_number), i2tv(0)));
+               kcons(K, i2tv(line_number), i2tv(0)));
     kset_source_info(K, K->eval_op, si);
 #endif
     /* TODO: si */
@@ -245,7 +245,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->list_app = kmake_applicative(K, list, 0), line_number = __LINE__;
 #if KTRACK_SI
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
-		      kcons(K, i2tv(__LINE__), i2tv(0)));
+               kcons(K, i2tv(__LINE__), i2tv(0)));
     kset_source_info(K, K->list_app, si);
     kset_source_info(K, kunwrap(K->list_app), si);
 #endif
@@ -253,7 +253,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->memoize_app = kmake_applicative(K, memoize, 0), line_number = __LINE__;
 #if KTRACK_SI
     si = kcons(K, kstring_new_b_imm(K, __FILE__), 
-		      kcons(K, i2tv(__LINE__), i2tv(0)));
+               kcons(K, i2tv(__LINE__), i2tv(0)));
     kset_source_info(K, K->memoize_app, si);
     kset_source_info(K, kunwrap(K->memoize_app), si);
 #endif
@@ -266,25 +266,25 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     K->module_params_sym = ksymbol_new_b(K, "module-parameters", KNIL);
 
     /* Create the root and error continuation (will be added to the 
-     environment in kinit_ground_env) */
+       environment in kinit_ground_env) */
     K->root_cont = kmake_continuation(K, KNIL, do_root_exit, 0);
 
-    #if KTRACK_SI
+#if KTRACK_SI
     /* Add source info to the cont */
     TValue str = kstring_new_b_imm(K, __FILE__);
     TValue tail = kcons(K, i2tv(__LINE__), i2tv(0));
     si = kcons(K, str, tail);
     kset_source_info(K, K->root_cont, si);
-    #endif
+#endif
 
     K->error_cont = kmake_continuation(K, K->root_cont, do_error_exit, 0);
 
-    #if KTRACK_SI
+#if KTRACK_SI
     str = kstring_new_b_imm(K, __FILE__);
     tail = kcons(K, i2tv(__LINE__), i2tv(0));
     si = kcons(K, str, tail);
     kset_source_info(K, K->error_cont, si);
-    #endif
+#endif
 
     /* this must be done before calling kinit_ground_env */
     kinit_error_hierarchy(K); 
@@ -312,7 +312,7 @@ void do_root_exit(klisp_State *K)
 
     /* Just save the value and end the loop */
     K->next_value = obj;
-    K->next_func = NULL;     /* force the loop to terminate */
+    K->next_func = NULL;        /* force the loop to terminate */
     return;
 }
 
@@ -339,10 +339,10 @@ void ks_sgrow(klisp_State *K, int32_t new_top)
     /* TEMP: do it naively for now */
     size_t new_size = old_size * 2;
     while(new_top > new_size)
-	new_size *= 2;
+        new_size *= 2;
 
     ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
-				 new_size*sizeof(TValue));
+                                 new_size*sizeof(TValue));
     ks_ssize(K) = new_size; 
 }
 
@@ -354,11 +354,11 @@ void ks_sshrink(klisp_State *K, int32_t new_top)
     /* TEMP: do it naively for now */
     size_t new_size = old_size;
     while(new_size > KS_ISSIZE && new_top * 4 < new_size)
-	new_size /= 2;
+        new_size /= 2;
 
     /* NOTE: shrink can't fail */
     ks_sbuf(K) = klispM_realloc_(K, ks_sbuf(K), old_size*sizeof(TValue),
-				 new_size*sizeof(TValue));
+                                 new_size*sizeof(TValue));
     ks_ssize(K) = new_size;
 }
 
@@ -371,10 +371,10 @@ void ks_tbgrow(klisp_State *K, int32_t new_top)
     /* TEMP: do it naively for now */
     size_t new_size = old_size * 2;
     while(new_top > new_size)
-	new_size *= 2;
+        new_size *= 2;
 
     ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size*sizeof(TValue),
-				 new_size*sizeof(TValue));
+                                 new_size*sizeof(TValue));
     ks_tbsize(K) = new_size; 
 }
 
@@ -386,11 +386,11 @@ void ks_tbshrink(klisp_State *K, int32_t new_top)
     /* TEMP: do it naively for now */
     size_t new_size = old_size;
     while(new_size > KS_ISSIZE && new_top * 4 < new_size)
-	new_size /= 2;
+        new_size /= 2;
 
     /* NOTE: shrink can't fail */
     ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size*sizeof(TValue),
-				 new_size*sizeof(TValue));
+                                 new_size*sizeof(TValue));
     ks_tbsize(K) = new_size;
 }
 
@@ -412,16 +412,16 @@ void ks_tbshrink(klisp_State *K, int32_t new_top)
 void mark_iancestors(TValue cont) 
 {
     while(!ttisnil(cont)) {
-	kmark(cont);
-	cont = tv2cont(cont)->parent;
+        kmark(cont);
+        cont = tv2cont(cont)->parent;
     }
 }
 
 void unmark_iancestors(TValue cont) 
 {
     while(!ttisnil(cont)) {
-	kunmark(cont);
-	cont = tv2cont(cont)->parent;
+        kunmark(cont);
+        cont = tv2cont(cont)->parent;
     }
 }
 
@@ -435,12 +435,12 @@ TValue select_interceptor(TValue guard_ls)
     /* the guard list can't be cyclic, that case is 
        replaced by a simple list while copyng guards */
     while(!ttisnil(guard_ls)) {
-	/* entry is (selector . interceptor-op) */
-	TValue entry = kcar(guard_ls);
-	TValue selector = kcar(entry);
-	if (kis_marked(selector))
-	    return kcdr(entry); /* only interceptor is important */
-	guard_ls = kcdr(guard_ls);
+        /* entry is (selector . interceptor-op) */
+        TValue entry = kcar(guard_ls);
+        TValue selector = kcar(entry);
+        if (kis_marked(selector))
+            return kcdr(entry); /* only interceptor is important */
+        guard_ls = kcdr(guard_ls);
     }
     return KNIL;
 }
@@ -452,7 +452,7 @@ TValue select_interceptor(TValue guard_ls)
 
 /* GC: assume src_cont & dst_cont are rooted */
 inline TValue create_interception_list(klisp_State *K, TValue src_cont, 
-				       TValue dst_cont)
+                                       TValue dst_cont)
 {
     mark_iancestors(dst_cont);
     TValue ilist = kcons(K, KNIL, KNIL);
@@ -465,28 +465,28 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
 
     /* the loop is until we find the common ancestor, that has to be marked */
     while(!kis_marked(cont)) {
-	/* only inner conts have exit guards */
-	if (kis_inner_cont(cont)) {
-	    klisp_assert(tv2cont(cont)->extra_size > 1);
-	    TValue entries = tv2cont(cont)->extra[0]; /* TODO make a macro */ 
+        /* only inner conts have exit guards */
+        if (kis_inner_cont(cont)) {
+            klisp_assert(tv2cont(cont)->extra_size > 1);
+            TValue entries = tv2cont(cont)->extra[0]; /* TODO make a macro */ 
 
-	    TValue interceptor = select_interceptor(entries);
-	    if (!ttisnil(interceptor)) {
+            TValue interceptor = select_interceptor(entries);
+            if (!ttisnil(interceptor)) {
                 /* TODO make macros */
-		TValue denv = tv2cont(cont)->extra[1]; 
-		TValue outer = tv2cont(cont)->parent;
-		TValue outer_denv = kcons(K, outer, denv);
-		krooted_tvs_push(K, outer_denv);
-		TValue new_entry = kcons(K, interceptor, outer_denv);
-		krooted_tvs_pop(K); /* already in entry */
-		krooted_tvs_push(K, new_entry);
-		TValue new_pair = kcons(K, new_entry, KNIL);
-		krooted_tvs_pop(K);
-		kset_cdr(tail, new_pair);
-		tail = new_pair;
-	    }
-	}
-	cont = tv2cont(cont)->parent;
+                TValue denv = tv2cont(cont)->extra[1]; 
+                TValue outer = tv2cont(cont)->parent;
+                TValue outer_denv = kcons(K, outer, denv);
+                krooted_tvs_push(K, outer_denv);
+                TValue new_entry = kcons(K, interceptor, outer_denv);
+                krooted_tvs_pop(K); /* already in entry */
+                krooted_tvs_push(K, new_entry);
+                TValue new_pair = kcons(K, new_entry, KNIL);
+                krooted_tvs_pop(K);
+                kset_cdr(tail, new_pair);
+                tail = new_pair;
+            }
+        }
+        cont = tv2cont(cont)->parent;
     }
     unmark_iancestors(dst_cont);
 
@@ -501,26 +501,26 @@ inline TValue create_interception_list(klisp_State *K, TValue src_cont,
     krooted_vars_push(K, &entry_int);
 
     while(!kis_marked(cont)) {
-	/* only outer conts have entry guards */
-	if (kis_outer_cont(cont)) {
-	    klisp_assert(tv2cont(cont)->extra_size > 1);
-	    TValue entries = tv2cont(cont)->extra[0]; /* TODO make a macro */
-	    /* this is rooted because it's a substructure of entries */
-	    TValue interceptor = select_interceptor(entries);
-	    if (!ttisnil(interceptor)) {
+        /* only outer conts have entry guards */
+        if (kis_outer_cont(cont)) {
+            klisp_assert(tv2cont(cont)->extra_size > 1);
+            TValue entries = tv2cont(cont)->extra[0]; /* TODO make a macro */
+            /* this is rooted because it's a substructure of entries */
+            TValue interceptor = select_interceptor(entries);
+            if (!ttisnil(interceptor)) {
                 /* TODO make macros */
-		TValue denv = tv2cont(cont)->extra[1]; 
-		TValue outer = cont;
-		TValue outer_denv = kcons(K, outer, denv);
-		krooted_tvs_push(K, outer_denv);
-		TValue new_entry = kcons(K, interceptor, outer_denv);
-		krooted_tvs_pop(K); /* already in entry */
-		krooted_tvs_push(K, new_entry);
-		entry_int = kcons(K, new_entry, entry_int);
-		krooted_tvs_pop(K);
-	    }
-	}
-	cont = tv2cont(cont)->parent;
+                TValue denv = tv2cont(cont)->extra[1]; 
+                TValue outer = cont;
+                TValue outer_denv = kcons(K, outer, denv);
+                krooted_tvs_push(K, outer_denv);
+                TValue new_entry = kcons(K, interceptor, outer_denv);
+                krooted_tvs_pop(K); /* already in entry */
+                krooted_tvs_push(K, new_entry);
+                entry_int = kcons(K, new_entry, entry_int);
+                krooted_tvs_pop(K);
+            }
+        }
+        cont = tv2cont(cont)->parent;
     }
 
     unmark_iancestors(src_cont);
@@ -557,32 +557,32 @@ void do_interception(klisp_State *K)
     TValue ls = xparams[0];
     TValue dst_cont = xparams[1];
     if (ttisnil(ls)) {
-	/* all interceptors returned normally */
-	/* this is a normal pass/not subject to interception */
-	kset_cc(K, dst_cont);
-	kapply_cc(K, obj);
+        /* all interceptors returned normally */
+        /* this is a normal pass/not subject to interception */
+        kset_cc(K, dst_cont);
+        kapply_cc(K, obj);
     } else {
-	/* call the operative with the passed obj and applicative
-	   for outer cont as ptree in the dynamic environment of 
-	   the corresponding call to guard-continuation in the 
-	   dynamic extent of the associated outer continuation.
-	   If the operative normally returns a value, others
-	   interceptions should be scheduled */
-	TValue first = kcar(ls);
-	TValue op = kcar(first);
-	TValue outer = kcadr(first);
-	TValue denv = kcddr(first);
-	TValue app = kmake_applicative(K, cont_app, 1, outer);
-	krooted_tvs_push(K, app);
-	TValue ptree = klist(K, 2, obj, app);
-	krooted_tvs_pop(K); /* already in ptree */
-	krooted_tvs_push(K, ptree);
-	TValue new_cont = kmake_continuation(K, outer, do_interception,
-					     2, kcdr(ls), dst_cont);
-	kset_cc(K, new_cont);
-	krooted_tvs_pop(K);
-	/* XXX: what to pass as si? */
-	ktail_call(K, op, ptree, denv);
+        /* call the operative with the passed obj and applicative
+           for outer cont as ptree in the dynamic environment of 
+           the corresponding call to guard-continuation in the 
+           dynamic extent of the associated outer continuation.
+           If the operative normally returns a value, others
+           interceptions should be scheduled */
+        TValue first = kcar(ls);
+        TValue op = kcar(first);
+        TValue outer = kcadr(first);
+        TValue denv = kcddr(first);
+        TValue app = kmake_applicative(K, cont_app, 1, outer);
+        krooted_tvs_push(K, app);
+        TValue ptree = klist(K, 2, obj, app);
+        krooted_tvs_pop(K); /* already in ptree */
+        krooted_tvs_push(K, ptree);
+        TValue new_cont = kmake_continuation(K, outer, do_interception,
+                                             2, kcdr(ls), dst_cont);
+        kset_cc(K, new_cont);
+        krooted_tvs_pop(K);
+        /* XXX: what to pass as si? */
+        ktail_call(K, op, ptree, denv);
     }
 }
 
@@ -598,14 +598,14 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
     TValue int_ls = create_interception_list(K, src_cont, dst_cont);
     TValue new_cont;
     if (ttisnil(int_ls)) {
-	new_cont = dst_cont; /* no interceptions */
+        new_cont = dst_cont; /* no interceptions */
     } else {
-	krooted_tvs_push(K, int_ls);
-	/* we have to contruct a continuation to do the interceptions
-	   in order and finally call dst_cont if no divert occurs */
-	new_cont = kmake_continuation(K, kget_cc(K), do_interception, 
-				      2, int_ls, dst_cont);
-	krooted_tvs_pop(K);
+        krooted_tvs_push(K, int_ls);
+        /* we have to contruct a continuation to do the interceptions
+           in order and finally call dst_cont if no divert occurs */
+        new_cont = kmake_continuation(K, kget_cc(K), do_interception, 
+                                      2, int_ls, dst_cont);
+        krooted_tvs_pop(K);
     }
     /* no more allocation from this point */
     krooted_tvs_pop(K);
@@ -631,19 +631,19 @@ void klispS_init_repl(klisp_State *K)
 void klispS_run(klisp_State *K)
 {
     while(true) {
-	if (setjmp(K->error_jb)) {
-	    /* continuation called */
-	    /* TEMP: do nothing, the loop will call the continuation */
-	} else {
-	    /* all ok, continue with next func */
-	    while (K->next_func) {
-		/* next_func is either operative or continuation
-		   but in any case the call is the same */
-		(*(K->next_func))(K);
-	    }
-	    /* K->next_func is NULL, this means we should exit already */
-	    break;
-	}
+        if (setjmp(K->error_jb)) {
+            /* continuation called */
+            /* TEMP: do nothing, the loop will call the continuation */
+        } else {
+            /* all ok, continue with next func */
+            while (K->next_func) {
+                /* next_func is either operative or continuation
+                   but in any case the call is the same */
+                (*(K->next_func))(K);
+            }
+            /* K->next_func is NULL, this means we should exit already */
+            break;
+        }
     }
 }
 

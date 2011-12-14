@@ -19,7 +19,7 @@ void klispS_resize (klisp_State *K, int32_t newsize);
 
 /* General constructor for strings */
 TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf, 
-			uint32_t size);
+                        uint32_t size);
 
 /* 
 ** Constructors for immutable strings
@@ -55,7 +55,7 @@ TValue kstring_new_sf(klisp_State *K, uint32_t size, char fill);
 #define kstring_immutablep(tv_) (kis_immutable(tv_))
 
 /* both obj1 and obj2 should be strings, this compares char by char
-  and doesn't differentiate immutable from mutable strings */
+   and doesn't differentiate immutable from mutable strings */
 bool kstring_equalp(TValue obj1, TValue obj2);
 bool kstringp(TValue obj);
 bool kimmutable_stringp(TValue obj);

@@ -72,7 +72,7 @@ typedef struct {
     size_t index;
 } ffi_callback_t;
 
-#define CB_INDEX_N      0
+#define CB_INDEX_N         0
 #define CB_INDEX_STACK  1
 #define CB_INDEX_FIRST_CALLBACK  2
 
@@ -131,7 +131,7 @@ static void ffi_encode_pointer(ffi_codec_t *self, klisp_State *K, TValue v, void
     } else if (ttisnil(v)) {
         *(void **)buf = NULL;
     } else if (tbasetype_(v) == K_TAG_USER) {
-       /* TODO: do not use internal macro tbasetype_ */
+        /* TODO: do not use internal macro tbasetype_ */
         *(void **)buf = pvalue(v);
     } else {
         klispE_throw_simple_with_irritants(K, "neither bytevector, string, pointer or nil", 1, v);
@@ -236,8 +236,8 @@ static TValue ffi_decode_uint32(ffi_codec_t *self, klisp_State *K, const void *b
 
         uint8_t d[4];
         for (int i = 3; i >= 0; i--) {
-          d[i] = (x & 0xFF);
-          x >>= 8;
+            d[i] = (x & 0xFF);
+            x >>= 8;
         }
         mp_int_read_unsigned(K, tv2bigint(res), d, 4);
 
@@ -292,14 +292,14 @@ static void ffi_encode_uint64(ffi_codec_t *self, klisp_State *K, TValue v, void 
     if (ttisfixint(v) && 0 <= ivalue(v)) {
         *(uint64_t *) buf = ivalue(v);
     } else if (ttisbigint(v)
-              && mp_int_compare_zero(tv2bigint(v)) >= 0
-              && mp_int_unsigned_len(tv2bigint(v)) <= 8) {
+               && mp_int_compare_zero(tv2bigint(v)) >= 0
+               && mp_int_unsigned_len(tv2bigint(v)) <= 8) {
         uint8_t d[8];
 
         mp_int_to_unsigned(K, tv2bigint(v), d, 8);
         uint64_t tmp = d[0];
         for (int i = 1; i < 8; i++)
-          tmp = (tmp << 8) | d[i];
+            tmp = (tmp << 8) | d[i];
         *(uint64_t *) buf = tmp;
     } else {
         klispE_throw_simple_with_irritants(K, "unable to convert to C uint64_t", 1, v);
@@ -391,8 +391,8 @@ void ffi_load_library(klisp_State *K)
 
     TValue filename = ptree;
     const char *filename_c =
-	get_opt_tpar(K, filename, "string", ttisstring)
-	? kstring_buf(filename) : NULL;
+        get_opt_tpar(K, filename, "string", ttisstring)
+        ? kstring_buf(filename) : NULL;
 
 #if KGFFI_DLFCN
     void *handle = dlopen(filename_c, RTLD_LAZY | RTLD_GLOBAL);
@@ -408,11 +408,11 @@ void ffi_load_library(klisp_State *K)
     /* TODO: unicode and wide character issues ??? */
     HMODULE handle = LoadLibrary(filename_c);
     if (handle == NULL) {
-         krooted_tvs_push(K, filename);
-         TValue err = ffi_win32_error_message(K, GetLastError());
-         klispE_throw_simple_with_irritants(K, "couldn't load dynamic library",
-                                            2, filename, err);
-         return;
+        krooted_tvs_push(K, filename);
+        TValue err = ffi_win32_error_message(K, GetLastError());
+        klispE_throw_simple_with_irritants(K, "couldn't load dynamic library",
+                                           2, filename, err);
+        return;
     }
 #else
 #   error
@@ -451,12 +451,12 @@ static ffi_abi tv2ffi_abi(klisp_State *K, TValue v)
 
 static ffi_codec_t *tv2ffi_codec(klisp_State *K, TValue v)
 {
-  for (size_t i = 0; i < sizeof(ffi_codecs)/sizeof(ffi_codecs[0]); i++) {
-      if (!strcmp(ffi_codecs[i].name, kstring_buf(v)))
-          return &ffi_codecs[i];
-  }
-  klispE_throw_simple_with_irritants(K, "unsupported FFI type", 1, v);
-  return NULL;
+    for (size_t i = 0; i < sizeof(ffi_codecs)/sizeof(ffi_codecs[0]); i++) {
+        if (!strcmp(ffi_codecs[i].name, kstring_buf(v)))
+            return &ffi_codecs[i];
+    }
+    klispE_throw_simple_with_irritants(K, "unsupported FFI type", 1, v);
+    return NULL;
 }
 
 inline size_t align(size_t offset, size_t alignment)
@@ -478,20 +478,20 @@ void ffi_make_call_interface(klisp_State *K)
 
 #define ttislist(v) (ttispair(v) || ttisnil(v))
     bind_3tp(K, ptree,
-            "abi string", ttisstring, abi_tv,
-            "rtype string", ttisstring, rtype_tv,
-            "argtypes string list", ttislist, argtypes_tv);
+             "abi string", ttisstring, abi_tv,
+             "rtype string", ttisstring, rtype_tv,
+             "argtypes string list", ttislist, argtypes_tv);
 #undef ttislist
 
     size_t nargs;
     check_typed_list(K, kstringp, false, argtypes_tv, (int32_t *) &nargs, 
-		     NULL);
+                     NULL);
 
     /* Allocate C structure ffi_call_interface_t inside
-     a mutable bytevector. The structure contains C pointers
-     into itself. It must never be reallocated or copied.
-     The bytevector will be encapsulated later to protect
-     it from lisp code. */
+       a mutable bytevector. The structure contains C pointers
+       into itself. It must never be reallocated or copied.
+       The bytevector will be encapsulated later to protect
+       it from lisp code. */
 
     size_t bytevector_size = sizeof(ffi_call_interface_t) + (sizeof(ffi_codec_t *) + sizeof(ffi_type)) * nargs;
     TValue bytevector = kbytevector_new_sf(K, bytevector_size, 0);
@@ -524,17 +524,17 @@ void ffi_make_call_interface(klisp_State *K)
 
     ffi_status status = ffi_prep_cif(&p->cif, abi, nargs, p->rcodec->libffi_type, p->argtypes);
     switch (status) {
-        case FFI_OK:
-            break;
-        case FFI_BAD_ABI:
-            klispE_throw_simple(K, "FFI_BAD_ABI");
-            return;
-        case FFI_BAD_TYPEDEF:
-            klispE_throw_simple(K, "FFI_BAD_TYPEDEF");
-            return;
-        default:
-            klispE_throw_simple(K, "unknown error in ffi_prep_cif");
-            return;
+    case FFI_OK:
+        break;
+    case FFI_BAD_ABI:
+        klispE_throw_simple(K, "FFI_BAD_ABI");
+        return;
+    case FFI_BAD_TYPEDEF:
+        klispE_throw_simple(K, "FFI_BAD_TYPEDEF");
+        return;
+    default:
+        klispE_throw_simple(K, "unknown error in ffi_prep_cif");
+        return;
     }
 
     TValue key = xparams[0];
@@ -604,9 +604,9 @@ void ffi_make_applicative(klisp_State *K)
     */
 
     bind_3tp(K, ptree,
-            "dynamic library", ttisencapsulation, lib_tv,
-            "function name string", ttisstring, name_tv,
-            "call interface", ttisencapsulation, cif_tv);
+             "dynamic library", ttisencapsulation, lib_tv,
+             "function name string", ttisstring, name_tv,
+             "call interface", ttisencapsulation, cif_tv);
     if (!kis_encapsulation_type(lib_tv, xparams[0])) {
         klispE_throw_simple(K, "first argument shall be dynamic library");
         return;
@@ -640,10 +640,10 @@ void ffi_make_applicative(klisp_State *K)
     HMODULE handle = pvalue(kcar(kget_enc_val(lib_tv)));
     void *funptr = GetProcAddress(handle, kstring_buf(name_tv));
     if (NULL == funptr) {
-         TValue err = ffi_win32_error_message(K, GetLastError());
-         klispE_throw_simple_with_irritants(K, "couldn't find symbol",
-                                            3, lib_name, name_tv, err);
-         return;
+        TValue err = ffi_win32_error_message(K, GetLastError());
+        klispE_throw_simple_with_irritants(K, "couldn't find symbol",
+                                           3, lib_name, name_tv, err);
+        return;
     }
 #else
 #   error
@@ -914,8 +914,8 @@ void ffi_make_callback(klisp_State *K)
     */
 
     bind_2tp(K, ptree,
-            "applicative", ttisapplicative, app_tv,
-            "call interface", ttisencapsulation, cif_tv);
+             "applicative", ttisapplicative, app_tv,
+             "call interface", ttisencapsulation, cif_tv);
     if (!kis_encapsulation_type(cif_tv, xparams[0])) {
         klispE_throw_simple(K, "second argument shall be call interface");
         return;
@@ -1032,12 +1032,12 @@ void ffi_memmove(klisp_State *K)
     UNUSED(denv);
 
     bind_3tp(K, ptree,
-            "any", anytype, dst_tv,
-            "any", anytype, src_tv,
-            "integer", ttisfixint, sz_tv);
+             "any", anytype, dst_tv,
+             "any", anytype, src_tv,
+             "integer", ttisfixint, sz_tv);
 
     if (ivalue(sz_tv) < 0)
-      klispE_throw_simple(K, "size should be nonnegative fixint");
+        klispE_throw_simple(K, "size should be nonnegative fixint");
 
     size_t sz = (size_t) ivalue(sz_tv);
     uint8_t * dst = ffi_memory_location(K, true, dst_tv, true, sz);
@@ -1064,7 +1064,7 @@ static void ffi_type_ref(klisp_State *K)
     const uint8_t *ptr = ffi_memory_location(K, true, location_tv, false, codec->libffi_type->size);
 #if KGFFI_CHECK_ALIGNMENT
     if ((size_t) ptr % codec->libffi_type->alignment != 0)
-      klispE_throw_simple(K, "unaligned memory read through FFI");
+        klispE_throw_simple(K, "unaligned memory read through FFI");
 #endif
 
     TValue result = codec->decode(codec, K, ptr);
@@ -1090,7 +1090,7 @@ static void ffi_type_set(klisp_State *K)
     uint8_t *ptr = ffi_memory_location(K, true, location_tv, false, codec->libffi_type->size);
 #if KGFFI_CHECK_ALIGNMENT
     if ((size_t) ptr % codec->libffi_type->alignment != 0)
-      klispE_throw_simple(K, "unaligned memory write through FFI");
+        klispE_throw_simple(K, "unaligned memory write through FFI");
 #endif
 
     codec->encode(codec, K, value_tv, ptr);
@@ -1189,7 +1189,7 @@ void kinit_ffi_cont_names(klisp_State *K)
     Table *t = tv2table(K->cont_name_table);
 
     add_cont_name(K, t, do_ffi_callback_encode_result, 
-		  "ffi-callback-encode-result");
+                  "ffi-callback-encode-result");
     add_cont_name(K, t, do_ffi_callback_return, 
-		  "ffi-callback-ret");
+                  "ffi-callback-ret");
 }

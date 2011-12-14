@@ -41,9 +41,9 @@ typedef struct {
 
 /* in klisp this has both the immutable strings & the symbols */
 typedef struct stringtable {
-  GCObject **hash;
-  uint32_t nuse;  /* number of elements */
-  int32_t size;
+    GCObject **hash;
+    uint32_t nuse;  /* number of elements */
+    int32_t size;
 } stringtable;
 
 #define GC_PROTECT_SIZE 32
@@ -63,10 +63,10 @@ struct klisp_State {
     ** and otherwise next_func is from an operative
     */
     TValue next_obj; /* this is the operative or continuation to call
-			must be here to protect it from gc */
+                        must be here to protect it from gc */
     klisp_CFunction next_func; /* the next function to call 
-				  (operative or continuation) */
-    TValue next_value;     /* the value to be passed to the next function */
+                                  (operative or continuation) */
+    TValue next_value;        /* the value to be passed to the next function */
     TValue next_env; /* either NIL or an environment for next operative */
     TValue *next_xparams; 
     /* TODO replace with GCObject *next_si */
@@ -85,11 +85,11 @@ struct klisp_State {
     TValue system_error_cont;  /* initialized by kinit_error_hierarchy() */
 
     klisp_Alloc frealloc;  /* function to reallocate memory */
-    void *ud;         /* auxiliary data to `frealloc' */
+    void *ud;            /* auxiliary data to `frealloc' */
 
     /* GC */
     uint16_t currentwhite; /* the one of the two whites that is in use in
-			      this collection cycle */
+                              this collection cycle */
     uint8_t gcstate;  /* state of garbage collector */
     int32_t sweepstrgc;  /* position of sweep in `strt' */
     GCObject *rootgc; /* list of all collectable objects */
@@ -108,7 +108,7 @@ struct klisp_State {
     /* TEMP: error handling */
     jmp_buf error_jb;
 
-     /* input/output port in use (for read & write) */
+    /* input/output port in use (for read & write) */
     TValue curr_port; /* save the port to update source info on errors */
 
     /* for current-input-port, current-output-port, current-error-port */
@@ -179,19 +179,19 @@ struct klisp_State {
        object pointed to by a variable may change */
     int32_t rooted_vars_top;
     TValue *rooted_vars_buf[GC_PROTECT_SIZE];
- };
+};
 
 /* some size related macros */
 #define KS_ISSIZE (1024)
 #define KS_ITBSIZE (1024)
 #define state_size() (sizeof(klisp_State))
 
- /*
- ** TEMP: for now use inlined functions, later check output in 
- **   different compilers and/or profile to see if it's worthy to 
- **   eliminate it, change it to compiler specific or replace it
- **   with defines 
- */
+/*
+** TEMP: for now use inlined functions, later check output in 
+**   different compilers and/or profile to see if it's worthy to 
+**   eliminate it, change it to compiler specific or replace it
+**   with defines 
+*/
 
 /*
 ** Stack functions 
@@ -222,7 +222,7 @@ inline void ks_spush(klisp_State *K, TValue obj)
     /* put check after so that there is always space for one obj, and if 
        realloc is needed, obj is already rooted */
     if (ks_stop(K) == ks_ssize(K)) {
-	ks_sgrow(K, ks_stop(K)+1);
+        ks_sgrow(K, ks_stop(K)+1);
     }
 }
 
@@ -230,7 +230,7 @@ inline void ks_spush(klisp_State *K, TValue obj)
 inline TValue ks_spop(klisp_State *K)
 {
     if (ks_ssize(K) != KS_ISSIZE && ks_stop(K)-1 < (ks_ssize(K) / 4))
-	ks_sshrink(K, ks_stop(K)-1);
+        ks_sshrink(K, ks_stop(K)-1);
     TValue obj = ks_selem(K, ks_stop(K) - 1);
     --ks_stop(K);
     return obj;
@@ -246,14 +246,14 @@ inline void ks_sdiscardn(klisp_State *K, int32_t n)
     int32_t new_top = ks_stop(K) - n;
     ks_stop(K) = new_top;
     if (ks_ssize(K) != KS_ISSIZE && new_top < (ks_ssize(K) / 4))
-	ks_sshrink(K, new_top);
+        ks_sshrink(K, new_top);
     return;
 }
 
 inline void ks_sclear(klisp_State *K)
 {
     if (ks_ssize(K) != KS_ISSIZE)
-	ks_sshrink(K, 0);
+        ks_sshrink(K, 0);
     ks_stop(K) = 0;
 }
 
@@ -288,7 +288,7 @@ inline bool ks_tbisempty(klisp_State *K);
 inline void ks_tbadd(klisp_State *K, char ch)
 {
     if (ks_tbidx(K) == ks_tbsize(K)) 
-	ks_tbgrow(K, ks_tbidx(K)+1);
+        ks_tbgrow(K, ks_tbidx(K)+1);
     ks_tbelem(K, ks_tbidx(K)) = ch;
     ++ks_tbidx(K);
 }
@@ -301,7 +301,7 @@ inline char ks_tbget(klisp_State *K)
 inline char ks_tbpop(klisp_State *K)
 {
     if (ks_tbsize(K) != KS_ITBSIZE && ks_tbidx(K)-1 < (ks_tbsize(K) / 4))
-	ks_tbshrink(K, ks_tbidx(K)-1);
+        ks_tbshrink(K, ks_tbidx(K)-1);
     char ch = ks_tbelem(K, ks_tbidx(K) - 1);
     --ks_tbidx(K);
     return ch;
@@ -316,7 +316,7 @@ inline char *ks_tbget_buffer(klisp_State *K)
 inline void ks_tbclear(klisp_State *K)
 {
     if (ks_tbsize(K) != KS_ITBSIZE)
-	ks_tbshrink(K, 0);
+        ks_tbshrink(K, 0);
     ks_tbidx(K) = 0;
 }
 
@@ -377,11 +377,11 @@ inline void kset_source_info(klisp_State *K, TValue obj, TValue si)
     klisp_assert(kcan_have_si(obj));
     klisp_assert(ttisnil(si) || ttispair(si));
     if (ttisnil(si)) {
-	gcvalue(obj)->gch.si = NULL;
-	gcvalue(obj)->gch.kflags &= ~(K_FLAG_HAS_SI);
+        gcvalue(obj)->gch.si = NULL;
+        gcvalue(obj)->gch.kflags &= ~(K_FLAG_HAS_SI);
     } else {
-	gcvalue(obj)->gch.si = gcvalue(si);
-	gcvalue(obj)->gch.kflags |= K_FLAG_HAS_SI;
+        gcvalue(obj)->gch.si = gcvalue(si);
+        gcvalue(obj)->gch.kflags |= K_FLAG_HAS_SI;
     }
 }
 
@@ -438,7 +438,7 @@ inline void klispS_set_cc(klisp_State *K, TValue new_cont)
 #define kset_cc(K_, c_) (klispS_set_cc(K_, c_))
 
 inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
-				TValue env, TValue si)
+                                TValue env, TValue si)
 {
     /* TODO write barriers */
     
@@ -457,21 +457,21 @@ inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
     K->next_si = si;
 }
 
-#define ktail_call_si(K_, op_, p_, e_, si_)				\
+#define ktail_call_si(K_, op_, p_, e_, si_)                             \
     { klispS_tail_call_si((K_), (op_), (p_), (e_), (si_)); return; }
 
 /* if no source info is needed */
-#define ktail_call(K_, op_, p_, e_)					\
-    { klisp_State *K__ = (K_);						\
-	TValue op__ = (op_);						\
-	(ktail_call_si(K__, op__, p_, e_, ktry_get_si(K__, op__))); }	\
+#define ktail_call(K_, op_, p_, e_)                                     \
+    { klisp_State *K__ = (K_);                                          \
+        TValue op__ = (op_);                                            \
+        (ktail_call_si(K__, op__, p_, e_, ktry_get_si(K__, op__))); }	\
 
-#define ktail_eval(K_, p_, e_)						\
-    { klisp_State *K__ = (K_);						\
-	TValue p__ = (p_);						\
-	klispS_tail_call_si(K__, K__->eval_op, p__, (e_),		\
-			    ktry_get_si(K__, p__));			\
-	return; }
+#define ktail_eval(K_, p_, e_)                              \
+    { klisp_State *K__ = (K_);                              \
+        TValue p__ = (p_);                                  \
+        klispS_tail_call_si(K__, K__->eval_op, p__, (e_),   \
+                            ktry_get_si(K__, p__));			\
+        return; }
 
 /* helper for continuation->applicative & kcall_cont */
 void cont_app(klisp_State *K);

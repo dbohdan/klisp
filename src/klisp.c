@@ -57,31 +57,31 @@ static const char *progname = KLISP_PROGNAME;
 static void print_usage (void) 
 {
     fprintf(stderr,
-	    "usage: %s [options] [script [args]].\n"
-	    "Available options are:\n"
-	    "  -e exp  eval string " KLISP_QL("exp") "\n"
-	    "  -l name  load file " KLISP_QL("name") "\n"
-	    "  -r name  require file " KLISP_QL("name") "\n"
-	    "  -i       enter interactive mode after executing " 
-	                KLISP_QL("script") "\n"
-	    "  -v       show version information\n"
-	    "  --       stop handling options\n"
-	    "  -        execute stdin and stop handling options\n"
-	    ,
-	    progname);
+            "usage: %s [options] [script [args]].\n"
+            "Available options are:\n"
+            "  -e exp  eval string " KLISP_QL("exp") "\n"
+            "  -l name  load file " KLISP_QL("name") "\n"
+            "  -r name  require file " KLISP_QL("name") "\n"
+            "  -i          enter interactive mode after executing " 
+            KLISP_QL("script") "\n"
+            "  -v          show version information\n"
+            "  --          stop handling options\n"
+            "  -           execute stdin and stop handling options\n"
+            ,
+            progname);
     fflush(stderr);
 }
 
 static void k_message (const char *pname, const char *msg) 
 {
     if (pname)
-	fprintf(stderr, "%s: ", pname);
+        fprintf(stderr, "%s: ", pname);
     fprintf(stderr, "%s\n", msg);
     fflush(stderr);
 }
 
 /* TODO move this to a common place to use it from elsewhere 
-(like the repl) */
+   (like the repl) */
 static void show_error(klisp_State *K, TValue obj) {
     /* FOR NOW used only for irritant list */
     TValue port = kcdr(K->kd_error_port_key);
@@ -89,66 +89,66 @@ static void show_error(klisp_State *K, TValue obj) {
 
     /* TEMP: obj should be an error obj */
     if (ttiserror(obj)) {
-	Error *err_obj = tv2error(obj);
-	TValue who = err_obj->who;
-	char *who_str;
-	/* TEMP? */
-	if (ttiscontinuation(who))
-	    who = tv2cont(who)->comb;
+        Error *err_obj = tv2error(obj);
+        TValue who = err_obj->who;
+        char *who_str;
+        /* TEMP? */
+        if (ttiscontinuation(who))
+            who = tv2cont(who)->comb;
 
-	if (ttisstring(who)) {
-	    who_str = kstring_buf(who);
+        if (ttisstring(who)) {
+            who_str = kstring_buf(who);
 #if KTRACK_NAMES
-	} else if (khas_name(who)) {
-	    TValue name = kget_name(K, who);
-	    who_str = ksymbol_buf(name);
+        } else if (khas_name(who)) {
+            TValue name = kget_name(K, who);
+            who_str = ksymbol_buf(name);
 #endif
-	} else {
-	    who_str = "?";
-	}
-	char *msg = kstring_buf(err_obj->msg);
-	fprintf(stderr, "\n*ERROR*: \n");
-	fprintf(stderr, "%s: %s", who_str, msg);
+        } else {
+            who_str = "?";
+        }
+        char *msg = kstring_buf(err_obj->msg);
+        fprintf(stderr, "\n*ERROR*: \n");
+        fprintf(stderr, "%s: %s", who_str, msg);
 
-	krooted_tvs_push(K, obj);
+        krooted_tvs_push(K, obj);
 
-	/* Msg + irritants */
-	/* TODO move to a new function */
-	if (!ttisnil(err_obj->irritants)) {
-	    fprintf(stderr, ": ");
-	    kwrite_display_to_port(K, port, err_obj->irritants, false);
-	}
-	kwrite_newline_to_port(K, port);
+        /* Msg + irritants */
+        /* TODO move to a new function */
+        if (!ttisnil(err_obj->irritants)) {
+            fprintf(stderr, ": ");
+            kwrite_display_to_port(K, port, err_obj->irritants, false);
+        }
+        kwrite_newline_to_port(K, port);
 
 #if KTRACK_NAMES
 #if KTRACK_SI
-	/* Location */
-	/* TODO move to a new function */
-	/* MAYBE: remove */
-	if (khas_name(who) || khas_si(who)) {
-	    fprintf(stderr, "Location: ");
-	    kwrite_display_to_port(K, port, who, false);
-	    kwrite_newline_to_port(K, port);
-	}
+        /* Location */
+        /* TODO move to a new function */
+        /* MAYBE: remove */
+        if (khas_name(who) || khas_si(who)) {
+            fprintf(stderr, "Location: ");
+            kwrite_display_to_port(K, port, who, false);
+            kwrite_newline_to_port(K, port);
+        }
 
-	/* Backtrace */
-	/* TODO move to a new function */
-	TValue tv_cont = err_obj->cont;
-	fprintf(stderr, "Backtrace: \n");
-	while(ttiscontinuation(tv_cont)) {
-	    kwrite_display_to_port(K, port, tv_cont, false);
-	    kwrite_newline_to_port(K, port);
-	    Continuation *cont = tv2cont(tv_cont);
-	    tv_cont = cont->parent;
-	}
-	/* add extra newline at the end */
-	kwrite_newline_to_port(K, port);
+        /* Backtrace */
+        /* TODO move to a new function */
+        TValue tv_cont = err_obj->cont;
+        fprintf(stderr, "Backtrace: \n");
+        while(ttiscontinuation(tv_cont)) {
+            kwrite_display_to_port(K, port, tv_cont, false);
+            kwrite_newline_to_port(K, port);
+            Continuation *cont = tv2cont(tv_cont);
+            tv_cont = cont->parent;
+        }
+        /* add extra newline at the end */
+        kwrite_newline_to_port(K, port);
 #endif
 #endif
-	krooted_tvs_pop(K);
+        krooted_tvs_pop(K);
     } else {
-	fprintf(stderr, "\n*ERROR*: not an error object passed to " 
-		"error continuation");
+        fprintf(stderr, "\n*ERROR*: not an error object passed to " 
+                "error continuation");
     }
     fflush(stderr);
 }
@@ -156,9 +156,9 @@ static void show_error(klisp_State *K, TValue obj) {
 static int report (klisp_State *K, int status) 
 {
     if (status == STATUS_ERROR) {
-	const char *msg = "Error!";
-	k_message(progname, msg);
-	show_error(K, K->next_value);
+        const char *msg = "Error!";
+        k_message(progname, msg);
+        show_error(K, K->next_value);
     }
     return status;
 }
@@ -210,7 +210,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
 
     /* create the guard set error flag after errors */
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
-				      1, p2tv(&errorp));
+                                      1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
     TValue exit_guard = kcons(K, K->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
@@ -225,11 +225,11 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
     TValue outer_cont = kmake_continuation(K, K->root_cont, 
-					   do_pass_value, 2, entry_guards, env);
+                                           do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, 
-					   do_pass_value, 2, exit_guards, env);
+                                           do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
     krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
 
@@ -240,7 +240,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
        that the evaluation didn't explicitly invoke the root continuation
     */
     TValue discard_cont = kmake_continuation(K, inner_cont, do_int_mark_root,
-					     1, p2tv(&rootp));
+                                             1, p2tv(&rootp));
 
     krooted_tvs_pop(K); /* pop inner cont */
     krooted_tvs_push(K, discard_cont);
@@ -269,7 +269,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     klispS_run(K);
 
     int status = errorp? STATUS_ERROR : 
-	(rootp? STATUS_ROOT : STATUS_CONTINUE);
+        (rootp? STATUS_ROOT : STATUS_CONTINUE);
     /* get the standard environment again in K->next_env */
     K->next_env = env;
     return report(K, status);
@@ -286,8 +286,8 @@ void do_file_eval(klisp_State *K)
     TValue denv = xparams[0];
     TValue ls = obj;
     if (!ttisnil(ls)) {
-	TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, ls, denv);
-	kset_cc(K, new_cont);
+        TValue new_cont = kmake_continuation(K, kget_cc(K), do_seq, 2, ls, denv);
+        kset_cc(K, new_cont);
     } 
     kapply_cc(K, KINERT);
 }
@@ -317,33 +317,33 @@ static int dofile(klisp_State *K, const char *name)
 
     /* XXX better do this in a continuation */
     if (name == NULL) {
-	port = kcdr(K->kd_in_port_key);
+        port = kcdr(K->kd_in_port_key);
     } else {
-	FILE *file = fopen(name, "r");
-	if (file == NULL) {
-	    TValue mode_str = kstring_new_b(K, "r");
-	    krooted_tvs_push(K, mode_str);
-	    TValue name_str = kstring_new_b(K, name);
-	    krooted_tvs_push(K, mode_str);
-	    TValue error_obj = klispE_new_simple_with_errno_irritants
-		(K, "fopen", 2, name_str, mode_str);
-	    krooted_tvs_pop(K);
-	    krooted_tvs_pop(K);
-	    K->next_value = error_obj;
-	    return report(K, STATUS_ERROR);
-	}
+        FILE *file = fopen(name, "r");
+        if (file == NULL) {
+            TValue mode_str = kstring_new_b(K, "r");
+            krooted_tvs_push(K, mode_str);
+            TValue name_str = kstring_new_b(K, name);
+            krooted_tvs_push(K, mode_str);
+            TValue error_obj = klispE_new_simple_with_errno_irritants
+                (K, "fopen", 2, name_str, mode_str);
+            krooted_tvs_pop(K);
+            krooted_tvs_pop(K);
+            K->next_value = error_obj;
+            return report(K, STATUS_ERROR);
+        }
 	    
-	TValue name_str = kstring_new_b(K, name);
-	krooted_tvs_push(K, name_str);
-	port = kmake_std_fport(K, name_str, false, false, file);
-	krooted_tvs_pop(K);
+        TValue name_str = kstring_new_b(K, name);
+        krooted_tvs_push(K, name_str);
+        port = kmake_std_fport(K, name_str, false, false, file);
+        krooted_tvs_pop(K);
     }
     
     krooted_tvs_push(K, port);
     /* TODO this is exactly the same as in string, factor the code out */
     /* create the guard set error flag after errors */
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
-				      1, p2tv(&errorp));
+                                      1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
     TValue exit_guard = kcons(K, K->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
@@ -358,11 +358,11 @@ static int dofile(klisp_State *K, const char *name)
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
     TValue outer_cont = kmake_continuation(K, K->root_cont, 
-					   do_pass_value, 2, entry_guards, env);
+                                           do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, 
-					   do_pass_value, 2, exit_guards, env);
+                                           do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
     krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
 
@@ -375,20 +375,20 @@ static int dofile(klisp_State *K, const char *name)
        that the evaluation didn't explicitly invoke the root continuation
     */
     TValue discard_cont = kmake_continuation(K, inner_cont, do_int_mark_root,
-					     1, p2tv(&rootp));
+                                             1, p2tv(&rootp));
 
     krooted_tvs_pop(K); /* pop inner cont */
     krooted_tvs_push(K, discard_cont);
 
     /* XXX This should probably be an extra param to the function */
     env = K->next_env; /* this is the standard env that should be used for 
-			  evaluation */
+                          evaluation */
     TValue eval_cont = kmake_continuation(K, discard_cont, do_file_eval, 
-					  1, env);
+                                          1, env);
     krooted_tvs_pop(K); /* pop discard cont */
     krooted_tvs_push(K, eval_cont);
     TValue read_cont = kmake_continuation(K, eval_cont, do_file_read, 
-					  1, port);
+                                          1, port);
     krooted_tvs_pop(K); /* pop eval cont */
     krooted_tvs_pop(K); /* pop port */
     kset_cc(K, read_cont); /* this will protect all conts from gc */
@@ -397,7 +397,7 @@ static int dofile(klisp_State *K, const char *name)
     klispS_run(K);
 
     int status = errorp? STATUS_ERROR : 
-	(rootp? STATUS_ROOT : STATUS_CONTINUE);
+        (rootp? STATUS_ROOT : STATUS_CONTINUE);
 
     /* get the standard environment again in K->next_env */
     K->next_env = env;
@@ -426,7 +426,7 @@ static int dorfile(klisp_State *K, const char *name)
     /* TODO this is exactly the same as in string, factor the code out */
     /* create the guard set error flag after errors */
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
-				      1, p2tv(&errorp));
+                                      1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
     TValue exit_guard = kcons(K, K->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
@@ -441,11 +441,11 @@ static int dorfile(klisp_State *K, const char *name)
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
     TValue outer_cont = kmake_continuation(K, K->root_cont, 
-					   do_pass_value, 2, entry_guards, env);
+                                           do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
     TValue inner_cont = kmake_continuation(K, outer_cont, 
-					   do_pass_value, 2, exit_guards, env);
+                                           do_pass_value, 2, exit_guards, env);
     kset_inner_cont(inner_cont);
     krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
 
@@ -458,7 +458,7 @@ static int dorfile(klisp_State *K, const char *name)
        that the evaluation didn't explicitly invoke the root continuation
     */
     TValue discard_cont = kmake_continuation(K, inner_cont, do_int_mark_root,
-					     1, p2tv(&rootp));
+                                             1, p2tv(&rootp));
 
     krooted_tvs_pop(K); /* pop inner cont */
 
@@ -482,7 +482,7 @@ static int dorfile(klisp_State *K, const char *name)
     klispS_run(K);
 
     int status = errorp? STATUS_ERROR : 
-	(rootp? STATUS_ROOT : STATUS_CONTINUE);
+        (rootp? STATUS_ROOT : STATUS_CONTINUE);
 
     /* get the standard environment again in K->next_env */
     K->next_env = env;
@@ -497,7 +497,7 @@ static int handle_script(klisp_State *K, char **argv, int n)
 //    lua_setglobal(L, "arg");
     fname = argv[n];
     if (strcmp(fname, "-") == 0 && strcmp(argv[n-1], "--") != 0) 
-	fname = NULL;  /* stdin */
+        fname = NULL;  /* stdin */
 
     return dofile(K, fname);
 }
@@ -509,38 +509,38 @@ static int collectargs (char **argv, bool *pi, bool *pv, bool *pe, bool *pl)
 {
     int i;
     for (i = 1; argv[i] != NULL; i++) {
-	if (argv[i][0] != '-')  /* not an option? */
-	    return i;
-	switch (argv[i][1]) {  /* option */
-	case '-':
-	    notail(argv[i]);
-	    return (argv[i+1] != NULL ? i+1 : 0);
-	case '\0':
-	    return i;
-	case 'i':
-	    notail(argv[i]);
-	    *pi = true;  /* go through */
-	case 'v':
-	    notail(argv[i]);
-	    *pv = true;
-	    break;
-	case 'e':
-	    *pe = true;  
-	    goto select_arg;
-	case 'l': 
-	    *pl = true;
-	    goto select_arg;
-	case 'r':
-	select_arg:
-	    if (argv[i][2] == '\0') {
-		i++;
-		if (argv[i] == NULL)
-		    return -1;
-	    }
-	    break;
-	default: 
-	    return -1;  /* invalid option */
-	}
+        if (argv[i][0] != '-')  /* not an option? */
+            return i;
+        switch (argv[i][1]) {  /* option */
+        case '-':
+            notail(argv[i]);
+            return (argv[i+1] != NULL ? i+1 : 0);
+        case '\0':
+            return i;
+        case 'i':
+            notail(argv[i]);
+            *pi = true;  /* go through */
+        case 'v':
+            notail(argv[i]);
+            *pv = true;
+            break;
+        case 'e':
+            *pe = true;  
+            goto select_arg;
+        case 'l': 
+            *pl = true;
+            goto select_arg;
+        case 'r':
+        select_arg:
+            if (argv[i][2] == '\0') {
+                i++;
+                if (argv[i] == NULL)
+                    return -1;
+            }
+            break;
+        default: 
+            return -1;  /* invalid option */
+        }
     }
     return 0;
 }
@@ -553,54 +553,54 @@ static int runargs (klisp_State *K, char **argv, int n)
     UNUSED(env);
 
     /* TEMP All passes to root cont and all resulting values will be ignored,
-     the only way to interrupt the running of arguments is to throw an error */
+       the only way to interrupt the running of arguments is to throw an error */
     for (int i = 1; i < n; i++) {
-	if (argv[i] == NULL) 
-	    continue;
+        if (argv[i] == NULL) 
+            continue;
 
-	klisp_assert(argv[i][0] == '-');
+        klisp_assert(argv[i][0] == '-');
 
-	switch (argv[i][1]) {  /* option */
-	case 'e': { /* eval expr */
-	    const char *chunk = argv[i] + 2;
-	    if (*chunk == '\0') 
-		chunk = argv[++i];
-	    klisp_assert(chunk != NULL);
+        switch (argv[i][1]) {  /* option */
+        case 'e': { /* eval expr */
+            const char *chunk = argv[i] + 2;
+            if (*chunk == '\0') 
+                chunk = argv[++i];
+            klisp_assert(chunk != NULL);
 
-	    int res = dostring(K, chunk, "=(command line)");
-	    if (res != STATUS_CONTINUE)
-		return res; /* stop if eval fails/exit */
-	    break;
-	}
-	case 'l': { /* load file */
-	    const char *filename = argv[i] + 2;
-	    if (*filename == '\0') filename = argv[++i];
-	    klisp_assert(filename != NULL);
+            int res = dostring(K, chunk, "=(command line)");
+            if (res != STATUS_CONTINUE)
+                return res; /* stop if eval fails/exit */
+            break;
+        }
+        case 'l': { /* load file */
+            const char *filename = argv[i] + 2;
+            if (*filename == '\0') filename = argv[++i];
+            klisp_assert(filename != NULL);
 	    
-	    int res = dofile(K, filename);
-	    if (res != STATUS_CONTINUE)
-		return res; /* stop if file fails/exit */
-	    break;
-	}
-	case 'r': { /* require file */
-	    const char *filename = argv[i] + 2;
-	    if (*filename == '\0') filename = argv[++i];
-	    klisp_assert(filename != NULL);
+            int res = dofile(K, filename);
+            if (res != STATUS_CONTINUE)
+                return res; /* stop if file fails/exit */
+            break;
+        }
+        case 'r': { /* require file */
+            const char *filename = argv[i] + 2;
+            if (*filename == '\0') filename = argv[++i];
+            klisp_assert(filename != NULL);
 	    
-	    int res = dorfile(K, filename);
-	    if (res != STATUS_CONTINUE)
-		return res; /* stop if file fails/exit */
-	    break;
-	}
-	default: 
-	    break;
-	}
+            int res = dorfile(K, filename);
+            if (res != STATUS_CONTINUE)
+                return res; /* stop if file fails/exit */
+            break;
+        }
+        default: 
+            break;
+        }
     }
     return STATUS_CONTINUE;
 }
 
 static void populate_argument_lists(klisp_State *K, char **argv, int argc, 
-				    int script)
+                                    int script)
 {
     /* first create the script list */
     TValue tail = KNIL;
@@ -608,9 +608,9 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     krooted_vars_push(K, &tail);
     krooted_vars_push(K, &obj);
     while(argc > script) {
-	char *arg = argv[--argc];
-	obj = kstring_new_b_imm(K, arg);
-	tail = kimm_cons(K, obj, tail);
+        char *arg = argv[--argc];
+        obj = kstring_new_b_imm(K, arg);
+        tail = kimm_cons(K, obj, tail);
     }
     /* Store the script argument list */
     obj = ksymbol_new_b(K, "get-script-arguments", KNIL);
@@ -619,9 +619,9 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     tv2op(obj)->extra[0] = tail;
 
     while(argc > 0) {
-	char *arg = argv[--argc];
-	obj = kstring_new_b_imm(K, arg);
-	tail = kimm_cons(K, obj, tail);
+        char *arg = argv[--argc];
+        obj = kstring_new_b_imm(K, arg);
+        tail = kimm_cons(K, obj, tail);
     }
     /* Store the interpreter argument list */
     obj = ksymbol_new_b(K, "get-interpreter-arguments", KNIL);
@@ -638,9 +638,9 @@ static int handle_klispinit(klisp_State *K)
     const char *init = getenv(KLISP_INIT);
     int res;
     if (init == NULL) 
-	res = STATUS_CONTINUE;
+        res = STATUS_CONTINUE;
     else 
-	res = dostring(K, init, "=" KLISP_INIT);
+        res = dostring(K, init, "=" KLISP_INIT);
 
     return res;
 }
@@ -667,7 +667,7 @@ static void pmain(klisp_State *K)
     //TValue env = K->next_env; 
 
     if (argv[0] && argv[0][0])
-	progname = argv[0];
+        progname = argv[0];
 
     /* TODO Here we should load libraries, however we don't have any
        non native bindings in the ground environment yet */
@@ -680,19 +680,19 @@ static void pmain(klisp_State *K)
     /* init (eval KLISP_INIT env variable contents) */
     s->status = handle_klispinit(K);
     if (s->status != STATUS_CONTINUE)
-	return;
+        return;
 
     bool has_i = false, has_v = false, has_e = false, has_l = false;
     int script = collectargs(argv, &has_i, &has_v, &has_e, &has_l);
 
     if (script < 0) { /* invalid args? */
-	print_usage();
-	s->status = STATUS_ERROR;
-	return;
+        print_usage();
+        s->status = STATUS_ERROR;
+        return;
     }
 
     if (has_v)
-	print_version();
+        print_version();
 
     /* TEMP this could be either set before or after running the arguments,
        we'll do it before for now */
@@ -701,24 +701,24 @@ static void pmain(klisp_State *K)
     s->status = runargs(K, argv, (script > 0) ? script : s->argc);
 
     if (s->status != STATUS_CONTINUE)
-	return;
+        return;
 
     if (script > 0) {
-	s->status = handle_script(K, argv, script);
+        s->status = handle_script(K, argv, script);
     }
 
     if (s->status != STATUS_CONTINUE)
-	return;
+        return;
 
     if (has_i) { 
-	dotty(K);
+        dotty(K);
     } else if (script == 0 && !has_e && !has_l && !has_v) {
-	if (ksystem_isatty(K, kcurr_input_port(K))) {
-	    print_version();
-	    dotty(K);
-	} else {
-	    s->status = dofile(K, NULL);
-	}
+        if (ksystem_isatty(K, kcurr_input_port(K))) {
+            print_version();
+            dotty(K);
+        } else {
+            s->status = dofile(K, NULL);
+        }
     }
 }
 
@@ -728,8 +728,8 @@ int main(int argc, char *argv[])
     klisp_State *K = klispL_newstate();
 
     if (K == NULL) {
-	k_message(argv[0], "cannot create state: not enough memory");
-	return EXIT_FAILURE;
+        k_message(argv[0], "cannot create state: not enough memory");
+        return EXIT_FAILURE;
     }
 
     /* This is weird but was done to follow lua scheme */
@@ -741,19 +741,19 @@ int main(int argc, char *argv[])
 
     /* convert s.status to either EXIT_SUCCESS or EXIT_FAILURE */
     if (s.status == STATUS_CONTINUE || s.status == STATUS_ROOT) {
-	/* must check value passed to the root continuation to
-	   return proper exit status */
-	if (ttisinert(K->next_value)) {
-	    s.status = EXIT_SUCCESS;
-	} else if (ttisboolean(K->next_value)) {
-	    s.status = kis_true(K->next_value)? EXIT_SUCCESS : EXIT_FAILURE;
-	} else if (ttisfixint(K->next_value)) {
-	    s.status = ivalue(K->next_value);
-	} else {
-	    s.status = EXIT_FAILURE;
-	}
+        /* must check value passed to the root continuation to
+           return proper exit status */
+        if (ttisinert(K->next_value)) {
+            s.status = EXIT_SUCCESS;
+        } else if (ttisboolean(K->next_value)) {
+            s.status = kis_true(K->next_value)? EXIT_SUCCESS : EXIT_FAILURE;
+        } else if (ttisfixint(K->next_value)) {
+            s.status = ivalue(K->next_value);
+        } else {
+            s.status = EXIT_FAILURE;
+        }
     } else { /* s.status == STATUS_ERROR */
-	s.status = EXIT_FAILURE;
+        s.status = EXIT_FAILURE;
     }
 
     klisp_close(K);

@@ -64,5 +64,5 @@ void kinit_kgkd_vars_ground_env(klisp_State *K)
 
     /* 10.1.1 make-keyed-dynamic-variable */
     add_applicative(K, ground_env, "make-keyed-dynamic-variable", 
-		    make_keyed_dynamic_variable, 0); 
+                    make_keyed_dynamic_variable, 0); 
 }

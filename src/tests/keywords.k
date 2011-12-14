@@ -20,8 +20,8 @@
 ($check-not-predicate (keyword? wrap))
 ($check-not-predicate (keyword? (call/cc ($lambda (c) c))))
 ($check-not-predicate (keyword? ($let (((enc . #ignore) 
-					(make-encapsulation-type)))
-				  (enc #inert))))
+                                        (make-encapsulation-type)))
+                                  (enc #inert))))
 ($check-not-predicate (keyword? (memoize #inert)))
 ($check-not-predicate (keyword? 1))
 ($check-not-predicate (keyword? 1.0))
@@ -51,7 +51,7 @@
 ($check-predicate (applicative? symbol->keyword))
 ($check equal? (symbol->keyword ((unwrap list) . keyword)) #:keyword)
 ($check equal? (keyword->symbol (symbol->keyword ((unwrap list) . keyword))) 
-	((unwrap list) . keyword))
+        ((unwrap list) . keyword))
 
 ;;;
 ;;; Eq?-ness & Equal?-ness

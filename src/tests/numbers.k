@@ -24,8 +24,8 @@
 ;; Other bugs:
 ;;
 ;;  - evaluating
-;;      
-;;      ($check equal? (round -1.1) -1)
+;;     
+;;     ($check equal? (round -1.1) -1)
 ;;    freezes the interpreter
 ;;
 
@@ -171,8 +171,8 @@
 ;; next installement of the report to see if this is changed.
 ;;
 ;; Andres Navarro
-;--- ($check equal? (div 10 -7) #undefined)           ; FAIL
-;--- ($check equal? (div -10 -7) #undefined)          ; FAIL
+                                        ;--- ($check equal? (div 10 -7) #undefined)         ; FAIL
+                                        ;--- ($check equal? (div -10 -7) #undefined)        ; FAIL
 
 ($check equal? (mod 10 7) 3)
 ($check equal? (div-and-mod 10 7) (list 1 3))
@@ -182,13 +182,13 @@
 ;; contradict the KernelReport.
 
 ($check equal? (div-and-mod 123 10) (list 12 3))
-;----- ($check equal? (div-and-mod 123 -10) (list -12 3))
+                                        ;----- ($check equal? (div-and-mod 123 -10) (list -12 3))
 ($check equal? (div-and-mod -123 10) (list -13 7))
-;----- ($check equal? (div-and-mod -123 -10) (list 13 7))
+                                        ;----- ($check equal? (div-and-mod -123 -10) (list 13 7))
 ($check equal? (div0-and-mod0 123 10) (list 12 3))
-;----- ($check equal? (div0-and-mod0 123 -10) (list -12 3))
+                                        ;----- ($check equal? (div0-and-mod0 123 -10) (list -12 3))
 ($check equal? (div0-and-mod0 -123 10) (list -12 -3))
-;----- ($check equal? (div0-and-mod0 -123 -10) (list 12 -3))
+                                        ;----- ($check equal? (div0-and-mod0 -123 -10) (list 12 -3))
 
 ;; 12.5.10 positive? negative?
 
@@ -257,7 +257,7 @@
 ;; negative infinity (...)"
 ;;
 ;; Andres Navarro
-;; was ($check-predicate (robust? 3.14))           ; FAIL
+;; was ($check-predicate (robust? 3.14))         ; FAIL
 ($check-not-predicate (robust? #real))
 ($check-not-predicate (robust? #undefined))
 
@@ -308,7 +308,7 @@
 ;; expressible by the formula (sign + or -) mantissa / 2 ^ (-expt)
 ;;
 ;; Andres Navarro
-; was ($check-not-predicate (rational? (sqrt 2)))    ; FAIL
+                                        ; was ($check-not-predicate (rational? (sqrt 2)))    ; FAIL
 ($check-not-predicate (rational? #e+infinity))
 
 ;; 12.8.2 /
@@ -438,7 +438,7 @@
 ($check string-ci=? (number->string -10 10) "-10")
 ($check string-ci=? (number->string 16 16) "10")
 ($check string-ci=? (number->string -16 16) "-10")
-; default base
+                                        ; default base
 ($check string-ci=? (number->string 10) (number->string 10 10))
 ;; infinities, undefined and reals with no primary value
 ($check string-ci=? (number->string #undefined) "#undefined")
@@ -453,17 +453,17 @@
 ($check string-ci=? (number->string #o-21/15 8) "-21/15")
 ;; bigints
 ($check string-ci=? (number->string #x1234567890abcdef 16) 
-	"1234567890abcdef")
+        "1234567890abcdef")
 
-; only bases 2, 8, 10, 16
+                                        ; only bases 2, 8, 10, 16
 ($check-error (number->string 10 3))
-; only numbers
+                                        ; only numbers
 ($check-error (number->string #inert))
 ($check-error (number->string #inert 2))
-; only numbers
+                                        ; only numbers
 ($check-error (number->string "2"))
 ($check-error (number->string "2" 8))
-; only base 10 with inexact numbers
+                                        ; only base 10 with inexact numbers
 ($check-error (number->string -1.0 2))
 ($check-error (number->string 1.25 8))
 ($check-error (number->string 3.0 16))
@@ -480,7 +480,7 @@
 ($check =? (string->number "-10" 10) -10)
 ($check =? (string->number "10" 16) 16)
 ($check =? (string->number "-10" 16) -16)
-; default base
+                                        ; default base
 ($check =? (string->number "10") (string->number "10" 10))
 ;; infinities, undefined and reals with no primary value
 ;; #undefined and #real can't be compared with =?
@@ -496,21 +496,21 @@
 ($check =? (string->number "-21/15" 8) #o-21/15)
 ;; bigints
 ($check =? (string->number "1234567890abcdef" 16) 
-	#x1234567890abcdef)
+        #x1234567890abcdef)
 ($check =? (string->number "1234567890ABCDEF" 16) 
-	#x1234567890abcdef)
+        #x1234567890abcdef)
 ;; doubles
 ($check =? (string->number "1.25e10") 1.25e10)
 ($check =? (string->number "-1.25e10" 10) -1.25e10)
 
-; only bases 2, 8, 10, 16
+                                        ; only bases 2, 8, 10, 16
 ($check-error (string->number "10" 3))
-; only strings
+                                        ; only strings
 ($check-error (string->number #inert))
 ($check-error (string->number #inert 2))
 ($check-error (string->number 2))
 ($check-error (string->number 2 8))
-; only base 10 with inexact numbers
+                                        ; only base 10 with inexact numbers
 ($check-error (string->number "-1.0" 2))
 ($check-error (string->number "1.25" 8))
 ($check-error (string->number "3.0" 16))
