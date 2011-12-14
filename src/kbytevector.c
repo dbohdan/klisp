@@ -18,10 +18,10 @@
 
 /* General constructor for bytevectors */
 TValue kbytevector_new_bs_g(klisp_State *K, bool m, const uint8_t *buf, 
-			uint32_t size)
+                            uint32_t size)
 {
     return m? kbytevector_new_bs(K, buf, size) :
-	kbytevector_new_bs_imm(K, buf, size);
+        kbytevector_new_bs_imm(K, buf, size);
 }
 
 /* 
@@ -34,24 +34,24 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     /* first check to see if it's in the stringtable */
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if bytevector is too long, don't hash all 
-			       its bytes */
+                                  its bytes */
     size_t size1;
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
-	h = h ^ ((h<<5)+(h>>2)+ buf[size1-1]);
+        h = h ^ ((h<<5)+(h>>2)+ buf[size1-1]);
 
     for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
-	 o != NULL; o = o->gch.next) {
-	klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
-		     o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
-		     
-	if (o->gch.tt != K_TBYTEVECTOR) continue;
+         o != NULL; o = o->gch.next) {
+        klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
+                     o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
+		        
+        if (o->gch.tt != K_TBYTEVECTOR) continue;
 
-	Bytevector *tb = (Bytevector *) o;
-	if (tb->size == size && (memcmp(buf, tb->b, size) == 0)) {
-	    /* bytevector may be dead */
-	    if (isdead(K, o)) changewhite(o);
-	    return gc2bytevector(o);
-	}
+        Bytevector *tb = (Bytevector *) o;
+        if (tb->size == size && (memcmp(buf, tb->b, size) == 0)) {
+            /* bytevector may be dead */
+            if (isdead(K, o)) changewhite(o);
+            return gc2bytevector(o);
+        }
     } 
 
     /* If it exits the loop, it means it wasn't found, hash is still in h */
@@ -59,7 +59,7 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     Bytevector *new_bb;
 
     if (size > (SIZE_MAX - sizeof(Bytevector)))
-	klispM_toobig(K);
+        klispM_toobig(K);
 
     new_bb = (Bytevector *) klispM_malloc(K, sizeof(Bytevector) + size);
 
@@ -77,7 +77,7 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     new_bb->size = size;
 
     if (size != 0) {
-	memcpy(new_bb->b, buf, size);
+        memcpy(new_bb->b, buf, size);
     }
     
     /* add to the string/symbol table (and link it) */
@@ -89,9 +89,9 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     tb->nuse++;
     TValue ret_tv = gc2bytevector(new_bb);
     if (tb->nuse > ((uint32_t) tb->size) && tb->size <= INT32_MAX / 2) {
-	krooted_tvs_push(K, ret_tv); /* save in case of gc */
-	klispS_resize(K, tb->size*2);  /* too crowded */
-	krooted_tvs_pop(K);
+        krooted_tvs_push(K, ret_tv); /* save in case of gc */
+        klispS_resize(K, tb->size*2);  /* too crowded */
+        krooted_tvs_pop(K);
     }
     
     return ret_tv;
@@ -108,8 +108,8 @@ TValue kbytevector_new_s(klisp_State *K, uint32_t size)
     Bytevector *new_bb;
 
     if (size == 0) {
-	klisp_assert(ttisbytevector(K->empty_bytevector));
-	return K->empty_bytevector;
+        klisp_assert(ttisbytevector(K->empty_bytevector));
+        return K->empty_bytevector;
     }
 
     new_bb = klispM_malloc(K, sizeof(Bytevector) + size);
@@ -130,8 +130,8 @@ TValue kbytevector_new_s(klisp_State *K, uint32_t size)
 TValue kbytevector_new_bs(klisp_State *K, const uint8_t *buf, uint32_t size)
 {
     if (size == 0) {
-	klisp_assert(ttisbytevector(K->empty_bytevector));
-	return K->empty_bytevector;
+        klisp_assert(ttisbytevector(K->empty_bytevector));
+        return K->empty_bytevector;
     }
 
     TValue new_bb = kbytevector_new_s(K, size);
@@ -143,8 +143,8 @@ TValue kbytevector_new_bs(klisp_State *K, const uint8_t *buf, uint32_t size)
 TValue kbytevector_new_sf(klisp_State *K, uint32_t size, uint8_t fill)
 {
     if (size == 0) {
-	klisp_assert(ttisbytevector(K->empty_bytevector));
-	return K->empty_bytevector;
+        klisp_assert(ttisbytevector(K->empty_bytevector));
+        return K->empty_bytevector;
     }
 
     TValue new_bb = kbytevector_new_s(K, size);
@@ -161,10 +161,10 @@ bool kbytevector_equalp(TValue obj1, TValue obj2)
     Bytevector *bytevector2 = tv2bytevector(obj2);
 
     if (bytevector1->size == bytevector2->size) {
-	return (bytevector1->size == 0) ||
-	    (memcmp(bytevector1->b, bytevector2->b, bytevector1->size) == 0);
+        return (bytevector1->size == 0) ||
+            (memcmp(bytevector1->b, bytevector2->b, bytevector1->size) == 0);
     } else {
-	return false;
+        return false;
     }
 }
 

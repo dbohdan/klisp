@@ -457,9 +457,10 @@ static int dorfile(klisp_State *K, const char *name)
        and return #inert instead, it will also signal via rootp = false
        that the evaluation didn't explicitly invoke the root continuation
     */
+    /* XXX for now, GC protect the environment in this discard continuation */
+    /* TODO use a more elegant way! */
     TValue discard_cont = kmake_continuation(K, inner_cont, do_int_mark_root,
-                                             1, p2tv(&rootp));
-
+                                             2, p2tv(&rootp), K->next_env);
     krooted_tvs_pop(K); /* pop inner cont */
 
     /* set the cont & call require */

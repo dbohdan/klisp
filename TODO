@@ -1,13 +1,9 @@
 * Release 0.3
 ** modules:
 *** simple modules (something inspired in r7rs) (r7rs)
-*** add modules support to the interpreter (r7rs)
 ** documentation:
 *** update the manual with the current features
 *** add a section to the manual with the interpreter usage
-** refactor
-*** convert all tabs to spaces (use sed)
-
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter

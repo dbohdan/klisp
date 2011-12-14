@@ -26,7 +26,7 @@
 /* {{{ Useful macros */
 
 #define TEMP(K) (temp + (K))
-#define SETUP(E, C)						\
+#define SETUP(E, C)                                             \
     do{if((res = (E)) != MP_OK) goto CLEANUP; ++(C);}while(0)
 
 /* Argument checking:
@@ -43,8 +43,8 @@ static mp_result s_rat_reduce(klisp_State *K, mp_rat r);
 
 /* Common code for addition and subtraction operations on rationals. */
 static mp_result s_rat_combine(klisp_State *K, mp_rat a, mp_rat b, mp_rat c, 
-			       mp_result (*comb_f)
-			       (klisp_State *,mp_int, mp_int, mp_int));
+                               mp_result (*comb_f)
+                               (klisp_State *,mp_int, mp_int, mp_int));
 
 /* {{{ mp_rat_init(r) */
 
@@ -62,10 +62,10 @@ mp_rat mp_rat_alloc(klisp_State *K)
     mp_rat out = klispM_new(K, mpq_t);
     
     if(out != NULL) {
-	if(mp_rat_init(K, out) != MP_OK) {
-	    klispM_free(K, out); 
-	    return NULL;
-	}
+        if(mp_rat_init(K, out) != MP_OK) {
+            klispM_free(K, out); 
+            return NULL;
+        }
     }
 
     return out;
@@ -76,15 +76,15 @@ mp_rat mp_rat_alloc(klisp_State *K)
 /* {{{ mp_rat_init_size(r, n_prec, d_prec) */
 
 mp_result mp_rat_init_size(klisp_State *K, mp_rat r, mp_size n_prec, 
-			   mp_size d_prec)
+                           mp_size d_prec)
 {
     mp_result res;
 
     if((res = mp_int_init_size(K, MP_NUMER_P(r), n_prec)) != MP_OK)
-	return res;
+        return res;
     if((res = mp_int_init_size(K, MP_DENOM_P(r), d_prec)) != MP_OK) {
-	mp_int_clear(K, MP_NUMER_P(r));
-	return res;
+        mp_int_clear(K, MP_NUMER_P(r));
+        return res;
     }
   
     return mp_int_set_value(K, MP_DENOM_P(r), 1);
@@ -99,9 +99,9 @@ mp_result mp_rat_init_copy(klisp_State *K, mp_rat r, mp_rat old)
     mp_result res;
 
     if((res = mp_int_init_copy(K, MP_NUMER_P(r), MP_NUMER_P(old))) != MP_OK)
-	return res;
+        return res;
     if((res = mp_int_init_copy(K, MP_DENOM_P(r), MP_DENOM_P(old))) != MP_OK) 
-	mp_int_clear(K, MP_NUMER_P(r));
+        mp_int_clear(K, MP_NUMER_P(r));
   
     return res;
 }
@@ -115,12 +115,12 @@ mp_result mp_rat_set_value(klisp_State *K, mp_rat r, int numer, int denom)
     mp_result res;
 
     if(denom == 0)
-	return MP_UNDEF;
+        return MP_UNDEF;
 
     if((res = mp_int_set_value(K, MP_NUMER_P(r), numer)) != MP_OK)
-	return res;
+        return res;
     if((res = mp_int_set_value(K, MP_DENOM_P(r), denom)) != MP_OK)
-	return res;
+        return res;
 
     return s_rat_reduce(K, r);
 }
@@ -129,7 +129,7 @@ mp_result mp_rat_set_value(klisp_State *K, mp_rat r, int numer, int denom)
 
 /* {{{ mp_rat_clear(r) */
 
-void      mp_rat_clear(klisp_State *K, mp_rat r)
+void         mp_rat_clear(klisp_State *K, mp_rat r)
 {
     mp_int_clear(K, MP_NUMER_P(r));
     mp_int_clear(K, MP_DENOM_P(r));
@@ -139,14 +139,14 @@ void      mp_rat_clear(klisp_State *K, mp_rat r)
 
 /* {{{ mp_rat_free(r) */
 
-void      mp_rat_free(klisp_State *K, mp_rat r)
+void         mp_rat_free(klisp_State *K, mp_rat r)
 {
     NRCHECK(r != NULL);
   
     if(r->num.digits != NULL)
-	mp_rat_clear(K, r);
+        mp_rat_clear(K, r);
 
-    klispM_free(K, r);     
+    klispM_free(K, r);        
 }
 
 /* }}} */
@@ -185,7 +185,7 @@ mp_result mp_rat_copy(klisp_State *K, mp_rat a, mp_rat c)
     mp_result res;
 
     if((res = mp_int_copy(K, MP_NUMER_P(a), MP_NUMER_P(c))) != MP_OK)
-	return res;
+        return res;
   
     res = mp_int_copy(K, MP_DENOM_P(a), MP_DENOM_P(c));
     return res;
@@ -195,7 +195,7 @@ mp_result mp_rat_copy(klisp_State *K, mp_rat a, mp_rat c)
 
 /* {{{ mp_rat_zero(r) */
 
-void      mp_rat_zero(klisp_State *K, mp_rat r)
+void         mp_rat_zero(klisp_State *K, mp_rat r)
 {
     mp_int_zero(MP_NUMER_P(r));
     mp_int_set_value(K, MP_DENOM_P(r), 1);  
@@ -210,7 +210,7 @@ mp_result mp_rat_abs(klisp_State *K, mp_rat a, mp_rat c)
     mp_result res;
 
     if((res = mp_int_abs(K, MP_NUMER_P(a), MP_NUMER_P(c))) != MP_OK)
-	return res;
+        return res;
   
     res = mp_int_abs(K, MP_DENOM_P(a), MP_DENOM_P(c));
     return res;
@@ -225,8 +225,8 @@ mp_result mp_rat_neg(klisp_State *K, mp_rat a, mp_rat c)
     mp_result res;
 
     if((res = mp_int_neg(K, MP_NUMER_P(a), 
-			 MP_NUMER_P(c))) != MP_OK)
-	return res;
+                         MP_NUMER_P(c))) != MP_OK)
+        return res;
 
     res = mp_int_copy(K, MP_DENOM_P(a), MP_DENOM_P(c));
     return res;
@@ -241,19 +241,19 @@ mp_result mp_rat_recip(klisp_State *K, mp_rat a, mp_rat c)
     mp_result res;
 
     if(mp_rat_compare_zero(a) == 0)
-	return MP_UNDEF;
+        return MP_UNDEF;
 
     if((res = mp_rat_copy(K, a, c)) != MP_OK)
-	return res;
+        return res;
 
     mp_int_swap(MP_NUMER_P(c), MP_DENOM_P(c));
 
     /* Restore the signs of the swapped elements */
     {
-	mp_sign tmp = MP_SIGN(MP_NUMER_P(c));
+        mp_sign tmp = MP_SIGN(MP_NUMER_P(c));
 
-	MP_SIGN(MP_NUMER_P(c)) = MP_SIGN(MP_DENOM_P(c));
-	MP_SIGN(MP_DENOM_P(c)) = tmp;
+        MP_SIGN(MP_NUMER_P(c)) = MP_SIGN(MP_DENOM_P(c));
+        MP_SIGN(MP_DENOM_P(c)) = tmp;
     }
 
     return MP_OK;
@@ -288,13 +288,13 @@ mp_result mp_rat_mul(klisp_State *K, mp_rat a, mp_rat b, mp_rat c)
     mp_result res;
 
     if((res = mp_int_mul(K, MP_NUMER_P(a), MP_NUMER_P(b), 
-			 MP_NUMER_P(c))) != MP_OK)
-	return res;
+                         MP_NUMER_P(c))) != MP_OK)
+        return res;
 
     if(mp_int_compare_zero(MP_NUMER_P(c)) != 0) {
-	if((res = mp_int_mul(K, MP_DENOM_P(a), MP_DENOM_P(b), 
-			     MP_DENOM_P(c))) != MP_OK)
-	    return res;
+        if((res = mp_int_mul(K, MP_DENOM_P(a), MP_DENOM_P(b), 
+                             MP_DENOM_P(c))) != MP_OK)
+            return res;
     }
 
     return s_rat_reduce(K, c);
@@ -309,35 +309,35 @@ mp_result mp_rat_div(klisp_State *K, mp_rat a, mp_rat b, mp_rat c)
     mp_result res = MP_OK;
 
     if(mp_rat_compare_zero(b) == 0)
-	return MP_UNDEF;
+        return MP_UNDEF;
 
     if(c == a || c == b) {
-	mpz_t tmp;
+        mpz_t tmp;
 
-	if((res = mp_int_init(&tmp)) != MP_OK) return res;
-	if((res = mp_int_mul(K, MP_NUMER_P(a), MP_DENOM_P(b), &tmp)) != MP_OK) 
-	    goto CLEANUP;
-	if((res = mp_int_mul(K, MP_DENOM_P(a), MP_NUMER_P(b), 
-			     MP_DENOM_P(c))) != MP_OK)
-	    goto CLEANUP;
-	res = mp_int_copy(K, &tmp, MP_NUMER_P(c));
+        if((res = mp_int_init(&tmp)) != MP_OK) return res;
+        if((res = mp_int_mul(K, MP_NUMER_P(a), MP_DENOM_P(b), &tmp)) != MP_OK) 
+            goto CLEANUP;
+        if((res = mp_int_mul(K, MP_DENOM_P(a), MP_NUMER_P(b), 
+                             MP_DENOM_P(c))) != MP_OK)
+            goto CLEANUP;
+        res = mp_int_copy(K, &tmp, MP_NUMER_P(c));
 
     CLEANUP:
-	mp_int_clear(K, &tmp);
+        mp_int_clear(K, &tmp);
     }
     else {
-	if((res = mp_int_mul(K, MP_NUMER_P(a), MP_DENOM_P(b), 
-			     MP_NUMER_P(c))) != MP_OK)
-	    return res;
-	if((res = mp_int_mul(K, MP_DENOM_P(a), MP_NUMER_P(b), 
-			     MP_DENOM_P(c))) != MP_OK)
-	    return res;
+        if((res = mp_int_mul(K, MP_NUMER_P(a), MP_DENOM_P(b), 
+                             MP_NUMER_P(c))) != MP_OK)
+            return res;
+        if((res = mp_int_mul(K, MP_DENOM_P(a), MP_NUMER_P(b), 
+                             MP_DENOM_P(c))) != MP_OK)
+            return res;
     }
 
     if(res != MP_OK)
-	return res;
+        return res;
     else
-	return s_rat_reduce(K, c);
+        return s_rat_reduce(K, c);
 }
 
 /* }}} */
@@ -350,16 +350,16 @@ mp_result mp_rat_add_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c)
     mp_result res;
 
     if((res = mp_int_init_copy(K, &tmp, b)) != MP_OK)
-	return res;
+        return res;
 
     if((res = mp_int_mul(K, &tmp, MP_DENOM_P(a), &tmp)) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
 
     if((res = mp_rat_copy(K, a, c)) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
 
     if((res = mp_int_add(K, MP_NUMER_P(c), &tmp, MP_NUMER_P(c))) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
 
     res = s_rat_reduce(K, c);
 
@@ -378,16 +378,16 @@ mp_result mp_rat_sub_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c)
     mp_result res;
 
     if((res = mp_int_init_copy(K, &tmp, b)) != MP_OK)
-	return res;
+        return res;
 
     if((res = mp_int_mul(K, &tmp, MP_DENOM_P(a), &tmp)) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
 
     if((res = mp_rat_copy(K, a, c)) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
 
     if((res = mp_int_sub(K, MP_NUMER_P(c), &tmp, MP_NUMER_P(c))) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
 
     res = s_rat_reduce(K, c);
 
@@ -405,10 +405,10 @@ mp_result mp_rat_mul_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c)
     mp_result res;
 
     if((res = mp_rat_copy(K, a, c)) != MP_OK)
-	return res;
+        return res;
 
     if((res = mp_int_mul(K, MP_NUMER_P(c), b, MP_NUMER_P(c))) != MP_OK)
-	return res;
+        return res;
 
     return s_rat_reduce(K, c);
 }
@@ -422,13 +422,13 @@ mp_result mp_rat_div_int(klisp_State *K, mp_rat a, mp_int b, mp_rat c)
     mp_result res;
 
     if(mp_int_compare_zero(b) == 0)
-	return MP_UNDEF;
+        return MP_UNDEF;
 
     if((res = mp_rat_copy(K, a, c)) != MP_OK)
-	return res;
+        return res;
 
     if((res = mp_int_mul(K, MP_DENOM_P(c), b, MP_DENOM_P(c))) != MP_OK)
-	return res;
+        return res;
 
     return s_rat_reduce(K, c);
 }
@@ -443,14 +443,14 @@ mp_result mp_rat_expt(klisp_State *K, mp_rat a, mp_small b, mp_rat c)
 
     /* Special cases for easy powers. */
     if(b == 0)
-	return mp_rat_set_value(K, c, 1, 1);
+        return mp_rat_set_value(K, c, 1, 1);
     else if(b == 1)
-	return mp_rat_copy(K, a, c);
+        return mp_rat_copy(K, a, c);
 
     /* Since rationals are always stored in lowest terms, it is not
        necessary to reduce again when raising to an integer power. */
     if((res = mp_int_expt(K, MP_NUMER_P(a), b, MP_NUMER_P(c))) != MP_OK)
-	return res;
+        return res;
 
     return mp_int_expt(K, MP_DENOM_P(a), b, MP_DENOM_P(c));
 }
@@ -459,25 +459,25 @@ mp_result mp_rat_expt(klisp_State *K, mp_rat a, mp_small b, mp_rat c)
 
 /* {{{ mp_rat_compare(a, b) */
 
-int       mp_rat_compare(klisp_State *K, mp_rat a, mp_rat b)
+int          mp_rat_compare(klisp_State *K, mp_rat a, mp_rat b)
 {
     /* Quick check for opposite signs.  Works because the sign of the
        numerator is always definitive. */
     if(MP_SIGN(MP_NUMER_P(a)) != MP_SIGN(MP_NUMER_P(b))) {
-	if(MP_SIGN(MP_NUMER_P(a)) == MP_ZPOS)
-	    return 1;
-	else
-	    return -1;
+        if(MP_SIGN(MP_NUMER_P(a)) == MP_ZPOS)
+            return 1;
+        else
+            return -1;
     }
     else {
-	/* Compare absolute magnitudes; if both are positive, the answer
-	   stands, otherwise it needs to be reflected about zero. */
-	int cmp = mp_rat_compare_unsigned(K, a, b);
+        /* Compare absolute magnitudes; if both are positive, the answer
+           stands, otherwise it needs to be reflected about zero. */
+        int cmp = mp_rat_compare_unsigned(K, a, b);
 
-	if(MP_SIGN(MP_NUMER_P(a)) == MP_ZPOS)
-	    return cmp;
-	else
-	    return -cmp;
+        if(MP_SIGN(MP_NUMER_P(a)) == MP_ZPOS)
+            return cmp;
+        else
+            return -cmp;
     }
 }
 
@@ -485,33 +485,33 @@ int       mp_rat_compare(klisp_State *K, mp_rat a, mp_rat b)
 
 /* {{{ mp_rat_compare_unsigned(a, b) */
 
-int       mp_rat_compare_unsigned(klisp_State *K, mp_rat a, mp_rat b)
+int          mp_rat_compare_unsigned(klisp_State *K, mp_rat a, mp_rat b)
 {
     /* If the denominators are equal, we can quickly compare numerators
        without multiplying.  Otherwise, we actually have to do some work. */
     if(mp_int_compare_unsigned(MP_DENOM_P(a), MP_DENOM_P(b)) == 0)
-	return mp_int_compare_unsigned(MP_NUMER_P(a), MP_NUMER_P(b));
+        return mp_int_compare_unsigned(MP_NUMER_P(a), MP_NUMER_P(b));
 
     else {
-	mpz_t  temp[2];
-	mp_result res;
-	int  cmp = INT_MAX, last = 0;
+        mpz_t  temp[2];
+        mp_result res;
+        int  cmp = INT_MAX, last = 0;
 
-	/* t0 = num(a) * den(b), t1 = num(b) * den(a) */
-	SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(a)), last);
-	SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(b)), last);
+        /* t0 = num(a) * den(b), t1 = num(b) * den(a) */
+        SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(a)), last);
+        SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(b)), last);
 
-	if((res = mp_int_mul(K, TEMP(0), MP_DENOM_P(b), TEMP(0))) != MP_OK ||
-	   (res = mp_int_mul(K, TEMP(1), MP_DENOM_P(a), TEMP(1))) != MP_OK)
-	    goto CLEANUP;
+        if((res = mp_int_mul(K, TEMP(0), MP_DENOM_P(b), TEMP(0))) != MP_OK ||
+           (res = mp_int_mul(K, TEMP(1), MP_DENOM_P(a), TEMP(1))) != MP_OK)
+            goto CLEANUP;
     
-	cmp = mp_int_compare_unsigned(TEMP(0), TEMP(1));
+        cmp = mp_int_compare_unsigned(TEMP(0), TEMP(1));
     
     CLEANUP:
-	while(--last >= 0)
-	    mp_int_clear(K, TEMP(last));
+        while(--last >= 0)
+            mp_int_clear(K, TEMP(last));
 
-	return cmp;
+        return cmp;
     }
 }
 
@@ -519,7 +519,7 @@ int       mp_rat_compare_unsigned(klisp_State *K, mp_rat a, mp_rat b)
 
 /* {{{ mp_rat_compare_zero(r) */
 
-int       mp_rat_compare_zero(mp_rat r)
+int          mp_rat_compare_zero(mp_rat r)
 {
     return mp_int_compare_zero(MP_NUMER_P(r));
 
@@ -536,9 +536,9 @@ int mp_rat_compare_value(klisp_State *K, mp_rat r, mp_small n, mp_small d)
     int  out = INT_MAX;
 
     if((res = mp_rat_init(K, &tmp)) != MP_OK)
-	return out;
+        return out;
     if((res = mp_rat_set_value(K, &tmp, n, d)) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
   
     out = mp_rat_compare(K, r, &tmp);
   
@@ -551,7 +551,7 @@ CLEANUP:
 
 /* {{{ mp_rat_is_integer(r) */
 
-int       mp_rat_is_integer(mp_rat r)
+int          mp_rat_is_integer(mp_rat r)
 {
     return (mp_int_compare_value(MP_DENOM_P(r), 1) == 0);
 }
@@ -565,7 +565,7 @@ mp_result mp_rat_to_ints(mp_rat r, mp_small *num, mp_small *den)
     mp_result res;
 
     if((res = mp_int_to_int(MP_NUMER_P(r), num)) != MP_OK)
-	return res;
+        return res;
 
     res = mp_int_to_int(MP_DENOM_P(r), den);
     return res;
@@ -576,7 +576,7 @@ mp_result mp_rat_to_ints(mp_rat r, mp_small *num, mp_small *den)
 /* {{{ mp_rat_to_string(r, radix, *str, limit) */
 
 mp_result mp_rat_to_string(klisp_State *K, mp_rat r, mp_size radix, char *str, 
-			   int limit)
+                           int limit)
 {
     char *start;
     int   len;
@@ -585,11 +585,11 @@ mp_result mp_rat_to_string(klisp_State *K, mp_rat r, mp_size radix, char *str,
     /* Write the numerator.  The sign of the rational number is written
        by the underlying integer implementation. */
     if((res = mp_int_to_string(K, MP_NUMER_P(r), radix, str, limit)) != MP_OK)
-	return res;
+        return res;
 
     /* If the value is zero, don't bother writing any denominator */
     if(mp_int_compare_zero(MP_NUMER_P(r)) == 0)
-	return MP_OK;
+        return MP_OK;
   
     /* Locate the end of the numerator, and make sure we are not going to 
        exceed the limit by writing a slash. */
@@ -597,7 +597,7 @@ mp_result mp_rat_to_string(klisp_State *K, mp_rat r, mp_size radix, char *str,
     start = str + len;
     limit -= len;
     if(limit == 0)
-	return MP_TRUNC;
+        return MP_TRUNC;
 
     *start++ = '/';
     limit -= 1;
@@ -610,8 +610,8 @@ mp_result mp_rat_to_string(klisp_State *K, mp_rat r, mp_size radix, char *str,
 
 /* {{{ mp_rat_to_decimal(r, radix, prec, *str, limit) */
 mp_result mp_rat_to_decimal(klisp_State *K, mp_rat r, mp_size radix, 
-			    mp_size prec, mp_round_mode round, char *str, 
-			    int limit)
+                            mp_size prec, mp_round_mode round, char *str, 
+                            int limit)
 {
     mpz_t temp[3];
     mp_result res;
@@ -626,31 +626,31 @@ mp_result mp_rat_to_decimal(klisp_State *K, mp_rat r, mp_size radix,
        absolute value of the numerator. */
     mp_int_abs(K, TEMP(0), TEMP(0));
     if((res = mp_int_div(K, TEMP(0), MP_DENOM_P(r), TEMP(0), 
-			 TEMP(1))) != MP_OK)
-	goto CLEANUP;
+                         TEMP(1))) != MP_OK)
+        goto CLEANUP;
 
     /* Now:  T0 = integer portion, unsigned;
        T1 = remainder, from which fractional part is computed. */
 
     /* Count up leading zeroes after the radix point. */
     for(lead_0 = 0; lead_0 < prec && mp_int_compare(TEMP(1), MP_DENOM_P(r)) < 0; 
-	++lead_0) {
-	if((res = mp_int_mul_value(K, TEMP(1), radix, TEMP(1))) != MP_OK)
-	    goto CLEANUP;
+        ++lead_0) {
+        if((res = mp_int_mul_value(K, TEMP(1), radix, TEMP(1))) != MP_OK)
+            goto CLEANUP;
     }
 
     /* Multiply remainder by a power of the radix sufficient to get the
        right number of significant figures. */
     if(prec > lead_0) {
-	if((res = mp_int_expt_value(K, radix, prec - lead_0, 
-				    TEMP(2))) != MP_OK)
-	    goto CLEANUP;
-	if((res = mp_int_mul(K, TEMP(1), TEMP(2), TEMP(1))) != MP_OK)
-	    goto CLEANUP;
+        if((res = mp_int_expt_value(K, radix, prec - lead_0, 
+                                    TEMP(2))) != MP_OK)
+            goto CLEANUP;
+        if((res = mp_int_mul(K, TEMP(1), TEMP(2), TEMP(1))) != MP_OK)
+            goto CLEANUP;
     }
     if((res = mp_int_div(K, TEMP(1), MP_DENOM_P(r), TEMP(1), 
-			 TEMP(2))) != MP_OK)
-	goto CLEANUP;
+                         TEMP(2))) != MP_OK)
+        goto CLEANUP;
 
     /* Now:  T1 = significant digits of fractional part;
        T2 = leftovers, to use for rounding. 
@@ -660,40 +660,40 @@ mp_result mp_rat_to_decimal(klisp_State *K, mp_rat r, mp_size radix,
        already.
     */
     switch(round) {
-	int cmp;
+        int cmp;
 
     case MP_ROUND_UP:
-	if(mp_int_compare_zero(TEMP(2)) != 0) {
-	    if(prec == 0)
-		res = mp_int_add_value(K, TEMP(0), 1, TEMP(0));
-	    else
-		res = mp_int_add_value(K, TEMP(1), 1, TEMP(1));
-	}
-	break;
+        if(mp_int_compare_zero(TEMP(2)) != 0) {
+            if(prec == 0)
+                res = mp_int_add_value(K, TEMP(0), 1, TEMP(0));
+            else
+                res = mp_int_add_value(K, TEMP(1), 1, TEMP(1));
+        }
+        break;
 
     case MP_ROUND_HALF_UP:
     case MP_ROUND_HALF_DOWN:
-	if((res = mp_int_mul_pow2(K, TEMP(2), 1, TEMP(2))) != MP_OK)
-	    goto CLEANUP;
+        if((res = mp_int_mul_pow2(K, TEMP(2), 1, TEMP(2))) != MP_OK)
+            goto CLEANUP;
 
-	cmp = mp_int_compare(TEMP(2), MP_DENOM_P(r));    
+        cmp = mp_int_compare(TEMP(2), MP_DENOM_P(r));    
 
-	if(round == MP_ROUND_HALF_UP)
-	    cmp += 1;
+        if(round == MP_ROUND_HALF_UP)
+            cmp += 1;
 
-	if(cmp > 0) {
-	    if(prec == 0)
-		res = mp_int_add_value(K, TEMP(0), 1, TEMP(0));
-	    else
-		res = mp_int_add_value(K, TEMP(1), 1, TEMP(1));
-	}
-	break;
+        if(cmp > 0) {
+            if(prec == 0)
+                res = mp_int_add_value(K, TEMP(0), 1, TEMP(0));
+            else
+                res = mp_int_add_value(K, TEMP(1), 1, TEMP(1));
+        }
+        break;
     
     case MP_ROUND_DOWN:
-	break;  /* No action required */
+        break;  /* No action required */
 
     default: 
-	return MP_BADARG; /* Invalid rounding specifier */
+        return MP_BADARG; /* Invalid rounding specifier */
     }
 
     /* The sign of the output should be the sign of the numerator, but
@@ -701,27 +701,27 @@ mp_result mp_rat_to_decimal(klisp_State *K, mp_rat r, mp_size radix,
        negative shouldn't be shown. */
     if(MP_SIGN(MP_NUMER_P(r)) == MP_NEG &&
        (mp_int_compare_zero(TEMP(0)) != 0 ||
-	mp_int_compare_zero(TEMP(1)) != 0)) {
-	*start++ = '-';
-	left -= 1;
+        mp_int_compare_zero(TEMP(1)) != 0)) {
+        *start++ = '-';
+        left -= 1;
     }
 
     if((res = mp_int_to_string(K, TEMP(0), radix, start, left)) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
   
     len = strlen(start);
     start += len;
     left -= len;
   
     if(prec == 0) 
-	goto CLEANUP;
+        goto CLEANUP;
   
     *start++ = '.';
     left -= 1;
   
     if(left < prec + 1) {
-	res = MP_TRUNC;
-	goto CLEANUP;
+        res = MP_TRUNC;
+        goto CLEANUP;
     }
 
     memset(start, '0', lead_0 - 1);
@@ -732,7 +732,7 @@ mp_result mp_rat_to_decimal(klisp_State *K, mp_rat r, mp_size radix,
 
 CLEANUP:
     while(--last >= 0)
-	mp_int_clear(K, TEMP(last));
+        mp_int_clear(K, TEMP(last));
   
     return res;
 }
@@ -748,7 +748,7 @@ mp_result mp_rat_string_len(mp_rat r, mp_size radix)
     n_len = mp_int_string_len(MP_NUMER_P(r), radix);
 
     if(mp_int_compare_zero(MP_NUMER_P(r)) != 0)
-	d_len = mp_int_string_len(MP_DENOM_P(r), radix);
+        d_len = mp_int_string_len(MP_DENOM_P(r), radix);
 
     /* Though simplistic, this formula is correct.  Space for the sign
        flag is included in n_len, and the space for the NUL that is
@@ -770,9 +770,9 @@ mp_result mp_rat_decimal_len(mp_rat r, mp_size radix, mp_size prec)
     z_len = mp_int_string_len(MP_NUMER_P(r), radix);
   
     if(prec == 0)
-	f_len = 1; /* terminator only */
+        f_len = 1; /* terminator only */
     else
-	f_len = 1 + prec + 1; /* decimal point, digits, terminator */
+        f_len = 1 + prec + 1; /* decimal point, digits, terminator */
   
     return z_len + f_len;
 }
@@ -782,7 +782,7 @@ mp_result mp_rat_decimal_len(mp_rat r, mp_size radix, mp_size prec)
 /* {{{ mp_rat_read_string(r, radix, *str) */
 
 mp_result mp_rat_read_string(klisp_State *K, mp_rat r, mp_size radix, 
-			     const char *str)
+                             const char *str)
 {
     return mp_rat_read_cstring(K, r, radix, str, NULL);
 }
@@ -792,34 +792,34 @@ mp_result mp_rat_read_string(klisp_State *K, mp_rat r, mp_size radix,
 /* {{{ mp_rat_read_cstring(r, radix, *str, **end) */
 
 mp_result mp_rat_read_cstring(klisp_State *K, mp_rat r, mp_size radix, 
-			      const char *str, char **end)
+                              const char *str, char **end)
 {
     mp_result res;
     char *endp;
 
     if((res = mp_int_read_cstring(K, MP_NUMER_P(r), radix, str, 
-				  &endp)) != MP_OK && (res != MP_TRUNC))
-	return res;
+                                  &endp)) != MP_OK && (res != MP_TRUNC))
+        return res;
 
     /* Skip whitespace between numerator and (possible) separator */
     while(isspace((unsigned char) *endp))
-	++endp;
+        ++endp;
   
     /* If there is no separator, we will stop reading at this point. */
     if(*endp != '/') {
-	mp_int_set_value(K, MP_DENOM_P(r), 1);
-	if(end != NULL)
-	    *end = endp;
-	return res;
+        mp_int_set_value(K, MP_DENOM_P(r), 1);
+        if(end != NULL)
+            *end = endp;
+        return res;
     }
   
     ++endp; /* skip separator */
     if((res = mp_int_read_cstring(K, MP_DENOM_P(r), radix, endp, end)) != MP_OK)
-	return res;
+        return res;
   
     /* Make sure the value is well-defined */
     if(mp_int_compare_zero(MP_DENOM_P(r)) == 0)
-	return MP_UNDEF;
+        return MP_UNDEF;
 
     /* Reduce to lowest terms */
     return s_rat_reduce(K, r);
@@ -835,25 +835,25 @@ mp_result mp_rat_read_cstring(klisp_State *K, mp_rat r, mp_size radix,
    This function will accept either a/b notation or decimal notation.
 */
 mp_result mp_rat_read_ustring(klisp_State *K, mp_rat r, mp_size radix, 
-			      const char *str, char **end)
+                              const char *str, char **end)
 {
-    char      *endp;
+    char         *endp;
     mp_result  res;
 
     if(radix == 0)
-	radix = 10;  /* default to decimal input */
+        radix = 10;  /* default to decimal input */
 
     if((res = mp_rat_read_cstring(K, r, radix, str, &endp)) != MP_OK) {
-	if(res == MP_TRUNC) {
-	    if(*endp == '.')
-		res = mp_rat_read_cdecimal(K, r, radix, str, &endp);
-	}
-	else
-	    return res;
+        if(res == MP_TRUNC) {
+            if(*endp == '.')
+                res = mp_rat_read_cdecimal(K, r, radix, str, &endp);
+        }
+        else
+            return res;
     }
 
     if(end != NULL)
-	*end = endp;
+        *end = endp;
 
     return res;
 }
@@ -863,7 +863,7 @@ mp_result mp_rat_read_ustring(klisp_State *K, mp_rat r, mp_size radix,
 /* {{{ mp_rat_read_decimal(r, radix, *str) */
 
 mp_result mp_rat_read_decimal(klisp_State *K, mp_rat r, mp_size radix, 
-			      const char *str)
+                              const char *str)
 {
     return mp_rat_read_cdecimal(K, r, radix, str, NULL);
 }
@@ -873,34 +873,34 @@ mp_result mp_rat_read_decimal(klisp_State *K, mp_rat r, mp_size radix,
 /* {{{ mp_rat_read_cdecimal(r, radix, *str, **end) */
 
 mp_result mp_rat_read_cdecimal(klisp_State *K, mp_rat r, mp_size radix, 
-			       const char *str, char **end)
+                               const char *str, char **end)
 {
     mp_result res;
     mp_sign   osign;
     char *endp;
 
     while(isspace((unsigned char) *str))
-	++str;
+        ++str;
   
     switch(*str) {
     case '-':
-	osign = MP_NEG;
-	break;
+        osign = MP_NEG;
+        break;
     default:
-	osign = MP_ZPOS;
+        osign = MP_ZPOS;
     }
   
     if((res = mp_int_read_cstring(K, MP_NUMER_P(r), radix, str, 
-				  &endp)) != MP_OK && (res != MP_TRUNC))
-	return res;
+                                  &endp)) != MP_OK && (res != MP_TRUNC))
+        return res;
 
     /* This needs to be here. */
     (void) mp_int_set_value(K, MP_DENOM_P(r), 1);
 
     if(*endp != '.') {
-	if(end != NULL)
-	    *end = endp;
-	return res;
+        if(end != NULL)
+            *end = endp;
+        return res;
     }
 
     /* If the character following the decimal point is whitespace or a
@@ -914,92 +914,92 @@ mp_result mp_rat_read_cdecimal(klisp_State *K, mp_rat r, mp_size radix,
     */
     ++endp;
     if(*endp == '\0') {
-	if(end != NULL)
-	    *end = endp;
-	return MP_OK;
+        if(end != NULL)
+            *end = endp;
+        return MP_OK;
     }
     else if(isspace((unsigned char) *endp) || *endp == '-' || *endp == '+') {
-	return MP_TRUNC;
+        return MP_TRUNC;
     }
     else {
-	mpz_t  frac;
-	mp_result save_res;
-	char  *save = endp;
-	int    num_lz = 0;
+        mpz_t  frac;
+        mp_result save_res;
+        char  *save = endp;
+        int    num_lz = 0;
 
-	/* Make a temporary to hold the part after the decimal point. */
-	if((res = mp_int_init(&frac)) != MP_OK)
-	    return res;
+        /* Make a temporary to hold the part after the decimal point. */
+        if((res = mp_int_init(&frac)) != MP_OK)
+            return res;
     
-	if((res = mp_int_read_cstring(K, &frac, radix, endp, &endp)) != MP_OK &&
-	   (res != MP_TRUNC))
-	    goto CLEANUP;
+        if((res = mp_int_read_cstring(K, &frac, radix, endp, &endp)) != MP_OK &&
+           (res != MP_TRUNC))
+            goto CLEANUP;
 
-	/* Save this response for later. */
-	save_res = res;
+        /* Save this response for later. */
+        save_res = res;
 
-	if(mp_int_compare_zero(&frac) == 0)
-	    goto FINISHED;
+        if(mp_int_compare_zero(&frac) == 0)
+            goto FINISHED;
 
-	/* Discard trailing zeroes (somewhat inefficiently) */
-	while(mp_int_divisible_value(K, &frac, radix))
-	    if((res = mp_int_div_value(K, &frac, radix, &frac, NULL)) != MP_OK)
-		goto CLEANUP;
+        /* Discard trailing zeroes (somewhat inefficiently) */
+        while(mp_int_divisible_value(K, &frac, radix))
+            if((res = mp_int_div_value(K, &frac, radix, &frac, NULL)) != MP_OK)
+                goto CLEANUP;
     
-	/* Count leading zeros after the decimal point */
-	while(save[num_lz] == '0')
-	    ++num_lz;
+        /* Count leading zeros after the decimal point */
+        while(save[num_lz] == '0')
+            ++num_lz;
 
-	/* Find the least power of the radix that is at least as large as
-	   the significant value of the fractional part, ignoring leading
-	   zeroes.  */
-	(void) mp_int_set_value(K, MP_DENOM_P(r), radix); 
+        /* Find the least power of the radix that is at least as large as
+           the significant value of the fractional part, ignoring leading
+           zeroes.  */
+        (void) mp_int_set_value(K, MP_DENOM_P(r), radix); 
     
-	while(mp_int_compare(MP_DENOM_P(r), &frac) < 0) {
-	    if((res = mp_int_mul_value(K, MP_DENOM_P(r), radix, 
-				       MP_DENOM_P(r))) != MP_OK)
-		goto CLEANUP;
-	}
+        while(mp_int_compare(MP_DENOM_P(r), &frac) < 0) {
+            if((res = mp_int_mul_value(K, MP_DENOM_P(r), radix, 
+                                       MP_DENOM_P(r))) != MP_OK)
+                goto CLEANUP;
+        }
     
-	/* Also shift by enough to account for leading zeroes */
-	while(num_lz > 0) {
-	    if((res = mp_int_mul_value(K, MP_DENOM_P(r), radix, 
-				       MP_DENOM_P(r))) != MP_OK)
-		goto CLEANUP;
+        /* Also shift by enough to account for leading zeroes */
+        while(num_lz > 0) {
+            if((res = mp_int_mul_value(K, MP_DENOM_P(r), radix, 
+                                       MP_DENOM_P(r))) != MP_OK)
+                goto CLEANUP;
 
-	    --num_lz;
-	}
+            --num_lz;
+        }
 
-	/* Having found this power, shift the numerator leftward that
-	   many, digits, and add the nonzero significant digits of the
-	   fractional part to get the result. */
-	if((res = mp_int_mul(K, MP_NUMER_P(r), MP_DENOM_P(r), 
-			     MP_NUMER_P(r))) != MP_OK)
-	    goto CLEANUP;
+        /* Having found this power, shift the numerator leftward that
+           many, digits, and add the nonzero significant digits of the
+           fractional part to get the result. */
+        if((res = mp_int_mul(K, MP_NUMER_P(r), MP_DENOM_P(r), 
+                             MP_NUMER_P(r))) != MP_OK)
+            goto CLEANUP;
     
-	{ /* This addition needs to be unsigned. */
-	    MP_SIGN(MP_NUMER_P(r)) = MP_ZPOS;
-	    if((res = mp_int_add(K, MP_NUMER_P(r), &frac, 
-				 MP_NUMER_P(r))) != MP_OK)
-		goto CLEANUP;
+        { /* This addition needs to be unsigned. */
+            MP_SIGN(MP_NUMER_P(r)) = MP_ZPOS;
+            if((res = mp_int_add(K, MP_NUMER_P(r), &frac, 
+                                 MP_NUMER_P(r))) != MP_OK)
+                goto CLEANUP;
 
-	    MP_SIGN(MP_NUMER_P(r)) = osign;
-	}
-	if((res = s_rat_reduce(K, r)) != MP_OK)
-	    goto CLEANUP;
+            MP_SIGN(MP_NUMER_P(r)) = osign;
+        }
+        if((res = s_rat_reduce(K, r)) != MP_OK)
+            goto CLEANUP;
 
-	/* At this point, what we return depends on whether reading the
-	   fractional part was truncated or not.  That information is
-	   saved from when we called mp_int_read_string() above. */
+        /* At this point, what we return depends on whether reading the
+           fractional part was truncated or not.  That information is
+           saved from when we called mp_int_read_string() above. */
     FINISHED:
-	res = save_res;
-	if(end != NULL)
-	    *end = endp;
+        res = save_res;
+        if(end != NULL)
+            *end = endp;
 
     CLEANUP:
-	mp_int_clear(K, &frac);
+        mp_int_clear(K, &frac);
 
-	return res;
+        return res;
     }
 }
 
@@ -1016,33 +1016,33 @@ static mp_result s_rat_reduce(klisp_State *K, mp_rat r)
     mp_result res = MP_OK;
 
     if(mp_int_compare_zero(MP_NUMER_P(r)) == 0) {
-	mp_int_set_value(K, MP_DENOM_P(r), 1);
-	return MP_OK;
+        mp_int_set_value(K, MP_DENOM_P(r), 1);
+        return MP_OK;
     }
 
     /* If the greatest common divisor of the numerator and denominator
        is greater than 1, divide it out. */
     if((res = mp_int_init(&gcd)) != MP_OK)
-	return res;
+        return res;
 
     if((res = mp_int_gcd(K, MP_NUMER_P(r), MP_DENOM_P(r), &gcd)) != MP_OK)
-	goto CLEANUP;
+        goto CLEANUP;
 
     if(mp_int_compare_value(&gcd, 1) != 0) {
-	if((res = mp_int_div(K, MP_NUMER_P(r), &gcd, MP_NUMER_P(r), 
-			     NULL)) != MP_OK)
-	    goto CLEANUP;
-	if((res = mp_int_div(K, MP_DENOM_P(r), &gcd, MP_DENOM_P(r), 
-			     NULL)) != MP_OK)
-	    goto CLEANUP;
+        if((res = mp_int_div(K, MP_NUMER_P(r), &gcd, MP_NUMER_P(r), 
+                             NULL)) != MP_OK)
+            goto CLEANUP;
+        if((res = mp_int_div(K, MP_DENOM_P(r), &gcd, MP_DENOM_P(r), 
+                             NULL)) != MP_OK)
+            goto CLEANUP;
     }
 
     /* Fix up the signs of numerator and denominator */
     if(MP_SIGN(MP_NUMER_P(r)) == MP_SIGN(MP_DENOM_P(r)))
-	MP_SIGN(MP_NUMER_P(r)) = MP_SIGN(MP_DENOM_P(r)) = MP_ZPOS;
+        MP_SIGN(MP_NUMER_P(r)) = MP_SIGN(MP_DENOM_P(r)) = MP_ZPOS;
     else {
-	MP_SIGN(MP_NUMER_P(r)) = MP_NEG;
-	MP_SIGN(MP_DENOM_P(r)) = MP_ZPOS;
+        MP_SIGN(MP_NUMER_P(r)) = MP_NEG;
+        MP_SIGN(MP_DENOM_P(r)) = MP_ZPOS;
     }
 
 CLEANUP:
@@ -1056,45 +1056,45 @@ CLEANUP:
 /* {{{ s_rat_combine(a, b, c, comb_f) */
 
 static mp_result s_rat_combine(klisp_State *K, mp_rat a, mp_rat b, mp_rat c, 
-			       mp_result (*comb_f)(klisp_State *K, mp_int, 
-						   mp_int, mp_int))
+                               mp_result (*comb_f)(klisp_State *K, mp_int, 
+                                                   mp_int, mp_int))
 {
     mp_result res;
 
     /* Shortcut when denominators are already common */
     if(mp_int_compare(MP_DENOM_P(a), MP_DENOM_P(b)) == 0) {
-	if((res = (comb_f)(K, MP_NUMER_P(a), MP_NUMER_P(b), 
-			   MP_NUMER_P(c))) != MP_OK)
-	    return res;
-	if((res = mp_int_copy(K, MP_DENOM_P(a), MP_DENOM_P(c))) != MP_OK)
-	    return res;
+        if((res = (comb_f)(K, MP_NUMER_P(a), MP_NUMER_P(b), 
+                           MP_NUMER_P(c))) != MP_OK)
+            return res;
+        if((res = mp_int_copy(K, MP_DENOM_P(a), MP_DENOM_P(c))) != MP_OK)
+            return res;
     
-	return s_rat_reduce(K, c);
+        return s_rat_reduce(K, c);
     }
     else {
-	mpz_t  temp[2];
-	int    last = 0;
+        mpz_t  temp[2];
+        int    last = 0;
 
-	SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(a)), last);
-	SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(b)), last);
+        SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(a)), last);
+        SETUP(mp_int_init_copy(K, TEMP(last), MP_NUMER_P(b)), last);
     
-	if((res = mp_int_mul(K, TEMP(0), MP_DENOM_P(b), TEMP(0))) != MP_OK)
-	    goto CLEANUP;
-	if((res = mp_int_mul(K, TEMP(1), MP_DENOM_P(a), TEMP(1))) != MP_OK)
-	    goto CLEANUP;
-	if((res = (comb_f)(K, TEMP(0), TEMP(1), MP_NUMER_P(c))) != MP_OK)
-	    goto CLEANUP;
+        if((res = mp_int_mul(K, TEMP(0), MP_DENOM_P(b), TEMP(0))) != MP_OK)
+            goto CLEANUP;
+        if((res = mp_int_mul(K, TEMP(1), MP_DENOM_P(a), TEMP(1))) != MP_OK)
+            goto CLEANUP;
+        if((res = (comb_f)(K, TEMP(0), TEMP(1), MP_NUMER_P(c))) != MP_OK)
+            goto CLEANUP;
 
-	res = mp_int_mul(K, MP_DENOM_P(a), MP_DENOM_P(b), MP_DENOM_P(c));
+        res = mp_int_mul(K, MP_DENOM_P(a), MP_DENOM_P(b), MP_DENOM_P(c));
 
     CLEANUP:
-	while(--last >= 0) 
-	    mp_int_clear(K, TEMP(last));
+        while(--last >= 0) 
+            mp_int_clear(K, TEMP(last));
 
-	if(res == MP_OK)
-	    return s_rat_reduce(K, c);
-	else
-	    return res;
+        if(res == MP_OK)
+            return s_rat_reduce(K, c);
+        else
+            return res;
     }
 }
 

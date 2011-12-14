@@ -17,7 +17,7 @@ TValue kwrap(klisp_State *K, TValue underlying)
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_app, K_TAPPLICATIVE, 
-		K_FLAG_CAN_HAVE_NAME);
+                K_FLAG_CAN_HAVE_NAME);
 
     /* applicative specific fields */
     new_app->underlying = underlying;

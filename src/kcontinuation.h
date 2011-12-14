@@ -12,6 +12,6 @@
 
 /* TODO: make some specialized constructors for 0, 1 and 2 parameters */
 TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn, 
-			  int xcount, ...);
+                          int xcount, ...);
 
 #endif

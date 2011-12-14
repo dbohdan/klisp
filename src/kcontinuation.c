@@ -13,16 +13,16 @@
 #include "kgc.h"
 
 TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn, 
-			  int32_t xcount, ...)
+                          int32_t xcount, ...)
 {
     va_list argp;
 
     Continuation *new_cont = (Continuation *)
-	klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
+        klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
 
     /* header + gc_fields */
     klispC_link(K, (GCObject *) new_cont, K_TCONTINUATION, 
-		K_FLAG_CAN_HAVE_NAME);
+                K_FLAG_CAN_HAVE_NAME);
 
 
     /* continuation specific fields */
@@ -31,7 +31,7 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn,
 
     TValue comb = K->next_obj;
     if (ttiscontinuation(comb))
-	comb = tv2cont(comb)->comb;
+        comb = tv2cont(comb)->comb;
     new_cont->comb = comb;
 
     new_cont->fn = fn;
@@ -39,7 +39,7 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn,
 
     va_start(argp, xcount);
     for (int i = 0; i < xcount; i++) {
-	new_cont->extra[i] = va_arg(argp, TValue);
+        new_cont->extra[i] = va_arg(argp, TValue);
     }
     va_end(argp);
 

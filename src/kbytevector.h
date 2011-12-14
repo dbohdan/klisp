@@ -14,7 +14,7 @@
 
 /* General constructor for bytevectors */
 TValue kbytevector_new_bs_g(klisp_State *K, bool m, const uint8_t *buf, 
-			    uint32_t size);
+                            uint32_t size);
 
 /* 
 ** Constructors for immutable bytevectors
@@ -37,7 +37,7 @@ TValue kbytevector_new_bs(klisp_State *K, const uint8_t *buf, uint32_t size);
 TValue kbytevector_new_sf(klisp_State *K, uint32_t size, uint8_t fill);
 
 /* both obj1 and obj2 should be bytevectors, this compares byte by byte
-  and doesn't differentiate immutable from mutable bytevectors */
+   and doesn't differentiate immutable from mutable bytevectors */
 bool kbytevector_equalp(TValue obj1, TValue obj2);
 bool kbytevectorp(TValue obj);
 bool kimmutable_bytevectorp(TValue obj);
