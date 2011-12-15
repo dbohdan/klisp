@@ -94,6 +94,7 @@ permission is granted to copy it in whole or in part without fee.
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
 @c TODO lisp types and other introductions
+* Interpreter::             The klisp stand-alone interpreter
 * Booleans::                Booleans module features.
 * Equivalence::             Equivalence (under & up to) mutation modules features.
 * Symbols::                 Symbols module features.
@@ -120,6 +121,7 @@ permission is granted to copy it in whole or in part without fee.
 @end menu
 
 @include intro.texi
+@include interpreter.texi
 @include booleans.texi
 @include equivalence.texi
 @include symbols.texi

@@ -2,7 +2,7 @@
 # some of this is from the elisp manual
 
 srcs = klisp.texi index.texi \
-	intro.texi \
+	intro.texi interpreter.texi \
 	booleans.texi equivalence.texi symbols.texi \
 	control.texi pairs_lists.texi \
 	environments.texi combiners.texi \

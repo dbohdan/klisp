@@ -40,6 +40,7 @@ the header "Permission to copy this report", that reads:
 
 * License::                 Conditions for copying and changing klisp.
 * Introduction::            Introduction and conventions used.
+* Interpreter::             The klisp stand-alone interpreter
 * Booleans::                Booleans module features.
 * Equivalence::             Equivalence (under & up to) mutation modules features.
 * Symbols::                 Symbols module features.
@@ -98,7 +99,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-File: klisp.info,  Node: Introduction,  Next: Booleans,  Prev: License,  Up: Top
+File: klisp.info,  Node: Introduction,  Next: Interpreter,  Prev: License,  Up: Top
 
 1 Introduction
 **************
@@ -376,9 +377,132 @@ manual also borrows freely from both the Kernel Report and the Scheme
 Reports.
 
 
-File: klisp.info,  Node: Booleans,  Next: Equivalence,  Prev: Introduction,  Up: Top
+File: klisp.info,  Node: Interpreter,  Next: Booleans,  Prev: Introduction,  Up: Top
 
-2 Booleans
+2 Interpreter
+*************
+
+This section describes the `klisp', a Kernel Programming Language
+stand-alone interpreter.
+
+2.1 Invocation
+==============
+
+`klisp' is invoked like this:
+     klisp [options] [script]
+
+2.2 Description
+===============
+
+`klisp' is a stand-alone klisp interpreter for the Kernel Programming
+Language.  It loads and evaluates Kernel programs in textual source
+form.  `klisp' can be used as a batch interpreter and also
+interactively.  The given `options' (*note Command Line Options::) are
+evaluated and then the klisp program in file `script' is loaded and
+evaluated.  All evaluations mentioned, including the initialization
+that is described below, take place in the same (initially) standard
+environment. All values that result from these evaluation are
+discarded, but if the `root-continuation' or `error-continuation' are
+passed a value, the evaluation of `options' is interrupted and `klisp'
+terminates.  *Note Exit Status: Interpreter Exit Status, for a
+description of the exit status in each case.
+
+   The string `script' together with all arguments are available as a
+list of strings via the applicative `get-script-arguments'.  If these
+arguments contain spaces or other characters special to the shell, then
+they should be quoted (but note that the quotes will be removed by the
+shell).  The complete command line, including the name of the
+interpreter, options, the script, and its arguments are available as a
+list of strings via the applicative `get-interpreter-arguments'.
+
+   At the very beginning, before even handling the command line,
+`klisp' reads and evaluates the contents of the environment variable
+`KLISP_INIT', if it is defined.  To use an init file, just define
+`KLISP_INIT' to the following form: `(load "/path/to/init-file")'.
+Notice that `klisp' expects exactly one expression in `KLISP_INIT', if
+it is defined.  So it is an error to have no expressions or more than
+one in `KLISP_INIT'.  The same is true of the argument to the `-e'
+option, as both are implemented in terms of `string-eval'.
+
+   In interactive mode, `klisp' prompts the user, reads expressions
+from the standard input, and evaluates them as they are read. The
+default prompt is "klisp> ".
+
+2.3 Options
+===========
+
+Options start with `-' and are described below. You can use `--' to
+signal the end of options. If no arguments are given, then `-v'  `-i'
+is assumed when the standard input is a terminal; otherwise, `-' is
+assumed.  If no SCRIPT, or option `-e' or `-l' is given, `-i' is
+assumed.
+
+`-'
+     load and execute the standard input as a file, that is, not
+     interactively, even when the standard input is a terminal.  .TP
+
+`-e EXPR'
+     evaluate expression EXPR.  You need to quote EXPR if it contains
+     spaces, quotes, or other characters special to the shell.
+
+`-i'
+     enter interactive mode after SCRIPT is executed.
+
+`-l NAME'
+     evaluate `(load "name")' before SCRIPT is executed.  Typically
+     used to do environment initialization.
+
+`-r NAME'
+     evaluate `(require "name")' before SCRIPT is executed. Typically
+     used to load libraries.
+
+`-v'
+     show version and copyright information.
+
+
+2.4 Exit Status
+===============
+
+If the SCRIPT or `stdin' reach EOF or if there is no SCRIPT,
+`EXIT_SUCCESS' is returned.  If the ERROR-CONTINUATION is passed an
+object during init, arguments or script evaluation `EXIT_FAILURE' is
+returned.  If the ROOT-CONTINUATION is passed an object, `klisp' tries
+to convert the value passed to the ROOT-CONTINUATION to an exit status
+as follows:
+
+`integer'
+     If the value is an integer it is used as exit status.
+
+`boolean'
+     If the value is a boolean then `EXIT_SUCCESS' is returned for `#t'
+     and `EXIT_FAILURE' for `#f'.
+
+`inert'
+     If the value is inert, then `EXIT_SUCCESS' is returned.
+
+`else'
+     In any other case `EXIT_FAILURE' is returned.
+
+2.5 Environment Variables
+=========================
+
+The following environment variables affect the behaviour of `klisp'
+
+`KLISP_INIT'
+     A Kernel expression to be evaluated before any arguments to the
+     interpreter.  To use an init file, just define KLISP_INIT to the
+     following form `(load "/path/to/init-file")'
+
+`KLISP_PATH'
+     A colon separated list of templates for controlling the search of
+     required files.  Each template can use the char `?' to be replaced
+     by the required name at run-time.
+
+
+
+File: klisp.info,  Node: Booleans,  Next: Equivalence,  Prev: Interpreter,  Up: Top
+
+3 Booleans
 **********
 
 The boolean data type consists of two values, which are called true and
@@ -431,7 +555,7 @@ boolean type is encapsulated.
 
 File: klisp.info,  Node: Equivalence,  Next: Symbols,  Prev: Booleans,  Up: Top
 
-3 Equivalence
+4 Equivalence
 *************
 
 Kernel has two general-purpose equivalence predicates (whereas R5RS
@@ -452,7 +576,7 @@ equivalence in the presence of mutation (`eq?').
 
 File: klisp.info,  Node: Symbols,  Next: Control,  Prev: Equivalence,  Up: Top
 
-4 Symbols
+5 Symbols
 *********
 
 Two symbols are eq? iff they have the same external representation.
@@ -484,7 +608,7 @@ symbols with other external representations may be created.
 
 File: klisp.info,  Node: Control,  Next: Pairs and lists,  Prev: Symbols,  Up: Top
 
-5 Control
+6 Control
 *********
 
 The inert data type is provided for use with control combiners.  It
@@ -536,7 +660,7 @@ consists of a single immutable value, having external representation
 
 File: klisp.info,  Node: Pairs and lists,  Next: Environments,  Prev: Control,  Up: Top
 
-6 Pairs and lists
+7 Pairs and lists
 *****************
 
 A pair is an object that refers to two other objects, called its car
@@ -877,7 +1001,7 @@ output using, modulo whitespace, external representation `(1 2 3)'.
 
 File: klisp.info,  Node: Environments,  Next: Combiners,  Prev: Pairs and lists,  Up: Top
 
-7 Environments
+8 Environments
 **************
 
 An environment consists of a set of bindings, and a list of zero or
@@ -1047,7 +1171,8 @@ external representation `#ignore'.  The ignore type is encapsulated.
      environment, then evaluates `<exp1>' as a tail context in the
      environment that must result from the first evaluation.
 
- -- Operative: ($bindings-environment . <bindings>)
+ -- Operative: $bindings->environment ($bindings->environment .
+          <bindings>)
      `<bindings>' should be as described for `$let'.
 
      The following equivalence holds:
@@ -1097,7 +1222,7 @@ external representation `#ignore'.  The ignore type is encapsulated.
 
 File: klisp.info,  Node: Combiners,  Next: Continuations,  Prev: Environments,  Up: Top
 
-8 Combiners
+9 Combiners
 ***********
 
 There are two types of combiners in Kernel, operative and applicative.
@@ -1221,8 +1346,8 @@ combiners are `equal?' iff they are `eq?'.
 
 File: klisp.info,  Node: Continuations,  Next: Encapsulations,  Prev: Combiners,  Up: Top
 
-9 Continuations
-***************
+10 Continuations
+****************
 
 A continuation is a plan for all future computation, parameterized by a
 value to be provided, and contingent on the states of all mutable data
@@ -1360,7 +1485,7 @@ continuation type is encapsulated.
           (apply-continuation continuation object) ==
             (apply (continuation->applicative continuation) object)
 
- -- Operative: ($let/cc <symbol> . <objects>)
+ -- Operative: $let/cc ($let/cc <symbol> . <objects>)
      A child environment `e' of the dynamic environment is created,
      containing a binding of `<symbol>' to the continuation to which
      the result of the call to `$let/cc' should normally return; then,
@@ -1394,7 +1519,7 @@ continuation type is encapsulated.
 
 File: klisp.info,  Node: Encapsulations,  Next: Promises,  Prev: Continuations,  Up: Top
 
-10 Encapsulations
+11 Encapsulations
 *****************
 
 An encapsulation is an object that refers to another object, called its
@@ -1429,7 +1554,7 @@ immutable.
 
 File: klisp.info,  Node: Promises,  Next: Keyed Variables,  Prev: Encapsulations,  Up: Top
 
-11 Promises
+12 Promises
 ***********
 
 A promise is an object that represents the potential to determine a
@@ -1507,7 +1632,7 @@ may not be `eq?'.  Two promises are `equal?' iff they are `eq?'.
 
 File: klisp.info,  Node: Keyed Variables,  Next: Numbers,  Prev: Promises,  Up: Top
 
-12 Keyed Variables
+13 Keyed Variables
 ******************
 
 A keyed variable is a device that associates a non-symbolic key (in the
@@ -1516,7 +1641,7 @@ in which lookup occurs.  Kernel provides two types of keyed variables:
 dynamic & static.  Keyed Dynamic Variables use the dynamic extent as
 context and Keyed Static Variables use the dynamic environment.
 
-12.1 Keyed Dynamic Variables
+13.1 Keyed Dynamic Variables
 ============================
 
 A keyed dynamic variable is a device that associates a non-symbolic key
@@ -1541,7 +1666,7 @@ dynamic extent in which lookup occurs.
           call to `a' is not within the dynamic extent of any call to
           `b', an error is signaled.
 
-12.2 Keyed Static Variables
+13.2 Keyed Static Variables
 ===========================
 
 A keyed static variable is a device that binds data in an environment
@@ -1568,7 +1693,7 @@ by a non-symbolic key, where the key is an accessor applicative.
 
 File: klisp.info,  Node: Numbers,  Next: Strings,  Prev: Keyed Variables,  Up: Top
 
-13 Numbers
+14 Numbers
 **********
 
 All numbers are immutable, and `equal?' iff `eq?'.  The number type is
@@ -1757,7 +1882,7 @@ floating point.  No bounding or robustness info is kept.
      argument to either applicative has no primary value an error is
      signaled.
 
- -- Applicative: (abs real)
+ -- Applicative: abs (abs real)
      Applicative `abs' returns the nonnegative real number with the
      same magnitude as `real'; that is, if `real' is nonnegative it
      returns `real', otherwise it returns the negation of `real'.
@@ -1960,7 +2085,7 @@ floating point.  No bounding or robustness info is kept.
 
 File: klisp.info,  Node: Strings,  Next: Characters,  Prev: Numbers,  Up: Top
 
-14 Strings
+15 Strings
 **********
 
 A string is an object that represent a sequence of characters (for now,
@@ -2073,7 +2198,7 @@ compatibility with r5rs was preferred/simpler.
 
 File: klisp.info,  Node: Characters,  Next: Ports,  Prev: Strings,  Up: Top
 
-15 Characters
+16 Characters
 *************
 
 A character is an object that represents an ASCII character (for now,
@@ -2137,7 +2262,7 @@ features defined here were taken mostly from r5rs scheme.
 
 File: klisp.info,  Node: Ports,  Next: Alphabetical Index,  Prev: Characters,  Up: Top
 
-16 Ports
+17 Ports
 ********
 
 A port is an object that mediates data from an input or to a
@@ -2187,9 +2312,11 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- with-input-from-file: (with-input-from-file string combiner)
- -- with-output-to-file: (with-output-to-file string combiner)
- -- with-error-to-file: (with-error-to-file string combiner)
+ -- Applicative: with-input-from-file (with-input-from-file string
+          combiner)
+ -- Applicative: with-output-to-file (with-output-to-file string
+          combiner)
+ -- Applicative: with-error-to-file (with-error-to-file string combiner)
      These three applicatives open the file named in `string' for
      textual input or output, an invoke the binder of either the
      input-port, the output-port or the error-port keyed dynamic
@@ -2202,9 +2329,9 @@ klisp and was taken from Scheme.
      SOURCE NOTE: The first two are enumerated in the Kernel report but
      the text is still missing.  The third applicative is from Scheme.
 
- -- get-current-input-port: (get-current-input-port)
- -- get-current-output-port: (get-current-output-port)
- -- get-current-error-port: (get-current-error-port)
+ -- Applicative: get-current-input-port (get-current-input-port)
+ -- Applicative: get-current-output-port (get-current-output-port)
+ -- Applicative: get-current-error-port (get-current-error-port)
      These are the accessors for the input-port, output-port, and
      error-port keyed dynamic variables repectively.
 
@@ -2246,8 +2373,8 @@ klisp and was taken from Scheme.
      but the text is still missing. open-binary-output-file is from
      Scheme.
 
- -- close-input-file: (close-input-file input-port)
- -- close-output-file: (close-output-file output-port)
+ -- Applicative: close-input-file (close-input-file input-port)
+ -- Applicative: close-output-file (close-output-file output-port)
      These applicatives close the port argument, so that no more
      input/output may be performed on them, and the resources can be
      freed.  If the port was already closed these applicatives have no
@@ -2260,9 +2387,9 @@ klisp and was taken from Scheme.
      is still missing.  There's probably a name error here.  These
      should probably be called close-input-port & close-output-port.
 
- -- close-input-port: (close-input-port input-port)
- -- close-output-port: (close-output-port output-port)
- -- close-port: (close-port port)
+ -- Applicative: close-input-port (close-input-port input-port)
+ -- Applicative: close-output-port (close-output-port output-port)
+ -- Applicative: close-port (close-port port)
      These applicatives close the port argument, so that no more
      input/output may be performed on them, and the resources can be
      freed.  If the port was already closed these applicatives have no
@@ -2290,7 +2417,7 @@ klisp and was taken from Scheme.
      SOURCE NOTE: this is enumerated in the Kernel report but the text
      is still missing.
 
- -- write: (write object [textual-output-port])
+ -- Applicative: write (write object [textual-output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2350,7 +2477,7 @@ klisp and was taken from Scheme.
      be changed to just `eof?', for consistency with the other
      primitive type predicates.
 
- -- read-char: (read-char [textual-input-port])
+ -- Applicative: read-char (read-char [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2361,7 +2488,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- peek-char: (peek-char [textual-input-port])
+ -- Applicative: peek-char (peek-char [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2374,7 +2501,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- char-ready?: (char-ready? [textual-input-port])
+ -- Applicative: char-ready? (char-ready? [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2387,7 +2514,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- write-char: (write-char char [textual-output-port])
+ -- Applicative: write-char (write-char char [textual-output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2398,7 +2525,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- newline: (newline [textal-ouput-port])
+ -- Applicative: newline (newline [textal-ouput-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2408,7 +2535,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- display: (display object [textual-output-port])
+ -- Applicative: display (display object [textual-output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2421,7 +2548,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- read-u8: (read-u8 [textual-input-port])
+ -- Applicative: read-u8 (read-u8 [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2433,7 +2560,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- peek-u8: (peek-u8 [textual-input-port])
+ -- Applicative: peek-u8 (peek-u8 [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2447,7 +2574,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- u8-ready?: (u8-ready? [textual-input-port])
+ -- Applicative: u8-ready? (u8-ready? [textual-input-port])
      If the `port' optional argument is not specified, then the value
      of the `input-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2460,7 +2587,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- write-u8: (write-u8 u8 [textual-output-port])
+ -- Applicative: write-u8 (write-u8 u8 [textual-output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the port
      is closed, an error is signaled.
@@ -2472,7 +2599,7 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
 
- -- flush-output-port: (flush-output-port [output-port])
+ -- Applicative: flush-output-port (flush-output-port [output-port])
      If the `port' optional argument is not specified, then the value
      of the `output-port' keyed dynamic variable is used.  If the
      `port' is closed or if it is not an output port, an error is
@@ -2485,7 +2612,7 @@ klisp and was taken from Scheme.
      SOURCE NOTE: this is missing from Kernel, it is taken from r7rs
      Scheme.
 
- -- file-exists?: (file-exists? string)
+ -- Applicative: file-exists? (file-exists? string)
      `string' should be the name/path for a file.
 
      Predicate `file-exists?' checks to see if a file named `string'
@@ -2494,7 +2621,7 @@ klisp and was taken from Scheme.
      SOURCE NOTE: this is missing from Kernel, it is taken from r7rs
      Scheme.
 
- -- delete-file: (delete-file string)
+ -- Applicative: delete-file (delete-file string)
      `string' should be the name/path for an existing file.
 
      Applicative `delete-file' deletes the file named `string'.  If it
@@ -2504,7 +2631,7 @@ klisp and was taken from Scheme.
      SOURCE NOTE: this is missing from Kernel, it is taken from r7rs
      Scheme.
 
- -- rename-file: (rename-file string1 string2)
+ -- Applicative: rename-file (rename-file string1 string2)
      `string1' should be the name/path for an existing file, `string2'
      should be the name/path for a non existing file.
 
@@ -2526,29 +2653,27 @@ Index
 * Menu:
 
 * $and?:                                 Booleans.            (line  28)
+* $bindings->environment:                Environments.        (line 175)
 * $binds?:                               Environments.        (line 108)
 * $cond:                                 Control.             (line  32)
 * $define!:                              Environments.        (line  49)
 * $if:                                   Control.             (line  15)
-* $import!:                              Environments.        (line 207)
+* $import!:                              Environments.        (line 208)
 * $lambda:                               Combiners.           (line  76)
 * $lazy:                                 Promises.            (line  43)
 * $let:                                  Environments.        (line  89)
 * $let*:                                 Environments.        (line 124)
 * $let-redirect:                         Environments.        (line 153)
 * $let-safe:                             Environments.        (line 161)
+* $let/cc:                               Continuations.       (line 143)
 * $letrec:                               Environments.        (line 137)
 * $letrec*:                              Environments.        (line 144)
 * $or?:                                  Booleans.            (line  41)
-* $provide!:                             Environments.        (line 191)
+* $provide!:                             Environments.        (line 192)
 * $remote-eval:                          Environments.        (line 169)
 * $sequence:                             Control.             (line  23)
-* $set!:                                 Environments.        (line 182)
+* $set!:                                 Environments.        (line 183)
 * $vau:                                  Combiners.           (line  26)
-* ( <1>:                                 Ports.               (line  54)
-* ( <2>:                                 Numbers.             (line 193)
-* ( <3>:                                 Continuations.       (line 143)
-* (:                                     Environments.        (line 174)
 * *:                                     Numbers.             (line 121)
 * +:                                     Numbers.             (line 109)
 * -:                                     Numbers.             (line 137)
@@ -2558,6 +2683,7 @@ Index
 * =?:                                    Numbers.             (line  95)
 * >=?:                                   Numbers.             (line 103)
 * >?:                                    Numbers.             (line 102)
+* abs:                                   Numbers.             (line 193)
 * acos:                                  Numbers.             (line 385)
 * and?:                                  Booleans.            (line  20)
 * append:                                Pairs and lists.     (line 208)
@@ -2589,8 +2715,8 @@ Index
 * cadddr:                                Pairs and lists.     (line 108)
 * caddr:                                 Pairs and lists.     (line  96)
 * cadr:                                  Pairs and lists.     (line  90)
-* call-with-input-file:                  Ports.               (line 173)
-* call-with-output-file:                 Ports.               (line 175)
+* call-with-input-file:                  Ports.               (line 175)
+* call-with-output-file:                 Ports.               (line 177)
 * call/cc:                               Continuations.       (line  43)
 * car:                                   Pairs and lists.     (line  85)
 * cdaaar:                                Pairs and lists.     (line 109)
@@ -2619,6 +2745,7 @@ Index
 * char-downcase:                         Characters.          (line  49)
 * char-lower-case?:                      Characters.          (line  44)
 * char-numeric?:                         Characters.          (line  38)
+* char-ready?:                           Ports.               (line 243)
 * char-upcase:                           Characters.          (line  48)
 * char-upper-case?:                      Characters.          (line  43)
 * char-whitespace?:                      Characters.          (line  39)
@@ -2629,6 +2756,11 @@ Index
 * char>?:                                Characters.          (line  24)
 * char?:                                 Characters.          (line  17)
 * characters:                            Characters.          (line   6)
+* close-input-file:                      Ports.               (line 115)
+* close-input-port:                      Ports.               (line 129)
+* close-output-file:                     Ports.               (line 116)
+* close-output-port:                     Ports.               (line 130)
+* close-port:                            Ports.               (line 131)
 * combiner?:                             Combiners.           (line 120)
 * combiners:                             Combiners.           (line   6)
 * cons:                                  Pairs and lists.     (line  35)
@@ -2640,9 +2772,11 @@ Index
 * copy-es-immutable!:                    Pairs and lists.     (line  49)
 * cos:                                   Numbers.             (line 380)
 * countable-list?:                       Pairs and lists.     (line 265)
+* delete-file:                           Ports.               (line 363)
 * denominator:                           Numbers.             (line 315)
 * description format:                    Format of Descriptions.
                                                               (line   6)
+* display:                               Ports.               (line 277)
 * div:                                   Numbers.             (line 149)
 * div-and-mod:                           Numbers.             (line 151)
 * div0:                                  Numbers.             (line 163)
@@ -2653,7 +2787,7 @@ Index
 * encycle!:                              Pairs and lists.     (line 158)
 * environment?:                          Environments.        (line  23)
 * environments:                          Environments.        (line   6)
-* eof-object?:                           Ports.               (line 208)
+* eof-object?:                           Ports.               (line 210)
 * eq?:                                   Equivalence.         (line  12)
 * equal?:                                Equivalence.         (line  16)
 * equivalence:                           Equivalence.         (line   6)
@@ -2667,10 +2801,12 @@ Index
 * exp:                                   Numbers.             (line 375)
 * expt:                                  Numbers.             (line 390)
 * extend-continuation:                   Continuations.       (line  50)
+* file-exists?:                          Ports.               (line 354)
 * filter:                                Pairs and lists.     (line 239)
 * finite-list?:                          Pairs and lists.     (line 261)
 * finite?:                               Numbers.             (line  75)
 * floor:                                 Numbers.             (line 324)
+* flush-output-port:                     Ports.               (line 341)
 * fonts:                                 Some Terms.          (line  13)
 * foo:                                   A Sample Applicative Description.
                                                               (line  15)
@@ -2678,8 +2814,11 @@ Index
 * force:                                 Promises.            (line  35)
 * gcd:                                   Numbers.             (line 207)
 * get-current-environment:               Environments.        (line 114)
+* get-current-error-port:                Ports.               (line  73)
+* get-current-input-port:                Ports.               (line  71)
+* get-current-output-port:               Ports.               (line  72)
 * get-list-metrics:                      Pairs and lists.     (line 123)
-* get-module:                            Ports.               (line 198)
+* get-module:                            Ports.               (line 200)
 * get-real-exact-bounds:                 Numbers.             (line 233)
 * get-real-exact-primary:                Numbers.             (line 252)
 * get-real-internal-bounds:              Numbers.             (line 232)
@@ -2695,6 +2834,7 @@ Index
 * input-port?:                           Ports.               (line  32)
 * integer->char:                         Characters.          (line  59)
 * integer?:                              Numbers.             (line  61)
+* interpreter:                           Interpreter.         (line   6)
 * Kernel history:                        Kernel History.      (line   6)
 * keyed dynamic variables:               Keyed Variables.     (line  15)
 * keyed static variables:                Keyed Variables.     (line  40)
@@ -2708,7 +2848,7 @@ Index
 * list-ref:                              Pairs and lists.     (line 198)
 * list-tail:                             Pairs and lists.     (line 147)
 * lists:                                 Pairs and lists.     (line   6)
-* load:                                  Ports.               (line 185)
+* load:                                  Ports.               (line 187)
 * log:                                   Numbers.             (line 376)
 * make-encapsulation-type:               Encapsulations.      (line  12)
 * make-environment:                      Environments.        (line  36)
@@ -2727,6 +2867,7 @@ Index
 * mod:                                   Numbers.             (line 150)
 * mod0:                                  Numbers.             (line 164)
 * negative?:                             Numbers.             (line 178)
+* newline:                               Ports.               (line 267)
 * nil:                                   Pairs and lists.     (line   6)
 * not?:                                  Booleans.            (line  16)
 * null?:                                 Pairs and lists.     (line  31)
@@ -2736,10 +2877,10 @@ Index
 * object descriptions:                   A Sample Applicative Description.
                                                               (line   6)
 * odd?:                                  Numbers.             (line 185)
-* open-binary-input-file:                Ports.               (line  79)
-* open-binary-output-file:               Ports.               (line  94)
-* open-input-file:                       Ports.               (line  78)
-* open-output-file:                      Ports.               (line  92)
+* open-binary-input-file:                Ports.               (line  81)
+* open-binary-output-file:               Ports.               (line  96)
+* open-input-file:                       Ports.               (line  80)
+* open-output-file:                      Ports.               (line  94)
 * operative descriptions:                A Sample Applicative Description.
                                                               (line   6)
 * operative?:                            Combiners.           (line  16)
@@ -2748,6 +2889,8 @@ Index
 * output-port?:                          Ports.               (line  33)
 * pair?:                                 Pairs and lists.     (line  27)
 * pairs:                                 Pairs and lists.     (line   6)
+* peek-char:                             Ports.               (line 230)
+* peek-u8:                               Ports.               (line 302)
 * port?:                                 Ports.               (line  28)
 * ports:                                 Ports.               (line   6)
 * positive?:                             Numbers.             (line 177)
@@ -2756,11 +2899,14 @@ Index
 * promises:                              Promises.            (line   6)
 * rational?:                             Numbers.             (line  66)
 * rationalize:                           Numbers.             (line 340)
-* read:                                  Ports.               (line 144)
+* read:                                  Ports.               (line 146)
+* read-char:                             Ports.               (line 219)
+* read-u8:                               Ports.               (line 290)
 * real->exact:                           Numbers.             (line 286)
 * real->inexact:                         Numbers.             (line 285)
 * real?:                                 Numbers.             (line  71)
 * reduce:                                Pairs and lists.     (line 270)
+* rename-file:                           Ports.               (line 373)
 * robust?:                               Numbers.             (line  87)
 * root-continuation:                     Continuations.       (line 104)
 * round:                                 Numbers.             (line 327)
@@ -2798,43 +2944,53 @@ Index
 * tan:                                   Numbers.             (line 381)
 * textual-port?:                         Ports.               (line  42)
 * truncate:                              Numbers.             (line 326)
+* u8-ready?:                             Ports.               (line 316)
 * undefined?:                            Numbers.             (line  91)
 * unwrap:                                Combiners.           (line  72)
+* with-error-to-file:                    Ports.               (line  58)
+* with-input-from-file:                  Ports.               (line  55)
+* with-output-to-file:                   Ports.               (line  57)
 * with-strict-arithmetic:                Numbers.             (line 298)
 * wrap:                                  Combiners.           (line  68)
+* write:                                 Ports.               (line 159)
+* write-char:                            Ports.               (line 256)
+* write-u8:                              Ports.               (line 329)
 * zero?:                                 Numbers.             (line 143)
 
 
 
 Tag Table:
 Node: Top703
-Node: License2601
-Node: Introduction4283
-Node: Caveats7213
-Node: Kernel History7999
-Node: Conventions9444
-Node: Some Terms10115
-Node: Evaluation Notation10786
-Node: Printing Notation11807
-Node: Error Messages12283
-Node: Format of Descriptions12931
-Node: A Sample Applicative Description13495
-Node: Acknowledgements15258
-Node: Booleans15644
-Node: Equivalence18186
-Node: Symbols18979
-Node: Control20345
-Node: Pairs and lists22662
-Node: Environments39685
-Node: Combiners49892
-Node: Continuations55928
-Node: Encapsulations64461
-Node: Promises65914
-Node: Keyed Variables69837
-Node: Numbers72608
-Node: Strings92107
-Node: Characters97454
-Node: Ports100164
-Node: Alphabetical Index117768
+Node: License2663
+Node: Introduction4345
+Node: Caveats7278
+Node: Kernel History8064
+Node: Conventions9509
+Node: Some Terms10180
+Node: Evaluation Notation10851
+Node: Printing Notation11872
+Node: Error Messages12348
+Node: Format of Descriptions12996
+Node: A Sample Applicative Description13560
+Node: Acknowledgements15323
+Node: Interpreter15709
+Ref: Command Line Options18009
+Ref: Interpreter Exit Status18943
+Node: Booleans20167
+Node: Equivalence22708
+Node: Symbols23501
+Node: Control24867
+Node: Pairs and lists27184
+Node: Environments44207
+Node: Combiners54448
+Node: Continuations60484
+Node: Encapsulations69027
+Node: Promises70480
+Node: Keyed Variables74403
+Node: Numbers77174
+Node: Strings96677
+Node: Characters102024
+Node: Ports104734
+Node: Alphabetical Index122670
 
 End Tag Table

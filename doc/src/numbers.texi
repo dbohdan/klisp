@@ -219,7 +219,7 @@ even.  If any argument to either applicative has no primary value an
 error is signaled.
 @end deffn
 
-@deffn Applicative (abs real)
+@deffn Applicative abs (abs real)
   Applicative @code{abs} returns the nonnegative real number with the
 same magnitude as @code{real}; that is, if @code{real} is nonnegative
 it returns @code{real}, otherwise it returns the negation of

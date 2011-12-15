@@ -42,7 +42,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 @c next node should be types
-@node Introduction, Booleans, License, Top
+@node Introduction, Interpreter, License, Top
 @chapter Introduction
 
   klisp is an open source interpreter for the Kernel Programming

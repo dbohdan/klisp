@@ -160,7 +160,7 @@ applies it as usual.
 @end example
 @end deffn
 
-@deffn Operative ($let/cc <symbol> . <objects>)
+@deffn Operative $let/cc ($let/cc <symbol> . <objects>)
   A child environment @code{e} of the dynamic environment is created,
 containing a binding of @code{<symbol>} to the continuation to which
 the result of the call to @code{$let/cc} should normally return; then,

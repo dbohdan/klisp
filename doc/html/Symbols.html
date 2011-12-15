@@ -32,9 +32,9 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 </div>
 
 <!-- node-name,  next,  previous,  up -->
-<h2 class="chapter">4 Symbols</h2>
+<h2 class="chapter">5 Symbols</h2>
 
-<p><a name="index-symbols-22"></a><!-- TODO add xref to eq?, identifiers, etc -->
+<p><a name="index-symbols-23"></a><!-- TODO add xref to eq?, identifiers, etc -->
   Two symbols are eq? iff they have the same external
 representation. Symbols are immutable, and the symbol type is
 encapsulated.  The external representations of symbols are usually
@@ -43,19 +43,19 @@ identifiers.  However, symbols with other external representations may
 be created.
 
 <div class="defun">
-&mdash; Applicative: <b>symbol?</b> (<var>symbol? . objects</var>)<var><a name="index-symbol_003f-23"></a></var><br>
+&mdash; Applicative: <b>symbol?</b> (<var>symbol? . objects</var>)<var><a name="index-symbol_003f-24"></a></var><br>
 <blockquote><p>  The primitive type predicate for type symbol.  <code>symbol?</code>
 returns true iff all the objects in <code>objects</code> are of type symbol. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>symbol-&gt;string</b> (<var>symbol-&gt;string symbol</var>)<var><a name="index-symbol_002d_003estring-24"></a></var><br>
+&mdash; Applicative: <b>symbol-&gt;string</b> (<var>symbol-&gt;string symbol</var>)<var><a name="index-symbol_002d_003estring-25"></a></var><br>
 <blockquote><p>  Applicative <code>symbol-&gt;string</code> returns the name of <code>symbol</code>
 as a string.  The string returned is immutable. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>string-&gt;symbol</b> (<var>string-&gt;symbol string</var>)<var><a name="index-string_002d_003esymbol-25"></a></var><br>
+&mdash; Applicative: <b>string-&gt;symbol</b> (<var>string-&gt;symbol string</var>)<var><a name="index-string_002d_003esymbol-26"></a></var><br>
 <blockquote><p>  Applicative <code>string-&gt;symbol</code> returns the symbol with name
 <code>string</code>.  The symbol is always interned, which means, that it is
 always the case that:

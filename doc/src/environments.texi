@@ -233,7 +233,7 @@ environment, then evaluates @code{<exp1>} as a tail context in the
 environment that must result from the first evaluation.
 @end deffn
 
-@deffn Operative ($bindings-environment . <bindings>)
+@deffn Operative $bindings->environment ($bindings->environment . <bindings>)
 @c TODO add xref to $let
   @code{<bindings>} should be as described for @code{$let}.
 

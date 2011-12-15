@@ -1,0 +1,154 @@
+@c -*-texinfo-*-
+@setfilename ../src/interpreter
+
+@node Interpreter, Booleans, Introduction, Top
+@comment  node-name,  next,  previous,  up
+@chapter Interpreter
+@cindex interpreter
+
+This section describes the @command{klisp}, a Kernel Programming Language
+stand-alone interpreter.
+
+@section Invocation
+@command{klisp} is invoked like this:
+@example
+klisp [options] [script]
+@end example
+
+@section Description
+@command{klisp} is a stand-alone klisp interpreter for the Kernel
+Programming Language.  It loads and evaluates Kernel programs in
+textual source form.  @command{klisp} can be used as a batch
+interpreter and also interactively.  The given @code{options}
+(@pxref{Command Line Options}) are evaluated and then the klisp
+program in file @code{script} is loaded and evaluated.  All
+evaluations mentioned, including the initialization that is described
+below, take place in the same (initially) standard environment. All
+values that result from these evaluation are discarded, but if the
+@code{root-continuation} or @code{error-continuation} are passed a
+value, the evaluation of @code{options} is interrupted and
+@command{klisp} terminates. 
+@xref{Interpreter Exit Status,,Exit Status}, for a description of the
+exit status in each case. 
+
+The string @code{script} together with all arguments are available as
+a list of strings via the applicative @code{get-script-arguments}.  If
+these arguments contain spaces or other characters special to the
+shell, then they should be quoted (but note that the quotes will be
+removed by the shell).  The complete command line, including the name
+of the interpreter, options, the script, and its arguments are
+available as a list of strings via the applicative
+@code{get-interpreter-arguments}. 
+
+At the very beginning, before even handling the command line,
+@command{klisp} reads and evaluates the contents of the environment
+variable @code{KLISP_INIT}, if it is defined.  To use an init file,
+just define @code{KLISP_INIT} to the following form: @code{(load
+"/path/to/init-file")}.  Notice that @command{klisp} expects exactly one
+expression in @code{KLISP_INIT}, if it is defined.  So it is an error
+to have no expressions or more than one in @code{KLISP_INIT}.  The
+same is true of the argument to the @code{-e} option, as both are
+implemented in terms of @code{string-eval}. 
+@c TODO add xref to string-eval
+
+In interactive mode, @command{klisp} prompts the user, reads
+expressions from the standard input, and evaluates them as they are
+read. The default prompt is "klisp> ".
+
+@anchor{Command Line Options}
+@section Options
+@c @cindex Command Line Options
+@c TODO move this to an appendix
+Options start with @option{-} and are described below. You can use
+@option{--} to signal the end of options. If no arguments are given,
+then @option{-v}  @option{-i} is assumed when the standard input is a
+terminal; otherwise, @option{-} is assumed.  If no @var{script}, or
+option @option{-e} or @code{-l} is given, @option{-i} is assumed.
+
+@table @option
+
+@item -
+@c TODO implement option index @opindex - ...
+@c cindex ...
+load and execute the standard input as a file,
+that is,
+not interactively,
+even when the standard input is a terminal.
+.TP
+
+@item -e @var{expr}
+@c @opindex -e ...
+@c @cindex -e ...
+evaluate expression @var{expr}.  You need to quote @var{expr} if it
+contains spaces, quotes, or other characters special to the shell. 
+
+@item -i
+@c @opindex -i ...
+@c @cindex -i ...
+enter interactive mode after @var{script} is executed.
+
+@item -l @var{name}
+@c @opindex -l ...
+@c @cindex -l ...
+evaluate @code{(load "name")} before @var{script} is executed.
+Typically used to do environment initialization. 
+
+@item -r @var{name}
+@c @opindex -r ...
+@c @cindex -r ...
+evaluate @code{(require "name")} before @var{script} is
+executed. Typically used to load libraries. 
+
+@item -v 
+@c @opindex -v ...
+@c @cindex -v ...
+show version and copyright information.
+
+@end table
+
+@c TODO move this to an appendix
+@anchor{Interpreter Exit Status}
+@section Exit Status
+@c @cindex Exit Status
+If the @var{script} or @file{stdin} reach @var{EOF} or if there is no
+@var{script}, @code{EXIT_SUCCESS} is returned.  If the
+@var{error-continuation} is passed an object during init, arguments or script
+evaluation @code{EXIT_FAILURE} is returned.  If the
+@var{root-continuation} is passed an object, @command{klisp} tries to
+convert the value passed to the @var{root-continuation} to an exit
+status as follows: 
+
+@table @code
+
+@item integer
+If the value is an integer it is used as exit status.
+
+@item boolean
+If the value is a boolean then @code{EXIT_SUCCESS} is returned for
+@code{#t} and @code{EXIT_FAILURE} for @code{#f}.
+
+@item inert
+If the value is inert, then @code{EXIT_SUCCESS} is returned.
+
+@item else
+In any other case @code{EXIT_FAILURE} is returned.
+@end table
+
+@section Environment Variables
+@c @cindex Interpreter Environment Variables
+
+The following environment variables affect the behaviour of @command{klisp}
+
+@table @env
+@item KLISP_INIT
+@c TODO index for env variables
+A Kernel expression to be evaluated before any arguments to the
+interpreter.  To use an init file, just define @var{KLISP_INIT} to the
+following form @code{(load "/path/to/init-file")}
+
+@item KLISP_PATH
+A colon separated list of templates for controlling the search of
+required files.  Each template can use the char @code{?} to be
+replaced by the required name at run-time.
+
+@end table

@@ -14,7 +14,7 @@ klisp \- Kernel Programming Language interpreter
 ]
 .SH DESCRIPTION
 .B klisp
-is a stand-alone klisp interpreter for 
+is a stand-alone interpreter for 
 the Kernel Programming Language.
 It loads and evaluates Kernel programs
 in textual source form.
@@ -46,7 +46,7 @@ via the applicative
 If these arguments contain spaces or other characters special to the shell,
 then they should be quoted
 (but note that the quotes will be removed by the shell).
-The complete command line
+The complete command line,
 including the name of the interpreter, options,
 the script, and its arguments
 are available as a list of strings
@@ -78,6 +78,14 @@ then
 is assumed when the standard input is a terminal;
 otherwise,
 .B "\-"
+is assumed.  If no
+.IR script ,
+or option
+.BR "\-e" ,
+or
+.BR "\-l" ,
+is given, 
+.B "\-i"
 is assumed.
 .LP
 In interactive mode,
@@ -124,7 +132,7 @@ is executed.
 Typically used to load libraries.
 .TP
 .B \-v
-show version information.
+show version and copyright information.
 .SH EXIT STATUS
 If the 
 .I script

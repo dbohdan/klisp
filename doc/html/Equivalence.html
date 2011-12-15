@@ -32,23 +32,23 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 </div>
 
 <!-- node-name,  next,  previous,  up -->
-<h2 class="chapter">3 Equivalence</h2>
+<h2 class="chapter">4 Equivalence</h2>
 
-<p><a name="index-equivalence-19"></a>
+<p><a name="index-equivalence-20"></a>
   Kernel has two general-purpose equivalence predicates (whereas R5RS
 Scheme has three).  The two Kernel predicates correspond to the
 abstract notions of equivalence up to mutation (<code>equal</code>) and
 equivalence in the presence of mutation (<code>eq?</code>).
 
 <div class="defun">
-&mdash; Applicative: <b>eq?</b> (<var>eq? . objects</var>)<var><a name="index-eq_003f-20"></a></var><br>
+&mdash; Applicative: <b>eq?</b> (<var>eq? . objects</var>)<var><a name="index-eq_003f-21"></a></var><br>
 <blockquote><p>  Predicate <code>eq?</code> returns true iff all of <code>objects</code> are
 effectively the same object, even in the presence of mutation. 
 <!-- todo maybe add more content here, specifical to klisp -->
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>equal?</b> (<var>equal? . objects</var>)<var><a name="index-equal_003f-21"></a></var><br>
+&mdash; Applicative: <b>equal?</b> (<var>equal? . objects</var>)<var><a name="index-equal_003f-22"></a></var><br>
 <blockquote><p>  Predicate <code>equal?</code> returns true iff all of <code>objects</code>
 &ldquo;look&rdquo; the same as long as nothing is mutated.  This is a weaker
 predicate than <code>eq?</code>; that is, <code>equal?</code> must return true

@@ -32,9 +32,9 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 </div>
 
 <!-- node-name,  next,  previous,  up -->
-<h2 class="chapter">11 Promises</h2>
+<h2 class="chapter">12 Promises</h2>
 
-<p><a name="index-promises-140"></a>
+<p><a name="index-promises-141"></a>
 <!-- TODO xref to $lazy, memoize, force -->
 A promise is an object that represents the potential to determine a
 value.  The value may be the result of an arbitrary computation that
@@ -64,14 +64,14 @@ the promises may or may not be <code>eq?</code>.  Two promises are
 <code>equal?</code> iff they are <code>eq?</code>.
 
 <div class="defun">
-&mdash; Applicative: <b>promise?</b> (<var>promise? . objects</var>)<var><a name="index-promise_003f-141"></a></var><br>
+&mdash; Applicative: <b>promise?</b> (<var>promise? . objects</var>)<var><a name="index-promise_003f-142"></a></var><br>
 <blockquote><p>  The primitive type predicate for type promise.  <code>promise?</code>
 returns true iff all the objects in <code>objects</code> are of type
 promise. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>force</b> (<var>force object</var>)<var><a name="index-force-142"></a></var><br>
+&mdash; Applicative: <b>force</b> (<var>force object</var>)<var><a name="index-force-143"></a></var><br>
 <blockquote><p>  If <code>object</code> is a promise, applicative <code>force</code> returns the
 value determined by promise; otherwise, it returns <code>object</code>.
 
@@ -81,7 +81,7 @@ how to force promises constructed by that constructor.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$lazy</b> (<var>$lazy expression</var>)<var><a name="index-g_t_0024lazy-143"></a></var><br>
+&mdash; Operative: <b>$lazy</b> (<var>$lazy expression</var>)<var><a name="index-g_t_0024lazy-144"></a></var><br>
 <blockquote><p>  Operative <code>$lazy</code> constructs and returns a new object of type
 promise, representing potential evaluation of expression in the
 dynamic environment from which <code>$lazy</code> was called.
@@ -114,7 +114,7 @@ evaluation will take place the first time each of them is forced.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>memoize</b> (<var>memoize object</var>)<var><a name="index-memoize-144"></a></var><br>
+&mdash; Applicative: <b>memoize</b> (<var>memoize object</var>)<var><a name="index-memoize-145"></a></var><br>
 <blockquote><p>  Applicative <code>memoize</code> constructs and returns a new object of
 type promise, representing memoization of <code>object</code>.  Whenever the
 promise is forced, it determines <code>object</code>. 

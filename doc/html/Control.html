@@ -32,20 +32,20 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 </div>
 
 <!-- node-name,  next,  previous,  up -->
-<h2 class="chapter">5 Control</h2>
+<h2 class="chapter">6 Control</h2>
 
-<p><a name="index-control-26"></a><a name="index-inert-27"></a>  The inert data type is provided for use with control combiners.  It
+<p><a name="index-control-27"></a><a name="index-inert-28"></a>  The inert data type is provided for use with control combiners.  It
 consists of a single immutable value, having external representation
 <code>#inert</code>.  The inert type is encapsulated.
 
 <div class="defun">
-&mdash; Applicative: <b>inert?</b> (<var>inert? . objects</var>)<var><a name="index-inert_003f-28"></a></var><br>
+&mdash; Applicative: <b>inert?</b> (<var>inert? . objects</var>)<var><a name="index-inert_003f-29"></a></var><br>
 <blockquote><p>  The primitive type predicate for type inert. <code>inert?</code>
 returns true iff all the objects in <code>objects</code> are of type inert. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$if</b> (<var>$if &lt;test&gt; &lt;consequent&gt; &lt;alternative&gt;</var>)<var><a name="index-g_t_0024if-29"></a></var><br>
+&mdash; Operative: <b>$if</b> (<var>$if &lt;test&gt; &lt;consequent&gt; &lt;alternative&gt;</var>)<var><a name="index-g_t_0024if-30"></a></var><br>
 <blockquote><p>  The <code>$if</code> operative first evaluates <code>&lt;test&gt;</code> in the
 dynamic environment.  If the result is not of type boolean, an error
 is signaled.  If the result is true, <code>&lt;consequent&gt;</code> is then
@@ -56,7 +56,7 @@ context.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$sequence</b> (<var>$sequence . &lt;objects&gt;</var>)<var><a name="index-g_t_0024sequence-30"></a></var><br>
+&mdash; Operative: <b>$sequence</b> (<var>$sequence . &lt;objects&gt;</var>)<var><a name="index-g_t_0024sequence-31"></a></var><br>
 <blockquote><p>The <code>$sequence</code> operative evaluates the elements of the list
 <code>&lt;objects&gt;</code> in the dynamic environment, one at a time from left
 to right.  If <code>&lt;objects&gt;</code> is a cyclic list, element evaluation
@@ -68,7 +68,7 @@ empty list, the result is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$cond</b> (<var>$cond . &lt;clauses&gt;</var>)<var><a name="index-g_t_0024cond-31"></a></var><br>
+&mdash; Operative: <b>$cond</b> (<var>$cond . &lt;clauses&gt;</var>)<var><a name="index-g_t_0024cond-32"></a></var><br>
 <blockquote><p><code>&lt;clauses&gt;</code> should be a list of clause expressions, each of the
 form <code>(&lt;test&gt; . &lt;body&gt;)</code>, where body is a list of expressions.
 
@@ -81,7 +81,7 @@ the behaviour of the <code>$cond</code> operative:
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>for-each</b> (<var>for-each . lists</var>)<var><a name="index-for_002deach-32"></a></var><br>
+&mdash; Applicative: <b>for-each</b> (<var>for-each . lists</var>)<var><a name="index-for_002deach-33"></a></var><br>
 <blockquote><p><code>lists</code> must be a nonempty list of lists; if there are two or
 more, they should all be the same length. If lists is empty, or if all
 of its elements are not lists of the same length, an error is

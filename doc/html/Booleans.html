@@ -5,7 +5,7 @@
 <meta name="description" content="klisp Reference Manual">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
-<link rel="prev" href="Introduction.html#Introduction" title="Introduction">
+<link rel="prev" href="Interpreter.html#Interpreter" title="Interpreter">
 <link rel="next" href="Equivalence.html#Equivalence" title="Equivalence">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <meta http-equiv="Content-Style-Type" content="text/css">
@@ -26,15 +26,15 @@
 <a name="Booleans"></a>
 <p>
 Next:&nbsp;<a rel="next" accesskey="n" href="Equivalence.html#Equivalence">Equivalence</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="Introduction.html#Introduction">Introduction</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Interpreter.html#Interpreter">Interpreter</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <hr>
 </div>
 
 <!-- node-name,  next,  previous,  up -->
-<h2 class="chapter">2 Booleans</h2>
+<h2 class="chapter">3 Booleans</h2>
 
-<p><a name="index-booleans-12"></a>
+<p><a name="index-booleans-13"></a>
   The boolean data type consists of two values, which are called true
 and false, and have respectively external representations <code>#t</code>
 and <code>#f</code>.  There are no possible mutations of either of these two
@@ -42,31 +42,31 @@ and <code>#f</code>.  There are no possible mutations of either of these two
 values, and the boolean type is encapsulated.
 
 <div class="defun">
-&mdash; Applicative: <b>boolean?</b> (<var>boolean? . objects</var>)<var><a name="index-boolean_003f-13"></a></var><br>
+&mdash; Applicative: <b>boolean?</b> (<var>boolean? . objects</var>)<var><a name="index-boolean_003f-14"></a></var><br>
 <blockquote><p>  The primitive type predicate for type boolean.  <code>boolean?</code>
 returns true iff all the objects in <code>objects</code> are of type boolean. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>not?</b> (<var>not? boolean</var>)<var><a name="index-not_003f-14"></a></var><br>
+&mdash; Applicative: <b>not?</b> (<var>not? boolean</var>)<var><a name="index-not_003f-15"></a></var><br>
 <blockquote><p>  Applicative <code>not?</code> is a predicate that returns the logical
 negation of its argument. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>and?</b> (<var>and? . booleans</var>)<var><a name="index-and_003f-15"></a></var><br>
+&mdash; Applicative: <b>and?</b> (<var>and? . booleans</var>)<var><a name="index-and_003f-16"></a></var><br>
 <blockquote><p>  Applicative <code>and?</code> is a predicate that returns true unless one
 or more of its arguments are false. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>or?</b> (<var>or? . booleans</var>)<var><a name="index-or_003f-16"></a></var><br>
+&mdash; Applicative: <b>or?</b> (<var>or? . booleans</var>)<var><a name="index-or_003f-17"></a></var><br>
 <blockquote><p>  Applicative <code>or?</code> is a predicate that returns false unless one
 or more of its arguments are true. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$and?</b> (<var>$and? . &lt;list&gt;</var>)<var><a name="index-g_t_0024and_003f-17"></a></var><br>
+&mdash; Operative: <b>$and?</b> (<var>$and? . &lt;list&gt;</var>)<var><a name="index-g_t_0024and_003f-18"></a></var><br>
 <blockquote><p>  The <code>$and?</code> operative performs a &ldquo;short-circuit and&rdquo; of its
 operands.  It evaluates them from left to right, until either an
 operand evaluates to false, or the end of the list is reached.  If the
@@ -82,7 +82,7 @@ error is signaled (even if it's the last one).
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$or?</b> (<var>$or? . &lt;list&gt;</var>)<var><a name="index-g_t_0024or_003f-18"></a></var><br>
+&mdash; Operative: <b>$or?</b> (<var>$or? . &lt;list&gt;</var>)<var><a name="index-g_t_0024or_003f-19"></a></var><br>
 <blockquote><p>  The <code>$or?</code> operative performs a &ldquo;short-circuit or&rdquo; of its
 operands.  It evaluates them from left to right, until either an
 operand evaluates to true, or the end of the list is reached.  If the
