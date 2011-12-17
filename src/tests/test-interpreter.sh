@@ -7,13 +7,20 @@
 # TODO: Write similar test script for Windows cmd.exe or PowerShell.
 #
 
-if [ $# -ne 1 ] ; then
-    echo "usage: test-interpreter.sh KLISP-EXECUTABLE" 1>&2
+if [ $# -eq 1 ] ; then
+    KLISP="$1"
+    VERBOSE=0
+elif [ $# -eq 2 -a "$1" = '--verbose' ] ; then
+    KLISP="$2"
+    VERBOSE=1
+else
+    echo "usage: test-interpreter.sh [--verbose] KLISP-EXECUTABLE" 1>&2
     exit 1
 fi
 
-KLISP="$1"
-GEN_K="test-interpreter-gen.k"
+GEN1_K="test-interpreter-gen1.k"
+GEN2_K="test-interpreter-gen2.k"
+GEN_DIR="./test-interpreter-dir"
 TMPERR="test-interpreter-err.log"
 
 # -- functions ----------------------------------------
@@ -50,19 +57,35 @@ check_helper()
         echo "FAIL: $command"
         echo " stdout => '$stdout'"
         echo " expected: '$expected_stdout'" 1>&2
-        nfail=$((1 + $nfail))
+        ok=0
     elif ! check_match "$expected_stderr" "$stderr" ;  then
         echo "FAIL: $command"
         echo " stderr => '$stderr'"
         echo " expected: '$expected_stderr'" 1>&2
-        nfail=$((1 + $nfail))
+        ok=0
     elif [ $exitstatus -ne $expected_exitstatus ] ; then
         echo "FAIL: $command"
         echo "  ==> exit status $exitstatus ; expected: $expected_exitstatus" 1>&2
-        nfail=$((1 + $nfail))
+        ok=0
     else
-        ## echo "OK: $command ==> $stdout"
+        ok=1
+    fi
+
+    if [ $ok -eq 1 ] ; then
         npass=$((1 + $npass))
+        if [ "$VERBOSE" -eq 1 ] ; then
+            echo "OK: $command ==> $stdout"
+        fi
+    else
+        nfail=$((1 + $nfail))
+        if [ "$VERBOSE" -eq 1 ] ; then
+            echo
+            echo " KLISP_INIT='$KLISP_INIT'"
+            echo " KLISP_PATH='$KLISP_PATH'"
+            echo " stderr => '$stderr'"
+            echo " stdout => '$stdout'"
+            echo
+        fi
     fi
 }
 
@@ -135,7 +158,8 @@ report()
 
 cleanup()
 {
-    rm -f "$GEN_K" "$TMPERR"
+    rm -fr "$GEN_DIR"
+    rm -f "$GEN1_K" "$GEN2_K" "$TMPERR"
 }
 # -- tests --------------------------------------------
 
@@ -143,8 +167,8 @@ init
 
 # script name on the command line
 
-echo '(display 123456)' > "$GEN_K"
-check_o '123456' $KLISP "$GEN_K"
+echo '(display 123456)' > "$GEN1_K"
+check_o '123456' $KLISP "$GEN1_K"
 
 # empty command line and stdin not a terminal
 
@@ -165,6 +189,30 @@ check_oes '' '/.*More than one object found in string.*/' 1 $KLISP -e '1 1'
 # WAS check_oi 'klisp> ' '' $KLISP -i
 
 check_oi '/klisp [0-9.][0-9.]* .*\n.*klisp> /' '' $KLISP -i
+
+# option: -l
+# N.B. -l turns off interactive mode
+
+echo '(display "TTT")' > "$GEN1_K"
+echo '(display "SSS")' > "$GEN2_K"
+check_o 'TTTSSS' $KLISP -r "$GEN1_K" "$GEN2_K"
+check_oi '/.*TTTklisp> /' '' $KLISP -i -l "$GEN1_K"
+check_o 'TTT' $KLISP "$GEN1_K" -l "$GEN2_K"
+check_o '0TTT1' $KLISP -e '(display 0)' -l "$GEN1_K" -e '(display 1)'
+check_o 'TTTSSSSSS' $KLISP -l "$GEN1_K" -l "$GEN2_K" -l "$GEN2_K"
+check_o 'TTTSSSTTTSSS' $KLISP -l "$GEN1_K" -l "$GEN2_K" -l "$GEN1_K" -l "$GEN2_K"
+
+# option: -r
+# N.B. -r does not turn off interactive mode (TODO: test it)
+
+echo '(display "TTT")' > "$GEN1_K"
+echo '(display "SSS")' > "$GEN2_K"
+check_o 'TTTSSS' $KLISP -r "$GEN1_K" "$GEN2_K"
+check_oi '/.*TTTklisp> /' '' $KLISP -i -r "$GEN1_K"
+check_o 'TTT' $KLISP "$GEN1_K" -r "$GEN2_K"
+check_o '0TTT1' $KLISP -e '(display 0)' -r "$GEN1_K" -e '(display 1)'
+check_oi 'TTTSSS' '' $KLISP -r "$GEN1_K" -r "$GEN2_K" -r "$GEN2_K"
+check_oi 'TTTSSS' '' $KLISP -r "$GEN1_K" -r "$GEN2_K" -r "$GEN1_K" -r "$GEN2_K"
 
 # option: -v
 
@@ -207,6 +255,35 @@ check_oes '' '/.*No object found in string.*/' 1 $KLISP -i
 # cleanup after tests with KLISP_INIT
 
 unset KLISP_INIT
+
+# KLISP_PATH environment variable
+# N.B. the path separator is actually semicolon (man page says colon)
+
+mkdir "$GEN_DIR"
+mkdir "$GEN_DIR/subdir"
+echo '(display 1)' > "$GEN_DIR/a.k"
+echo '(display 2)' > "$GEN_DIR/b.k"
+echo '(display 3)' > "$GEN_DIR/subdir/a.k"
+echo '(display 4)' > "$GEN_DIR/subdir/b.k"
+
+export KLISP_PATH="$GEN_DIR/?"
+check_oi '12' '' $KLISP -r a.k -r b.k
+
+export KLISP_PATH="$GEN_DIR/?.k"
+check_oi '12' '' $KLISP -r a -r b
+
+export KLISP_PATH="$GEN_DIR/subdir/?.k"
+check_oi '34' '' $KLISP -r a -r b
+
+export KLISP_PATH="$GEN_DIR/?.k;$GEN_DIR/subdir/?.k"
+check_oi '12' '' $KLISP -r a -r b
+
+export KLISP_PATH="$GEN_DIR/subdir/?.k;$GEN_DIR/?.k"
+check_oi '34' '' $KLISP -r a -r b
+
+# cleanup after tests with KLISP_PATH
+
+unset KLISP_PATH
 
 # other environment variables
 
