@@ -553,9 +553,8 @@ static TValue extract_import_bindings(klisp_State *K, TValue imports)
             }
             menv = kmodule_env(kcdr(entry));
             mls = kmodule_exp_list(kcdr(entry));
-            
-            if (ttisnil(stack))
-                continue;
+
+            klisp_assert(ttispair(clause) && !ttiskeyword(kcar(clause)));
         } else {
             clause = kcar(stack);
             stack = kcdr(stack);

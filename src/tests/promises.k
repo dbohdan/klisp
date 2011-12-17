@@ -30,7 +30,7 @@
 
 ;; Test cases from R(-1)RK
 ($define! lazy-test-1
-  ($sequence
+  ($let ()
     ($provide! (get-count p)
       ($define! count 5)
       ($define! get-count ($lambda () count))

@@ -11,10 +11,10 @@
 #include "kgc.h"
 
 /* GC: Assumes env & ext_list are roooted */
-/* ext_list should be immutable */
+/* ext_list should be immutable (and it may be empty) */
 TValue kmake_module(klisp_State *K, TValue env, TValue exp_list)
 {
-    klisp_assert(kis_immutable(exp_list));
+    klisp_assert(ttisnil(exp_list) || kis_immutable(exp_list));
     Module *new_mod = klispM_new(K, Module);
 
     /* header + gc_fields */
