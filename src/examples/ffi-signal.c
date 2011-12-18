@@ -60,7 +60,7 @@ static void safe_add_applicative(klisp_State *K, TValue env,
                                  const char *name,
                                  klisp_CFunction fn)
 {
-    TValue symbol = ksymbol_new(K, name, KNIL);
+    TValue symbol = ksymbol_new_b(K, name, KNIL);
     krooted_tvs_push(K, symbol);
     TValue value = kmake_applicative(K, fn, 0);
     krooted_tvs_push(K, value);
