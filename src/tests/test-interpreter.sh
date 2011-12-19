@@ -257,8 +257,9 @@ check_oes '' '/.*No object found in string.*/' 1 $KLISP -i
 unset KLISP_INIT
 
 # KLISP_PATH environment variable
-# N.B. the path separator is actually semicolon (man page says colon)
-
+# The path separator is semicolon and the 
+# question mark is replaced by the name
+# being required
 mkdir "$GEN_DIR"
 mkdir "$GEN_DIR/subdir"
 echo '(display 1)' > "$GEN_DIR/a.k"

@@ -494,9 +494,9 @@ The following environment variables affect the behaviour of `klisp'
      following form `(load "/path/to/init-file")'
 
 `KLISP_PATH'
-     A colon separated list of templates for controlling the search of
-     required files.  Each template can use the char `?' to be replaced
-     by the required name at run-time.
+     A semicolon separated list of templates for controlling the search
+     of required files.  Each template can use the char `?' to be
+     replaced by the required name at run-time.
 
 
 
@@ -2976,21 +2976,21 @@ Node: Acknowledgements15323
 Node: Interpreter15709
 Ref: Command Line Options18009
 Ref: Interpreter Exit Status18943
-Node: Booleans20167
-Node: Equivalence22708
-Node: Symbols23501
-Node: Control24867
-Node: Pairs and lists27184
-Node: Environments44207
-Node: Combiners54448
-Node: Continuations60484
-Node: Encapsulations69027
-Node: Promises70480
-Node: Keyed Variables74403
-Node: Numbers77174
-Node: Strings96677
-Node: Characters102024
-Node: Ports104734
-Node: Alphabetical Index122670
+Node: Booleans20171
+Node: Equivalence22712
+Node: Symbols23505
+Node: Control24871
+Node: Pairs and lists27188
+Node: Environments44211
+Node: Combiners54452
+Node: Continuations60488
+Node: Encapsulations69031
+Node: Promises70484
+Node: Keyed Variables74407
+Node: Numbers77178
+Node: Strings96681
+Node: Characters102028
+Node: Ports104738
+Node: Alphabetical Index122674
 
 End Tag Table

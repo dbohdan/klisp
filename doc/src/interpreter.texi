@@ -147,7 +147,7 @@ interpreter.  To use an init file, just define @var{KLISP_INIT} to the
 following form @code{(load "/path/to/init-file")}
 
 @item KLISP_PATH
-A colon separated list of templates for controlling the search of
+A semicolon separated list of templates for controlling the search of
 required files.  Each template can use the char @code{?} to be
 replaced by the required name at run-time.
 

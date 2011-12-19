@@ -1,7 +1,21 @@
 * Release 0.3
 ** documentation:
 *** update the manual with the current features
-*** add a section to the manual with the interpreter usage
+** test
+*** build
+    - Windows 
+    - Linux
+*** test cases
+    - Windows 
+    - Linux
+** fix
+*** delete-file problem in Windows (do GC and retry)
+** Makefile
+*** Add a couple of flags to turn debug on/off
+** Webpage
+*** Try to put together a quick webpage
+**** Try Skeleton CSS framework
+*** Have Maria Sol draw a simple logo
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter
@@ -26,10 +40,11 @@
     - currently
       - int32_t (used in lists)
       - uint32_t (used in strings, vectors and bytevectors)
-*** add static qualifiers (especially in all kg*.c files
+*** add static qualifiers (especially in all kg*.c files)
 *** add const qualifiers where sensible
 ** fix:
 *** fix char-ready? and u8-ready? (r7rs)
+    - Probably need a thread per port
 ** reader/writer
 *** syntax support for complex numbers (Kernel report)
 *** unicode support
@@ -41,8 +56,9 @@
 *** $named-let + $do (r7rs)
 *** $define-record-type (r7rs)
 *** eager comprehensions (at least for check.k) see SRFIs 42 and 78 (srfi)
-** other
 *** restarts (r7rs/common lisp)
+*** check.k as a module
+** other
 *** add restart support to the repl/interpreter (r7rs)
 *** complex numbers (Kernel report)
 *** interval arithmetic (Kernel report)
@@ -66,3 +82,9 @@
       - disable it by default
   - Even after disabling these two, the size is 500k
   - Continue investigating and try to make it lower
+
+** documentation
+*** Clean up the structure of the documentation
+*** Add xrefs
+*** Work a little on the indexes
+*** Add README files to all directories
