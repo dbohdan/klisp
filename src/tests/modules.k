@@ -109,6 +109,7 @@
 ($check-error ($fresh ($import-module! (#:rename (mod-a) (1 2)))))
 ($check-error ($fresh ($import-module! (#:rename (mod-a) p))))
 ($check-error ($fresh ($import-module! (#:rename (mod-a)))))
+($check-error ($fresh ($import-module! (#:rename (mod-a) (p q))) r))
 
 ($check equal? ($fresh ($import-module! (#:only (mod-b 1 2 x) u)) u) 4)
 ($check equal? ($fresh ($import-module! (#:only (mod-b 1 2 x) p)) p) 1)

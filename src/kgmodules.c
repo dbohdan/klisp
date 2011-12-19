@@ -618,16 +618,42 @@ static TValue extract_import_bindings(klisp_State *K, TValue imports)
                 krooted_tvs_pop(K); krooted_tvs_pop(K);
             } else if (kkeyword_cstr_cmp(keyw, "rename") == 0) {
                 check_distinct_symbols(K, clause);
+                /* env is for renamed symbols info */
+                TValue env = kmake_empty_environment(K);
+                krooted_tvs_push(K, env);
+
+                /* remember all renamed symbols info first */
+                for (TValue ls = rest; !ttisnil(ls); ls = kcdr(ls)) {
+                    TValue p = kcar(ls);
+                    kadd_binding(K, env, kcar(p), kcar(kcdr(p)));
+                }
+
+                /* now we can construct the list and env */
                 TValue nmls = kcons(K, KNIL, KNIL);
                 TValue nmls_lp = nmls;
                 krooted_tvs_push(K, nmls);
                 TValue nmenv = kmake_empty_environment(K);
                 krooted_tvs_push(K, nmenv);
 
-                for (TValue ls = rest; !ttisnil(ls); ls = kcdr(ls)) {
-                    TValue p = kcar(ls);
-                    TValue si = kcar(p);
-                    TValue se = kcar(kcdr(p));
+
+                /* add all renamed symbols first */
+                for (TValue ls = mls; !ttisnil(ls); ls = kcdr(ls)) {
+                    TValue si = kcar(ls);
+                    TValue se;
+                    if (kbinds(K, env, si)) /* renamed binding */
+                        se = kget_binding(K, env, si);
+                    else se = si;
+
+                    /* check that symbol wasn't already defined
+                       (can happen if a binding is renamed to another binding
+                       of the same module and that other binding isn't itself 
+                       renamed) */
+                    if (kbinds(K, nmenv, se)) {
+                        klispE_throw_simple_with_irritants(
+                            K, "imported a symbol twice in #:rename clause", 
+                            1, se);
+                        return KINERT;
+                    }
 
                     np = kcons(K, se, KNIL);
                     kset_cdr(nmls_lp, np);
@@ -635,9 +661,10 @@ static TValue extract_import_bindings(klisp_State *K, TValue imports)
 
                     kadd_binding(K, nmenv, se, kget_binding(K, menv, si));
                 }
+
                 mls = kcdr(nmls);
                 menv = nmenv;
-                krooted_tvs_pop(K); krooted_tvs_pop(K);
+                krooted_tvs_pop(K); krooted_tvs_pop(K); krooted_tvs_pop(K);
             }
         }
 
