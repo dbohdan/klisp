@@ -74,11 +74,12 @@ end of the list is reached (which is immediate if <code>&lt;list&gt;</code> is
 <code>nil</code>), the operative returns true.  If an operand evaluates to
 false, no further operand evaluations are performed, and the operative
 returns false.  If <code>&lt;list&gt;</code> is acyclic, and the last operand is
-<!-- TODO cross ref tail-contect -->
-evaluated, it is evaluated as a tail context.  If <code>&lt;list&gt;</code> is
-cyclic, an unbounded number of operand evaluations may be
-performed.  If any of the operands evaluates to a non-boolean value, an
-error is signaled (even if it's the last one). 
+<!-- TODO cross ref tail-context -->
+evaluated, it is evaluated in a special type of tail context that
+checks that the passed value is a boolean.  If <code>&lt;list&gt;</code> is
+cyclic, an unbounded number of operand evaluations may be performed. 
+If any of the operands evaluates to a non-boolean value, an error is
+signaled (even if it's the last one). 
 </p></blockquote></div>
 
 <div class="defun">
@@ -91,10 +92,11 @@ end of the list is reached (which is immediate if <code>&lt;list&gt;</code> is
 true, no further operand evaluations are performed, and the operative
 returns true.  If <code>&lt;list&gt;</code> is acyclic, and the last operand is
 <!-- TODO cross ref tail-context -->
-evaluated, it is evaluated as a tail context.  If <code>&lt;list&gt;</code> is
-cyclic, an unbounded number of operand evaluations may be
-performed.  If any of the operands evaluates to a non-boolean value, an
-error is signaled (even if it's the last one). 
+evaluated, it is evaluated in a special type of tail context that
+checks that the passed value is a boolean.  If <code>&lt;list&gt;</code> is
+cyclic, an unbounded number of operand evaluations may be performed. 
+If any of the operands evaluates to a non-boolean value, an error is
+signaled (even if it's the last one). 
 </p></blockquote></div>
 
 <!-- *-texinfo-*- -->

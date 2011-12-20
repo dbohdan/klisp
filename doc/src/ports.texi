@@ -27,7 +27,7 @@ an output only external representation (so that it can never be the
 normal result of a call to read).  The eof type is encapsulated.
 
 SOURCE NOTE:  the eof type is not in the Kernel report, it is used in
-klisp and was taken from Scheme.
+klisp and was taken from r7rs.
 
 @deffn Applicative port? (port? . objects)
   The primitive type predicate for type port.  @code{port?}
@@ -53,7 +53,23 @@ its arguments is not a binary port.
 
   Every port must be admitted by at least one of these two predicates.
 
-  SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+  SOURCE NOTE: this is missing from Kernel, it is taken from r7rs.
+@end deffn
+
+@deffn Applicative file-port? (file-port? . objects)
+@deffnx Applicative string-port? (string-port? . objects)
+@deffnx Applicative bytevector-port? (bytevector-port? . objects)
+These applictives are predicates that returns true unless one or more
+of its arguments is not file, string or bytevector port, repectively.
+
+  Every port in klisp is be admitted by exactly one of these predicates.
+
+  SOURCE NOTE: this is missing from Kernel.
+@end deffn
+
+@deffn Applicative port-open? (port-open? port)
+Applicative @code{port-open?} returns true iff @code{port} is still
+open.
 @end deffn
 
 @deffn Applicative with-input-from-file (with-input-from-file string combiner)
@@ -97,7 +113,7 @@ In either case, if the file can't be opened (e.g. because it doesn't
 exists, or there's a permissions problem), an error is signaled.
 
   SOURCE NOTE: open-input-file is enumerated in the Kernel report but
-the text is still missing. open-binary-input-file is from Scheme.
+the text is still missing. open-binary-input-file is from r7rs.
 @end deffn
 
 @deffn Applicative open-output-file (open-output-file string)
@@ -117,7 +133,25 @@ but that could change later (i.e. like in Scheme the behaviour should
 be considered unspecified).
 
   SOURCE NOTE: open-output-file is enumerated in the Kernel report but
-the text is still missing. open-binary-output-file is from Scheme.
+the text is still missing. open-binary-output-file is from r7rs.
+@end deffn
+
+@deffn Applicative open-input-string (open-output-string string)
+@deffnx Applicative open-input-bytevector (open-output-bytevector bytevector)
+These applicative return a fresh input port that reads characters or
+unsigned bytes from the passed sequence.
+
+  SOURCE NOTE: These are taken from r7rs.
+@end deffn
+
+@deffn Applicative open-output-string (open-output-string)
+@deffnx Applicative open-output-bytevector (open-output-bytevector)
+These applicative return a fresh output port that accumulates
+characters or unsigned bytes.  The accumulated data can be obtained
+via applicatives @code{get-ouput-string} and
+@code{get-output-bytevector}, respectively.
+
+  SOURCE NOTE: This are taken from r7rs.
 @end deffn
 
 @deffn Applicative close-input-file (close-input-file input-port)
@@ -147,7 +181,7 @@ be used to selectively close only one direction of the port.
   The result returned by applicatives @code{close-input-port},
 @code{close-output-port}, and @code{close-port} is inert.
 
-  SOURCE NOTE: this is from Scheme. The equivalent
+  SOURCE NOTE: this is from r7rs. The equivalent
 @code{close-input-file} and @code{close-output-file} are probably name
 errors and only retained here till the draft standard rectifies them
 @end deffn
@@ -185,6 +219,11 @@ by @code{write} is inert.
 still missing.
 @end deffn
 
+@deffn Applicative write-simple (write-simple object [port])
+Applicative @code{write-simple} is like @code{write} except that it
+doesn't write sharing info. It will hang if handed a cyclic structure.
+@end deffn
+
 @deffn Applicative call-with-input-file (call-with-input-file string combiner)
 @deffnx Applicative call-with-output-file (call-with-output-file string combiner)
   These applicatives open file named in @code{string} for textual
@@ -211,6 +250,12 @@ report.  The one detail that I think is still open, is whether to
 return @code{#inert} (as is the case with klisp currently) or rather
 return the value of the last evaluation.
 @end deffn
+
+@deffn Applicative require
+TODO
+@end deffn
+
+TODO
 
 @deffn Applicative get-module (get-module string [environment])
 @c TODO add xref standard-environment, open/input, read

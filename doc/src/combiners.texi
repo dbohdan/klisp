@@ -148,6 +148,20 @@ times.
 @c TODO comp/xref for-each
 @end deffn
 
+@deffn Applicative string-map (string-map applicative . strings)
+@deffnx Applicative vector-map (vector-map applicative . vectors)
+@deffnx Applicative bytevector-map (bytevector-map applicative . bytevectors)
+@code{strings}, @code{vectors}, or @code{bytevectors} should be
+non-empty lists of the corresponding type and all elements should be
+of the same length.
+
+These applicatives behave as @code{map} except that the list of
+elements passed to @code{applicative} are the n-th chars, objects, or
+uint8s of the strings, vectors or bytevectors passed as arguments.
+
+SOURCE NOTE: These are taken from r7rs.
+@end deffn
+
 @deffn Applicative combiner? (combiner? . objects)
   The primitive type predicate for type combiner. @code{combiner?}
 returns true iff all the objects in @code{objects} are of type

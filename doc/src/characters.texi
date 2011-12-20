@@ -9,14 +9,20 @@
 
   A character is an object that represents an ASCII character (for
 now, only ASCII is supported in klisp, in the future, full UNICODE
-will be supported).  The external representation of characters
-consists of a leading ``#\'' and the character or character name.  The
-only supported names for now are ``newline'' and ``space'' (both from
-r5rs scheme).  Characters are immutable.  The character type is
-encapsulated.
+will be supported).  
+
+The external representation of characters consists of a leading ``#\''
+and the character or character name or ``#\x'' followed by the hex
+unicode code point (only ASCII supported for now).  The supported
+names for now are ``null'', ``alarm'', ``backspace'', ``tab'',
+``newline'', ``return'', ``escape'', ``space'', ``delete'', ``vtab'',
+and ``formfeed'' (this is a combination of the ones accepted in r6rs
+and r7rs).
+
+Characters are immutable.  The character type is encapsulated.
 
   SOURCE NOTE: This section is still missing from the report.  The
-features defined here were taken mostly from r5rs scheme.
+features defined here were taken mostly from r7rs.
 
 @deffn Applicative char? (char? . objects)
   The primitive type predicate for type character.  @code{char?}

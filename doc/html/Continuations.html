@@ -34,7 +34,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <!-- node-name,  next,  previous,  up -->
 <h2 class="chapter">10 Continuations</h2>
 
-<p><a name="index-continuations-127"></a>
+<p><a name="index-continuations-141"></a>
   A continuation is a plan for all future computation, parameterized
 by a value to be provided, and contingent on the states of all mutable
 data structures (which notably may include environments). When the
@@ -71,14 +71,14 @@ The continuation type is encapsulated.
 
 <!-- TODO add dynamic extent & guard selection/interception to the intro -->
 <div class="defun">
-&mdash; Applicative: <b>continuation?</b> (<var>continuation? . objects</var>)<var><a name="index-continuation_003f-128"></a></var><br>
+&mdash; Applicative: <b>continuation?</b> (<var>continuation? . objects</var>)<var><a name="index-continuation_003f-142"></a></var><br>
 <blockquote><p>  The primitive type predicate for type continuation. 
 <code>continuation?</code> returns true iff all the objects in
 <code>objects</code> are of type continuation. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>call/cc</b> (<var>call/cc combiner</var>)<var><a name="index-call_002fcc-129"></a></var><br>
+&mdash; Applicative: <b>call/cc</b> (<var>call/cc combiner</var>)<var><a name="index-call_002fcc-143"></a></var><br>
 <blockquote><p>  Calls <code>combiner</code> in the dynamic environment as a tail context,
 passing as sole operand to it the continuation to which <code>call/cc</code>
 would normally return its result.  (That is, constructs such a
@@ -87,7 +87,7 @@ combination and evaluates it in the dynamic environment.)
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>extend-continuation</b> (<var>extend-continuation continuation applicative </var>[<var>environment</var>])<var><a name="index-extend_002dcontinuation-130"></a></var><br>
+&mdash; Applicative: <b>extend-continuation</b> (<var>extend-continuation continuation applicative </var>[<var>environment</var>])<var><a name="index-extend_002dcontinuation-144"></a></var><br>
 <blockquote><p>  The <code>extend-continuation</code> applicative constructs and returns a
 new child of <code>continuation</code> that, when it normally receives a
 value v, calls the underlying combiner of <code>applicative</code> with
@@ -102,7 +102,7 @@ normally to be returned to <code>continuation</code>.
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>guard-continuation</b> (<var>guard-continuation entry-guards continuation exit-guards</var>)<var><a name="index-guard_002dcontinuation-131"></a></var><br>
+&mdash; Applicative: <b>guard-continuation</b> (<var>guard-continuation entry-guards continuation exit-guards</var>)<var><a name="index-guard_002dcontinuation-145"></a></var><br>
 <blockquote><p>  <code>entry-guards</code> and <code>exit-guards</code> should each be a list of
 clauses; each clause should be a list of length two, whose first
 element is a continuation, and whose second element is an applicative
@@ -137,7 +137,7 @@ independent of any subsequent mutations to the arguments.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>continuation-&gt;applicative</b> (<var>continuation-&gt;applicative continuation</var>)<var><a name="index-continuation_002d_003eapplicative-132"></a></var><br>
+&mdash; Applicative: <b>continuation-&gt;applicative</b> (<var>continuation-&gt;applicative continuation</var>)<var><a name="index-continuation_002d_003eapplicative-146"></a></var><br>
 <blockquote><p>  Returns an applicative whose underlying operative abnormally passes
 its operand tree to <code>continuation</code>, thus: A series of
 interceptors are selected to handle the abnormal pass, and a
@@ -149,7 +149,7 @@ passed to the derived continuation.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Variable: <b>root-continuation</b><var><a name="index-root_002dcontinuation-133"></a></var><br>
+&mdash; Variable: <b>root-continuation</b><var><a name="index-root_002dcontinuation-147"></a></var><br>
 <blockquote><p>  This continuation is the ancestor of all other continuations. When
 it normally receives a value, it terminates the Kernel session. (For
 example, if the system is running a read-eval-print loop, it exits the
@@ -158,7 +158,7 @@ loop.)
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Variable: <b>error-continuation</b><var><a name="index-error_002dcontinuation-134"></a></var><br>
+&mdash; Variable: <b>error-continuation</b><var><a name="index-error_002dcontinuation-148"></a></var><br>
 <blockquote><p>  The dynamic extent of this continuation is mutually disjoint from
 the dynamic extent in which Kernel computation usually occurs (such as
 the dynamic extent in which the Kernel system would run a
@@ -183,7 +183,7 @@ dynamic extent of <code>error-continuation</code>.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>apply-continuation</b> (<var>apply-continuation continuation object</var>)<var><a name="index-apply_002dcontinuation-135"></a></var><br>
+&mdash; Applicative: <b>apply-continuation</b> (<var>apply-continuation continuation object</var>)<var><a name="index-apply_002dcontinuation-149"></a></var><br>
 <blockquote><p>  Applicative <code>apply-continuation</code> converts its first argument to
 an applicative as if by <code>continuation-&gt;applicative</code>, and then
 applies it as usual.
@@ -195,7 +195,7 @@ applies it as usual.
         </blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$let/cc</b> (<var>$let/cc &lt;symbol&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024let_002fcc-136"></a></var><br>
+&mdash; Operative: <b>$let/cc</b> (<var>$let/cc &lt;symbol&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024let_002fcc-150"></a></var><br>
 <blockquote><p>  A child environment <code>e</code> of the dynamic environment is created,
 containing a binding of <code>&lt;symbol&gt;</code> to the continuation to which
 the result of the call to <code>$let/cc</code> should normally return; then,
@@ -210,7 +210,7 @@ if <code>&lt;objects&gt;</code> is empty the result is inert.
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>guard-dynamic-extent</b> (<var>guard-dynamic-extent entry-guards combiner exit-guards</var>)<var><a name="index-guard_002ddynamic_002dextent-137"></a></var><br>
+&mdash; Applicative: <b>guard-dynamic-extent</b> (<var>guard-dynamic-extent entry-guards combiner exit-guards</var>)<var><a name="index-guard_002ddynamic_002dextent-151"></a></var><br>
 <blockquote><p>  This applicative extends the current continuation with the specified
 guards, and calls <code>combiner</code> in the dynamic extent of the new
 continuation, with no operands and the dynamic environment of the call
@@ -218,7 +218,7 @@ to <code>guard-dynamic-extent</code>.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>exit</b> (<var>exit </var>[<var>object</var>])<var><a name="index-exit-138"></a></var><br>
+&mdash; Applicative: <b>exit</b> (<var>exit </var>[<var>object</var>])<var><a name="index-exit-152"></a></var><br>
 <blockquote><!-- TODO add xref -->
         <p>Applicative <code>exit</code> initiates an abnormal transfer of
 <code>object</code> (or <code>#inert</code> if <code>object</code> was not specified),

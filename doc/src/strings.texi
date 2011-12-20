@@ -11,15 +11,25 @@
 now, only ASCII is supported in klisp, in the future, full UNICODE
 will be supported).  The external representation of strings consists
 of a leading ``"'', the characters of the string and a closing ``"''.
-Some characters should be escaped, by preceding them with a ``\'': in
-klisp these are the double quote (``"'') and the backslash (``\'').
-In the future more advanced escape mechanism may be added (like in
-r7rs-draft scheme, for escping common ASCII control codes and
-arbitrary unicode characters).  A string has a length that is fixed at
-creation time, and as many characters, indexed from @code{0} to
-@code{length-1}.
+Both double quote and backslash should be escaped to appear withing
+strings.  Some other characters also have an escaped form for
+convenience.  All of these are written with a leading slash (``\'').
+In klisp these are: double quote (``\"''), backslash (``\\''), null
+(``\0''), alarm (``\a''), backspace (``\b''), tab (``\t''), newline
+(``\n''), return (``\r''), vertical tab (``\v''), and formfeed
+(``\f'').  You can also use inline hex escapes to include arbitary
+unicode codepoints (only ASCII range supported for now).  The syntax
+is ``\x<hex codepoint>;''.  New lines can be escaped to simplify the
+accomodation of literal strings in source code, to do this: use ``\''
+followed by any ammount of intraline whitespace, a new line and
+another ammount of intraline whitespace.  All of that intraline
+whitespace and the newline, together with the leading slash is
+discarded by the reader and doesn't end up in the string being read.
 
-  Strings may be mutable or immutable.  If an attempt is made to
+A string has a length that is fixed at creation time, and as many
+characters, indexed from @code{0} to @code{length-1}.
+
+Strings may be mutable or immutable.  If an attempt is made to
 mutate an immutable string, an error is signaled.  Two immutable
 strings are ``eq?'' iff they are ``equal?''.  Two mutable strings are
 ``eq?'' if they were created by the same constructor call.  Two
@@ -33,16 +43,26 @@ attempt is made to return a new empty string (like calling
 The string type is encapsulated.
 
 SOURCE NOTE: This section is still missing from the report.  The
-features defined here were taken mostly from r5rs scheme.  It is
+features defined here were taken mostly from r7rs scheme.  It is
 possible that in the future, klisp only admits immutable strings (like
 lua and java), and that operations for contructing strings are moved
 to a new type (like Java's StringBuilder/StringBuffer).  But for now,
-compatibility with r5rs was preferred/simpler.
+compatibility with r7rs was preferred/simpler.
 
 @deffn Applicative string? (string? . objects)
   The primitive type predicate for type string.  @code{string?}
 returns true iff all the objects in @code{objects} are of type
 string.
+@end deffn
+
+@deffn Applicative immutable-string? (immutable-string? objects)
+@deffnx Applicative mutable-string? (mutable-string? objects)
+The primitive type predicates for types immutable string and mutable
+string.  These return true iff all the objects in @code{objects} are of
+type immutable string or mutable string respectively.
+
+SOURCE NOTE: these aren't provided in the Kernel report, but added for
+convenience.  These can be implemented in standard kernel by using guards.
 @end deffn
 
 @deffn Applicative string=? (string=? . strings)
@@ -127,10 +147,23 @@ new immutable string with the same length and characters as
 
 @deffn Applicative string->list (string->list string)
 @deffnx Applicative list->string (list->string chars)
-  Applicatives @code{string->list} and @code{list->string} convert
-between strings and list of characters.  The strings returned by
-@code{list->string} are mutable.
+@deffnx Applicative string->vector (string->vector string)
+@deffnx Applicative vector->string (vector->string vchars)
+@deffnx Applicative string->bytevector (string->bytevector string)
+@deffnx Applicative bytevector->string (bytevector->string bvchars)
+These applicatives convert between strings and list of characters,
+vectors of characters, and bytevectors of characters.  The objects
+returned by these applicatives are always mutable.
 @end deffn
 
-@c TODO add upcase/downcase when added to klisp
+@deffn Applicative string-upcase (string-upcase string)
+@deffnx Applicative string-downcase (string-downcase string)
+@deffnx Applicative string-titlecase (string-titlecase string)
+@deffnx Applicative string-foldcase (string-foldcase string)
+These applicatives perform the respective case folding on the passed
+@code{string} and return a new mutable strings as a result.  The
+original @code{string} is not modified.  For now in klisp only ASCII
+is implemented, and so @code{string-foldcase} is the same as
+@code{string-downcase}.
+@end deffn
 

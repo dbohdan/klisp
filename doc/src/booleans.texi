@@ -41,11 +41,12 @@ end of the list is reached (which is immediate if @code{<list>} is
 @code{nil}), the operative returns true.  If an operand evaluates to
 false, no further operand evaluations are performed, and the operative
 returns false.  If @code{<list>} is acyclic, and the last operand is
-@c TODO cross ref tail-contect
-evaluated, it is evaluated as a tail context.  If @code{<list>} is
-cyclic, an unbounded number of operand evaluations may be
-performed.  If any of the operands evaluates to a non-boolean value, an
-error is signaled (even if it's the last one).
+@c TODO cross ref tail-context
+evaluated, it is evaluated in a special type of tail context that
+checks that the passed value is a boolean.  If @code{<list>} is
+cyclic, an unbounded number of operand evaluations may be performed.
+If any of the operands evaluates to a non-boolean value, an error is
+signaled (even if it's the last one).
 @end deffn
 
 @deffn Operative $or? ($or? . <list>)
@@ -57,9 +58,10 @@ end of the list is reached (which is immediate if @code{<list>} is
 true, no further operand evaluations are performed, and the operative
 returns true.  If @code{<list>} is acyclic, and the last operand is
 @c TODO cross ref tail-context
-evaluated, it is evaluated as a tail context.  If @code{<list>} is
-cyclic, an unbounded number of operand evaluations may be
-performed.  If any of the operands evaluates to a non-boolean value, an
-error is signaled (even if it's the last one).
+evaluated, it is evaluated in a special type of tail context that
+checks that the passed value is a boolean.  If @code{<list>} is
+cyclic, an unbounded number of operand evaluations may be performed.
+If any of the operands evaluates to a non-boolean value, an error is
+signaled (even if it's the last one).
 @end deffn
 

@@ -34,7 +34,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <!-- node-name,  next,  previous,  up -->
 <h2 class="chapter">17 Ports</h2>
 
-<p><a name="index-ports-258"></a>
+<p><a name="index-ports-287"></a>
   A port is an object that mediates data from an input or to a
 destination.  In the former case, the port is an input port, in the
 latter case, an output port.  The data itself can consist of either
@@ -55,17 +55,17 @@ an output only external representation (so that it can never be the
 normal result of a call to read).  The eof type is encapsulated.
 
    <p>SOURCE NOTE:  the eof type is not in the Kernel report, it is used in
-klisp and was taken from Scheme.
+klisp and was taken from r7rs.
 
 <div class="defun">
-&mdash; Applicative: <b>port?</b> (<var>port? . objects</var>)<var><a name="index-port_003f-259"></a></var><br>
+&mdash; Applicative: <b>port?</b> (<var>port? . objects</var>)<var><a name="index-port_003f-288"></a></var><br>
 <blockquote><p>  The primitive type predicate for type port.  <code>port?</code>
 returns true iff all the objects in <code>objects</code> are of type port. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>input-port?</b> (<var>input-port? . objects</var>)<var><a name="index-input_002dport_003f-260"></a></var><br>
-&mdash; Applicative: <b>output-port?</b> (<var>output-port? . objects</var>)<var><a name="index-output_002dport_003f-261"></a></var><br>
+&mdash; Applicative: <b>input-port?</b> (<var>input-port? . objects</var>)<var><a name="index-input_002dport_003f-289"></a></var><br>
+&mdash; Applicative: <b>output-port?</b> (<var>output-port? . objects</var>)<var><a name="index-output_002dport_003f-290"></a></var><br>
 <blockquote><p>  Applicative <code>input-port?</code> is a predicate that returns true
 unless one or more of its arguments is not an input port.  Applicative
 <code>output-port?</code> is a predicate that returns true unless one or
@@ -75,8 +75,8 @@ more of its arguments is not an output port.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>textual-port?</b> (<var>textual-port? . objects</var>)<var><a name="index-textual_002dport_003f-262"></a></var><br>
-&mdash; Applicative: <b>binary-port?</b> (<var>binary-port? . objects</var>)<var><a name="index-binary_002dport_003f-263"></a></var><br>
+&mdash; Applicative: <b>textual-port?</b> (<var>textual-port? . objects</var>)<var><a name="index-textual_002dport_003f-291"></a></var><br>
+&mdash; Applicative: <b>binary-port?</b> (<var>binary-port? . objects</var>)<var><a name="index-binary_002dport_003f-292"></a></var><br>
 <blockquote><p>  Applicative <code>textual-port?</code> is a predicate that returns true
 unless one or more of its arguments is not a textual port.  Applicative
 <code>binary-port?</code> is a predicate that returns true unless one or more of
@@ -84,13 +84,31 @@ its arguments is not a binary port.
 
         <p>Every port must be admitted by at least one of these two predicates.
 
-        <p>SOURCE NOTE: this is missing from Kernel, it is taken from Scheme. 
+        <p>SOURCE NOTE: this is missing from Kernel, it is taken from r7rs. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>with-input-from-file</b> (<var>with-input-from-file string combiner</var>)<var><a name="index-with_002dinput_002dfrom_002dfile-264"></a></var><br>
-&mdash; Applicative: <b>with-output-to-file</b> (<var>with-output-to-file string combiner</var>)<var><a name="index-with_002doutput_002dto_002dfile-265"></a></var><br>
-&mdash; Applicative: <b>with-error-to-file</b> (<var>with-error-to-file string combiner</var>)<var><a name="index-with_002derror_002dto_002dfile-266"></a></var><br>
+&mdash; Applicative: <b>file-port?</b> (<var>file-port? . objects</var>)<var><a name="index-file_002dport_003f-293"></a></var><br>
+&mdash; Applicative: <b>string-port?</b> (<var>string-port? . objects</var>)<var><a name="index-string_002dport_003f-294"></a></var><br>
+&mdash; Applicative: <b>bytevector-port?</b> (<var>bytevector-port? . objects</var>)<var><a name="index-bytevector_002dport_003f-295"></a></var><br>
+<blockquote><p>These applictives are predicates that returns true unless one or more
+of its arguments is not file, string or bytevector port, repectively.
+
+        <p>Every port in klisp is be admitted by exactly one of these predicates.
+
+        <p>SOURCE NOTE: this is missing from Kernel. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>port-open?</b> (<var>port-open? port</var>)<var><a name="index-port_002dopen_003f-296"></a></var><br>
+<blockquote><p>Applicative <code>port-open?</code> returns true iff <code>port</code> is still
+open. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>with-input-from-file</b> (<var>with-input-from-file string combiner</var>)<var><a name="index-with_002dinput_002dfrom_002dfile-297"></a></var><br>
+&mdash; Applicative: <b>with-output-to-file</b> (<var>with-output-to-file string combiner</var>)<var><a name="index-with_002doutput_002dto_002dfile-298"></a></var><br>
+&mdash; Applicative: <b>with-error-to-file</b> (<var>with-error-to-file string combiner</var>)<var><a name="index-with_002derror_002dto_002dfile-299"></a></var><br>
 <blockquote><!-- add xref get-current-input-port/get-current-output-port -->
         <p>These three applicatives open the file named in <code>string</code> for
 textual input or output, an invoke the binder of either the
@@ -106,9 +124,9 @@ the text is still missing.  The third applicative is from Scheme.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-current-input-port</b> (<var>get-current-input-port</var>)<var><a name="index-get_002dcurrent_002dinput_002dport-267"></a></var><br>
-&mdash; Applicative: <b>get-current-output-port</b> (<var>get-current-output-port</var>)<var><a name="index-get_002dcurrent_002doutput_002dport-268"></a></var><br>
-&mdash; Applicative: <b>get-current-error-port</b> (<var>get-current-error-port</var>)<var><a name="index-get_002dcurrent_002derror_002dport-269"></a></var><br>
+&mdash; Applicative: <b>get-current-input-port</b> (<var>get-current-input-port</var>)<var><a name="index-get_002dcurrent_002dinput_002dport-300"></a></var><br>
+&mdash; Applicative: <b>get-current-output-port</b> (<var>get-current-output-port</var>)<var><a name="index-get_002dcurrent_002doutput_002dport-301"></a></var><br>
+&mdash; Applicative: <b>get-current-error-port</b> (<var>get-current-error-port</var>)<var><a name="index-get_002dcurrent_002derror_002dport-302"></a></var><br>
 <blockquote><p>  These are the accessors for the input-port, output-port, and
 error-port keyed dynamic variables repectively. 
 <!-- add xref to with-input-from-file, etc -->
@@ -119,8 +137,8 @@ the text is still missing.  The third applicative is from Scheme.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>open-input-file</b> (<var>open-input-file string</var>)<var><a name="index-open_002dinput_002dfile-270"></a></var><br>
-&mdash; Applicative: <b>open-binary-input-file</b> (<var>open-binary-input-file string</var>)<var><a name="index-open_002dbinary_002dinput_002dfile-271"></a></var><br>
+&mdash; Applicative: <b>open-input-file</b> (<var>open-input-file string</var>)<var><a name="index-open_002dinput_002dfile-303"></a></var><br>
+&mdash; Applicative: <b>open-binary-input-file</b> (<var>open-binary-input-file string</var>)<var><a name="index-open_002dbinary_002dinput_002dfile-304"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for an existing file.
 
         <p>Applicative <code>open-input-file</code> creates and returns a textual
@@ -131,12 +149,12 @@ In either case, if the file can't be opened (e.g. because it doesn't
 exists, or there's a permissions problem), an error is signaled.
 
         <p>SOURCE NOTE: open-input-file is enumerated in the Kernel report but
-the text is still missing. open-binary-input-file is from Scheme. 
+the text is still missing. open-binary-input-file is from r7rs. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>open-output-file</b> (<var>open-output-file string</var>)<var><a name="index-open_002doutput_002dfile-272"></a></var><br>
-&mdash; Applicative: <b>open-binary-output-file</b> (<var>open-binary-output-file string</var>)<var><a name="index-open_002dbinary_002doutput_002dfile-273"></a></var><br>
+&mdash; Applicative: <b>open-output-file</b> (<var>open-output-file string</var>)<var><a name="index-open_002doutput_002dfile-305"></a></var><br>
+&mdash; Applicative: <b>open-binary-output-file</b> (<var>open-binary-output-file string</var>)<var><a name="index-open_002dbinary_002doutput_002dfile-306"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for an existing file.
 
         <p>Applicative <code>open-output-file</code> creates and returns a textual
@@ -152,12 +170,32 @@ but that could change later (i.e. like in Scheme the behaviour should
 be considered unspecified).
 
         <p>SOURCE NOTE: open-output-file is enumerated in the Kernel report but
-the text is still missing. open-binary-output-file is from Scheme. 
+the text is still missing. open-binary-output-file is from r7rs. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>close-input-file</b> (<var>close-input-file input-port</var>)<var><a name="index-close_002dinput_002dfile-274"></a></var><br>
-&mdash; Applicative: <b>close-output-file</b> (<var>close-output-file output-port</var>)<var><a name="index-close_002doutput_002dfile-275"></a></var><br>
+&mdash; Applicative: <b>open-input-string</b> (<var>open-output-string string</var>)<var><a name="index-open_002dinput_002dstring-307"></a></var><br>
+&mdash; Applicative: <b>open-input-bytevector</b> (<var>open-output-bytevector bytevector</var>)<var><a name="index-open_002dinput_002dbytevector-308"></a></var><br>
+<blockquote><p>These applicative return a fresh input port that reads characters or
+unsigned bytes from the passed sequence.
+
+        <p>SOURCE NOTE: These are taken from r7rs. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>open-output-string</b> (<var>open-output-string</var>)<var><a name="index-open_002doutput_002dstring-309"></a></var><br>
+&mdash; Applicative: <b>open-output-bytevector</b> (<var>open-output-bytevector</var>)<var><a name="index-open_002doutput_002dbytevector-310"></a></var><br>
+<blockquote><p>These applicative return a fresh output port that accumulates
+characters or unsigned bytes.  The accumulated data can be obtained
+via applicatives <code>get-ouput-string</code> and
+<code>get-output-bytevector</code>, respectively.
+
+        <p>SOURCE NOTE: This are taken from r7rs. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>close-input-file</b> (<var>close-input-file input-port</var>)<var><a name="index-close_002dinput_002dfile-311"></a></var><br>
+&mdash; Applicative: <b>close-output-file</b> (<var>close-output-file output-port</var>)<var><a name="index-close_002doutput_002dfile-312"></a></var><br>
 <blockquote><p>  These applicatives close the port argument, so that no more
 input/output may be performed on them, and the resources can be
 freed.  If the port was already closed these applicatives have no
@@ -172,9 +210,9 @@ probably be called close-input-port &amp; close-output-port.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>close-input-port</b> (<var>close-input-port input-port</var>)<var><a name="index-close_002dinput_002dport-276"></a></var><br>
-&mdash; Applicative: <b>close-output-port</b> (<var>close-output-port output-port</var>)<var><a name="index-close_002doutput_002dport-277"></a></var><br>
-&mdash; Applicative: <b>close-port</b> (<var>close-port port</var>)<var><a name="index-close_002dport-278"></a></var><br>
+&mdash; Applicative: <b>close-input-port</b> (<var>close-input-port input-port</var>)<var><a name="index-close_002dinput_002dport-313"></a></var><br>
+&mdash; Applicative: <b>close-output-port</b> (<var>close-output-port output-port</var>)<var><a name="index-close_002doutput_002dport-314"></a></var><br>
+&mdash; Applicative: <b>close-port</b> (<var>close-port port</var>)<var><a name="index-close_002dport-315"></a></var><br>
 <blockquote><p>  These applicatives close the port argument, so that no more
 input/output may be performed on them, and the resources can be
 freed.  If the port was already closed these applicatives have no
@@ -184,13 +222,13 @@ be used to selectively close only one direction of the port.
         <p>The result returned by applicatives <code>close-input-port</code>,
 <code>close-output-port</code>, and <code>close-port</code> is inert.
 
-        <p>SOURCE NOTE: this is from Scheme. The equivalent
+        <p>SOURCE NOTE: this is from r7rs. The equivalent
 <code>close-input-file</code> and <code>close-output-file</code> are probably name
 errors and only retained here till the draft standard rectifies them
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>read</b> (<var>read </var>[<var>textual-input-port</var>])<var><a name="index-read-279"></a></var><br>
+&mdash; Applicative: <b>read</b> (<var>read </var>[<var>textual-input-port</var>])<var><a name="index-read-316"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -206,7 +244,7 @@ still missing.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>write</b> (<var>write object </var>[<var>textual-output-port</var>])<var><a name="index-write-280"></a></var><br>
+&mdash; Applicative: <b>write</b> (<var>write object </var>[<var>textual-output-port</var>])<var><a name="index-write-317"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -224,8 +262,14 @@ still missing.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>call-with-input-file</b> (<var>call-with-input-file string combiner</var>)<var><a name="index-call_002dwith_002dinput_002dfile-281"></a></var><br>
-&mdash; Applicative: <b>call-with-output-file</b> (<var>call-with-output-file string combiner</var>)<var><a name="index-call_002dwith_002doutput_002dfile-282"></a></var><br>
+&mdash; Applicative: <b>write-simple</b> (<var>write-simple object </var>[<var>port</var>])<var><a name="index-write_002dsimple-318"></a></var><br>
+<blockquote><p>Applicative <code>write-simple</code> is like <code>write</code> except that it
+doesn't write sharing info. It will hang if handed a cyclic structure. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>call-with-input-file</b> (<var>call-with-input-file string combiner</var>)<var><a name="index-call_002dwith_002dinput_002dfile-319"></a></var><br>
+&mdash; Applicative: <b>call-with-output-file</b> (<var>call-with-output-file string combiner</var>)<var><a name="index-call_002dwith_002doutput_002dfile-320"></a></var><br>
 <blockquote><p>  These applicatives open file named in <code>string</code> for textual
 input/output respectively and call their <code>combiner</code> argument in a
 fresh empty environment passing it as a sole operand the opened port. 
@@ -237,7 +281,7 @@ still missing.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>load</b> (<var>load string</var>)<var><a name="index-load-283"></a></var><br>
+&mdash; Applicative: <b>load</b> (<var>load string</var>)<var><a name="index-load-321"></a></var><br>
 <blockquote><!-- TODO add xref, open/input, read -->
         <p>Applicative <code>load</code> opens the file named <code>string</code> for
 textual input; reads objects from the file until the end of the file
@@ -253,7 +297,14 @@ return the value of the last evaluation.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-module</b> (<var>get-module string </var>[<var>environment</var>])<var><a name="index-get_002dmodule-284"></a></var><br>
+&mdash; Applicative: <b>require</b><var><a name="index-require-322"></a></var><br>
+<blockquote><p>TODO
+</p></blockquote></div>
+
+   <p>TODO
+
+<div class="defun">
+&mdash; Applicative: <b>get-module</b> (<var>get-module string </var>[<var>environment</var>])<var><a name="index-get_002dmodule-323"></a></var><br>
 <blockquote><!-- TODO add xref standard-environment, open/input, read -->
         <p>Applicative <code>get-module</code> creates a fresh standard environment;
 opens the file named <code>string</code> for textual input; reads objects
@@ -266,7 +317,7 @@ prior to evaluating read expressions, by binding symbol
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>eof-object?</b> (<var>eof-object? . objects</var>)<var><a name="index-eof_002dobject_003f-285"></a></var><br>
+&mdash; Applicative: <b>eof-object?</b> (<var>eof-object? . objects</var>)<var><a name="index-eof_002dobject_003f-324"></a></var><br>
 <blockquote><p>  The primitive type predicate for type eof.  <code>eof-object?</code>
 returns true iff all the objects in <code>objects</code> are of type eof.
 
@@ -277,7 +328,7 @@ primitive type predicates.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>read-char</b> (<var>read-char </var>[<var>textual-input-port</var>])<var><a name="index-read_002dchar-286"></a></var><br>
+&mdash; Applicative: <b>read-char</b> (<var>read-char </var>[<var>textual-input-port</var>])<var><a name="index-read_002dchar-325"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -290,7 +341,7 @@ an <code>eof</code> if the end of file was reached.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>peek-char</b> (<var>peek-char </var>[<var>textual-input-port</var>])<var><a name="index-peek_002dchar-287"></a></var><br>
+&mdash; Applicative: <b>peek-char</b> (<var>peek-char </var>[<var>textual-input-port</var>])<var><a name="index-peek_002dchar-326"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -305,7 +356,7 @@ remains unchanged so that new call to <code>peek-char</code> or
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-ready?</b> (<var>char-ready? </var>[<var>textual-input-port</var>])<var><a name="index-char_002dready_003f-288"></a></var><br>
+&mdash; Applicative: <b>char-ready?</b> (<var>char-ready? </var>[<var>textual-input-port</var>])<var><a name="index-char_002dready_003f-327"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -320,7 +371,7 @@ the code to do this is non-portable.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>write-char</b> (<var>write-char char </var>[<var>textual-output-port</var>])<var><a name="index-write_002dchar-289"></a></var><br>
+&mdash; Applicative: <b>write-char</b> (<var>write-char char </var>[<var>textual-output-port</var>])<var><a name="index-write_002dchar-328"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -333,7 +384,7 @@ The result returned by <code>write-char</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>newline</b> (<var>newline </var>[<var>textal-ouput-port</var>])<var><a name="index-newline-290"></a></var><br>
+&mdash; Applicative: <b>newline</b> (<var>newline </var>[<var>textal-ouput-port</var>])<var><a name="index-newline-329"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -345,7 +396,7 @@ The result returned by <code>newline</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>display</b> (<var>display object </var>[<var>textual-output-port</var>])<var><a name="index-display-291"></a></var><br>
+&mdash; Applicative: <b>display</b> (<var>display object </var>[<var>textual-output-port</var>])<var><a name="index-display-330"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -360,7 +411,7 @@ within those strings and character objects are output as if by
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>read-u8</b> (<var>read-u8 </var>[<var>textual-input-port</var>])<var><a name="index-read_002du8-292"></a></var><br>
+&mdash; Applicative: <b>read-u8</b> (<var>read-u8 </var>[<var>textual-input-port</var>])<var><a name="index-read_002du8-331"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -374,7 +425,7 @@ the end of file was reached.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>peek-u8</b> (<var>peek-u8 </var>[<var>textual-input-port</var>])<var><a name="index-peek_002du8-293"></a></var><br>
+&mdash; Applicative: <b>peek-u8</b> (<var>peek-u8 </var>[<var>textual-input-port</var>])<var><a name="index-peek_002du8-332"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -390,7 +441,7 @@ same port return the same byte.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>u8-ready?</b> (<var>u8-ready? </var>[<var>textual-input-port</var>])<var><a name="index-u8_002dready_003f-294"></a></var><br>
+&mdash; Applicative: <b>u8-ready?</b> (<var>u8-ready? </var>[<var>textual-input-port</var>])<var><a name="index-u8_002dready_003f-333"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>input-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -405,7 +456,7 @@ the code to do this is non-portable.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>write-u8</b> (<var>write-u8 u8 </var>[<var>textual-output-port</var>])<var><a name="index-write_002du8-295"></a></var><br>
+&mdash; Applicative: <b>write-u8</b> (<var>write-u8 u8 </var>[<var>textual-output-port</var>])<var><a name="index-write_002du8-334"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If the
 port is closed, an error is signaled.
@@ -419,7 +470,7 @@ result returned by <code>write-u8</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>flush-output-port</b> (<var>flush-output-port </var>[<var>output-port</var>])<var><a name="index-flush_002doutput_002dport-296"></a></var><br>
+&mdash; Applicative: <b>flush-output-port</b> (<var>flush-output-port </var>[<var>output-port</var>])<var><a name="index-flush_002doutput_002dport-335"></a></var><br>
 <blockquote><p>  If the <code>port</code> optional argument is not specified, then the
 value of the <code>output-port</code> keyed dynamic variable is used.  If
 the <code>port</code> is closed or if it is not an output port, an error is
@@ -433,7 +484,7 @@ output port to the underlying file or device. The result returned by
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>file-exists?</b> (<var>file-exists? string</var>)<var><a name="index-file_002dexists_003f-297"></a></var><br>
+&mdash; Applicative: <b>file-exists?</b> (<var>file-exists? string</var>)<var><a name="index-file_002dexists_003f-336"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for a file.
 
         <p>Predicate <code>file-exists?</code> checks to see if a file named
@@ -443,7 +494,7 @@ output port to the underlying file or device. The result returned by
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>delete-file</b> (<var>delete-file string</var>)<var><a name="index-delete_002dfile-298"></a></var><br>
+&mdash; Applicative: <b>delete-file</b> (<var>delete-file string</var>)<var><a name="index-delete_002dfile-337"></a></var><br>
 <blockquote><p>  <code>string</code> should be the name/path for an existing file.
 
         <p>Applicative <code>delete-file</code> deletes the file named <code>string</code>. 
@@ -454,7 +505,7 @@ result returned by <code>delete-file</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>rename-file</b> (<var>rename-file string1 string2</var>)<var><a name="index-rename_002dfile-299"></a></var><br>
+&mdash; Applicative: <b>rename-file</b> (<var>rename-file string1 string2</var>)<var><a name="index-rename_002dfile-338"></a></var><br>
 <blockquote><p>  <code>string1</code> should be the name/path for an existing file,
 <code>string2</code> should be the name/path for a non existing file.
 

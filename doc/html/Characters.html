@@ -34,63 +34,69 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <!-- node-name,  next,  previous,  up -->
 <h2 class="chapter">16 Characters</h2>
 
-<p><a name="index-characters-237"></a>
+<p><a name="index-characters-266"></a>
   A character is an object that represents an ASCII character (for
 now, only ASCII is supported in klisp, in the future, full UNICODE
-will be supported).  The external representation of characters
-consists of a leading &ldquo;#\&rdquo; and the character or character name.  The
-only supported names for now are &ldquo;newline&rdquo; and &ldquo;space&rdquo; (both from
-r5rs scheme).  Characters are immutable.  The character type is
-encapsulated.
+will be supported).
+
+   <p>The external representation of characters consists of a leading &ldquo;#\&rdquo;
+and the character or character name or &ldquo;#\x&rdquo; followed by the hex
+unicode code point (only ASCII supported for now).  The supported
+names for now are &ldquo;null&rdquo;, &ldquo;alarm&rdquo;, &ldquo;backspace&rdquo;, &ldquo;tab&rdquo;,
+&ldquo;newline&rdquo;, &ldquo;return&rdquo;, &ldquo;escape&rdquo;, &ldquo;space&rdquo;, &ldquo;delete&rdquo;, &ldquo;vtab&rdquo;,
+and &ldquo;formfeed&rdquo; (this is a combination of the ones accepted in r6rs
+and r7rs).
+
+   <p>Characters are immutable.  The character type is encapsulated.
 
    <p>SOURCE NOTE: This section is still missing from the report.  The
-features defined here were taken mostly from r5rs scheme.
+features defined here were taken mostly from r7rs.
 
 <div class="defun">
-&mdash; Applicative: <b>char?</b> (<var>char? . objects</var>)<var><a name="index-char_003f-238"></a></var><br>
+&mdash; Applicative: <b>char?</b> (<var>char? . objects</var>)<var><a name="index-char_003f-267"></a></var><br>
 <blockquote><p>  The primitive type predicate for type character.  <code>char?</code>
 returns true iff all the objects in <code>objects</code> are of type
 character. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char=?</b> (<var>char=? . chars</var>)<var><a name="index-char_003d_003f-239"></a></var><br>
-&mdash; Applicative: <b>char&lt;?</b> (<var>char&lt;? . chars</var>)<var><a name="index-char_003c_003f-240"></a></var><br>
-&mdash; Applicative: <b>char&lt;=?</b> (<var>char&lt;=? . chars</var>)<var><a name="index-char_003c_003d_003f-241"></a></var><br>
-&mdash; Applicative: <b>char&gt;?</b> (<var>char&gt;? . chars</var>)<var><a name="index-char_003e_003f-242"></a></var><br>
-&mdash; Applicative: <b>char&gt;=?</b> (<var>char&gt;=? . chars</var>)<var><a name="index-char_003e_003d_003f-243"></a></var><br>
+&mdash; Applicative: <b>char=?</b> (<var>char=? . chars</var>)<var><a name="index-char_003d_003f-268"></a></var><br>
+&mdash; Applicative: <b>char&lt;?</b> (<var>char&lt;? . chars</var>)<var><a name="index-char_003c_003f-269"></a></var><br>
+&mdash; Applicative: <b>char&lt;=?</b> (<var>char&lt;=? . chars</var>)<var><a name="index-char_003c_003d_003f-270"></a></var><br>
+&mdash; Applicative: <b>char&gt;?</b> (<var>char&gt;? . chars</var>)<var><a name="index-char_003e_003f-271"></a></var><br>
+&mdash; Applicative: <b>char&gt;=?</b> (<var>char&gt;=? . chars</var>)<var><a name="index-char_003e_003d_003f-272"></a></var><br>
 <blockquote><p>  These predicates compare any number of characters using their
 ASCII value for the comparison. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-ci=?</b> (<var>char-ci=? . chars</var>)<var><a name="index-char_002dci_003d_003f-244"></a></var><br>
-&mdash; Applicative: <b>char-ci&lt;?</b> (<var>char-ci&lt;? . chars</var>)<var><a name="index-char_002dci_003c_003f-245"></a></var><br>
-&mdash; Applicative: <b>char-ci&lt;=?</b> (<var>char-ci&lt;=? . chars</var>)<var><a name="index-char_002dci_003c_003d_003f-246"></a></var><br>
-&mdash; Applicative: <b>char-ci&gt;?</b> (<var>char-ci&gt;? . chars</var>)<var><a name="index-char_002dci_003e_003f-247"></a></var><br>
-&mdash; Applicative: <b>char-ci&gt;=?</b> (<var>char-ci&gt;=? . chars</var>)<var><a name="index-char_002dci_003e_003d_003f-248"></a></var><br>
+&mdash; Applicative: <b>char-ci=?</b> (<var>char-ci=? . chars</var>)<var><a name="index-char_002dci_003d_003f-273"></a></var><br>
+&mdash; Applicative: <b>char-ci&lt;?</b> (<var>char-ci&lt;? . chars</var>)<var><a name="index-char_002dci_003c_003f-274"></a></var><br>
+&mdash; Applicative: <b>char-ci&lt;=?</b> (<var>char-ci&lt;=? . chars</var>)<var><a name="index-char_002dci_003c_003d_003f-275"></a></var><br>
+&mdash; Applicative: <b>char-ci&gt;?</b> (<var>char-ci&gt;? . chars</var>)<var><a name="index-char_002dci_003e_003f-276"></a></var><br>
+&mdash; Applicative: <b>char-ci&gt;=?</b> (<var>char-ci&gt;=? . chars</var>)<var><a name="index-char_002dci_003e_003d_003f-277"></a></var><br>
 <blockquote><p>  These predicates convert the chars to lowercase and then compare
 their ASCII values. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-alphabetic?</b> (<var>char-alphabetic? . chars</var>)<var><a name="index-char_002dalphabetic_003f-249"></a></var><br>
-&mdash; Applicative: <b>char-numeric?</b> (<var>char-numeric? . chars</var>)<var><a name="index-char_002dnumeric_003f-250"></a></var><br>
-&mdash; Applicative: <b>char-whitespace?</b> (<var>char-whitespace? . chars</var>)<var><a name="index-char_002dwhitespace_003f-251"></a></var><br>
+&mdash; Applicative: <b>char-alphabetic?</b> (<var>char-alphabetic? . chars</var>)<var><a name="index-char_002dalphabetic_003f-278"></a></var><br>
+&mdash; Applicative: <b>char-numeric?</b> (<var>char-numeric? . chars</var>)<var><a name="index-char_002dnumeric_003f-279"></a></var><br>
+&mdash; Applicative: <b>char-whitespace?</b> (<var>char-whitespace? . chars</var>)<var><a name="index-char_002dwhitespace_003f-280"></a></var><br>
 <blockquote><p>  These predicates return true iff all of their arguments are
 respectively &ldquo;alphabetic&rdquo;, &ldquo;numeric&rdquo;, or &ldquo;whitespace&rdquo;. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-upper-case?</b> (<var>char-upper-case? . chars</var>)<var><a name="index-char_002dupper_002dcase_003f-252"></a></var><br>
-&mdash; Applicative: <b>char-lower-case?</b> (<var>char-lower-case? . chars</var>)<var><a name="index-char_002dlower_002dcase_003f-253"></a></var><br>
+&mdash; Applicative: <b>char-upper-case?</b> (<var>char-upper-case? . chars</var>)<var><a name="index-char_002dupper_002dcase_003f-281"></a></var><br>
+&mdash; Applicative: <b>char-lower-case?</b> (<var>char-lower-case? . chars</var>)<var><a name="index-char_002dlower_002dcase_003f-282"></a></var><br>
 <blockquote><p>  These predicates return true iff all of their arguments are
 respectively &ldquo;upper case, or &ldquo;lower case&rdquo;. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-upcase</b> (<var>char-upcase char</var>)<var><a name="index-char_002dupcase-254"></a></var><br>
-&mdash; Applicative: <b>char-downcase</b> (<var>char-downcase char</var>)<var><a name="index-char_002ddowncase-255"></a></var><br>
+&mdash; Applicative: <b>char-upcase</b> (<var>char-upcase char</var>)<var><a name="index-char_002dupcase-283"></a></var><br>
+&mdash; Applicative: <b>char-downcase</b> (<var>char-downcase char</var>)<var><a name="index-char_002ddowncase-284"></a></var><br>
 <blockquote><p>  These applicatives return a character <code>char2</code> so that:
      <pre class="example">          (char-ci=? char char2) &rArr; #t
 </pre>
@@ -102,8 +108,8 @@ respectively &ldquo;upper case, or &ldquo;lower case&rdquo;.
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-&gt;integer</b> (<var>char-&gt;integer char</var>)<var><a name="index-char_002d_003einteger-256"></a></var><br>
-&mdash; Applicative: <b>integer-&gt;char</b> (<var>integer-&gt;char k</var>)<var><a name="index-integer_002d_003echar-257"></a></var><br>
+&mdash; Applicative: <b>char-&gt;integer</b> (<var>char-&gt;integer char</var>)<var><a name="index-char_002d_003einteger-285"></a></var><br>
+&mdash; Applicative: <b>integer-&gt;char</b> (<var>integer-&gt;char k</var>)<var><a name="index-integer_002d_003echar-286"></a></var><br>
 <blockquote><p>  These applicatives convert between ASCII values (as exact integers
 between 0 and 127) and characters.  If an integer that is out of range
 for ASCII characters is passed to <code>integer-&gt;char</code>, an error is

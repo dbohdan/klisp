@@ -12,7 +12,13 @@ representation. Symbols are immutable, and the symbol type is
 encapsulated.  The external representations of symbols are usually
 identifiers.  However, symbols with other external representations may
 @c TODO add xref to string->symbol
-be created.
+be created.  Symbols whose external representation is enclosed within
+``|'' (that is ``| ... |'') can contain any character supported by
+klisp, ``|'' and ``\'' can be included by escaping them with a leading
+``\'' (that is ``\|'' and ``\\'').  Characters in symbols can also be
+specified with a unicode hex escape by using the syntax ``\x<hex
+codepoint>;''.  This works whether using the ``| ... |'' syntax or
+not.
 
 @deffn Applicative symbol? (symbol? . objects)
   The primitive type predicate for type symbol.  @code{symbol?}
@@ -34,8 +40,7 @@ always the case that:
 @end example
 @c TODO add xrefs for external representation
   @code{string->symbol} can create symbols whose external
-representation aren't identifiers.  Right now klisp uses an output-only
-representation, but in the near future it will probably include some
-kind of escaping mechanism to allow arbitrary symbols to have readable
-external representations as in R7RS Scheme.
+representation aren't identifiers.  klisp uses the r7rs external
+representation for such symbols and so all symbols can be written and
+read back.
 @end deffn

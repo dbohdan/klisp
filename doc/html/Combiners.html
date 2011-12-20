@@ -34,7 +34,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <!-- node-name,  next,  previous,  up -->
 <h2 class="chapter">9 Combiners</h2>
 
-<p><a name="index-combiners-115"></a><a name="index-applicatives-116"></a><a name="index-operatives-117"></a>
+<p><a name="index-combiners-126"></a><a name="index-applicatives-127"></a><a name="index-operatives-128"></a>
   There are two types of combiners in Kernel, operative and
 applicative. Both types are encapsulated. All combiners are immutable. 
 Two applicatives are <code>eq?</code> iff their underlying combiners are
@@ -47,21 +47,21 @@ iff they are <code>eq?</code>.
 <!-- TODO add xref for eq? and equal? -->
 
 <div class="defun">
-&mdash; Applicative: <b>operative?</b> (<var>operative? . objects</var>)<var><a name="index-operative_003f-118"></a></var><br>
+&mdash; Applicative: <b>operative?</b> (<var>operative? . objects</var>)<var><a name="index-operative_003f-129"></a></var><br>
 <blockquote><p>  The primitive type predicate for type operative. <code>operative?</code>
 returns true iff all the objects in <code>objects</code> are of type
 operative. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>applicative?</b> (<var>applicative? . objects</var>)<var><a name="index-applicative_003f-119"></a></var><br>
+&mdash; Applicative: <b>applicative?</b> (<var>applicative? . objects</var>)<var><a name="index-applicative_003f-130"></a></var><br>
 <blockquote><p>  The primitive type predicate for type applicative. 
 <code>applicative?</code> returns true iff all the objects in
 <code>objects</code> are of type applicative. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$vau</b> (<var>$vau &lt;formals&gt; &lt;eformal&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024vau-120"></a></var><br>
+&mdash; Operative: <b>$vau</b> (<var>$vau &lt;formals&gt; &lt;eformal&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024vau-131"></a></var><br>
 <blockquote><!-- TODO add xref to formal parameter tree -->
         <p><code>&lt;formals&gt;</code> should be a formal parameter tree; <code>&lt;eformal&gt;</code>
 should be either a symbol or <code>#ignore</code>.  If <code>&lt;formals&gt;</code> does
@@ -110,19 +110,19 @@ operative is compound.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>wrap</b> (<var>wrap combiner</var>)<var><a name="index-wrap-121"></a></var><br>
+&mdash; Applicative: <b>wrap</b> (<var>wrap combiner</var>)<var><a name="index-wrap-132"></a></var><br>
 <blockquote><p>  The <code>wrap</code> applicative returns an applicative whose underlying
 combiner is <code>combiner</code>. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>unwrap</b> (<var>unwrap applicative</var>)<var><a name="index-unwrap-122"></a></var><br>
+&mdash; Applicative: <b>unwrap</b> (<var>unwrap applicative</var>)<var><a name="index-unwrap-133"></a></var><br>
 <blockquote><p>  The <code>unwrap</code> applicative returns the underlying combiner of
 <code>applicative</code>. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$lambda</b> (<var>$lambda &lt;formals&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024lambda-123"></a></var><br>
+&mdash; Operative: <b>$lambda</b> (<var>$lambda &lt;formals&gt; . &lt;objects&gt;</var>)<var><a name="index-g_t_0024lambda-134"></a></var><br>
 <blockquote><p>  <code>&lt;formals&gt;</code> should be a formal parameter tree.
 
         <p>The <code>$lambda</code> operative is defined by the following equivalence:
@@ -132,7 +132,7 @@ combiner is <code>combiner</code>.
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>apply</b> (<var>apply applicative object </var>[<var>environment</var>])<var><a name="index-apply-124"></a></var><br>
+&mdash; Applicative: <b>apply</b> (<var>apply applicative object </var>[<var>environment</var>])<var><a name="index-apply-135"></a></var><br>
 <blockquote><p>  Applicative <code>apply</code> combines the underlying combiner of
 <code>applicative</code> with <code>object</code> in a tail context with dynamic
 environment <code>environment</code> (if the long form is used) or in an
@@ -148,7 +148,7 @@ empty environment (if the short form is used).
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>map</b> (<var>map applicative . lists</var>)<var><a name="index-map-125"></a></var><br>
+&mdash; Applicative: <b>map</b> (<var>map applicative . lists</var>)<var><a name="index-map-136"></a></var><br>
 <blockquote><p>  <code>lists</code> must be a nonempty list of lists; if there are two or
 <!-- TODO add xref to length -->
 more, they must all have the same length. If <code>lists</code> is empty, or
@@ -177,7 +177,22 @@ times.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>combiner?</b> (<var>combiner? . objects</var>)<var><a name="index-combiner_003f-126"></a></var><br>
+&mdash; Applicative: <b>string-map</b> (<var>string-map applicative . strings</var>)<var><a name="index-string_002dmap-137"></a></var><br>
+&mdash; Applicative: <b>vector-map</b> (<var>vector-map applicative . vectors</var>)<var><a name="index-vector_002dmap-138"></a></var><br>
+&mdash; Applicative: <b>bytevector-map</b> (<var>bytevector-map applicative . bytevectors</var>)<var><a name="index-bytevector_002dmap-139"></a></var><br>
+<blockquote><p><code>strings</code>, <code>vectors</code>, or <code>bytevectors</code> should be
+non-empty lists of the corresponding type and all elements should be
+of the same length.
+
+        <p>These applicatives behave as <code>map</code> except that the list of
+elements passed to <code>applicative</code> are the n-th chars, objects, or
+uint8s of the strings, vectors or bytevectors passed as arguments.
+
+        <p>SOURCE NOTE: These are taken from r7rs. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>combiner?</b> (<var>combiner? . objects</var>)<var><a name="index-combiner_003f-140"></a></var><br>
 <blockquote><p>  The primitive type predicate for type combiner. <code>combiner?</code>
 returns true iff all the objects in <code>objects</code> are of type
 combiner (i.e. applicative or operative). 

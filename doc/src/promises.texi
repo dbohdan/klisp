@@ -87,3 +87,12 @@ evaluation will take place the first time each of them is forced.
 type promise, representing memoization of @code{object}.  Whenever the
 promise is forced, it determines @code{object}.
 @end deffn
+
+@deffn Operative $delay ($delay <expression>)
+Operative @code{delay} behaves as the composition of @code{$lazy} and
+@code{memoize}, that is:
+@example
+($delay <expr>) @equiv{} ($lazy (memoize <expr>))
+@end example
+SOURCE NOTE: this is taken from r7rs.
+@end deffn

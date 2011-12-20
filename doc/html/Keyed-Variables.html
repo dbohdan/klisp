@@ -34,7 +34,7 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <!-- node-name,  next,  previous,  up -->
 <h2 class="chapter">13 Keyed Variables</h2>
 
-<p><a name="index-keyed-variables-146"></a>
+<p><a name="index-keyed-variables-161"></a>
   A keyed variable is a device that associates a non-symbolic key (in
 the form of an accessor applicative) with a value depending on the
 context in which lookup occurs.  Kernel provides two types of keyed
@@ -44,14 +44,14 @@ environment.
 
 <h3 class="section">13.1 Keyed Dynamic Variables</h3>
 
-<p><a name="index-keyed-dynamic-variables-147"></a><!-- add cf xref static -->
+<p><a name="index-keyed-dynamic-variables-162"></a><!-- add cf xref static -->
 <!-- TODO add xref to dynamic extent -->
   A keyed dynamic variable is a device that associates a non-symbolic
 key (in the form of an accessor applicative) with a value depending on
 the dynamic extent in which lookup occurs.
 
 <div class="defun">
-&mdash; Applicative: <b>make-keyed-dynamic-variable</b> (<var>make-keyed-dynamic-variable</var>)<var><a name="index-make_002dkeyed_002ddynamic_002dvariable-148"></a></var><br>
+&mdash; Applicative: <b>make-keyed-dynamic-variable</b> (<var>make-keyed-dynamic-variable</var>)<var><a name="index-make_002dkeyed_002ddynamic_002dvariable-163"></a></var><br>
 <blockquote><p>  Returns a list of the form <code>(b a)</code>, where <code>b</code> and <code>a</code>
 are applicatives, as follows.  Each call to
 <code>make-keyed-dynamic-variable</code> returns different <code>b</code> and
@@ -74,13 +74,13 @@ call to <code>a</code> is not within the dynamic extent of any call to
 
 <h3 class="section">13.2 Keyed Static Variables</h3>
 
-<p><a name="index-keyed-static-variables-149"></a>  A keyed static variable is a device that binds data in an
+<p><a name="index-keyed-static-variables-164"></a>  A keyed static variable is a device that binds data in an
 environment by a non-symbolic key, where the key is an accessor
 applicative. 
 <!-- add cf xref dynamic -->
 
 <div class="defun">
-&mdash; Applicative: <b>make-keyed-static-variable</b> (<var>make-keyed-static-variable</var>)<var><a name="index-make_002dkeyed_002dstatic_002dvariable-150"></a></var><br>
+&mdash; Applicative: <b>make-keyed-static-variable</b> (<var>make-keyed-static-variable</var>)<var><a name="index-make_002dkeyed_002dstatic_002dvariable-165"></a></var><br>
 <blockquote><p>  Returns a list of the form <code>(b a)</code>, where <code>b</code> and <code>a</code>
 are applicatives, as follows.  Each call to <code>make-keyed-static-variable</code>
 returns different <code>b</code> and <code>a</code>.

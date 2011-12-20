@@ -15,7 +15,7 @@ equivalence in the presence of mutation (@code{eq?}).
 @deffn Applicative eq? (eq? . objects)
   Predicate @code{eq?} returns true iff all of @code{objects} are
 effectively the same object, even in the presence of mutation. 
-@c todo maybe add more content here, specifical to klisp
+@c todo maybe add more content here, specific to klisp
 @end deffn
 
 @deffn Applicative equal? (equal? . objects)
@@ -23,5 +23,5 @@ effectively the same object, even in the presence of mutation.
 ``look'' the same as long as nothing is mutated.  This is a weaker
 predicate than @code{eq?}; that is, @code{equal?} must return true
 whenever @code{eq?} would return true.
-@c todo maybe add more content here, specifical to klisp
+@c todo maybe add more content here, specific to klisp
 @end deffn

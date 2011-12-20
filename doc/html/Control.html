@@ -81,7 +81,7 @@ the behaviour of the <code>$cond</code> operative:
         </blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>for-each</b> (<var>for-each . lists</var>)<var><a name="index-for_002deach-33"></a></var><br>
+&mdash; Applicative: <b>for-each</b> (<var>for-each applicative . lists</var>)<var><a name="index-for_002deach-33"></a></var><br>
 <blockquote><p><code>lists</code> must be a nonempty list of lists; if there are two or
 more, they should all be the same length. If lists is empty, or if all
 of its elements are not lists of the same length, an error is
@@ -92,6 +92,46 @@ signaled.
 of accumulating and returning a list of the results of the
 element-wise applications, the results of the applications are
 discarded and the result returned by <code>for-each</code> is inert. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>string-for-each</b> (<var>string-for-each applicative . strings</var>)<var><a name="index-string_002dfor_002deach-34"></a></var><br>
+&mdash; Applicative: <b>vector-for-each</b> (<var>vector-for-each applicative. vectors</var>)<var><a name="index-vector_002dfor_002deach-35"></a></var><br>
+&mdash; Applicative: <b>bytevector-for-each</b> (<var>bytevector-for-each applicative . bytevectors</var>)<var><a name="index-bytevector_002dfor_002deach-36"></a></var><br>
+<blockquote><p><code>strings</code>, <code>vectors</code>, or <code>bytevectors</code> should be
+non-empty lists of the corresponding type and all elements should be
+of the same length.
+
+        <p>These applicatives behave as <code>for-each</code> except that the list of
+elements passed to <code>applicative</code> are the n-th chars, objects, or
+uint8s of the strings, vectors or bytevectors passed as arguments.
+
+        <p>SOURCE NOTE: These are taken from r7rs. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$when</b> (<var>$when &lt;test&gt; . &lt;body&gt;</var>)<var><a name="index-g_t_0024when-37"></a></var><br>
+&mdash; Operative: <b>$unless</b> (<var>$unless &lt;test&gt; . &lt;body&gt;</var>)<var><a name="index-g_t_0024unless-38"></a></var><br>
+<blockquote><p><code>body</code> should be a list of expressions.
+
+        <p>These operatives behave as one-armed <code>$if</code>s with an implicit
+<code>$sequence</code>, except that they always discard the last value and
+the result returned is inert.
+
+        <p>So both <code>$when</code>, and <code>$unless</code> evaluate <code>&lt;test&gt;</code> in the
+dynamic environment.  If the result is non boolean an error is
+signaled.  In <code>$when</code> if the result is false and in
+<code>$unless</code> if the result is true, the expressions in <code>&lt;body&gt;</code>
+are not evaluated and an inert value is returned.  Otherwise, the
+expressions in <code>&lt;body&gt;</code> are evaluated sequentially in the dynamic
+environment.  If <code>&lt;body&gt;</code> is a non cyclic list, the last
+expression in <code>&lt;body&gt;</code> is evaluated in a special type of tail
+context, that, upon receiving a value discards it and returns an inert
+value instead.  If <code>&lt;body&gt;</code> is a cyclic list, element evaluation
+continues indefinitely, with elements in the cycle being evaluated
+repeatedly. 
+<!-- TODO xref tail-context -->
+SOURCE NOTE: These are taken from r7rs. 
 </p></blockquote></div>
 
 <!-- *-texinfo-*- -->

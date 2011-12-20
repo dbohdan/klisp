@@ -73,6 +73,23 @@ returns true iff all the objects in @code{objects} are of type number.
 are of type integer.
 @end deffn
 
+@deffn Applicative exact-integer? (exact-integer? . objects)
+  The primitive type predicate for number subtype exact integer.
+@code{exact-integer?}  returns true iff all the objects in
+@code{objects} are of type integer and exact.
+
+SOURCE NOTE: this is from r7rs.
+@end deffn
+
+@deffn Applicative u8? (u8? . objects)
+The primitive type predicate for number subtype exact integer between
+0 and 255.  This is the subtype used in bytevectors.  @code{u8?}
+returns true iff all the objects in @code{objects} are of type
+integer, are exact, and lie between 0 and 255 inclusive.
+
+SOURCE NOTE: this is handy for use with bytevectors.
+@end deffn
+
 @deffn Applicative rational? (rational? . objects)
   The primitive type predicate for number subtype rational.
 @code{rational?}  returns true iff all the objects in @code{objects}
@@ -427,40 +444,81 @@ primary values of the arguments; but the result is an approximation of
 @code{x0}.
 @end deffn
 
+@deffn Applicative sqrt (sqrt number)
+If @code{number} is negative, the result is undefined.
+
+Applicative @code{sqrt} returns the positive square root of number.
+The result may be inexact even if @code{number} is exact and the
+square root is rational.
+@end deffn
+
+@deffn Applicative expt (expt number1 number2)
+Applicative @code{expt} returns @code{number1} to the power of
+@code{number2}.  If @code{number1} is zero, then the result is 1 if
+@code{number2} is zero and 0 otherwise.
+@end deffn
+
 @deffn Applicative exp (exp number)
 @deffnx Applicative log (log number)
-TODO
-@end deffn
-
-
-@deffn Applicative sin (sin number)
+@deffnx Applicative sin (sin number)
 @deffnx Applicative cos (cos number)
 @deffnx Applicative tan (tan number)
-TODO
-@end deffn
-
-@deffn Applicative asin (asin number)
+@deffnx Applicative asin (asin number)
 @deffnx Applicative acos (acos number)
 @deffnx Applicative atan (atan number1 [number2])
-TODO
+These applicatives compute the usual transcendental functions.
+@code{log} computes the natural logarithm (not the base-10 logarithm).
+The two argument version of @code{atan} computes @code{(angle
+(make-recutangular number1 number2))} even thou klisp doesn't support
+complex numbers.
+
+All results may be inexact even if @code{number} is exact and the
+result of the transcendental function is rational.
+TODO add intervals returned for multidefined functions (inverses and log)
 @end deffn
 
-@deffn Applicative sqrt (sqrt number)
-@deffnx Applicative expt (expt number1 number2)
-TODO
+@deffn Applicative string->number (string->number string [radix])
+@code{radix} should be an exact integer, either 2, 8, 10, or 16.
+@code{string} should be a string describing a number in the specified
+radix, but may contain a radix prefix to override it.  The default
+@code{radix}, if not supplied, is 10.
+
+Applicative @code{string->number} returns the best approximation of
+the number represented by @code{string}.  If @code{string} is not a
+valid representation of a number in the given @code{radix} an error is
+signaled.
+
+Examples:
+@example
+(string->number "100") @result{} 100
+(string->number "100" 16) @result{} 256
+(string->number "#o100" 2) @result{} 64
+(string->number "1.0") @result{} 1.0
+@end example
+
+SOURCE NOTE: this is taken from r7rs.
 @end deffn
 
+@deffn Applicative number->string (number->string number [radix])
+@code{radix} should be an exact integer, either 2, 8, 10, or 16.  The
+default @code{radix}, if not supplied, is 10.
 
+Applicative @code{number->string} returns a string representing
+@code{number} in the given @code{radix}.  No radix prefix is present
+in the returned string.  If an inexact number is passed together with
+a radix other from 10, an error is signaled.
 
+The returned string is such that 
+@example
+(string->number (number->string number radix) radix) @equiv{} number
+@end example
 
+Examples:
+@example
+(number->string 100) @result{} "100"
+(number->string 256 16) @result{} "100"
+(number->string 1.0) @result{} "1.0"
+@end example
 
-
-
-
-
-
-
-
-
-
-
+SOURCE NOTE: this is taken from r7rs.
+@end deffn

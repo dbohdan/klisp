@@ -41,8 +41,8 @@ returns true iff all the objects in @code{objects} are of type ignore.
 @deffn Applicative eval (eval expression environment)
 @c TODO add xref to tail context
 @c TODO add xref to evaluation description
-  The @code{eval} applicative evaluates @code{expression} as a tail
-context in @code{environment}, and returns the resulting value.
+The @code{eval} applicative evaluates @code{expression} in
+@code{environment}, as a tail context, returning the resulting value.
 @end deffn
 
 @deffn Applicative make-environment (make-environment . environments)
@@ -243,6 +243,17 @@ environment that must result from the first evaluation.
 ($bindings->environment . bindings) @equiv{}
   ($let-redirect (make-environment) bindings (get-current-environment))
 @end example
+@end deffn
+
+@deffn Applicative eval-string (eval-string string environment)
+@code{string} should be the external representation of a single
+object.  If none or more than one external representation is found in
+@code{string} then an error is signaled.
+
+Applicative @code{eval-string} reads an external representation from
+string, and evaluates the resulting object in @code{environment}, as a
+tail context, returning the resulting value. 
+@c TODO add xref to tail context.
 @end deffn
 
 @deffn Operative $set! ($set! <exp1> <formals> <exp2>)

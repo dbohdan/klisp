@@ -40,7 +40,13 @@ representation. Symbols are immutable, and the symbol type is
 encapsulated.  The external representations of symbols are usually
 identifiers.  However, symbols with other external representations may
 <!-- TODO add xref to string->symbol -->
-be created.
+be created.  Symbols whose external representation is enclosed within
+&ldquo;|&rdquo; (that is &ldquo;| ... |&rdquo;) can contain any character supported by
+klisp, &ldquo;|&rdquo; and &ldquo;\&rdquo; can be included by escaping them with a leading
+&ldquo;\&rdquo; (that is &ldquo;\|&rdquo; and &ldquo;\\&rdquo;).  Characters in symbols can also be
+specified with a unicode hex escape by using the syntax &ldquo;\x&lt;hex
+codepoint&gt;;&rdquo;.  This works whether using the &ldquo;| ... |&rdquo; syntax or
+not.
 
 <div class="defun">
 &mdash; Applicative: <b>symbol?</b> (<var>symbol? . objects</var>)<var><a name="index-symbol_003f-24"></a></var><br>
@@ -64,10 +70,9 @@ always the case that:
 </pre>
         <!-- TODO add xrefs for external representation -->
         <p><code>string-&gt;symbol</code> can create symbols whose external
-representation aren't identifiers.  Right now klisp uses an output-only
-representation, but in the near future it will probably include some
-kind of escaping mechanism to allow arbitrary symbols to have readable
-external representations as in R7RS Scheme. 
+representation aren't identifiers.  klisp uses the r7rs external
+representation for such symbols and so all symbols can be written and
+read back. 
 </p></blockquote></div>
 
 <!-- *-texinfo-*- -->

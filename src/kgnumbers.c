@@ -2514,6 +2514,9 @@ void kinit_numbers_ground_env(klisp_State *K)
     /* 12.5.? exact-integer? */
     add_applicative(K, ground_env, "exact-integer?", ftypep, 2, symbol, 
                     p2tv(keintegerp));
+    /* 12.5.? u8? */
+    add_applicative(K, ground_env, "u8?", ftypep, 2, symbol, 
+                    p2tv(ku8p));
     /* 12.5.2 =? */
     add_applicative(K, ground_env, "=?", ftyped_kbpredp, 3,
                     symbol, p2tv(knumber_wpvp), p2tv(knum_eqp));

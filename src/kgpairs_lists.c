@@ -1345,8 +1345,6 @@ void kinit_pairs_lists_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "countable-list?", countable_listp, 0);
     /* 6.3.10 reduce */
     add_applicative(K, ground_env, "reduce", reduce, 0);
-
-    /* TODO add make-list, list-copy and reverse (from r7rs) */
 }
 
 /* init continuation names */

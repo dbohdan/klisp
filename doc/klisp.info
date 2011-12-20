@@ -534,7 +534,8 @@ boolean type is encapsulated.
      `nil'), the operative returns true.  If an operand evaluates to
      false, no further operand evaluations are performed, and the
      operative returns false.  If `<list>' is acyclic, and the last
-     operand is evaluated, it is evaluated as a tail context.  If
+     operand is evaluated, it is evaluated in a special type of tail
+     context that checks that the passed value is a boolean.  If
      `<list>' is cyclic, an unbounded number of operand evaluations may
      be performed.  If any of the operands evaluates to a non-boolean
      value, an error is signaled (even if it's the last one).
@@ -547,7 +548,8 @@ boolean type is encapsulated.
      `nil'), the operative returns false.  If an operand evaluates to
      true, no further operand evaluations are performed, and the
      operative returns true.  If `<list>' is acyclic, and the last
-     operand is evaluated, it is evaluated as a tail context.  If
+     operand is evaluated, it is evaluated in a special type of tail
+     context that checks that the passed value is a boolean.  If
      `<list>' is cyclic, an unbounded number of operand evaluations may
      be performed.  If any of the operands evaluates to a non-boolean
      value, an error is signaled (even if it's the last one).
@@ -582,7 +584,13 @@ File: klisp.info,  Node: Symbols,  Next: Control,  Prev: Equivalence,  Up: Top
 Two symbols are eq? iff they have the same external representation.
 Symbols are immutable, and the symbol type is encapsulated.  The
 external representations of symbols are usually identifiers.  However,
-symbols with other external representations may be created.
+symbols with other external representations may be created.  Symbols
+whose external representation is enclosed within "|" (that is "| ...
+|") can contain any character supported by klisp, "|" and "\" can be
+included by escaping them with a leading "\" (that is "\|" and "\\").
+Characters in symbols can also be specified with a unicode hex escape
+by using the syntax "\x<hex codepoint>;".  This works whether using the
+"| ... |" syntax or not.
 
  -- Applicative: symbol? (symbol? . objects)
      The primitive type predicate for type symbol.  `symbol?' returns
@@ -599,11 +607,9 @@ symbols with other external representations may be created.
           (eq? <symbol> (string->symbol (symbol->string <symbol>)))
                => #t
        `string->symbol' can create symbols whose external
-     representation aren't identifiers.  Right now klisp uses an
-     output-only representation, but in the near future it will
-     probably include some kind of escaping mechanism to allow
-     arbitrary symbols to have readable external representations as in
-     R7RS Scheme.
+     representation aren't identifiers.  klisp uses the r7rs external
+     representation for such symbols and so all symbols can be written
+     and read back.
 
 
 File: klisp.info,  Node: Control,  Next: Pairs and lists,  Prev: Symbols,  Up: Top
@@ -646,7 +652,7 @@ consists of a single immutable value, having external representation
           ($cond (<test> . <body>) . <clauses>) ==
             ($if <test> ($sequence . <body>) ($cond . <clauses>))
 
- -- Applicative: for-each (for-each . lists)
+ -- Applicative: for-each (for-each applicative . lists)
      `lists' must be a nonempty list of lists; if there are two or
      more, they should all be the same length. If lists is empty, or if
      all of its elements are not lists of the same length, an error is
@@ -656,6 +662,41 @@ consists of a single immutable value, having external representation
      accumulating and returning a list of the results of the
      element-wise applications, the results of the applications are
      discarded and the result returned by `for-each' is inert.
+
+ -- Applicative: string-for-each (string-for-each applicative . strings)
+ -- Applicative: vector-for-each (vector-for-each applicative. vectors)
+ -- Applicative: bytevector-for-each (bytevector-for-each applicative .
+          bytevectors)
+     `strings', `vectors', or `bytevectors' should be non-empty lists
+     of the corresponding type and all elements should be of the same
+     length.
+
+     These applicatives behave as `for-each' except that the list of
+     elements passed to `applicative' are the n-th chars, objects, or
+     uint8s of the strings, vectors or bytevectors passed as arguments.
+
+     SOURCE NOTE: These are taken from r7rs.
+
+ -- Operative: $when ($when <test> . <body>)
+ -- Operative: $unless ($unless <test> . <body>)
+     `body' should be a list of expressions.
+
+     These operatives behave as one-armed `$if's with an implicit
+     `$sequence', except that they always discard the last value and
+     the result returned is inert.
+
+     So both `$when', and `$unless' evaluate `<test>' in the dynamic
+     environment.  If the result is non boolean an error is signaled.
+     In `$when' if the result is false and in `$unless' if the result
+     is true, the expressions in `<body>' are not evaluated and an
+     inert value is returned.  Otherwise, the expressions in `<body>'
+     are evaluated sequentially in the dynamic environment.  If
+     `<body>' is a non cyclic list, the last expression in `<body>' is
+     evaluated in a special type of tail context, that, upon receiving
+     a value discards it and returns an inert value instead.  If
+     `<body>' is a cyclic list, element evaluation continues
+     indefinitely, with elements in the cycle being evaluated
+     repeatedly.  SOURCE NOTE: These are taken from r7rs.
 
 
 File: klisp.info,  Node: Pairs and lists,  Next: Environments,  Prev: Control,  Up: Top
@@ -690,6 +731,16 @@ output using, modulo whitespace, external representation `(1 2 3)'.
  -- Applicative: null? (null? . objects)
      The primitive type predicate for type null.  `null?' returns true
      iff all the objects in `objects' are of type null.
+
+ -- Applicative: immutable-pair? (immutable-pair? objects)
+ -- Applicative: mutable-pair? (mutable-pair? objects)
+     The primitive type predicates for types immutable pair and mutable
+     pair.  These return true iff all the objects in `objects' are of
+     type immutable pair or mutable pair respectively.
+
+     SOURCE NOTE: these aren't provided in the Kernel report, but added
+     for convenience.  These can be implemented in standard kernel by
+     using guards.
 
  -- Applicative: cons (cons object1 object2)
      A new mutable pair object is constructed and returned, whose car
@@ -778,6 +829,34 @@ output using, modulo whitespace, external representation `(1 2 3)'.
      individual "car’s" and "cdr’s" were written out in prefix order.
      Arbitrary compositions up to four deep are provided. There are
      twenty-eight of these applicatives in all.
+
+ -- Applicative: make-list (make-list length [fill])
+     `length' shoulde be an exact non-negative integer.
+
+     Applicative `make-list' creates a new mutable acyclic list of
+     length `length', with all pairs having `fill' in their cars.  If
+     no value is provided for `fill', `#inert' is used.
+
+     SOURCE NOTE: this is taken from r7rs.
+
+ -- Applicative: list-copy (list-copy list)
+     Applicative `list-copy' creates a new mutable copy of `list'.
+     That is, the returned list has the same list metrics as `list' and
+     the cars in the returned list are initially `eq?' to the
+     corresponding cars in `list'.
+
+     SOURCE NOTE: this is taken from r7rs.
+
+ -- Applicative: reverse (reverse list)
+     `list' should be an acyclic list.
+
+     Applicative `reverse' makes a mutable copy of list but with the
+     reverse order.  That is, the returned list has the same number of
+     pairs as `list' and the cars in the returned list are initially
+     `eq?' to the corresponding cars in `list' but starting from the
+     end and going backwards.
+
+     SOURCE NOTE: this is taken from r7rs.
 
  -- Applicative: get-list-metrics (get-list-metrics object)
      By definition, an improper list is a data structure whose objects
@@ -908,14 +987,18 @@ output using, modulo whitespace, external representation `(1 2 3)'.
      were in the cycle of `list'; if there were no such elements, the
      result is acyclic.
 
- -- Applicative: assoc (assoc object pairs)
+ -- Applicative: assoc (assoc object pairs [eq-pred?])
      Applicative `assoc' returns the first element of `pairs' whose car
-     is `equal?' to `object'.  If there is no such element in `pairs',
-     nil is returned.
+     is `eq-pred?' to `object'.  If there is no such element in
+     `pairs', nil is returned.  If `eq-pred?' is not supplied it
+     defaults to `equal?'.  SOURCE NOTE: the optional eq-pred? argument
+     is from r7rs.
 
- -- Applicative: member? (member? object list)
+ -- Applicative: member? (member? object list [eq-pred?])
      Applicative `member?' is a predicate that returns true iff some
-     element of `list' is `equal?' to `object'.
+     element of `list' is `eq-pred?' to `object'.  If `eq-pred?' is not
+     supplied, it defaults to `equal?'.  SOURCE NOTE: the optional
+     eq-pred? argument is from r7rs.
 
  -- Applicative: finite-list? (finite-list? . objects)
      This is the type predicate for type finite-list.  `finite-list?'
@@ -1030,8 +1113,8 @@ external representation `#ignore'.  The ignore type is encapsulated.
      true iff all the objects in `objects' are of type ignore.
 
  -- Applicative: eval (eval expression environment)
-     The `eval' applicative evaluates `expression' as a tail context in
-     `environment', and returns the resulting value.
+     The `eval' applicative evaluates `expression' in `environment', as
+     a tail context, returning the resulting value.
 
  -- Applicative: make-environment (make-environment . environments)
      The applicative constructs and returns a new environment, with
@@ -1179,6 +1262,15 @@ external representation `#ignore'.  The ignore type is encapsulated.
 
           ($bindings->environment . bindings) ==
             ($let-redirect (make-environment) bindings (get-current-environment))
+
+ -- Applicative: eval-string (eval-string string environment)
+     `string' should be the external representation of a single object.
+     If none or more than one external representation is found in
+     `string' then an error is signaled.
+
+     Applicative `eval-string' reads an external representation from
+     string, and evaluates the resulting object in `environment', as a
+     tail context, returning the resulting value.
 
  -- Operative: $set! ($set! <exp1> <formals> <exp2>)
      `<formals>' should be as described for the `$define!' operative.
@@ -1337,6 +1429,20 @@ combiners are `equal?' iff they are `eq?'.
      while the cycle length `c' of the resultant list will be the least
      common multiple of the `ck'.  In the construction of the result,
      applicative is called exactly `a + c' times.
+
+ -- Applicative: string-map (string-map applicative . strings)
+ -- Applicative: vector-map (vector-map applicative . vectors)
+ -- Applicative: bytevector-map (bytevector-map applicative .
+          bytevectors)
+     `strings', `vectors', or `bytevectors' should be non-empty lists
+     of the corresponding type and all elements should be of the same
+     length.
+
+     These applicatives behave as `map' except that the list of
+     elements passed to `applicative' are the n-th chars, objects, or
+     uint8s of the strings, vectors or bytevectors passed as arguments.
+
+     SOURCE NOTE: These are taken from r7rs.
 
  -- Applicative: combiner? (combiner? . objects)
      The primitive type predicate for type combiner. `combiner?'
@@ -1629,6 +1735,12 @@ may not be `eq?'.  Two promises are `equal?' iff they are `eq?'.
      promise, representing memoization of `object'.  Whenever the
      promise is forced, it determines `object'.
 
+ -- Operative: $delay ($delay <expression>)
+     Operative `delay' behaves as the composition of `$lazy' and
+     `memoize', that is:
+          ($delay <expr>) == ($lazy (memoize <expr>))
+     SOURCE NOTE: this is taken from r7rs.
+
 
 File: klisp.info,  Node: Keyed Variables,  Next: Numbers,  Prev: Promises,  Up: Top
 
@@ -1754,6 +1866,21 @@ floating point.  No bounding or robustness info is kept.
      The primitive type predicate for number subtype integer.
      `integer?'  returns true iff all the objects in `objects' are of
      type integer.
+
+ -- Applicative: exact-integer? (exact-integer? . objects)
+     The primitive type predicate for number subtype exact integer.
+     `exact-integer?'  returns true iff all the objects in `objects'
+     are of type integer and exact.
+
+     SOURCE NOTE: this is from r7rs.
+
+ -- Applicative: u8? (u8? . objects)
+     The primitive type predicate for number subtype exact integer
+     between 0 and 255.  This is the subtype used in bytevectors.  `u8?'
+     returns true iff all the objects in `objects' are of type integer,
+     are exact, and lie between 0 and 255 inclusive.
+
+     SOURCE NOTE: this is handy for use with bytevectors.
 
  -- Applicative: rational? (rational? . objects)
      The primitive type predicate for number subtype rational.
@@ -2064,23 +2191,73 @@ floating point.  No bounding or robustness info is kept.
      but the result is an approximation of `x0', which is so bounded,
      and the bounds of the result include `x0'.
 
+ -- Applicative: sqrt (sqrt number)
+     If `number' is negative, the result is undefined.
+
+     Applicative `sqrt' returns the positive square root of number.
+     The result may be inexact even if `number' is exact and the square
+     root is rational.
+
+ -- Applicative: expt (expt number1 number2)
+     Applicative `expt' returns `number1' to the power of `number2'.
+     If `number1' is zero, then the result is 1 if `number2' is zero
+     and 0 otherwise.
+
  -- Applicative: exp (exp number)
  -- Applicative: log (log number)
-     TODO
-
  -- Applicative: sin (sin number)
  -- Applicative: cos (cos number)
  -- Applicative: tan (tan number)
-     TODO
-
  -- Applicative: asin (asin number)
  -- Applicative: acos (acos number)
  -- Applicative: atan (atan number1 [number2])
-     TODO
+     These applicatives compute the usual transcendental functions.
+     `log' computes the natural logarithm (not the base-10 logarithm).
+     The two argument version of `atan' computes `(angle
+     (make-recutangular number1 number2))' even thou klisp doesn't
+     support complex numbers.
 
- -- Applicative: sqrt (sqrt number)
- -- Applicative: expt (expt number1 number2)
-     TODO
+     All results may be inexact even if `number' is exact and the
+     result of the transcendental function is rational.  TODO add
+     intervals returned for multidefined functions (inverses and log)
+
+ -- Applicative: string->number (string->number string [radix])
+     `radix' should be an exact integer, either 2, 8, 10, or 16.
+     `string' should be a string describing a number in the specified
+     radix, but may contain a radix prefix to override it.  The default
+     `radix', if not supplied, is 10.
+
+     Applicative `string->number' returns the best approximation of the
+     number represented by `string'.  If `string' is not a valid
+     representation of a number in the given `radix' an error is
+     signaled.
+
+     Examples:
+          (string->number "100") => 100
+          (string->number "100" 16) => 256
+          (string->number "#o100" 2) => 64
+          (string->number "1.0") => 1.0
+
+     SOURCE NOTE: this is taken from r7rs.
+
+ -- Applicative: number->string (number->string number [radix])
+     `radix' should be an exact integer, either 2, 8, 10, or 16.  The
+     default `radix', if not supplied, is 10.
+
+     Applicative `number->string' returns a string representing
+     `number' in the given `radix'.  No radix prefix is present in the
+     returned string.  If an inexact number is passed together with a
+     radix other from 10, an error is signaled.
+
+     The returned string is such that
+          (string->number (number->string number radix) radix) == number
+
+     Examples:
+          (number->string 100) => "100"
+          (number->string 256 16) => "100"
+          (number->string 1.0) => "1.0"
+
+     SOURCE NOTE: this is taken from r7rs.
 
 
 File: klisp.info,  Node: Strings,  Next: Characters,  Prev: Numbers,  Up: Top
@@ -2091,13 +2268,23 @@ File: klisp.info,  Node: Strings,  Next: Characters,  Prev: Numbers,  Up: Top
 A string is an object that represent a sequence of characters (for now,
 only ASCII is supported in klisp, in the future, full UNICODE will be
 supported).  The external representation of strings consists of a
-leading """, the characters of the string and a closing """.  Some
-characters should be escaped, by preceding them with a "\": in klisp
-these are the double quote (""") and the backslash ("\").  In the
-future more advanced escape mechanism may be added (like in r7rs-draft
-scheme, for escping common ASCII control codes and arbitrary unicode
-characters).  A string has a length that is fixed at creation time, and
-as many characters, indexed from `0' to `length-1'.
+leading """, the characters of the string and a closing """.  Both
+double quote and backslash should be escaped to appear withing strings.
+Some other characters also have an escaped form for convenience.  All
+of these are written with a leading slash ("\").  In klisp these are:
+double quote ("\""), backslash ("\\"), null ("\0"), alarm ("\a"),
+backspace ("\b"), tab ("\t"), newline ("\n"), return ("\r"), vertical
+tab ("\v"), and formfeed ("\f").  You can also use inline hex escapes
+to include arbitary unicode codepoints (only ASCII range supported for
+now).  The syntax is "\x<hex codepoint>;".  New lines can be escaped to
+simplify the accomodation of literal strings in source code, to do
+this: use "\" followed by any ammount of intraline whitespace, a new
+line and another ammount of intraline whitespace.  All of that intraline
+whitespace and the newline, together with the leading slash is
+discarded by the reader and doesn't end up in the string being read.
+
+   A string has a length that is fixed at creation time, and as many
+characters, indexed from `0' to `length-1'.
 
    Strings may be mutable or immutable.  If an attempt is made to
 mutate an immutable string, an error is signaled.  Two immutable
@@ -2112,15 +2299,26 @@ string (like calling `(string)', the canonical immutable empty string
 is returned.  The string type is encapsulated.
 
    SOURCE NOTE: This section is still missing from the report.  The
-features defined here were taken mostly from r5rs scheme.  It is
+features defined here were taken mostly from r7rs scheme.  It is
 possible that in the future, klisp only admits immutable strings (like
 lua and java), and that operations for contructing strings are moved to
 a new type (like Java's StringBuilder/StringBuffer).  But for now,
-compatibility with r5rs was preferred/simpler.
+compatibility with r7rs was preferred/simpler.
 
  -- Applicative: string? (string? . objects)
      The primitive type predicate for type string.  `string?' returns
      true iff all the objects in `objects' are of type string.
+
+ -- Applicative: immutable-string? (immutable-string? objects)
+ -- Applicative: mutable-string? (mutable-string? objects)
+     The primitive type predicates for types immutable string and
+     mutable string.  These return true iff all the objects in
+     `objects' are of type immutable string or mutable string
+     respectively.
+
+     SOURCE NOTE: these aren't provided in the Kernel report, but added
+     for convenience.  These can be implemented in standard kernel by
+     using guards.
 
  -- Applicative: string=? (string=? . strings)
  -- Applicative: string<? (string<? . strings)
@@ -2191,9 +2389,23 @@ compatibility with r5rs was preferred/simpler.
 
  -- Applicative: string->list (string->list string)
  -- Applicative: list->string (list->string chars)
-     Applicatives `string->list' and `list->string' convert between
-     strings and list of characters.  The strings returned by
-     `list->string' are mutable.
+ -- Applicative: string->vector (string->vector string)
+ -- Applicative: vector->string (vector->string vchars)
+ -- Applicative: string->bytevector (string->bytevector string)
+ -- Applicative: bytevector->string (bytevector->string bvchars)
+     These applicatives convert between strings and list of characters,
+     vectors of characters, and bytevectors of characters.  The objects
+     returned by these applicatives are always mutable.
+
+ -- Applicative: string-upcase (string-upcase string)
+ -- Applicative: string-downcase (string-downcase string)
+ -- Applicative: string-titlecase (string-titlecase string)
+ -- Applicative: string-foldcase (string-foldcase string)
+     These applicatives perform the respective case folding on the
+     passed `string' and return a new mutable strings as a result.  The
+     original `string' is not modified.  For now in klisp only ASCII is
+     implemented, and so `string-foldcase' is the same as
+     `string-downcase'.
 
 
 File: klisp.info,  Node: Characters,  Next: Ports,  Prev: Strings,  Up: Top
@@ -2203,13 +2415,19 @@ File: klisp.info,  Node: Characters,  Next: Ports,  Prev: Strings,  Up: Top
 
 A character is an object that represents an ASCII character (for now,
 only ASCII is supported in klisp, in the future, full UNICODE will be
-supported).  The external representation of characters consists of a
-leading "#\" and the character or character name.  The only supported
-names for now are "newline" and "space" (both from r5rs scheme).
-Characters are immutable.  The character type is encapsulated.
+supported).
+
+   The external representation of characters consists of a leading "#\"
+and the character or character name or "#\x" followed by the hex
+unicode code point (only ASCII supported for now).  The supported names
+for now are "null", "alarm", "backspace", "tab", "newline", "return",
+"escape", "space", "delete", "vtab", and "formfeed" (this is a
+combination of the ones accepted in r6rs and r7rs).
+
+   Characters are immutable.  The character type is encapsulated.
 
    SOURCE NOTE: This section is still missing from the report.  The
-features defined here were taken mostly from r5rs scheme.
+features defined here were taken mostly from r7rs.
 
  -- Applicative: char? (char? . objects)
      The primitive type predicate for type character.  `char?' returns
@@ -2284,7 +2502,7 @@ output only external representation (so that it can never be the normal
 result of a call to read).  The eof type is encapsulated.
 
    SOURCE NOTE:  the eof type is not in the Kernel report, it is used in
-klisp and was taken from Scheme.
+klisp and was taken from r7rs.
 
  -- Applicative: port? (port? . objects)
      The primitive type predicate for type port.  `port?' returns true
@@ -2310,7 +2528,22 @@ klisp and was taken from Scheme.
      Every port must be admitted by at least one of these two
      predicates.
 
-     SOURCE NOTE: this is missing from Kernel, it is taken from Scheme.
+     SOURCE NOTE: this is missing from Kernel, it is taken from r7rs.
+
+ -- Applicative: file-port? (file-port? . objects)
+ -- Applicative: string-port? (string-port? . objects)
+ -- Applicative: bytevector-port? (bytevector-port? . objects)
+     These applictives are predicates that returns true unless one or
+     more of its arguments is not file, string or bytevector port,
+     repectively.
+
+     Every port in klisp is be admitted by exactly one of these
+     predicates.
+
+     SOURCE NOTE: this is missing from Kernel.
+
+ -- Applicative: port-open? (port-open? port)
+     Applicative `port-open?' returns true iff `port' is still open.
 
  -- Applicative: with-input-from-file (with-input-from-file string
           combiner)
@@ -2350,7 +2583,7 @@ klisp and was taken from Scheme.
      exists, or there's a permissions problem), an error is signaled.
 
      SOURCE NOTE: open-input-file is enumerated in the Kernel report but
-     the text is still missing. open-binary-input-file is from Scheme.
+     the text is still missing. open-binary-input-file is from r7rs.
 
  -- Applicative: open-output-file (open-output-file string)
  -- Applicative: open-binary-output-file (open-binary-output-file
@@ -2371,7 +2604,24 @@ klisp and was taken from Scheme.
 
      SOURCE NOTE: open-output-file is enumerated in the Kernel report
      but the text is still missing. open-binary-output-file is from
-     Scheme.
+     r7rs.
+
+ -- Applicative: open-input-string (open-output-string string)
+ -- Applicative: open-input-bytevector (open-output-bytevector
+          bytevector)
+     These applicative return a fresh input port that reads characters
+     or unsigned bytes from the passed sequence.
+
+     SOURCE NOTE: These are taken from r7rs.
+
+ -- Applicative: open-output-string (open-output-string)
+ -- Applicative: open-output-bytevector (open-output-bytevector)
+     These applicative return a fresh output port that accumulates
+     characters or unsigned bytes.  The accumulated data can be obtained
+     via applicatives `get-ouput-string' and `get-output-bytevector',
+     respectively.
+
+     SOURCE NOTE: This are taken from r7rs.
 
  -- Applicative: close-input-file (close-input-file input-port)
  -- Applicative: close-output-file (close-output-file output-port)
@@ -2399,10 +2649,9 @@ klisp and was taken from Scheme.
      The result returned by applicatives `close-input-port',
      `close-output-port', and `close-port' is inert.
 
-     SOURCE NOTE: this is from Scheme. The equivalent
-     `close-input-file' and `close-output-file' are probably name
-     errors and only retained here till the draft standard rectifies
-     them
+     SOURCE NOTE: this is from r7rs. The equivalent `close-input-file'
+     and `close-output-file' are probably name errors and only retained
+     here till the draft standard rectifies them
 
  -- Applicative: read (read [textual-input-port])
      If the `port' optional argument is not specified, then the value
@@ -2432,6 +2681,10 @@ klisp and was taken from Scheme.
      SOURCE NOTE: this is enumerated in the Kernel report but the text
      is still missing.
 
+ -- Applicative: write-simple (write-simple object [port])
+     Applicative `write-simple' is like `write' except that it doesn't
+     write sharing info. It will hang if handed a cyclic structure.
+
  -- Applicative: call-with-input-file (call-with-input-file string
           combiner)
  -- Applicative: call-with-output-file (call-with-output-file string
@@ -2457,6 +2710,11 @@ klisp and was taken from Scheme.
      report.  The one detail that I think is still open, is whether to
      return `#inert' (as is the case with klisp currently) or rather
      return the value of the last evaluation.
+
+ -- Applicative: require
+     TODO
+
+   TODO
 
  -- Applicative: get-module (get-module string [environment])
      Applicative `get-module' creates a fresh standard environment;
@@ -2657,8 +2915,9 @@ Index
 * $binds?:                               Environments.        (line 108)
 * $cond:                                 Control.             (line  32)
 * $define!:                              Environments.        (line  49)
+* $delay:                                Promises.            (line  79)
 * $if:                                   Control.             (line  15)
-* $import!:                              Environments.        (line 208)
+* $import!:                              Environments.        (line 217)
 * $lambda:                               Combiners.           (line  76)
 * $lazy:                                 Promises.            (line  43)
 * $let:                                  Environments.        (line  89)
@@ -2668,219 +2927,239 @@ Index
 * $let/cc:                               Continuations.       (line 143)
 * $letrec:                               Environments.        (line 137)
 * $letrec*:                              Environments.        (line 144)
-* $or?:                                  Booleans.            (line  41)
-* $provide!:                             Environments.        (line 192)
+* $or?:                                  Booleans.            (line  42)
+* $provide!:                             Environments.        (line 201)
 * $remote-eval:                          Environments.        (line 169)
 * $sequence:                             Control.             (line  23)
-* $set!:                                 Environments.        (line 183)
+* $set!:                                 Environments.        (line 192)
+* $unless:                               Control.             (line  68)
 * $vau:                                  Combiners.           (line  26)
-* *:                                     Numbers.             (line 121)
-* +:                                     Numbers.             (line 109)
-* -:                                     Numbers.             (line 137)
-* /:                                     Numbers.             (line 306)
-* <=?:                                   Numbers.             (line 101)
-* <?:                                    Numbers.             (line 100)
-* =?:                                    Numbers.             (line  95)
-* >=?:                                   Numbers.             (line 103)
-* >?:                                    Numbers.             (line 102)
-* abs:                                   Numbers.             (line 193)
-* acos:                                  Numbers.             (line 385)
+* $when:                                 Control.             (line  67)
+* *:                                     Numbers.             (line 136)
+* +:                                     Numbers.             (line 124)
+* -:                                     Numbers.             (line 152)
+* /:                                     Numbers.             (line 321)
+* <=?:                                   Numbers.             (line 116)
+* <?:                                    Numbers.             (line 115)
+* =?:                                    Numbers.             (line 110)
+* >=?:                                   Numbers.             (line 118)
+* >?:                                    Numbers.             (line 117)
+* abs:                                   Numbers.             (line 208)
+* acos:                                  Numbers.             (line 408)
 * and?:                                  Booleans.            (line  20)
-* append:                                Pairs and lists.     (line 208)
-* append!:                               Pairs and lists.     (line 306)
+* append:                                Pairs and lists.     (line 246)
+* append!:                               Pairs and lists.     (line 348)
 * applicative descriptions:              A Sample Applicative Description.
                                                               (line   6)
 * applicative?:                          Combiners.           (line  21)
 * applicatives:                          Combiners.           (line   6)
 * apply:                                 Combiners.           (line  83)
 * apply-continuation:                    Continuations.       (line 134)
-* asin:                                  Numbers.             (line 384)
-* assoc:                                 Pairs and lists.     (line 252)
-* assq:                                  Pairs and lists.     (line 333)
-* atan:                                  Numbers.             (line 386)
+* asin:                                  Numbers.             (line 407)
+* assoc:                                 Pairs and lists.     (line 290)
+* assq:                                  Pairs and lists.     (line 375)
+* atan:                                  Numbers.             (line 409)
 * binary-port?:                          Ports.               (line  43)
 * boolean?:                              Booleans.            (line  12)
 * booleans:                              Booleans.            (line   6)
-* caaaar:                                Pairs and lists.     (line 101)
-* caaadr:                                Pairs and lists.     (line 102)
-* caaar:                                 Pairs and lists.     (line  93)
-* caadar:                                Pairs and lists.     (line 103)
-* caaddr:                                Pairs and lists.     (line 104)
-* caadr:                                 Pairs and lists.     (line  94)
-* caar:                                  Pairs and lists.     (line  89)
-* cadaar:                                Pairs and lists.     (line 105)
-* cadadr:                                Pairs and lists.     (line 106)
-* cadar:                                 Pairs and lists.     (line  95)
-* caddar:                                Pairs and lists.     (line 107)
-* cadddr:                                Pairs and lists.     (line 108)
-* caddr:                                 Pairs and lists.     (line  96)
-* cadr:                                  Pairs and lists.     (line  90)
-* call-with-input-file:                  Ports.               (line 175)
-* call-with-output-file:                 Ports.               (line 177)
+* bytevector->string:                    Strings.             (line 134)
+* bytevector-for-each:                   Control.             (line  56)
+* bytevector-map:                        Combiners.           (line 123)
+* bytevector-port?:                      Ports.               (line  56)
+* caaaar:                                Pairs and lists.     (line 111)
+* caaadr:                                Pairs and lists.     (line 112)
+* caaar:                                 Pairs and lists.     (line 103)
+* caadar:                                Pairs and lists.     (line 113)
+* caaddr:                                Pairs and lists.     (line 114)
+* caadr:                                 Pairs and lists.     (line 104)
+* caar:                                  Pairs and lists.     (line  99)
+* cadaar:                                Pairs and lists.     (line 115)
+* cadadr:                                Pairs and lists.     (line 116)
+* cadar:                                 Pairs and lists.     (line 105)
+* caddar:                                Pairs and lists.     (line 117)
+* cadddr:                                Pairs and lists.     (line 118)
+* caddr:                                 Pairs and lists.     (line 106)
+* cadr:                                  Pairs and lists.     (line 100)
+* call-with-input-file:                  Ports.               (line 210)
+* call-with-output-file:                 Ports.               (line 212)
 * call/cc:                               Continuations.       (line  43)
-* car:                                   Pairs and lists.     (line  85)
-* cdaaar:                                Pairs and lists.     (line 109)
-* cdaadr:                                Pairs and lists.     (line 110)
-* cdaar:                                 Pairs and lists.     (line  97)
-* cdadar:                                Pairs and lists.     (line 111)
-* cdaddr:                                Pairs and lists.     (line 112)
-* cdadr:                                 Pairs and lists.     (line  98)
-* cdar:                                  Pairs and lists.     (line  91)
-* cddaar:                                Pairs and lists.     (line 113)
-* cddadr:                                Pairs and lists.     (line 114)
-* cddar:                                 Pairs and lists.     (line  99)
-* cdddar:                                Pairs and lists.     (line 115)
-* cddddr:                                Pairs and lists.     (line 116)
-* cdddr:                                 Pairs and lists.     (line 100)
-* cddr:                                  Pairs and lists.     (line  92)
-* cdr:                                   Pairs and lists.     (line  86)
-* ceiling:                               Numbers.             (line 325)
-* char->integer:                         Characters.          (line  58)
-* char-alphabetic?:                      Characters.          (line  37)
-* char-ci<=?:                            Characters.          (line  31)
-* char-ci<?:                             Characters.          (line  30)
-* char-ci=?:                             Characters.          (line  29)
-* char-ci>=?:                            Characters.          (line  33)
-* char-ci>?:                             Characters.          (line  32)
-* char-downcase:                         Characters.          (line  49)
-* char-lower-case?:                      Characters.          (line  44)
-* char-numeric?:                         Characters.          (line  38)
-* char-ready?:                           Ports.               (line 243)
-* char-upcase:                           Characters.          (line  48)
-* char-upper-case?:                      Characters.          (line  43)
-* char-whitespace?:                      Characters.          (line  39)
-* char<=?:                               Characters.          (line  23)
-* char<?:                                Characters.          (line  22)
-* char=?:                                Characters.          (line  21)
-* char>=?:                               Characters.          (line  25)
-* char>?:                                Characters.          (line  24)
-* char?:                                 Characters.          (line  17)
+* car:                                   Pairs and lists.     (line  95)
+* cdaaar:                                Pairs and lists.     (line 119)
+* cdaadr:                                Pairs and lists.     (line 120)
+* cdaar:                                 Pairs and lists.     (line 107)
+* cdadar:                                Pairs and lists.     (line 121)
+* cdaddr:                                Pairs and lists.     (line 122)
+* cdadr:                                 Pairs and lists.     (line 108)
+* cdar:                                  Pairs and lists.     (line 101)
+* cddaar:                                Pairs and lists.     (line 123)
+* cddadr:                                Pairs and lists.     (line 124)
+* cddar:                                 Pairs and lists.     (line 109)
+* cdddar:                                Pairs and lists.     (line 125)
+* cddddr:                                Pairs and lists.     (line 126)
+* cdddr:                                 Pairs and lists.     (line 110)
+* cddr:                                  Pairs and lists.     (line 102)
+* cdr:                                   Pairs and lists.     (line  96)
+* ceiling:                               Numbers.             (line 340)
+* char->integer:                         Characters.          (line  64)
+* char-alphabetic?:                      Characters.          (line  43)
+* char-ci<=?:                            Characters.          (line  37)
+* char-ci<?:                             Characters.          (line  36)
+* char-ci=?:                             Characters.          (line  35)
+* char-ci>=?:                            Characters.          (line  39)
+* char-ci>?:                             Characters.          (line  38)
+* char-downcase:                         Characters.          (line  55)
+* char-lower-case?:                      Characters.          (line  50)
+* char-numeric?:                         Characters.          (line  44)
+* char-ready?:                           Ports.               (line 283)
+* char-upcase:                           Characters.          (line  54)
+* char-upper-case?:                      Characters.          (line  49)
+* char-whitespace?:                      Characters.          (line  45)
+* char<=?:                               Characters.          (line  29)
+* char<?:                                Characters.          (line  28)
+* char=?:                                Characters.          (line  27)
+* char>=?:                               Characters.          (line  31)
+* char>?:                                Characters.          (line  30)
+* char?:                                 Characters.          (line  23)
 * characters:                            Characters.          (line   6)
-* close-input-file:                      Ports.               (line 115)
-* close-input-port:                      Ports.               (line 129)
-* close-output-file:                     Ports.               (line 116)
-* close-output-port:                     Ports.               (line 130)
-* close-port:                            Ports.               (line 131)
-* combiner?:                             Combiners.           (line 120)
+* close-input-file:                      Ports.               (line 147)
+* close-input-port:                      Ports.               (line 161)
+* close-output-file:                     Ports.               (line 148)
+* close-output-port:                     Ports.               (line 162)
+* close-port:                            Ports.               (line 163)
+* combiner?:                             Combiners.           (line 134)
 * combiners:                             Combiners.           (line   6)
-* cons:                                  Pairs and lists.     (line  35)
+* cons:                                  Pairs and lists.     (line  45)
 * continuation->applicative:             Continuations.       (line  95)
 * continuation?:                         Continuations.       (line  38)
 * continuations:                         Continuations.       (line   6)
 * control:                               Control.             (line   6)
-* copy-es:                               Pairs and lists.     (line 321)
-* copy-es-immutable!:                    Pairs and lists.     (line  49)
-* cos:                                   Numbers.             (line 380)
-* countable-list?:                       Pairs and lists.     (line 265)
-* delete-file:                           Ports.               (line 363)
-* denominator:                           Numbers.             (line 315)
+* copy-es:                               Pairs and lists.     (line 363)
+* copy-es-immutable!:                    Pairs and lists.     (line  59)
+* cos:                                   Numbers.             (line 405)
+* countable-list?:                       Pairs and lists.     (line 307)
+* delete-file:                           Ports.               (line 403)
+* denominator:                           Numbers.             (line 330)
 * description format:                    Format of Descriptions.
                                                               (line   6)
-* display:                               Ports.               (line 277)
-* div:                                   Numbers.             (line 149)
-* div-and-mod:                           Numbers.             (line 151)
-* div0:                                  Numbers.             (line 163)
-* div0-and-mod0:                         Numbers.             (line 165)
+* display:                               Ports.               (line 317)
+* div:                                   Numbers.             (line 164)
+* div-and-mod:                           Numbers.             (line 166)
+* div0:                                  Numbers.             (line 178)
+* div0-and-mod0:                         Numbers.             (line 180)
 * documentation notation:                Evaluation Notation. (line   6)
 * empty list:                            Pairs and lists.     (line   6)
 * encapsulations:                        Encapsulations.      (line   6)
-* encycle!:                              Pairs and lists.     (line 158)
+* encycle!:                              Pairs and lists.     (line 196)
 * environment?:                          Environments.        (line  23)
 * environments:                          Environments.        (line   6)
-* eof-object?:                           Ports.               (line 210)
+* eof-object?:                           Ports.               (line 250)
 * eq?:                                   Equivalence.         (line  12)
 * equal?:                                Equivalence.         (line  16)
 * equivalence:                           Equivalence.         (line   6)
 * error message notation:                Error Messages.      (line   6)
 * error-continuation:                    Continuations.       (line 110)
 * eval:                                  Environments.        (line  32)
+* eval-string:                           Environments.        (line 183)
 * evaluation notation:                   Evaluation Notation. (line   6)
-* even?:                                 Numbers.             (line 186)
-* exact?:                                Numbers.             (line  79)
+* even?:                                 Numbers.             (line 201)
+* exact-integer?:                        Numbers.             (line  66)
+* exact?:                                Numbers.             (line  94)
 * exit:                                  Continuations.       (line 162)
-* exp:                                   Numbers.             (line 375)
-* expt:                                  Numbers.             (line 390)
+* exp:                                   Numbers.             (line 402)
+* expt:                                  Numbers.             (line 397)
 * extend-continuation:                   Continuations.       (line  50)
-* file-exists?:                          Ports.               (line 354)
-* filter:                                Pairs and lists.     (line 239)
-* finite-list?:                          Pairs and lists.     (line 261)
-* finite?:                               Numbers.             (line  75)
-* floor:                                 Numbers.             (line 324)
-* flush-output-port:                     Ports.               (line 341)
+* file-exists?:                          Ports.               (line 394)
+* file-port?:                            Ports.               (line  54)
+* filter:                                Pairs and lists.     (line 277)
+* finite-list?:                          Pairs and lists.     (line 303)
+* finite?:                               Numbers.             (line  90)
+* floor:                                 Numbers.             (line 339)
+* flush-output-port:                     Ports.               (line 381)
 * fonts:                                 Some Terms.          (line  13)
 * foo:                                   A Sample Applicative Description.
                                                               (line  15)
 * for-each:                              Control.             (line  42)
 * force:                                 Promises.            (line  35)
-* gcd:                                   Numbers.             (line 207)
+* gcd:                                   Numbers.             (line 222)
 * get-current-environment:               Environments.        (line 114)
-* get-current-error-port:                Ports.               (line  73)
-* get-current-input-port:                Ports.               (line  71)
-* get-current-output-port:               Ports.               (line  72)
-* get-list-metrics:                      Pairs and lists.     (line 123)
-* get-module:                            Ports.               (line 200)
-* get-real-exact-bounds:                 Numbers.             (line 233)
-* get-real-exact-primary:                Numbers.             (line 252)
-* get-real-internal-bounds:              Numbers.             (line 232)
-* get-real-internal-primary:             Numbers.             (line 251)
-* get-string-arithmetic:                 Numbers.             (line 299)
+* get-current-error-port:                Ports.               (line  88)
+* get-current-input-port:                Ports.               (line  86)
+* get-current-output-port:               Ports.               (line  87)
+* get-list-metrics:                      Pairs and lists.     (line 161)
+* get-module:                            Ports.               (line 240)
+* get-real-exact-bounds:                 Numbers.             (line 248)
+* get-real-exact-primary:                Numbers.             (line 267)
+* get-real-internal-bounds:              Numbers.             (line 247)
+* get-real-internal-primary:             Numbers.             (line 266)
+* get-string-arithmetic:                 Numbers.             (line 314)
 * guard-continuation:                    Continuations.       (line  63)
 * guard-dynamic-extent:                  Continuations.       (line 156)
 * ignore:                                Environments.        (line   6)
 * ignore?:                               Environments.        (line  28)
+* immutable-pair?:                       Pairs and lists.     (line  35)
+* immutable-string?:                     Strings.             (line  51)
 * inert:                                 Control.             (line   6)
 * inert?:                                Control.             (line  11)
-* inexact?:                              Numbers.             (line  83)
+* inexact?:                              Numbers.             (line  98)
 * input-port?:                           Ports.               (line  32)
-* integer->char:                         Characters.          (line  59)
+* integer->char:                         Characters.          (line  65)
 * integer?:                              Numbers.             (line  61)
 * interpreter:                           Interpreter.         (line   6)
 * Kernel history:                        Kernel History.      (line   6)
 * keyed dynamic variables:               Keyed Variables.     (line  15)
 * keyed static variables:                Keyed Variables.     (line  40)
 * keyed variables:                       Keyed Variables.     (line   6)
-* lcm:                                   Numbers.             (line 206)
-* length:                                Pairs and lists.     (line 191)
-* list:                                  Pairs and lists.     (line  72)
-* list*:                                 Pairs and lists.     (line  78)
-* list->string:                          Strings.             (line 109)
-* list-neighbors:                        Pairs and lists.     (line 228)
-* list-ref:                              Pairs and lists.     (line 198)
-* list-tail:                             Pairs and lists.     (line 147)
+* lcm:                                   Numbers.             (line 221)
+* length:                                Pairs and lists.     (line 229)
+* list:                                  Pairs and lists.     (line  82)
+* list*:                                 Pairs and lists.     (line  88)
+* list->string:                          Strings.             (line 130)
+* list-copy:                             Pairs and lists.     (line 142)
+* list-neighbors:                        Pairs and lists.     (line 266)
+* list-ref:                              Pairs and lists.     (line 236)
+* list-tail:                             Pairs and lists.     (line 185)
 * lists:                                 Pairs and lists.     (line   6)
-* load:                                  Ports.               (line 187)
-* log:                                   Numbers.             (line 376)
+* load:                                  Ports.               (line 222)
+* log:                                   Numbers.             (line 403)
 * make-encapsulation-type:               Encapsulations.      (line  12)
 * make-environment:                      Environments.        (line  36)
-* make-inexact:                          Numbers.             (line 270)
+* make-inexact:                          Numbers.             (line 285)
 * make-kernel-standard-environment:      Environments.        (line 119)
 * make-keyed-dynamic-variable:           Keyed Variables.     (line  21)
 * make-keyed-static-variable:            Keyed Variables.     (line  44)
-* make-string:                           Strings.             (line  57)
+* make-list:                             Pairs and lists.     (line 133)
+* make-string:                           Strings.             (line  78)
 * map <1>:                               Combiners.           (line  96)
-* map:                                   Pairs and lists.     (line 169)
-* max:                                   Numbers.             (line 198)
-* member?:                               Pairs and lists.     (line 257)
+* map:                                   Pairs and lists.     (line 207)
+* max:                                   Numbers.             (line 213)
+* member?:                               Pairs and lists.     (line 297)
 * memoize:                               Promises.            (line  74)
-* memq?:                                 Pairs and lists.     (line 338)
-* min:                                   Numbers.             (line 199)
-* mod:                                   Numbers.             (line 150)
-* mod0:                                  Numbers.             (line 164)
-* negative?:                             Numbers.             (line 178)
-* newline:                               Ports.               (line 267)
+* memq?:                                 Pairs and lists.     (line 380)
+* min:                                   Numbers.             (line 214)
+* mod:                                   Numbers.             (line 165)
+* mod0:                                  Numbers.             (line 179)
+* mutable-pair?:                         Pairs and lists.     (line  36)
+* mutable-string?:                       Strings.             (line  52)
+* negative?:                             Numbers.             (line 193)
+* newline:                               Ports.               (line 307)
 * nil:                                   Pairs and lists.     (line   6)
 * not?:                                  Booleans.            (line  16)
 * null?:                                 Pairs and lists.     (line  31)
+* number->string:                        Numbers.             (line 439)
 * number?:                               Numbers.             (line  57)
 * numbers:                               Numbers.             (line   6)
-* numerator:                             Numbers.             (line 314)
+* numerator:                             Numbers.             (line 329)
 * object descriptions:                   A Sample Applicative Description.
                                                               (line   6)
-* odd?:                                  Numbers.             (line 185)
-* open-binary-input-file:                Ports.               (line  81)
-* open-binary-output-file:               Ports.               (line  96)
-* open-input-file:                       Ports.               (line  80)
-* open-output-file:                      Ports.               (line  94)
+* odd?:                                  Numbers.             (line 200)
+* open-binary-input-file:                Ports.               (line  96)
+* open-binary-output-file:               Ports.               (line 111)
+* open-input-bytevector:                 Ports.               (line 132)
+* open-input-file:                       Ports.               (line  95)
+* open-input-string:                     Ports.               (line 130)
+* open-output-bytevector:                Ports.               (line 139)
+* open-output-file:                      Ports.               (line 109)
+* open-output-string:                    Ports.               (line 138)
 * operative descriptions:                A Sample Applicative Description.
                                                               (line   6)
 * operative?:                            Combiners.           (line  16)
@@ -2889,73 +3168,91 @@ Index
 * output-port?:                          Ports.               (line  33)
 * pair?:                                 Pairs and lists.     (line  27)
 * pairs:                                 Pairs and lists.     (line   6)
-* peek-char:                             Ports.               (line 230)
-* peek-u8:                               Ports.               (line 302)
+* peek-char:                             Ports.               (line 270)
+* peek-u8:                               Ports.               (line 342)
+* port-open?:                            Ports.               (line  66)
 * port?:                                 Ports.               (line  28)
 * ports:                                 Ports.               (line   6)
-* positive?:                             Numbers.             (line 177)
+* positive?:                             Numbers.             (line 192)
 * printing notation:                     Printing Notation.   (line   6)
 * promise?:                              Promises.            (line  31)
 * promises:                              Promises.            (line   6)
-* rational?:                             Numbers.             (line  66)
-* rationalize:                           Numbers.             (line 340)
-* read:                                  Ports.               (line 146)
-* read-char:                             Ports.               (line 219)
-* read-u8:                               Ports.               (line 290)
-* real->exact:                           Numbers.             (line 286)
-* real->inexact:                         Numbers.             (line 285)
-* real?:                                 Numbers.             (line  71)
-* reduce:                                Pairs and lists.     (line 270)
-* rename-file:                           Ports.               (line 373)
-* robust?:                               Numbers.             (line  87)
+* rational?:                             Numbers.             (line  81)
+* rationalize:                           Numbers.             (line 355)
+* read:                                  Ports.               (line 177)
+* read-char:                             Ports.               (line 259)
+* read-u8:                               Ports.               (line 330)
+* real->exact:                           Numbers.             (line 301)
+* real->inexact:                         Numbers.             (line 300)
+* real?:                                 Numbers.             (line  86)
+* reduce:                                Pairs and lists.     (line 312)
+* rename-file:                           Ports.               (line 413)
+* require:                               Ports.               (line 235)
+* reverse:                               Pairs and lists.     (line 150)
+* robust?:                               Numbers.             (line 102)
 * root-continuation:                     Continuations.       (line 104)
-* round:                                 Numbers.             (line 327)
-* set-car!:                              Pairs and lists.     (line  41)
-* set-cdr!:                              Pairs and lists.     (line  42)
-* simplest-rational:                     Numbers.             (line 341)
-* sin:                                   Numbers.             (line 379)
-* sqrt:                                  Numbers.             (line 389)
-* string:                                Strings.             (line  63)
-* string->immutable-string:              Strings.             (line 103)
-* string->list:                          Strings.             (line 108)
-* string->symbol:                        Symbols.             (line  20)
-* string-append:                         Strings.             (line  94)
-* string-ci<=?:                          Strings.             (line  51)
-* string-ci<?:                           Strings.             (line  50)
-* string-ci=?:                           Strings.             (line  49)
-* string-ci>=?:                          Strings.             (line  53)
-* string-ci>?:                           Strings.             (line  52)
-* string-copy:                           Strings.             (line  98)
-* string-fill!:                          Strings.             (line  80)
-* string-length:                         Strings.             (line  67)
-* string-ref:                            Strings.             (line  70)
-* string-set!:                           Strings.             (line  75)
-* string<=?:                             Strings.             (line  43)
-* string<?:                              Strings.             (line  42)
-* string=?:                              Strings.             (line  41)
-* string>=?:                             Strings.             (line  45)
-* string>?:                              Strings.             (line  44)
-* string?:                               Strings.             (line  37)
+* round:                                 Numbers.             (line 342)
+* set-car!:                              Pairs and lists.     (line  51)
+* set-cdr!:                              Pairs and lists.     (line  52)
+* simplest-rational:                     Numbers.             (line 356)
+* sin:                                   Numbers.             (line 404)
+* sqrt:                                  Numbers.             (line 390)
+* string:                                Strings.             (line  84)
+* string->bytevector:                    Strings.             (line 133)
+* string->immutable-string:              Strings.             (line 124)
+* string->list:                          Strings.             (line 129)
+* string->number:                        Numbers.             (line 420)
+* string->symbol:                        Symbols.             (line  26)
+* string->vector:                        Strings.             (line 131)
+* string-append:                         Strings.             (line 115)
+* string-ci<=?:                          Strings.             (line  72)
+* string-ci<?:                           Strings.             (line  71)
+* string-ci=?:                           Strings.             (line  70)
+* string-ci>=?:                          Strings.             (line  74)
+* string-ci>?:                           Strings.             (line  73)
+* string-copy:                           Strings.             (line 119)
+* string-downcase:                       Strings.             (line 140)
+* string-fill!:                          Strings.             (line 101)
+* string-foldcase:                       Strings.             (line 142)
+* string-for-each:                       Control.             (line  53)
+* string-length:                         Strings.             (line  88)
+* string-map:                            Combiners.           (line 120)
+* string-port?:                          Ports.               (line  55)
+* string-ref:                            Strings.             (line  91)
+* string-set!:                           Strings.             (line  96)
+* string-titlecase:                      Strings.             (line 141)
+* string-upcase:                         Strings.             (line 139)
+* string<=?:                             Strings.             (line  64)
+* string<?:                              Strings.             (line  63)
+* string=?:                              Strings.             (line  62)
+* string>=?:                             Strings.             (line  66)
+* string>?:                              Strings.             (line  65)
+* string?:                               Strings.             (line  47)
 * strings:                               Strings.             (line   6)
-* substring:                             Strings.             (line  85)
-* symbol->string:                        Symbols.             (line  16)
-* symbol?:                               Symbols.             (line  12)
+* substring:                             Strings.             (line 106)
+* symbol->string:                        Symbols.             (line  22)
+* symbol?:                               Symbols.             (line  18)
 * symbols:                               Symbols.             (line   6)
-* tan:                                   Numbers.             (line 381)
+* tan:                                   Numbers.             (line 406)
 * textual-port?:                         Ports.               (line  42)
-* truncate:                              Numbers.             (line 326)
-* u8-ready?:                             Ports.               (line 316)
-* undefined?:                            Numbers.             (line  91)
+* truncate:                              Numbers.             (line 341)
+* u8-ready?:                             Ports.               (line 356)
+* u8?:                                   Numbers.             (line  73)
+* undefined?:                            Numbers.             (line 106)
 * unwrap:                                Combiners.           (line  72)
-* with-error-to-file:                    Ports.               (line  58)
-* with-input-from-file:                  Ports.               (line  55)
-* with-output-to-file:                   Ports.               (line  57)
-* with-strict-arithmetic:                Numbers.             (line 298)
+* vector->string:                        Strings.             (line 132)
+* vector-for-each:                       Control.             (line  54)
+* vector-map:                            Combiners.           (line 121)
+* with-error-to-file:                    Ports.               (line  73)
+* with-input-from-file:                  Ports.               (line  70)
+* with-output-to-file:                   Ports.               (line  72)
+* with-strict-arithmetic:                Numbers.             (line 313)
 * wrap:                                  Combiners.           (line  68)
-* write:                                 Ports.               (line 159)
-* write-char:                            Ports.               (line 256)
-* write-u8:                              Ports.               (line 329)
-* zero?:                                 Numbers.             (line 143)
+* write:                                 Ports.               (line 190)
+* write-char:                            Ports.               (line 296)
+* write-simple:                          Ports.               (line 205)
+* write-u8:                              Ports.               (line 369)
+* zero?:                                 Numbers.             (line 158)
 
 
 
@@ -2977,20 +3274,20 @@ Node: Interpreter15709
 Ref: Command Line Options18009
 Ref: Interpreter Exit Status18943
 Node: Booleans20171
-Node: Equivalence22712
-Node: Symbols23505
-Node: Control24871
-Node: Pairs and lists27188
-Node: Environments44211
-Node: Combiners54452
-Node: Continuations60488
-Node: Encapsulations69031
-Node: Promises70484
-Node: Keyed Variables74407
-Node: Numbers77178
-Node: Strings96681
-Node: Characters102028
-Node: Ports104738
-Node: Alphabetical Index122674
+Node: Equivalence22848
+Node: Symbols23641
+Node: Control25271
+Node: Pairs and lists29362
+Node: Environments48242
+Node: Combiners58915
+Node: Continuations65569
+Node: Encapsulations74112
+Node: Promises75565
+Node: Keyed Variables79720
+Node: Numbers82491
+Node: Strings104945
+Node: Characters112206
+Node: Ports115116
+Node: Alphabetical Index134564
 
 End Tag Table

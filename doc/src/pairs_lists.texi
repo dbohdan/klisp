@@ -43,6 +43,16 @@ true iff all the objects in @code{objects} are of type pair.
 true iff all the objects in @code{objects} are of type null.
 @end deffn
 
+@deffn Applicative immutable-pair? (immutable-pair? objects)
+@deffnx Applicative mutable-pair? (mutable-pair? objects)
+The primitive type predicates for types immutable pair and mutable
+pair.  These return true iff all the objects in @code{objects} are of
+type immutable pair or mutable pair respectively.
+
+SOURCE NOTE: these aren't provided in the Kernel report, but added for
+convenience.  These can be implemented in standard kernel by using guards.
+@end deffn
+
 @deffn Applicative cons (cons object1 object2)
   A new mutable pair object is constructed and returned, whose car and
 cdr referents are respectively @code{object1} and @code{object2}.  No
@@ -140,6 +150,37 @@ the ``a’s'' and ``d’s'' in the same order as they would appear if all
 the individual ``car’s'' and ``cdr’s'' were written out in prefix
 order.  Arbitrary compositions up to four deep are provided. There are
 twenty-eight of these applicatives in all.
+@end deffn
+
+@deffn Applicative make-list (make-list length [fill])
+  @code{length} shoulde be an exact non-negative integer.
+
+  Applicative @code{make-list} creates a new mutable acyclic list of
+length @code{length}, with all pairs having @code{fill} in their
+cars.  If no value is provided for @code{fill}, @code{#inert} is used.
+
+SOURCE NOTE: this is taken from r7rs.
+@end deffn
+
+@deffn Applicative list-copy (list-copy list)
+Applicative @code{list-copy} creates a new mutable copy of
+@code{list}.  That is, the returned list has the same list metrics as
+@code{list} and the cars in the returned list are initially @code{eq?}
+to the corresponding cars in @code{list}.
+
+SOURCE NOTE: this is taken from r7rs.
+@end deffn
+
+@deffn Applicative reverse (reverse list)
+@code{list} should be an acyclic list.
+
+Applicative @code{reverse} makes a mutable copy of list but with the
+reverse order.  That is, the returned list has the same number of
+pairs as @code{list} and the cars in the returned list are initially
+@code{eq?} to the corresponding cars in @code{list} but starting from
+the end and going backwards.
+
+SOURCE NOTE: this is taken from r7rs.
 @end deffn
 
 @deffn Applicative get-list-metrics (get-list-metrics object)
@@ -298,19 +339,23 @@ that were in the cycle of @code{list}; if there were no such elements,
 the result is acyclic.
 @end deffn
 
-@deffn Applicative assoc (assoc object pairs)
+@deffn Applicative assoc (assoc object pairs [eq-pred?])
   Applicative @code{assoc} returns the first element of @code{pairs}
-whose car is @code{equal?} to @code{object}.  If there is no such
-element in @code{pairs}, nil is returned.
+whose car is @code{eq-pred?} to @code{object}.  If there is no such
+element in @code{pairs}, nil is returned.  If @code{eq-pred?} is not
+supplied it defaults to @code{equal?}.
 @c TODO add xref/comp to assq
 @c TODO add xref to equal?
+SOURCE NOTE: the optional eq-pred? argument is from r7rs.
 @end deffn
 
-@deffn Applicative member? (member? object list)
+@deffn Applicative member? (member? object list [eq-pred?])
   Applicative @code{member?} is a predicate that returns true iff some
-element of @code{list} is @code{equal?} to @code{object}.
+element of @code{list} is @code{eq-pred?} to @code{object}.  If
+@code{eq-pred?} is not supplied, it defaults to @code{equal?}.
 @c TODO add xref/comp to memq
 @c TODO add xref to equal?
+SOURCE NOTE: the optional eq-pred? argument is from r7rs.
 @end deffn
 
 @deffn Applicative finite-list? (finite-list? . objects)

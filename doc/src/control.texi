@@ -50,7 +50,7 @@ the behaviour of the @code{$cond} operative:
 @end example
 @end deffn
 
-@deffn Applicative for-each (for-each . lists)
+@deffn Applicative for-each (for-each applicative . lists)
 @code{lists} must be a nonempty list of lists; if there are two or
 more, they should all be the same length. If lists is empty, or if all
 of its elements are not lists of the same length, an error is
@@ -61,4 +61,42 @@ signaled.
 of accumulating and returning a list of the results of the
 element-wise applications, the results of the applications are
 discarded and the result returned by @code{for-each} is inert.
+@end deffn
+
+@deffn Applicative string-for-each (string-for-each applicative . strings)
+@deffnx Applicative vector-for-each (vector-for-each applicative. vectors)
+@deffnx Applicative bytevector-for-each (bytevector-for-each applicative . bytevectors)
+@code{strings}, @code{vectors}, or @code{bytevectors} should be
+non-empty lists of the corresponding type and all elements should be
+of the same length.
+
+These applicatives behave as @code{for-each} except that the list of
+elements passed to @code{applicative} are the n-th chars, objects, or
+uint8s of the strings, vectors or bytevectors passed as arguments.
+
+SOURCE NOTE: These are taken from r7rs.
+@end deffn
+
+@deffn Operative $when ($when <test> . <body>)
+@deffnx Operative $unless ($unless <test> . <body>)
+@code{body} should be a list of expressions.
+
+These operatives behave as one-armed @code{$if}s with an implicit
+@code{$sequence}, except that they always discard the last value and
+the result returned is inert.
+
+So both @code{$when}, and @code{$unless} evaluate @code{<test>} in the
+dynamic environment.  If the result is non boolean an error is
+signaled.  In @code{$when} if the result is false and in
+@code{$unless} if the result is true, the expressions in @code{<body>}
+are not evaluated and an inert value is returned.  Otherwise, the
+expressions in @code{<body>} are evaluated sequentially in the dynamic
+environment.  If @code{<body>} is a non cyclic list, the last
+expression in @code{<body>} is evaluated in a special type of tail
+context, that, upon receiving a value discards it and returns an inert
+value instead.  If @code{<body>} is a cyclic list, element evaluation
+continues indefinitely, with elements in the cycle being evaluated
+repeatedly.
+@c TODO xref tail-context
+SOURCE NOTE: These are taken from r7rs.
 @end deffn
