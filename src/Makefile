@@ -71,7 +71,7 @@ $(KRN_T): $(KRN_O) $(KRN_A)
 	$(CC) -o $@ $(MYLDFLAGS) $(KRN_O) $(KRN_A) $(LIBS)
 
 clean:
-	$(RM) $(ALL_T) $(ALL_O) kgffi.o
+	$(RM) $(ALL_T) $(ALL_O) kgffi.o TAGS
 
 # XXX this fails if USE_LIBFFI is not defined
 depend:
@@ -111,6 +111,9 @@ posix:
 		"MYCFLAGS=-DKLISP_USE_POSIX -D_POSIX_SOURCE $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1)" \
 		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi)"
 
+# for use in emacs
+tags:
+	rm -f TAGS; etags --declarations -o TAGS *.[ch]
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all default o clean
 
