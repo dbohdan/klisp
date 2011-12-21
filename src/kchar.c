@@ -15,6 +15,7 @@ bool kchar_numericp(TValue ch)    { return isdigit(chvalue(ch)) != 0; }
 bool kchar_whitespacep(TValue ch) { return isspace(chvalue(ch)) != 0; }
 bool kchar_upper_casep(TValue ch) { return isupper(chvalue(ch)) != 0; }
 bool kchar_lower_casep(TValue ch) { return islower(chvalue(ch)) != 0; }
+bool kchar_title_casep(TValue ch) { return false; } /* only ASCII */
 
 /* Helpers for binary typed predicates */
 bool kchar_eqp(TValue ch1, TValue ch2) { return chvalue(ch1) == chvalue(ch2); }

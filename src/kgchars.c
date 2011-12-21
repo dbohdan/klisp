@@ -215,6 +215,8 @@ void kinit_chars_ground_env(klisp_State *K)
                     symbol, p2tv(kcharp), p2tv(kchar_upper_casep));
     add_applicative(K, ground_env, "char-lower-case?", ftyped_predp, 3, 
                     symbol, p2tv(kcharp), p2tv(kchar_lower_casep));
+    add_applicative(K, ground_env, "char-title-case?", ftyped_predp, 3, 
+                    symbol, p2tv(kcharp), p2tv(kchar_title_casep));
     /* 14.1.4? char->integer, integer->char */
     add_applicative(K, ground_env, "char->integer", kchar_to_integer, 0);
     add_applicative(K, ground_env, "integer->char", kinteger_to_char, 0);

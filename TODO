@@ -2,7 +2,6 @@
 ** Documentation:
 *** update the manual with the current features
 **** complete sections
-- Characters (add char-digit?, char->digit, and digit->char)
 - Ports
 **** Add missing sections
 - vector

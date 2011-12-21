@@ -57,23 +57,33 @@ respectively ``alphabetic'', ``numeric'', or ``whitespace''.
 
 @deffn Applicative char-upper-case? (char-upper-case? . chars) 
 @deffnx Applicative char-lower-case? (char-lower-case? . chars) 
-  These predicates return true iff all of their arguments are
-respectively ``upper case, or ``lower case''.
+@deffnx Applicative char-title-case? (char-title-case? . chars) 
+These predicates return true iff all of their arguments are
+respectively ``upper case, ``lower case'', or ``title case''.
+
+Currently klisp only supports ASCII, so there are no title-cased
+characters (i.e. @code{char-title-case?} always returns false).
 @end deffn
 
 @deffn Applicative char-upcase (char-upcase char) 
 @deffnx Applicative char-downcase (char-downcase char) 
-  These applicatives return a character @code{char2} so that:
+@deffnx Applicative char-titlecase (char-downcase char) 
+@deffnx Applicative char-foldcase (char-downcase char) 
+These applicatives return a character @code{char2} so that:
 @example
 (char-ci=? char char2) @result{} #t
 @end example
 
-  If @code{char} is alphabetic then the following holds:
+If @code{char} is alphabetic then the following holds:
 
 @example
 (char-upper-case? (char-upcase char)) @result{} #t
 (char-lower-case? (char-downcase char)) @result{} #t
 @end example
+
+Currently klisp only supports ASCII, so @code{char-foldcase} behaves
+as @code{char-downcase} and @code{char-titlecase} behaves as
+@code{char-upcase}.
 @end deffn
 
 @deffn Applicative char->integer (char->integer char)
@@ -84,4 +94,39 @@ for ASCII characters is passed to @code{integer->char}, an error is
 signaled.
 @end deffn
 
+@deffn Applicative char-digit? (char-digit? char [base])
+@code{base} must be an exact integer, between 2 and 36, it omitted it
+defaults to @code{10}.
 
+Applicative @code{char-digit?} is a predicate that returns true iff
+@code{char} is a digit in base @code{base}.  If @code{base} is greater
+than 10, then either upper case or lower case letters can be used.
+
+SOURCE NOTE:  This is like char-numeric? but with bases other than 10.
+@end deffn
+
+@deffn Applicative char->digit (char->digit char [base])
+@deffnx Applicative digit->char (digit->char digit [base])
+@code{base} must be an exact integer, between 2 and 36, it omitted it
+defaults to @code{10}.  In @code{char->digit}, @code{char} should be a
+character such that
+@example 
+(char-digit? char base) @result{} #t 
+@end example
+In @code{digit->char}, @code{digit} should be an exact integer such
+that
+@example
+(>=? (- base 1) digit 0) @result{} #t
+@end example
+
+These two applicatives convert between chars representing digits and
+the corresponding integer values, in arbitrary bases (between 2 and
+36).
+
+@code{char->digit} accepts either lower or upper case characters (if
+the base is greater than 10), @code{digit->char} always returns
+lower characters (or numbers of course).
+
+SOURCE NOTE: These are like r7rs digit-value but augmented with a
+base argument.
+@end deffn

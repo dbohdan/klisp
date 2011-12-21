@@ -90,14 +90,20 @@ respectively &ldquo;alphabetic&rdquo;, &ldquo;numeric&rdquo;, or &ldquo;whitespa
 <div class="defun">
 &mdash; Applicative: <b>char-upper-case?</b> (<var>char-upper-case? . chars</var>)<var><a name="index-char_002dupper_002dcase_003f-281"></a></var><br>
 &mdash; Applicative: <b>char-lower-case?</b> (<var>char-lower-case? . chars</var>)<var><a name="index-char_002dlower_002dcase_003f-282"></a></var><br>
-<blockquote><p>  These predicates return true iff all of their arguments are
-respectively &ldquo;upper case, or &ldquo;lower case&rdquo;. 
+&mdash; Applicative: <b>char-title-case?</b> (<var>char-title-case? . chars</var>)<var><a name="index-char_002dtitle_002dcase_003f-283"></a></var><br>
+<blockquote><p>These predicates return true iff all of their arguments are
+respectively &ldquo;upper case, &ldquo;lower case&rdquo;, or &ldquo;title case&rdquo;.
+
+        <p>Currently klisp only supports ASCII, so there are no title-cased
+characters (i.e. <code>char-title-case?</code> always returns false). 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-upcase</b> (<var>char-upcase char</var>)<var><a name="index-char_002dupcase-283"></a></var><br>
-&mdash; Applicative: <b>char-downcase</b> (<var>char-downcase char</var>)<var><a name="index-char_002ddowncase-284"></a></var><br>
-<blockquote><p>  These applicatives return a character <code>char2</code> so that:
+&mdash; Applicative: <b>char-upcase</b> (<var>char-upcase char</var>)<var><a name="index-char_002dupcase-284"></a></var><br>
+&mdash; Applicative: <b>char-downcase</b> (<var>char-downcase char</var>)<var><a name="index-char_002ddowncase-285"></a></var><br>
+&mdash; Applicative: <b>char-titlecase</b> (<var>char-downcase char</var>)<var><a name="index-char_002dtitlecase-286"></a></var><br>
+&mdash; Applicative: <b>char-foldcase</b> (<var>char-downcase char</var>)<var><a name="index-char_002dfoldcase-287"></a></var><br>
+<blockquote><p>These applicatives return a character <code>char2</code> so that:
      <pre class="example">          (char-ci=? char char2) &rArr; #t
 </pre>
         <p>If <code>char</code> is alphabetic then the following holds:
@@ -105,15 +111,54 @@ respectively &ldquo;upper case, or &ldquo;lower case&rdquo;.
      <pre class="example">          (char-upper-case? (char-upcase char)) &rArr; #t
           (char-lower-case? (char-downcase char)) &rArr; #t
 </pre>
-        </blockquote></div>
+        <p>Currently klisp only supports ASCII, so <code>char-foldcase</code> behaves
+as <code>char-downcase</code> and <code>char-titlecase</code> behaves as
+<code>char-upcase</code>. 
+</p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>char-&gt;integer</b> (<var>char-&gt;integer char</var>)<var><a name="index-char_002d_003einteger-285"></a></var><br>
-&mdash; Applicative: <b>integer-&gt;char</b> (<var>integer-&gt;char k</var>)<var><a name="index-integer_002d_003echar-286"></a></var><br>
+&mdash; Applicative: <b>char-&gt;integer</b> (<var>char-&gt;integer char</var>)<var><a name="index-char_002d_003einteger-288"></a></var><br>
+&mdash; Applicative: <b>integer-&gt;char</b> (<var>integer-&gt;char k</var>)<var><a name="index-integer_002d_003echar-289"></a></var><br>
 <blockquote><p>  These applicatives convert between ASCII values (as exact integers
 between 0 and 127) and characters.  If an integer that is out of range
 for ASCII characters is passed to <code>integer-&gt;char</code>, an error is
 signaled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>char-digit?</b> (<var>char-digit? char </var>[<var>base</var>])<var><a name="index-char_002ddigit_003f-290"></a></var><br>
+<blockquote><p><code>base</code> must be an exact integer, between 2 and 36, it omitted it
+defaults to <code>10</code>.
+
+        <p>Applicative <code>char-digit?</code> is a predicate that returns true iff
+<code>char</code> is a digit in base <code>base</code>.  If <code>base</code> is greater
+than 10, then either upper case or lower case letters can be used.
+
+        <p>SOURCE NOTE:  This is like char-numeric? but with bases other than 10. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>char-&gt;digit</b> (<var>char-&gt;digit char </var>[<var>base</var>])<var><a name="index-char_002d_003edigit-291"></a></var><br>
+&mdash; Applicative: <b>digit-&gt;char</b> (<var>digit-&gt;char digit </var>[<var>base</var>])<var><a name="index-digit_002d_003echar-292"></a></var><br>
+<blockquote><p><code>base</code> must be an exact integer, between 2 and 36, it omitted it
+defaults to <code>10</code>.  In <code>char-&gt;digit</code>, <code>char</code> should be a
+character such that
+     <pre class="example">          (char-digit? char base) &rArr; #t
+</pre>
+        <p>In <code>digit-&gt;char</code>, <code>digit</code> should be an exact integer such
+that
+     <pre class="example">          (&gt;=? (- base 1) digit 0) &rArr; #t
+</pre>
+        <p>These two applicatives convert between chars representing digits and
+the corresponding integer values, in arbitrary bases (between 2 and
+36).
+
+        <p><code>char-&gt;digit</code> accepts either lower or upper case characters (if
+the base is greater than 10), <code>digit-&gt;char</code> always returns
+lower characters (or numbers of course).
+
+        <p>SOURCE NOTE: These are like r7rs digit-value but augmented with a
+base argument. 
 </p></blockquote></div>
 
 <!-- *-texinfo-*- -->

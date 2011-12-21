@@ -18,6 +18,7 @@ bool kchar_numericp(TValue ch);
 bool kchar_whitespacep(TValue ch);
 bool kchar_upper_casep(TValue ch);
 bool kchar_lower_casep(TValue ch);
+bool kchar_title_casep(TValue ch);
 /* Helpers for binary typed predicates */
 bool kchar_eqp(TValue ch1, TValue ch2);
 bool kchar_ltp(TValue ch1, TValue ch2);

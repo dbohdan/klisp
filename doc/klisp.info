@@ -2457,11 +2457,17 @@ features defined here were taken mostly from r7rs.
 
  -- Applicative: char-upper-case? (char-upper-case? . chars)
  -- Applicative: char-lower-case? (char-lower-case? . chars)
+ -- Applicative: char-title-case? (char-title-case? . chars)
      These predicates return true iff all of their arguments are
-     respectively "upper case, or "lower case".
+     respectively "upper case, "lower case", or "title case".
+
+     Currently klisp only supports ASCII, so there are no title-cased
+     characters (i.e. `char-title-case?' always returns false).
 
  -- Applicative: char-upcase (char-upcase char)
  -- Applicative: char-downcase (char-downcase char)
+ -- Applicative: char-titlecase (char-downcase char)
+ -- Applicative: char-foldcase (char-downcase char)
      These applicatives return a character `char2' so that:
           (char-ci=? char char2) => #t
 
@@ -2470,12 +2476,46 @@ features defined here were taken mostly from r7rs.
           (char-upper-case? (char-upcase char)) => #t
           (char-lower-case? (char-downcase char)) => #t
 
+     Currently klisp only supports ASCII, so `char-foldcase' behaves as
+     `char-downcase' and `char-titlecase' behaves as `char-upcase'.
+
  -- Applicative: char->integer (char->integer char)
  -- Applicative: integer->char (integer->char k)
      These applicatives convert between ASCII values (as exact integers
      between 0 and 127) and characters.  If an integer that is out of
      range for ASCII characters is passed to `integer->char', an error
      is signaled.
+
+ -- Applicative: char-digit? (char-digit? char [base])
+     `base' must be an exact integer, between 2 and 36, it omitted it
+     defaults to `10'.
+
+     Applicative `char-digit?' is a predicate that returns true iff
+     `char' is a digit in base `base'.  If `base' is greater than 10,
+     then either upper case or lower case letters can be used.
+
+     SOURCE NOTE:  This is like char-numeric? but with bases other than
+     10.
+
+ -- Applicative: char->digit (char->digit char [base])
+ -- Applicative: digit->char (digit->char digit [base])
+     `base' must be an exact integer, between 2 and 36, it omitted it
+     defaults to `10'.  In `char->digit', `char' should be a character
+     such that
+          (char-digit? char base) => #t
+     In `digit->char', `digit' should be an exact integer such that
+          (>=? (- base 1) digit 0) => #t
+
+     These two applicatives convert between chars representing digits
+     and the corresponding integer values, in arbitrary bases (between
+     2 and 36).
+
+     `char->digit' accepts either lower or upper case characters (if
+     the base is greater than 10), `digit->char' always returns lower
+     characters (or numbers of course).
+
+     SOURCE NOTE: These are like r7rs digit-value but augmented with a
+     base argument.
 
 
 File: klisp.info,  Node: Ports,  Next: Alphabetical Index,  Prev: Characters,  Up: Top
@@ -3000,18 +3040,23 @@ Index
 * cddr:                                  Pairs and lists.     (line 102)
 * cdr:                                   Pairs and lists.     (line  96)
 * ceiling:                               Numbers.             (line 340)
-* char->integer:                         Characters.          (line  64)
+* char->digit:                           Characters.          (line  91)
+* char->integer:                         Characters.          (line  73)
 * char-alphabetic?:                      Characters.          (line  43)
 * char-ci<=?:                            Characters.          (line  37)
 * char-ci<?:                             Characters.          (line  36)
 * char-ci=?:                             Characters.          (line  35)
 * char-ci>=?:                            Characters.          (line  39)
 * char-ci>?:                             Characters.          (line  38)
-* char-downcase:                         Characters.          (line  55)
+* char-digit?:                           Characters.          (line  80)
+* char-downcase:                         Characters.          (line  59)
+* char-foldcase:                         Characters.          (line  61)
 * char-lower-case?:                      Characters.          (line  50)
 * char-numeric?:                         Characters.          (line  44)
 * char-ready?:                           Ports.               (line 283)
-* char-upcase:                           Characters.          (line  54)
+* char-title-case?:                      Characters.          (line  51)
+* char-titlecase:                        Characters.          (line  60)
+* char-upcase:                           Characters.          (line  58)
 * char-upper-case?:                      Characters.          (line  49)
 * char-whitespace?:                      Characters.          (line  45)
 * char<=?:                               Characters.          (line  29)
@@ -3041,6 +3086,7 @@ Index
 * denominator:                           Numbers.             (line 330)
 * description format:                    Format of Descriptions.
                                                               (line   6)
+* digit->char:                           Characters.          (line  92)
 * display:                               Ports.               (line 317)
 * div:                                   Numbers.             (line 164)
 * div-and-mod:                           Numbers.             (line 166)
@@ -3102,7 +3148,7 @@ Index
 * inert?:                                Control.             (line  11)
 * inexact?:                              Numbers.             (line  98)
 * input-port?:                           Ports.               (line  32)
-* integer->char:                         Characters.          (line  65)
+* integer->char:                         Characters.          (line  74)
 * integer?:                              Numbers.             (line  61)
 * interpreter:                           Interpreter.         (line   6)
 * Kernel history:                        Kernel History.      (line   6)
@@ -3287,7 +3333,7 @@ Node: Keyed Variables79720
 Node: Numbers82491
 Node: Strings104945
 Node: Characters112206
-Node: Ports115116
-Node: Alphabetical Index134564
+Node: Ports116852
+Node: Alphabetical Index136300
 
 End Tag Table
