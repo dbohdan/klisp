@@ -1,21 +1,44 @@
 * Release 0.3
-** documentation:
+** Documentation:
 *** update the manual with the current features
-** test
-*** build
-    - Windows 
-    - Linux
-*** test cases
-    - Windows 
-    - Linux
-** fix
-*** delete-file problem in Windows (do GC and retry)
+**** complete sections
+- Characters (add char-digit?, char->digit, and digit->char)
+- Ports
+**** Add missing sections
+- vector
+- bytevector
+- module/library
+- error
+- system
+** Test
+*** Windows
+    - build
+    - test cases
+*** Linux
+    - build
+    - test cases
+** Fix
+*** Windows
+ - delete-file problem in Windows (do GC and retry)
 ** Makefile
-*** Add a couple of flags to turn debug on/off
+- Add a couple of flags to turn debug on/off
 ** Webpage
 *** Try to put together a quick webpage
-**** Try Skeleton CSS framework
-*** Have Maria Sol draw a simple logo
+- Try Skeleton CSS framework
+- Have Maria Sol draw a simple logo
+
+** Refactor
+*** change 'module' to 'library'
+ This follows r6rs and r7rs new draft, and avoids problems with the
+ report uses of the word 'module'
+- c & h files
+- c function names
+- bound kernel names
+- documentation
+- tests
+- reference implementation in klisp-extra
+- libraries in klisp-extra
+
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter
@@ -49,6 +72,14 @@
 *** syntax support for complex numbers (Kernel report)
 *** unicode support
 *** add case sensitive option / compiler flag
+** features
+*** r7rs
+- add optional arguments to all versions of fill!
+- add optional arguments to all versions of copy
+- read-bytevector & read-bytevector!
+*** extra
+- read lines (reads all lines and returns a list of them)
+- read list (like what is used for load)
 ** library
 *** some simplified error guarding (r7rs)
 *** $case (r7rs)
@@ -84,7 +115,12 @@
   - Continue investigating and try to make it lower
 
 ** documentation
-*** Clean up the structure of the documentation
-*** Add xrefs
-*** Work a little on the indexes
-*** Add README files to all directories
+*** info/html manual
+  - xrefs
+  - Clean up the structure of the documentation
+  - a little on the indexes
+  - add sections for general concepts (tail context, dynamic extent, etc)
+*** README
+  - Add README files to all directories
+*** man page
+  - change man page to mandoc format
