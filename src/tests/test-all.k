@@ -8,6 +8,7 @@
 (load "tests/booleans.k")
 (load "tests/eq-equal.k")
 (load "tests/symbols.k")
+(load "tests/continuations.k")
 (load "tests/control.k")
 (load "tests/pairs-and-lists.k")
 (load "tests/pair-mutation.k")
