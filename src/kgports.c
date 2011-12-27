@@ -1277,12 +1277,13 @@ void kinit_ports_ground_env(klisp_State *K)
 
     /* 15.1.6 close-input-file, close-output-file */
     /* ASK John: should this be called close-input-port & close-ouput-port 
-       like in r5rs? that doesn't seem consistent with open thou */
+       like in r5rs? */
     add_applicative(K, ground_env, "close-input-file", close_file, 1,
                     b2tv(false));
     add_applicative(K, ground_env, "close-output-file", close_file, 1,
                     b2tv(true));
-    /* 15.1.? Use the r7rs names, in preparation for other kind of ports */
+    /* 15.1.? Use the r7rs names, this has more sense in the face of 
+       the different port types available in klisp */
     add_applicative(K, ground_env, "close-input-port", close_port, 2, 
                     b2tv(true), b2tv(false));
     add_applicative(K, ground_env, "close-output-port", close_port, 2, 
@@ -1359,13 +1360,6 @@ void kinit_ports_ground_env(klisp_State *K)
                     find_required_filename, 0);
     /* 15.2.3 get-module */
     add_applicative(K, ground_env, "get-module", get_module, 0);
-    /* 15.2.? display */
-    add_applicative(K, ground_env, "display", display, 0);
-
-    /* 15.1.? read-line */
-    add_applicative(K, ground_env, "read-line", read_line, 0);
-    /* 15.1.? flush-output-port */
-    add_applicative(K, ground_env, "flush-output-port", flush, 0);
 
     /*
      * That's all there is in the report combined with r5rs and r7rs scheme.

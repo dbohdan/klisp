@@ -1,8 +1,6 @@
 * Release 0.3
 ** Documentation:
 *** update the manual with the current features
-**** complete sections
-- Ports
 **** Add missing sections
 - vector
 - bytevector
@@ -65,12 +63,17 @@
 *** add static qualifiers (especially in all kg*.c files)
 *** add const qualifiers where sensible
 ** fix:
-*** fix char-ready? and u8-ready? (r7rs)
+- fix char-ready? and u8-ready? (r7rs)
     - Probably need a thread per port
 ** reader/writer
-*** syntax support for complex numbers (Kernel report)
-*** unicode support
-*** add case sensitive option / compiler flag
+- syntax support for complex numbers (Kernel report)
+- unicode support
+- add case sensitive option / compiler flag
+*** add new external representations
+- vectors
+- bytevectors
+- errors
+- others(?)
 ** features
 *** r7rs
 - add optional arguments to all versions of fill!
@@ -119,6 +122,8 @@
   - Clean up the structure of the documentation
   - a little on the indexes
   - add sections for general concepts (tail context, dynamic extent, etc)
+  - find a way to inline function documentation in the c source code 
+    (check to see how emacs does this for elisp)
 *** README
   - Add README files to all directories
 *** man page
