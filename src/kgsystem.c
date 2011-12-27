@@ -29,7 +29,7 @@
 /* XXX current revision of the r7rs draft asks for tai seconds,
    I am sticking with UTC seconds for now, at least till the report is 
    ratified */
-void current_second(klisp_State *K)
+void get_current_second(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue ptree = K->next_value;
@@ -50,7 +50,7 @@ void current_second(klisp_State *K)
 }
 
 /* ??.?.?  current-jiffy */
-void current_jiffy(klisp_State *K)
+void get_current_jiffy(klisp_State *K)
 {
     TValue ptree = K->next_value;
     check_0p(K, ptree);
@@ -58,7 +58,7 @@ void current_jiffy(klisp_State *K)
 }
 
 /* ??.?.?  jiffies-per-second */
-void jiffies_per_second(klisp_State *K)
+void get_jiffies_per_second(klisp_State *K)
 {
     TValue ptree = K->next_value;
     check_0p(K, ptree);
@@ -156,7 +156,24 @@ void get_arguments(klisp_State *K)
     kapply_cc(K, res);
 }
 
-/* ?.? get-environment-variable, get-environment-variables */
+/* ?.? defined-environment-variable?, get-environment-variable, 
+   get-environment-variables */
+void defined_environment_variableP(klisp_State *K)
+{
+    TValue ptree = K->next_value;
+    TValue *xparams = K->next_xparams;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "string", ttisstring, name);
+    char *str = getenv(kstring_buf(name));
+
+    TValue res = (str == NULL)? KFALSE : KTRUE;
+    kapply_cc(K, res);
+}
+
 void get_environment_variable(klisp_State *K)
 {
     TValue ptree = K->next_value;
@@ -168,10 +185,11 @@ void get_environment_variable(klisp_State *K)
 
     bind_1tp(K, ptree, "string", ttisstring, name);
     char *str = getenv(kstring_buf(name));
-    /* I follow r7rs here, but should probably throw error */
+
     TValue res;
     if (str == NULL) {
-        res = KFALSE;
+        klispE_throw_simple_with_irritants(K, "undefined env var", 1, name);
+        return;
     } else {
         res = kstring_new_b_imm(K, str);
     }
@@ -236,12 +254,12 @@ void kinit_system_ground_env(klisp_State *K)
     TValue ground_env = K->ground_env;
     TValue symbol, value;
 
-    /* ??.?.? current-second */
-    add_applicative(K, ground_env, "current-second", current_second, 0);
-    /* ??.?.? current-jiffy */
-    add_applicative(K, ground_env, "current-jiffy", current_jiffy, 0);
-    /* ??.?.? jiffies-per-second */
-    add_applicative(K, ground_env, "jiffies-per-second", jiffies_per_second, 
+    /* ??.?.? get-current-second */
+    add_applicative(K, ground_env, "get-current-second", get_current_second, 0);
+    /* ??.?.? get-current-jiffy */
+    add_applicative(K, ground_env, "get-current-jiffy", get_current_jiffy, 0);
+    /* ??.?.? get-jiffies-per-second */
+    add_applicative(K, ground_env, "get-jiffies-per-second", get_jiffies_per_second, 
                     0);
     /* ?.? file-exists? */
     add_applicative(K, ground_env, "file-exists?", file_existsp, 0);
@@ -256,7 +274,10 @@ void kinit_system_ground_env(klisp_State *K)
                     1, KNIL);
     add_applicative(K, ground_env, "get-interpreter-arguments", get_arguments, 
                     1, KNIL);
-    /* ?.? get-environment-variable, get-environment-variables */
+    /* ?.? defined-environment-variable?, get-environment-variable, 
+       get-environment-variables */
+    add_applicative(K, ground_env, "defined-environment-variable?", 
+                    defined_environment_variableP, 0);
     add_applicative(K, ground_env, "get-environment-variable", 
                     get_environment_variable, 0);
     add_applicative(K, ground_env, "get-environment-variables", 

@@ -290,7 +290,8 @@ unset KLISP_PATH
 
 export KLISPTEST1=pqr
 check_o '"pqr"' $KLISP '-e (write (get-environment-variable "KLISPTEST1"))'
-check_o '#f' $KLISP '-e (write (get-environment-variable "KLISPTEST2"))'
+check_o '#t' $KLISP '-e (write (defined-environment-variable? "KLISPTEST1"))'
+check_o '#f' $KLISP '-e (write (defined-environment-variable? "KLISPTEST2"))'
 
 # script arguments
 

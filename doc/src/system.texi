@@ -1,31 +1,91 @@
-@deffn Applicative file-exists? (file-exists? string)
-  @code{string} should be the name/path for a file.
+@c -*-texinfo-*-
+@setfilename ../src/system
 
-  Predicate @code{file-exists?} checks to see if a file named
+@node System, Alphabetical Index, Ports, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter System
+@cindex system
+
+Module System contains some useful features for interacting with the
+host environment.
+
+SOURCE NOTE: most of these come from r7rs.
+
+@deffn Applicative get-current-second (get-current-second)
+Applicative @code{get-current-second} returns the number of seconds
+elapsed since the UNIX/POSIX epoch (that is midnight January 1st,
+1970, UTC).  
+
+NOTE: r7rs specifies TAI seconds, but for now we are sticking to POSIX
+here.
+@end deffn
+
+@deffn Applicative get-current-jiffies (get-current-jiffies)
+Applicative @code{get-current-jiffies} returns the number of jiffies
+(fractions of a second) elapsed since an arbitrary epoch that may
+change in each run of the klisp interpreter.  Applicative
+@code{get-jiffies-per-second} can be used to determine which fraction
+of a second a jiffy represents.
+@end deffn
+
+@deffn Applicative get-jiffies-per-second (get-jiffies-per-second)
+Applicative @code{get-jiffies-per-second} returns a constant
+representing the number of jiffies that correspond to one second.
+@end deffn
+
+@deffn Applicative file-exists (file-exists string)
+Predicate @code{file-exists?} checks to see if a file named
 @code{string} exists.
-
-  SOURCE NOTE: this is missing from Kernel, it is taken from r7rs Scheme.
 @end deffn
 
 @deffn Applicative delete-file (delete-file string)
-  @code{string} should be the name/path for an existing file.
+@code{string} should be the name/path for an existing file.
 
-  Applicative @code{delete-file} deletes the file named @code{string}.
+Applicative @code{delete-file} deletes the file named @code{string}.
 If it doesn't exists or can't be deleted, an error is signaled. The
-result returned by @code{delete-file} is inert. 
-
-  SOURCE NOTE: this is missing from Kernel, it is taken from r7rs Scheme.
+result returned by @code{delete-file} is inert.
 @end deffn
 
 @deffn Applicative rename-file (rename-file string1 string2)
-  @code{string1} should be the name/path for an existing file,
+@code{string1} should be the name/path for an existing file,
 @code{string2} should be the name/path for a non existing file.
 
-  Applicative @code{rename-file} renames the file named @code{string1}
+Applicative @code{rename-file} renames the file named @code{string1}
 to @code{string2}. If the file doesn't exists or can't be renamed for
 any reason, an error is signaled. The result returned by
-@code{rename-file} is inert. 
+@code{rename-file} is inert.
 
-  SOURCE NOTE: this is missing from Kernel AND Scheme, it is taken
-from C, being quite similar to @code{delete-file}.
+SOURCE NOTE: this is missing from r7rs, it is taken from C, being
+quite similar to @code{delete-file}.
+@end deffn
+
+@deffn Applicative get-script-arguments (get-script-arguments)
+@deffnx Applicative get-interpreter-arguments (get-interpreter-arguments)
+These applicatives return respectively the script and interpreter
+arguments.  The script arguments are a list of the arguments passed to
+the klisp interpreter starting from (and including) the script name.
+The interpreter arguments are the complete list of arguments passed to
+the klisp interpreter (including the name of the interpreter as the
+first item in the list, the interpreter flag arguments and the script
+name and arguments.
+@end deffn
+
+@deffn Applicative defined-environment-variable? (defined-environment-variable? string)
+Predicate @code{defined-environment-variable?} returns true iff
+@code{string} represents a defined envrionment variable.
+@end deffn
+
+@deffn Applicative get-environment-variable (get-environment-variable string)
+Applicative @code{get-environment-variable} returns the value of the
+environment variable represented by @code{string}.  If @code{string}
+doesn't represent a defined environment variable an error is signaled.
+@end deffn
+
+@deffn Applicative get-environment-variables (get-environment-variables)
+@c TODO xref to alist
+Applicative @code{get-environment-variable} returns an alist
+representing the defined environment variables and their values.  The
+alist is a list of @code{(variable . value)} entries, where both
+@code{variable} and @code{value} are strings.
 @end deffn

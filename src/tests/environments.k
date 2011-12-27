@@ -230,7 +230,6 @@
           get-module))
 
 ;; Additional symbols defined in klisp.
-
 ($check-predicate
  ($binds? (make-kernel-standard-environment)
           ;; symbols
@@ -246,6 +245,7 @@
           ;; TODO
           ;; ports
           textual-port? binary-port?
+          flush-output-port
           with-error-to-file
           get-current-error-port
           open-binary-input-file open-binary-output-file
@@ -255,10 +255,9 @@
           newline
           display
           read-u8 peek-u8 u8-ready? write-u8
-          flush-output-port
-          file-exists? delete-file rename-file
           ;; system functions
-          current-second current-jiffy jiffies-per-second
+          get-current-second get-current-jiffy get-jiffies-per-second
+          file-exists? delete-file rename-file
           ;; bytevectors
           bytevector?
           ;; error handling

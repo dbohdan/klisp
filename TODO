@@ -6,7 +6,6 @@
 - bytevector
 - module/library
 - error
-- system
 ** Test
 *** Windows
     - build

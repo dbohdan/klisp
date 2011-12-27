@@ -56,6 +56,7 @@ the header "Permission to copy this report", that reads:
 * Strings::                 Strings module features.
 * Characters::              Characters module features.
 * Ports::                   Ports module features.
+* System::                  System module features.
 * Alphabetical Index::      Index including concepts, functions, variables,
                               and other terms.
 
@@ -2518,7 +2519,7 @@ features defined here were taken mostly from r7rs.
      base argument.
 
 
-File: klisp.info,  Node: Ports,  Next: Alphabetical Index,  Prev: Characters,  Up: Top
+File: klisp.info,  Node: Ports,  Next: System,  Prev: Characters,  Up: Top
 
 17 Ports
 ********
@@ -3015,7 +3016,87 @@ klisp and was taken from r7rs.
      binding symbol `module-parameters' to the `environment' argument.
 
 
-File: klisp.info,  Node: Alphabetical Index,  Next: (dir),  Prev: Ports,  Up: Top
+File: klisp.info,  Node: System,  Next: Alphabetical Index,  Prev: Ports,  Up: Top
+
+18 System
+*********
+
+Module System contains some useful features for interacting with the
+host environment.
+
+   SOURCE NOTE: most of these come from r7rs.
+
+ -- Applicative: get-current-second (get-current-second)
+     Applicative `get-current-second' returns the number of seconds
+     elapsed since the UNIX/POSIX epoch (that is midnight January 1st,
+     1970, UTC).
+
+     NOTE: r7rs specifies TAI seconds, but for now we are sticking to
+     POSIX here.
+
+ -- Applicative: get-current-jiffies (get-current-jiffies)
+     Applicative `get-current-jiffies' returns the number of jiffies
+     (fractions of a second) elapsed since an arbitrary epoch that may
+     change in each run of the klisp interpreter.  Applicative
+     `get-jiffies-per-second' can be used to determine which fraction
+     of a second a jiffy represents.
+
+ -- Applicative: get-jiffies-per-second (get-jiffies-per-second)
+     Applicative `get-jiffies-per-second' returns a constant
+     representing the number of jiffies that correspond to one second.
+
+ -- Applicative: file-exists (file-exists string)
+     Predicate `file-exists?' checks to see if a file named `string'
+     exists.
+
+ -- Applicative: delete-file (delete-file string)
+     `string' should be the name/path for an existing file.
+
+     Applicative `delete-file' deletes the file named `string'.  If it
+     doesn't exists or can't be deleted, an error is signaled. The
+     result returned by `delete-file' is inert.
+
+ -- Applicative: rename-file (rename-file string1 string2)
+     `string1' should be the name/path for an existing file, `string2'
+     should be the name/path for a non existing file.
+
+     Applicative `rename-file' renames the file named `string1' to
+     `string2'. If the file doesn't exists or can't be renamed for any
+     reason, an error is signaled. The result returned by `rename-file'
+     is inert.
+
+     SOURCE NOTE: this is missing from r7rs, it is taken from C, being
+     quite similar to `delete-file'.
+
+ -- Applicative: get-script-arguments (get-script-arguments)
+ -- Applicative: get-interpreter-arguments (get-interpreter-arguments)
+     These applicatives return respectively the script and interpreter
+     arguments.  The script arguments are a list of the arguments
+     passed to the klisp interpreter starting from (and including) the
+     script name.  The interpreter arguments are the complete list of
+     arguments passed to the klisp interpreter (including the name of
+     the interpreter as the first item in the list, the interpreter
+     flag arguments and the script name and arguments.
+
+ -- Applicative: defined-environment-variable?
+          (defined-environment-variable? string)
+     Predicate `defined-environment-variable?' returns true iff
+     `string' represents a defined envrionment variable.
+
+ -- Applicative: get-environment-variable (get-environment-variable
+          string)
+     Applicative `get-environment-variable' returns the value of the
+     environment variable represented by `string'.  If `string' doesn't
+     represent a defined environment variable an error is signaled.
+
+ -- Applicative: get-environment-variables (get-environment-variables)
+     Applicative `get-environment-variable' returns an alist
+     representing the defined environment variables and their values.
+     The alist is a list of `(variable . value)' entries, where both
+     `variable' and `value' are strings.
+
+
+File: klisp.info,  Node: Alphabetical Index,  Next: (dir),  Prev: System,  Up: Top
 
 Index
 *****
@@ -3155,6 +3236,8 @@ Index
 * copy-es-immutable!:                    Pairs and lists.     (line  59)
 * cos:                                   Numbers.             (line 405)
 * countable-list?:                       Pairs and lists.     (line 307)
+* defined-environment-variable?:         System.              (line  65)
+* delete-file:                           System.              (line  35)
 * denominator:                           Numbers.             (line 330)
 * description format:                    Format of Descriptions.
                                                               (line   6)
@@ -3186,6 +3269,7 @@ Index
 * exp:                                   Numbers.             (line 402)
 * expt:                                  Numbers.             (line 397)
 * extend-continuation:                   Continuations.       (line  50)
+* file-exists:                           System.              (line  31)
 * file-port?:                            Ports.               (line  54)
 * filter:                                Pairs and lists.     (line 277)
 * find-required-filename:                Ports.               (line 457)
@@ -3202,7 +3286,13 @@ Index
 * get-current-environment:               Environments.        (line 114)
 * get-current-error-port:                Ports.               (line  91)
 * get-current-input-port:                Ports.               (line  89)
+* get-current-jiffies:                   System.              (line  20)
 * get-current-output-port:               Ports.               (line  90)
+* get-current-second:                    System.              (line  12)
+* get-environment-variable:              System.              (line  70)
+* get-environment-variables:             System.              (line  75)
+* get-interpreter-arguments:             System.              (line  55)
+* get-jiffies-per-second:                System.              (line  27)
 * get-list-metrics:                      Pairs and lists.     (line 161)
 * get-module:                            Ports.               (line 488)
 * get-output-bytevector:                 Ports.               (line 195)
@@ -3211,6 +3301,7 @@ Index
 * get-real-exact-primary:                Numbers.             (line 267)
 * get-real-internal-bounds:              Numbers.             (line 247)
 * get-real-internal-primary:             Numbers.             (line 266)
+* get-script-arguments:                  System.              (line  54)
 * get-string-arithmetic:                 Numbers.             (line 314)
 * guard-continuation:                    Continuations.       (line  63)
 * guard-dynamic-extent:                  Continuations.       (line 156)
@@ -3309,6 +3400,7 @@ Index
 * reduce:                                Pairs and lists.     (line 312)
 * register-requirement!:                 Ports.               (line 454)
 * registered-requirement?:               Ports.               (line 453)
+* rename-file:                           System.              (line  42)
 * require:                               Ports.               (line 430)
 * reverse:                               Pairs and lists.     (line 150)
 * robust?:                               Numbers.             (line 102)
@@ -3355,6 +3447,7 @@ Index
 * symbol->string:                        Symbols.             (line  22)
 * symbol?:                               Symbols.             (line  18)
 * symbols:                               Symbols.             (line   6)
+* system:                                System.              (line   6)
 * tan:                                   Numbers.             (line 406)
 * textual-port?:                         Ports.               (line  42)
 * truncate:                              Numbers.             (line 341)
@@ -3381,36 +3474,37 @@ Index
 
 Tag Table:
 Node: Top703
-Node: License2663
-Node: Introduction4345
-Node: Caveats7278
-Node: Kernel History8064
-Node: Conventions9509
-Node: Some Terms10180
-Node: Evaluation Notation10851
-Node: Printing Notation11872
-Node: Error Messages12348
-Node: Format of Descriptions12996
-Node: A Sample Applicative Description13560
-Node: Acknowledgements15323
-Node: Interpreter15709
-Ref: Command Line Options18009
-Ref: Interpreter Exit Status18943
-Node: Booleans20171
-Node: Equivalence22848
-Node: Symbols23641
-Node: Control25271
-Node: Pairs and lists29362
-Node: Environments48242
-Node: Combiners58915
-Node: Continuations65569
-Node: Encapsulations74112
-Node: Promises75565
-Node: Keyed Variables79720
-Node: Numbers82491
-Node: Strings104945
-Node: Characters112206
-Node: Ports116852
-Node: Alphabetical Index140004
+Node: License2715
+Node: Introduction4397
+Node: Caveats7330
+Node: Kernel History8116
+Node: Conventions9561
+Node: Some Terms10232
+Node: Evaluation Notation10903
+Node: Printing Notation11924
+Node: Error Messages12400
+Node: Format of Descriptions13048
+Node: A Sample Applicative Description13612
+Node: Acknowledgements15375
+Node: Interpreter15761
+Ref: Command Line Options18061
+Ref: Interpreter Exit Status18995
+Node: Booleans20223
+Node: Equivalence22900
+Node: Symbols23693
+Node: Control25323
+Node: Pairs and lists29414
+Node: Environments48294
+Node: Combiners58967
+Node: Continuations65621
+Node: Encapsulations74164
+Node: Promises75617
+Node: Keyed Variables79772
+Node: Numbers82543
+Node: Strings104997
+Node: Characters112258
+Node: Ports116904
+Node: System140044
+Node: Alphabetical Index143538
 
 End Tag Table

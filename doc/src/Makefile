@@ -9,7 +9,8 @@ srcs = klisp.texi index.texi \
 	continuations.texi encapsulations.texi \
 	promises.texi keyed_vars.texi \
 	numbers.texi strings.texi \
-	characters.texi ports.texi
+	characters.texi ports.texi \
+	system.texi
 
 #TODO add dvi/pdf output
 #TODO check what happens with xrefs

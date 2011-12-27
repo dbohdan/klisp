@@ -1309,6 +1309,13 @@ void kinit_ports_ground_env(klisp_State *K)
                     i2tv(K_TEOF));
     /* 15.1.? newline */
     add_applicative(K, ground_env, "newline", newline, 0);
+    /* 15.1.? display */
+    add_applicative(K, ground_env, "display", display, 0);
+    /* 15.1.? read-line */
+    add_applicative(K, ground_env, "read-line", read_line, 0);
+    /* 15.1.? flush-output-port */
+    add_applicative(K, ground_env, "flush-output-port", flush, 0);
+
     /* 15.1.? write-char */
     add_applicative(K, ground_env, "write-char", write_char, 0);
     /* 15.1.? read-char */
