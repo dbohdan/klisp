@@ -19,7 +19,7 @@
 /* TEMP: for now we only implement bigrats (memory allocated) */
 
 /* This tries to convert a bigrat to a fixint or a bigint */
-inline TValue kbigrat_try_integer(klisp_State *K, TValue n)
+static inline TValue kbigrat_try_integer(klisp_State *K, TValue n)
 {
     Bigrat *b = tv2bigrat(n);
 

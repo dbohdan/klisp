@@ -185,7 +185,7 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 
 /* This works no matter if parents is a list or a single environment */
 /* GC: assumes env & sym are rooted */
-inline bool try_get_binding(klisp_State *K, TValue env, TValue sym, 
+static inline bool try_get_binding(klisp_State *K, TValue env, TValue sym, 
                             TValue *value)
 {
     /* assume the stack may be in use, keep track of pushed objs */
@@ -266,7 +266,7 @@ TValue kmake_keyed_static_env(klisp_State *K, TValue parent, TValue key,
 }
 
 /* GC: assumes parent, key & env are rooted */
-inline bool try_get_keyed(klisp_State *K, TValue env, TValue key, 
+static inline bool try_get_keyed(klisp_State *K, TValue env, TValue key, 
                           TValue *value)
 {
     /* MAYBE: this could be optimized to mark environments to avoid
