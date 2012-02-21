@@ -67,7 +67,7 @@ inline void clear_ls_marks(TValue ls)
 }
 
 /* operands should be a pair, and should be rooted (GC) */
-inline TValue make_arg_ls(klisp_State *K, TValue operands, TValue *tail)
+static inline TValue make_arg_ls(klisp_State *K, TValue operands, TValue *tail)
 {
     TValue arg_ls = kcons(K, kcar(operands), KNIL);
     krooted_tvs_push(K, arg_ls); /* root the constructed list */

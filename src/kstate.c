@@ -451,7 +451,7 @@ TValue select_interceptor(TValue guard_ls)
 */
 
 /* GC: assume src_cont & dst_cont are rooted */
-inline TValue create_interception_list(klisp_State *K, TValue src_cont, 
+static inline TValue create_interception_list(klisp_State *K, TValue src_cont, 
                                        TValue dst_cont)
 {
     mark_iancestors(dst_cont);

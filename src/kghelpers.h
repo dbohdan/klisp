@@ -316,7 +316,7 @@ inline void unmark_list(klisp_State *K, TValue obj)
     }
 }
 
-inline void unmark_tree(klisp_State *K, TValue obj)
+static inline void unmark_tree(klisp_State *K, TValue obj)
 {
     assert(ks_sisempty(K));
 

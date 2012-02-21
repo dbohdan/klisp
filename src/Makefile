@@ -9,11 +9,11 @@ PLAT= none
 CC=gcc
 # TEMP for now put in debug symbols
 # TEMP for now only 32 bit binaries (see kobject.h)
-CFLAGS=-O2 -g -std=c99 -Wall -m32 $(MYCFLAGS)
+CFLAGS=-arch i386 -O2 -g -std=c99 -Wall -m32 $(MYCFLAGS)
 AR= ar rcu
 RANLIB= ranlib
 RM= rm -f
-LIBS= -lm $(MYLIBS)
+LIBS= -arch i386 -lm $(MYLIBS)
 
 # Set USE_LIBFFI=1 (or other nonempty string) to enable libffi-dependent
 # code.

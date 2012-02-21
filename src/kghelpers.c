@@ -887,7 +887,7 @@ bool eq2p(klisp_State *K, TValue obj1, TValue obj2)
 
 /* find "name" of the set of this obj, if there isn't one create it,
    if there is one, flatten its branch */
-inline TValue equal_find(klisp_State *K, TValue obj)
+static inline TValue equal_find(klisp_State *K, TValue obj)
 {
     /* GC: should root obj */
     if (kis_unmarked(obj)) {
@@ -920,7 +920,7 @@ inline TValue equal_find(klisp_State *K, TValue obj)
 }
 
 /* merge the smaller set into the big one, if both are equal just pick one */
-inline void equal_merge(klisp_State *K, TValue root1, TValue root2)
+static inline void equal_merge(klisp_State *K, TValue root1, TValue root2)
 {
     /* K isn't needed but added for consistency */
     UNUSED(K);
@@ -943,7 +943,7 @@ inline void equal_merge(klisp_State *K, TValue root1, TValue root2)
 
 /* check to see if two objects were already compared, and return that. If they
    weren't compared yet, merge their sets (and flatten their branches) */
-inline bool equal_find2_mergep(klisp_State *K, TValue obj1, TValue obj2)
+static inline bool equal_find2_mergep(klisp_State *K, TValue obj1, TValue obj2)
 {
     /* GC: should root root1 and root2 */
     TValue root1 = equal_find(K, obj1);
@@ -1787,7 +1787,7 @@ TValue make_bind_continuation(klisp_State *K, TValue key,
 /* TODO: this isn't very clean, refactor */
 
 /* GC: assumes obj & root are rooted */
-inline TValue check_copy_single_entry(klisp_State *K, char *name,
+static inline TValue check_copy_single_entry(klisp_State *K, char *name,
                                       TValue obj, TValue root)
 {
     if (!ttispair(obj) || !ttispair(kcdr(obj)) || 

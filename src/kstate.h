@@ -329,7 +329,7 @@ inline bool ks_tbisempty(klisp_State *K)
 ** Functions to protect values from GC
 ** TODO: add write barriers
 */
-inline void krooted_tvs_push(klisp_State *K, TValue tv)
+static inline void krooted_tvs_push(klisp_State *K, TValue tv)
 {
     klisp_assert(K->rooted_tvs_top < GC_PROTECT_SIZE);
     K->rooted_tvs_buf[K->rooted_tvs_top++] = tv;

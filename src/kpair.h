@@ -17,13 +17,13 @@ bool kpairp(TValue obj);
 bool kimmutable_pairp(TValue obj);
 bool kmutable_pairp(TValue obj);
 
-inline TValue kcar(TValue p)
+static inline TValue kcar(TValue p)
 {
     klisp_assert(kpairp(p));
     return tv2pair(p)->car;
 }
 
-inline TValue kcdr(TValue p)
+static inline TValue kcdr(TValue p)
 {
     klisp_assert(kpairp(p));
     return tv2pair(p)->cdr;
