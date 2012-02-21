@@ -9,11 +9,11 @@ PLAT= none
 CC=gcc
 # TEMP for now put in debug symbols
 # TEMP for now only 32 bit binaries (see kobject.h)
-CFLAGS=-arch i386 -O2 -g -std=c99 -Wall -m32 $(MYCFLAGS)
+CFLAGS=-O2 -g -std=c99 -Wall -m32 $(MYCFLAGS)
 AR= ar rcu
 RANLIB= ranlib
 RM= rm -f
-LIBS= -arch i386 -lm $(MYLIBS)
+LIBS=-lm $(MYLIBS)
 
 # Set USE_LIBFFI=1 (or other nonempty string) to enable libffi-dependent
 # code.
@@ -27,8 +27,8 @@ MYLIBS=
 
 # == END OF USER SETTINGS. NO NEED TO CHANGE ANYTHING BELOW THIS LINE =========
 
-# TEMP only these two for now
-PLATS= generic mingw posix
+# TEMP only these for now
+PLATS= generic mingw posix macosx
 
 KRN_A= libklisp.a
 CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
@@ -110,6 +110,11 @@ posix:
 	$(MAKE) all \
 		"MYCFLAGS=-DKLISP_USE_POSIX -D_POSIX_SOURCE $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1)" \
 		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi)"
+macosx:
+	$(MAKE) all \
+		"MYCFLAGS=-DKLISP_USE_POSIX -D_POSIX_SOURCE $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1) " \
+		"-arch i386" \
+		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi) -arch i386"
 
 # for use in emacs
 tags:

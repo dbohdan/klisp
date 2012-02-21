@@ -129,7 +129,7 @@ void do_set_eval_obj(klisp_State *K)
 
 /* Helpers for $provide! & $import! */
 
-inline void unmark_maybe_symbol_list(klisp_State *K, TValue ls)
+static inline void unmark_maybe_symbol_list(klisp_State *K, TValue ls)
 {
     UNUSED(K);
     while(ttispair(ls) && kis_marked(ls)) {

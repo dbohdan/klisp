@@ -307,7 +307,7 @@ inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2)
 ** MAYBE: These shouldn't be inline really.
 ** These two stop at the first object that is not a marked pair
 */
-inline void unmark_list(klisp_State *K, TValue obj)
+static inline void unmark_list(klisp_State *K, TValue obj)
 {
     UNUSED(K); /* not needed, it's here for consistency */
     while(ttispair(obj) && kis_marked(obj)) {

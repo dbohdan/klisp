@@ -58,7 +58,7 @@ void do_eval_ls(klisp_State *K)
 }
 
 /* TODO: move this to another file, to use it elsewhere */
-inline void clear_ls_marks(TValue ls)
+static inline void clear_ls_marks(TValue ls)
 {
     while (ttispair(ls) && kis_marked(ls)) {
         kunmark(ls);
