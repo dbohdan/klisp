@@ -8,7 +8,7 @@ README for klisp 0.2
   that probably won't happen for some time. It is written in C99 under
   the MIT license. It draws heavily from the Lua interpreter source
   code & file structure. It uses the IMath library for arbitrary sized
-  integers and rationals.
+  integers and rationals. You can check the webpage at http://klisp.org
 
 * What is the Kernel Programming Language?
   ----------------------------------------
@@ -21,9 +21,8 @@ README for klisp 0.2
   ------------
   klisp is freely available for both academic and commercial purposes.
   See COPYRIGHT for details.
-  klisp can be downloaded at
+  klisp can be downloaded from http://klisp.org or from 
   https://bitbucket.org/AndresNavarro/klisp
-
 
 * Installation
   ------------
