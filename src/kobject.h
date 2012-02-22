@@ -298,6 +298,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttiseof(o)	(tbasetype_(o) == K_TAG_EOF)
 #define ttisboolean(o)	(tbasetype_(o) == K_TAG_BOOLEAN)
 #define ttischar(o)	(tbasetype_(o) == K_TAG_CHAR)
+#define ttisuser(o)	(tbasetype_(o) == K_TAG_USER)
 #define ttisfree(o)	(tbasetype_(o) == K_TAG_FREE)
 
 /* Complex types (value in heap), 

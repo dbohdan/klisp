@@ -584,6 +584,9 @@ void kwrite_scalar(klisp_State *K, TValue obj)
         kw_printf(K, "#ignore");
         break;
 /* unreadable objects */
+    case K_TUSER:
+        kw_printf(K, "#[user pointer: %p]", pvalue(obj));
+        break;
     case K_TEOF:
         kw_printf(K, "#[eof]");
         break;
