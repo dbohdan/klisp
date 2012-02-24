@@ -519,6 +519,15 @@ input; reads immutable objects from the file until the end of the file
 is reached; evaluates those objects consecutively in the created
 environment.  The result from applicative <code>load</code> is inert.
 
+        <p>Notice that if <code>string</code> is a relative path it is looked in the
+current directory (whatever that means in your OS, normally the
+directory from which the interpreted was run or the directory where
+the interpreter executable lives).  klisp doesn't track the directory
+from which the current code was read, so there's in principle no way
+to load a file in the same directory as the currently executing code
+with a relative path.  See <code>find-required-filename</code> for a way to
+look for a file in a number of directories.
+
         <p>SOURCE NOTE: load is enumerated in the Kernel report, but the
 description is not there yet.  This seems like a sane way to define
 it, taking the description of <code>get-module</code> that there is in the

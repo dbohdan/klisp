@@ -2940,6 +2940,16 @@ klisp and was taken from r7rs.
      file is reached; evaluates those objects consecutively in the
      created environment.  The result from applicative `load' is inert.
 
+     Notice that if `string' is a relative path it is looked in the
+     current directory (whatever that means in your OS, normally the
+     directory from which the interpreted was run or the directory where
+     the interpreter executable lives).  klisp doesn't track the
+     directory from which the current code was read, so there's in
+     principle no way to load a file in the same directory as the
+     currently executing code with a relative path.  See
+     `find-required-filename' for a way to look for a file in a number
+     of directories.
+
      SOURCE NOTE: load is enumerated in the Kernel report, but the
      description is not there yet.  This seems like a sane way to define
      it, taking the description of `get-module' that there is in the
@@ -3272,7 +3282,7 @@ Index
 * file-exists:                           System.              (line  31)
 * file-port?:                            Ports.               (line  54)
 * filter:                                Pairs and lists.     (line 277)
-* find-required-filename:                Ports.               (line 457)
+* find-required-filename:                Ports.               (line 467)
 * finite-list?:                          Pairs and lists.     (line 303)
 * finite?:                               Numbers.             (line  90)
 * floor:                                 Numbers.             (line 339)
@@ -3294,7 +3304,7 @@ Index
 * get-interpreter-arguments:             System.              (line  55)
 * get-jiffies-per-second:                System.              (line  27)
 * get-list-metrics:                      Pairs and lists.     (line 161)
-* get-module:                            Ports.               (line 488)
+* get-module:                            Ports.               (line 498)
 * get-output-bytevector:                 Ports.               (line 195)
 * get-output-string:                     Ports.               (line 186)
 * get-real-exact-bounds:                 Numbers.             (line 248)
@@ -3398,10 +3408,10 @@ Index
 * real->inexact:                         Numbers.             (line 300)
 * real?:                                 Numbers.             (line  86)
 * reduce:                                Pairs and lists.     (line 312)
-* register-requirement!:                 Ports.               (line 454)
-* registered-requirement?:               Ports.               (line 453)
+* register-requirement!:                 Ports.               (line 464)
+* registered-requirement?:               Ports.               (line 463)
 * rename-file:                           System.              (line  42)
-* require:                               Ports.               (line 430)
+* require:                               Ports.               (line 440)
 * reverse:                               Pairs and lists.     (line 150)
 * robust?:                               Numbers.             (line 102)
 * root-continuation:                     Continuations.       (line 104)
@@ -3454,7 +3464,7 @@ Index
 * u8-ready?:                             Ports.               (line 390)
 * u8?:                                   Numbers.             (line  73)
 * undefined?:                            Numbers.             (line 106)
-* unregister-requirement!:               Ports.               (line 456)
+* unregister-requirement!:               Ports.               (line 466)
 * unwrap:                                Combiners.           (line  72)
 * vector->string:                        Strings.             (line 132)
 * vector-for-each:                       Control.             (line  54)
@@ -3504,7 +3514,7 @@ Node: Numbers82543
 Node: Strings104997
 Node: Characters112258
 Node: Ports116904
-Node: System140044
-Node: Alphabetical Index143538
+Node: System140602
+Node: Alphabetical Index144096
 
 End Tag Table
