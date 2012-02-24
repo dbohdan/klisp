@@ -114,7 +114,7 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TVECTOR:
     case K_TFPORT:
     case K_TMPORT:
-    case K_TMODULE:
+    case K_TLIBRARY:
         o->gch.gclist = K->gray;
         K->gray = o;
         break;
@@ -348,11 +348,11 @@ static int32_t propagatemark (klisp_State *K) {
         markvaluearray(K, v->array, v->sizearray);
         return sizeof(Vector) + v->sizearray * sizeof(TValue);
     }
-    case K_TMODULE: {
-        Module *m = cast(Module *, o);
-        markvalue(K, m->env);
-        markvalue(K, m->exp_list);
-        return sizeof(Module);
+    case K_TLIBRARY: {
+        Library *l = cast(Library *, o);
+        markvalue(K, l->env);
+        markvalue(K, l->exp_list);
+        return sizeof(Library);
     }
     default: 
         fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
@@ -506,8 +506,8 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TVECTOR:
         klispM_freemem(K, o, sizeof(Vector) + sizeof(TValue) * o->vector.sizearray);
         break;
-    case K_TMODULE:
-        klispM_free(K, (Module *)o);
+    case K_TLIBRARY:
+        klispM_free(K, (Library *)o);
         break;
     default:
         /* shouldn't happen */
@@ -652,7 +652,7 @@ static void markroot (klisp_State *K) {
     markvalue(K, K->require_path);
     markvalue(K, K->require_table);
 
-    markvalue(K, K->modules_registry);
+    markvalue(K, K->libraries_registry);
 
     /* Mark all objects in the auxiliary stack,
        (all valid indexes are below top) and all the objects in

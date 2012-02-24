@@ -158,8 +158,8 @@ struct klisp_State {
     TValue require_path;
     TValue require_table;
 
-    /* modules */
-    TValue modules_registry; /* this is a list, because module names
+    /* libraries */
+    TValue libraries_registry; /* this is a list, because library names
                                 are list of symbols and numbers so 
                                 putting them in a table isn't easy */
 

@@ -28,6 +28,6 @@
 (load "tests/vectors.k")
 (load "tests/system.k")
 (load "tests/keywords.k")
-(load "tests/modules.k")
+(load "tests/libraries.k")
 
 (check-report)

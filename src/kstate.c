@@ -207,8 +207,8 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud) {
     }
     K->require_table = klispH_new(K, 0, MINREQUIRETABSIZE, 0);
 
-    /* initialize module facilities */
-    K->modules_registry = KNIL;
+    /* initialize library facilities */
+    K->libraries_registry = KNIL;
 
     /* initialize temp stack */
     K->ssize = KS_ISSIZE;

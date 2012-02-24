@@ -4,7 +4,7 @@
 **** Add missing sections
 - vector
 - bytevector
-- module/library
+- library
 - error
 ** Test
 *** Windows
@@ -20,19 +20,6 @@
 - Add a couple of flags to turn debug on/off
 ** Webpage
 - Have Maria Sol draw a simple logo
-
-** Refactor
-*** change 'module' to 'library'
- This follows r6rs and r7rs new draft, and avoids problems with the
- report uses of the word 'module'
-- c & h files
-- c function names
-- bound kernel names
-- documentation
-- tests
-- reference implementation in klisp-extra
-- libraries in klisp-extra
-
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter

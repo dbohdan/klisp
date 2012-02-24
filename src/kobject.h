@@ -169,7 +169,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TMPORT           43
 #define K_TVECTOR          44
 #define K_TKEYWORD	45
-#define K_TMODULE	46
+#define K_TLIBRARY	46
 
 /* for tables */
 #define K_TDEADKEY           60
@@ -226,7 +226,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_MPORT K_MAKE_VTAG(K_TMPORT)
 #define K_TAG_VECTOR K_MAKE_VTAG(K_TVECTOR)
 #define K_TAG_KEYWORD K_MAKE_VTAG(K_TKEYWORD)
-#define K_TAG_MODULE K_MAKE_VTAG(K_TMODULE)
+#define K_TAG_LIBRARY K_MAKE_VTAG(K_TLIBRARY)
 
 /*
 ** Macros to test types
@@ -328,7 +328,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
             t_ == K_TAG_FPORT || t_ == K_TAG_MPORT;})
 #define ttisvector(o) (tbasetype_(o) == K_TAG_VECTOR)
 #define ttiskeyword(o)	(tbasetype_(o) == K_TAG_KEYWORD)
-#define ttismodule(o)	(tbasetype_(o) == K_TAG_MODULE)
+#define ttislibrary(o)	(tbasetype_(o) == K_TAG_LIBRARY)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -558,7 +558,7 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader; /* symbols are marked via their strings */
     TValue env; /* this is inherited and a child is returned */
     TValue exp_list; /* this is an immutable list of symbols */
-} Module;
+} Library;
 
 /*
 ** `module' operation for hashing (size is always a power of 2)
@@ -623,7 +623,7 @@ union GCObject {
     MPort mport;
     Vector vector;
     Keyword keyw;
-    Module mod;
+    Library lib;
 };
 
 
@@ -739,7 +739,7 @@ const TValue kfree;
 #define gc2bytevector(o_) (gc2tv(K_TAG_BYTEVECTOR, o_))
 #define gc2vector(o_) (gc2tv(K_TAG_VECTOR, o_))
 #define gc2keyw(o_) (gc2tv(K_TAG_KEYWORD, o_))
-#define gc2mod(o_) (gc2tv(K_TAG_MODULE, o_))
+#define gc2lib(o_) (gc2tv(K_TAG_LIBRARY, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -762,7 +762,7 @@ const TValue kfree;
 #define tv2mport(v_) ((MPort *) gcvalue(v_))
 #define tv2port(v_) ((Port *) gcvalue(v_))
 #define tv2keyw(v_) ((Keyword *) gcvalue(v_))
-#define tv2mod(v_) ((Module *) gcvalue(v_))
+#define tv2lib(v_) ((Library *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))

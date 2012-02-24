@@ -1,6 +1,6 @@
 /*
-** kgmodules.c
-** Modules features for the ground environment
+** kglibraries.c
+** Libraries features for the ground environment
 ** See Copyright Notice in klisp.h
 */
 
@@ -11,7 +11,7 @@
 
 #include "kstate.h"
 #include "kobject.h"
-#include "kmodule.h"
+#include "klibrary.h"
 #include "kapplicative.h"
 #include "koperative.h"
 #include "kcontinuation.h"
@@ -21,17 +21,17 @@
 #include "kkeyword.h"
 
 #include "kghelpers.h"
-#include "kgmodules.h"
+#include "kglibraries.h"
 
 /* Continuations */
-static void do_register_module(klisp_State *K);
-static void do_provide_module(klisp_State *K);
+static void do_register_library(klisp_State *K);
+static void do_provide_library(klisp_State *K);
 
 
-/* ?.? module? */
+/* ?.? library? */
 /* uses typep */
 
-/* Helper for make-module */
+/* Helper for make-library */
 static inline void unmark_symbol_list(klisp_State *K, TValue ls)
 {
     UNUSED(K);
@@ -39,8 +39,8 @@ static inline void unmark_symbol_list(klisp_State *K, TValue ls)
         kunmark_symbol(kcar(ls));
 }
 
-/* ?.? make-module */
-static void make_module(klisp_State *K)
+/* ?.? make-library */
+static void make_library(klisp_State *K)
 {
     bind_1p(K, K->next_value, obj);
 
@@ -56,7 +56,7 @@ static void make_module(klisp_State *K)
     krooted_tvs_push(K, dummy);
     TValue lp = dummy;
     TValue tail = obj;
-    /* use a table environment for modules */
+    /* use a table environment for libraries */
     TValue env = kmake_table_environment(K, KNIL);
     krooted_tvs_push(K, env);
 
@@ -86,48 +86,48 @@ static void make_module(klisp_State *K)
     }
 
     unmark_symbol_list(K, kcdr(dummy));
-    TValue new_mod = kmake_module(K, env, kcdr(dummy));
+    TValue new_lib = kmake_library(K, env, kcdr(dummy));
     krooted_tvs_pop(K); krooted_tvs_pop(K);
-    kapply_cc(K, new_mod);
+    kapply_cc(K, new_lib);
 }
 
-/* ?.? get-module-export-list */
-static void get_module_export_list(klisp_State *K)
+/* ?.? get-library-export-list */
+static void get_library_export_list(klisp_State *K)
 {
-    bind_1tp(K, K->next_value, "module", ttismodule, mod);
+    bind_1tp(K, K->next_value, "library", ttislibrary, lib);
     /* return mutable list (following the Kernel report) */
     /* XXX could use unchecked_copy_list if available */
-    TValue copy = check_copy_list(K, kmodule_exp_list(mod), true, NULL, NULL);
+    TValue copy = check_copy_list(K, klibrary_exp_list(lib), true, NULL, NULL);
     kapply_cc(K, copy);
 }
 
-/* ?.? get-module-environment */
-static void get_module_environment(klisp_State *K)
+/* ?.? get-library-environment */
+static void get_library_environment(klisp_State *K)
 {
-    bind_1tp(K, K->next_value, "module", ttismodule, mod);
-    kapply_cc(K, kmake_environment(K, kmodule_env(mod)));
+    bind_1tp(K, K->next_value, "library", ttislibrary, lib);
+    kapply_cc(K, kmake_environment(K, klibrary_env(lib)));
 }
 
-/* Helpers for working with module names */
+/* Helpers for working with library names */
 static bool valid_name_partp(TValue obj)
 {
     return ttissymbol(obj) || (keintegerp(obj) && !knegativep(obj));
 }
 
-static void check_module_name(klisp_State *K, TValue name)
+static void check_library_name(klisp_State *K, TValue name)
 {
     if (ttisnil(name)) {
-        klispE_throw_simple(K, "Empty module name");
+        klispE_throw_simple(K, "Empty library name");
         return;
     }
     check_typed_list(K, valid_name_partp, false, name, NULL, NULL);
 }
 
-static TValue modules_registry_assoc(klisp_State *K, TValue name, TValue *lastp)
+static TValue libraries_registry_assoc(klisp_State *K, TValue name, TValue *lastp)
 {
     TValue last = KNIL;
     TValue res = KNIL;
-    for (TValue ls = K->modules_registry; !ttisnil(ls); last = ls, 
+    for (TValue ls = K->libraries_registry; !ttisnil(ls); last = ls, 
              ls = kcdr(ls)) {
         if (equal2p(K, kcar(kcar(ls)), name)) {
             res = kcar(ls);
@@ -138,91 +138,91 @@ static TValue modules_registry_assoc(klisp_State *K, TValue name, TValue *lastp)
     return res;
 }
 
-/* ?.? $registered-module? */
-static void Sregistered_moduleP(klisp_State *K)
+/* ?.? $registered-library? */
+static void Sregistered_libraryP(klisp_State *K)
 {
     bind_1p(K, K->next_value, name);
-    check_module_name(K, name);
-    TValue entry = modules_registry_assoc(K, name, NULL);
+    check_library_name(K, name);
+    TValue entry = libraries_registry_assoc(K, name, NULL);
     kapply_cc(K, ttisnil(entry)? KFALSE : KTRUE);
 }
 
-/* ?.? $get-registered-module */
-static void Sget_registered_module(klisp_State *K)
+/* ?.? $get-registered-library */
+static void Sget_registered_library(klisp_State *K)
 {
     bind_1p(K, K->next_value, name);
-    check_module_name(K, name);
-    TValue entry = modules_registry_assoc(K, name, NULL);
+    check_library_name(K, name);
+    TValue entry = libraries_registry_assoc(K, name, NULL);
     if (ttisnil(entry)) {
-        klispE_throw_simple_with_irritants(K, "Unregistered module name",
+        klispE_throw_simple_with_irritants(K, "Unregistered library name",
                                            1, name);
         return;
     }
     kapply_cc(K, kcdr(entry));
 }
 
-static void do_register_module(klisp_State *K)
+static void do_register_library(klisp_State *K)
 {
     /* 
     ** xparams[0]: name 
     */
     TValue obj = K->next_value;
-    if (!ttismodule(obj)) {
-        klispE_throw_simple_with_irritants(K, "not a module", 1, obj);
+    if (!ttislibrary(obj)) {
+        klispE_throw_simple_with_irritants(K, "not a library", 1, obj);
         return;
     }
     TValue name = K->next_xparams[0];
-    TValue entry = modules_registry_assoc(K, name, NULL);
+    TValue entry = libraries_registry_assoc(K, name, NULL);
     if (!ttisnil(entry)) {
-        klispE_throw_simple_with_irritants(K, "module name already registered",
+        klispE_throw_simple_with_irritants(K, "library name already registered",
                                            1, name);
         return;
     }
     TValue np = kcons(K, name, obj);
     krooted_tvs_push(K, np);
-    np = kcons(K, np, K->modules_registry);
-    K->modules_registry = np;
+    np = kcons(K, np, K->libraries_registry);
+    K->libraries_registry = np;
     krooted_tvs_pop(K);
     kapply_cc(K, KINERT);
 }
 
-/* ?.? $register-module! */
-static void Sregister_moduleB(klisp_State *K)
+/* ?.? $register-library! */
+static void Sregister_libraryB(klisp_State *K)
 {
-    bind_2p(K, K->next_value, name, module);
-    check_module_name(K, name);
+    bind_2p(K, K->next_value, name, library);
+    check_library_name(K, name);
     /* copy the name to avoid mutation */
     /* XXX could use unchecked_copy_list if available */
     name = check_copy_list(K, name, false, NULL, NULL);
     krooted_tvs_push(K, name);
-    TValue cont = kmake_continuation(K, kget_cc(K), do_register_module,
+    TValue cont = kmake_continuation(K, kget_cc(K), do_register_library,
                                      1, name);
     krooted_tvs_pop(K);
     kset_cc(K, cont);
-    ktail_eval(K, module, K->next_env);
+    ktail_eval(K, library, K->next_env);
 }
 
-/* ?.? $unregister-module! */
-static void Sunregister_moduleB(klisp_State *K)
+/* ?.? $unregister-library! */
+static void Sunregister_libraryB(klisp_State *K)
 {
     bind_1p(K, K->next_value, name);
-    check_module_name(K, name);
+    check_library_name(K, name);
     TValue last;
-    TValue entry = modules_registry_assoc(K, name, &last);
+    TValue entry = libraries_registry_assoc(K, name, &last);
     if (ttisnil(entry)) {
-        klispE_throw_simple_with_irritants(K, "module name not registered",
+        klispE_throw_simple_with_irritants(K, "library name not registered",
                                            1, name);
         return;
     }
     if (ttisnil(last)) { /* it's in the first pair */
-        K->modules_registry = kcdr(K->modules_registry);
+        K->libraries_registry = kcdr(K->libraries_registry);
     } else {
         kset_cdr(last, kcdr(kcdr(last)));
     }
     kapply_cc(K, KINERT);
 }
 
-/* Helpers for provide-module */
+/* Helpers for provide-library */
 static void unmark_export_list(klisp_State *K, TValue exports, TValue last)
 {
     /* exports shouldn't have the leading keyword */
@@ -290,7 +290,7 @@ static void check_export_list(klisp_State *K, TValue exports)
     unmark_export_list(K, exports, KNIL);
 }
 
-static void do_provide_module(klisp_State *K)
+static void do_provide_library(klisp_State *K)
 {
     /* 
     ** xparams[0]: name 
@@ -300,8 +300,8 @@ static void do_provide_module(klisp_State *K)
     */
     TValue name = K->next_xparams[0];
 
-    if (!ttisnil(modules_registry_assoc(K, name, NULL))) {
-        klispE_throw_simple_with_irritants(K, "module name already registered",
+    if (!ttisnil(libraries_registry_assoc(K, name, NULL))) {
+        klispE_throw_simple_with_irritants(K, "library name already registered",
                                            1, name);
         return;
     }
@@ -317,31 +317,31 @@ static void do_provide_module(klisp_State *K)
         TValue iname = kcar(inames);
         if (!kbinds(K, env, iname)) {
             klispE_throw_simple_with_irritants(K, "unbound exported symbol in "
-                                               "module", 1, iname);
+                                               "library", 1, iname);
             return;
         }
         kadd_binding(K, new_env, kcar(enames), kget_binding(K, env, iname));
     }
 
     enames = K->next_xparams[2];
-    TValue module = kmake_module(K, new_env, enames);
+    TValue library = kmake_library(K, new_env, enames);
     krooted_tvs_pop(K); /* new_env */
-    krooted_tvs_push(K, module);
+    krooted_tvs_push(K, library);
 
-    TValue np = kcons(K, name, module);
-    krooted_tvs_pop(K); /* module */
+    TValue np = kcons(K, name, library);
+    krooted_tvs_pop(K); /* library */
     krooted_tvs_push(K, np);
-    np = kcons(K, np, K->modules_registry);
-    K->modules_registry = np;
+    np = kcons(K, np, K->libraries_registry);
+    K->libraries_registry = np;
     krooted_tvs_pop(K);
     kapply_cc(K, KINERT);
 }
 
-/* ?.? $provide-module! */
-static void Sprovide_moduleB(klisp_State *K)
+/* ?.? $provide-library! */
+static void Sprovide_libraryB(klisp_State *K)
 {
     bind_al2p(K, K->next_value, name, exports, body);
-    check_module_name(K, name);
+    check_library_name(K, name);
     name = check_copy_list(K, name, false, NULL, NULL);
     krooted_tvs_push(K, name);
     check_export_list(K, exports);
@@ -376,8 +376,8 @@ static void Sprovide_moduleB(klisp_State *K)
     body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
-    if (!ttisnil(modules_registry_assoc(K, name, NULL))) {
-        klispE_throw_simple_with_irritants(K, "module name already registered",
+    if (!ttisnil(libraries_registry_assoc(K, name, NULL))) {
+        klispE_throw_simple_with_irritants(K, "library name already registered",
                                            1, name);
         return;
     }
@@ -389,7 +389,7 @@ static void Sprovide_moduleB(klisp_State *K)
     TValue env = kmake_table_environment(K, K->next_env);
     krooted_tvs_push(K, env);
 
-    kset_cc(K, kmake_continuation(K, kget_cc(K), do_provide_module,
+    kset_cc(K, kmake_continuation(K, kget_cc(K), do_provide_library,
                                   4, name, inames, enames, env));
 
     if (!ttisnil(body) && !ttisnil(kcdr(body))) {
@@ -413,7 +413,7 @@ static void Sprovide_moduleB(klisp_State *K)
     }
 }
 
-/* Helpers from $import-module! */
+/* Helpers from $import-library! */
 
 /* This takes a keyword import clause */
 static void check_distinct_symbols(klisp_State *K, TValue clause)
@@ -466,7 +466,7 @@ static void check_import_list(klisp_State *K, TValue imports)
                 stack = kcons(K, clause, stack);
                 clause = kcar(kcdr(clause));
             }
-            check_module_name(K, clause);
+            check_library_name(K, clause);
         } else {
             /* this is always a keyword clause */
             clause = kcar(stack);
@@ -545,14 +545,14 @@ static TValue extract_import_bindings(klisp_State *K, TValue imports)
                 stack = kcons(K, clause, stack);
                 clause = kcar(kcdr(clause));
             }
-            TValue entry = modules_registry_assoc(K, clause, NULL);
+            TValue entry = libraries_registry_assoc(K, clause, NULL);
             if (ttisnil(entry)) {
-                klispE_throw_simple_with_irritants(K, "module name not "
+                klispE_throw_simple_with_irritants(K, "library name not "
                                                    "registered", 1, clause);
                 return KINERT;
             }
-            menv = kmodule_env(kcdr(entry));
-            mls = kmodule_exp_list(kcdr(entry));
+            menv = klibrary_env(kcdr(entry));
+            mls = klibrary_exp_list(kcdr(entry));
 
             klisp_assert(ttispair(clause) && !ttiskeyword(kcar(clause)));
         } else {
@@ -646,7 +646,7 @@ static TValue extract_import_bindings(klisp_State *K, TValue imports)
 
                     /* check that symbol wasn't already defined
                        (can happen if a binding is renamed to another binding
-                       of the same module and that other binding isn't itself 
+                       of the same library and that other binding isn't itself 
                        renamed) */
                     if (kbinds(K, nmenv, se)) {
                         klispE_throw_simple_with_irritants(
@@ -686,8 +686,8 @@ static TValue extract_import_bindings(klisp_State *K, TValue imports)
     return kcdr(ret_ls);
 }
 
-/* ?.? $import-module! */
-static void Simport_moduleB(klisp_State *K)
+/* ?.? $import-library! */
+static void Simport_libraryB(klisp_State *K)
 {
     TValue imports = K->next_value;
     TValue denv = K->next_env;
@@ -726,37 +726,37 @@ static void Simport_moduleB(klisp_State *K)
 }
 
 /* init ground */
-void kinit_modules_ground_env(klisp_State *K)
+void kinit_libraries_ground_env(klisp_State *K)
 {
     TValue ground_env = K->ground_env;
     TValue symbol, value;
 
-    add_applicative(K, ground_env, "module?", typep, 2, symbol, 
-                    i2tv(K_TMODULE));
-    add_applicative(K, ground_env, "make-module", make_module, 0); 
-    add_applicative(K, ground_env, "get-module-export-list", 
-                    get_module_export_list, 0); 
-    add_applicative(K, ground_env, "get-module-environment", 
-                    get_module_environment, 0); 
+    add_applicative(K, ground_env, "library?", typep, 2, symbol, 
+                    i2tv(K_TLIBRARY));
+    add_applicative(K, ground_env, "make-library", make_library, 0); 
+    add_applicative(K, ground_env, "get-library-export-list", 
+                    get_library_export_list, 0); 
+    add_applicative(K, ground_env, "get-library-environment", 
+                    get_library_environment, 0); 
 
-    add_operative(K, ground_env, "$registered-module?", Sregistered_moduleP, 
+    add_operative(K, ground_env, "$registered-library?", Sregistered_libraryP, 
                   0);
-    add_operative(K, ground_env, "$get-registered-module", 
-                  Sget_registered_module, 0);
-    add_operative(K, ground_env, "$register-module!", Sregister_moduleB, 
+    add_operative(K, ground_env, "$get-registered-library", 
+                  Sget_registered_library, 0);
+    add_operative(K, ground_env, "$register-library!", Sregister_libraryB, 
                   0);
-    add_operative(K, ground_env, "$unregister-module!", Sunregister_moduleB, 
+    add_operative(K, ground_env, "$unregister-library!", Sunregister_libraryB, 
                   0);
 
-    add_operative(K, ground_env, "$provide-module!", Sprovide_moduleB, 0);
-    add_operative(K, ground_env, "$import-module!", Simport_moduleB, 0);
+    add_operative(K, ground_env, "$provide-library!", Sprovide_libraryB, 0);
+    add_operative(K, ground_env, "$import-library!", Simport_libraryB, 0);
 }
 
 /* init continuation names */
-void kinit_modules_cont_names(klisp_State *K)
+void kinit_libraries_cont_names(klisp_State *K)
 {
     Table *t = tv2table(K->cont_name_table);
 
-    add_cont_name(K, t, do_register_module, "register-module"); 
-    add_cont_name(K, t, do_provide_module, "provide-module"); 
+    add_cont_name(K, t, do_register_library, "register-library"); 
+    add_cont_name(K, t, do_provide_library, "provide-library"); 
 }
