@@ -1,0 +1,187 @@
+@c -*-texinfo-*-
+@setfilename ../src/libraries
+
+@node Libraries, System, Ports, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Libraries
+@cindex libraries
+
+Libraries provide a way to organize klisp code with a clean & clear
+interface to the rest of the program.  They are first class objects
+(as all manipulable entities in Kernel, and according to the
+guidelines in the Kernel report). A library has list of exported
+symbols and values for those symbols (generally combiners but may be
+any object). The library type is encapsulated.
+
+In addition there's a mechanism to refer to library objects by name
+(where a name is actually a unique list of symbols and numbers), with
+the ability to register new libraries, get the library object from a
+name, unregister libraries, etc.  
+
+These two ways of working with libraries conform the low level API to
+libraries and are orthogonal to each other.  They are provided to
+allow klisp programs to construct their own interface to library
+definition and use, and to respect the guidelines and spirit of the
+Kernel Report.
+
+There's also a higher level API that is a combination of the lower level
+APIs and behaves more like traditional module systems.  This is
+probably what most klisp programs will use.  This API consist of the
+@code{$provide-library!} operative to define (and register) new
+libraries and the @code{$import-library!} operative to extract
+bindings out of existing libraries.  This allows various forms of
+controlling which bindings are extracted from the libraries and allows
+various forms of renaming. It can be used both in the body of
+libraries or in the top level.
+
+No association is made by klisp between source files and libraries.
+For a possible mechanism to handle this see @code{require} in the
+ports module. Also no special meaning is assigned to the library
+names.  This could be used by an even higher level API, for example to
+map to version numbers and/or to the underlying filesystem.
+
+SOURCE NOTE: This is mostly an adaptation from the r7rs draft of
+scheme.  There's no mention of libraries in the Kernel Report, but
+they were deemed important for klisp in order to share and distribute
+code with a common interface.  A number of adaptations were made to
+the scheme version to sit more comfortably with the Kernel way of
+doing things (first class status, exposing of the library register,
+etc).
+
+@deffn Applicative library? (library? . objects)
+The primitive type predicate for type library.
+@code{library?} returns true iff all the objects in @code{objects}
+are of type library.
+
+NOTE: This is part of the low level API to libraries. It won't be
+needed to writers or users of libraries that stick to the higher level
+API (i.e. @code{$provide-library!} & @code{$import-library!}).
+@end deffn
+
+@deffn Applicative make-library (make-library bindings)
+@code{bindings} should be an acyclic list of @code{(symbol . value)}
+pairs.  Each symbol may only occur once in the list.
+
+Constructs a new library object with the passed @code{bindings} as
+exported objects.  
+
+NOTE: This is part of the low level API to libraries, writers of
+libraries are encouraged to use @code{$provide-library!} to define
+their libraries.
+@end deffn
+
+@deffn Applicative get-library-export-list (get-library-export-list library)
+@deffnx Applicative get-library-environment (get-library-environment library)
+@code{get-library-export-list} returns the list of symbols exported
+from the passed library.  @code{get-library-environment} returns a
+fresh empty environment whose parent has all exported symbols of the
+library bound to the exported objects.
+
+NOTE: This is part of the low level API to libraries, users of
+libraries are encouraged to use @code{$import-library!} to get
+bindings out of libraries (and into the current environment).
+@end deffn
+
+@deffn Operative $registered-library? ($registered-library? name)
+@deffnx Operative $get-registered-library ($get-registered-library name)
+@deffnx Operative $register-library! ($register-library! name library)
+@deffnx Operative $unregister-library! ($unregister-library! name)
+@code{name} should a an acyclic list of symbols and exact non-negative
+integers.  Two registered libraries can't have the same name (in the
+sense of @code{equal?}).
+
+These operatives control the library registry that maps names to
+libraries.  
+
+Predicate @code{$registered-library?} returns true iff a
+library named @code{name} is already registered.
+@code{get-registered-library} returns the library object associated
+with @code{name} (or throws an error if no library named @code{name}
+is registered).  @code{$register-library!} registers @code{library}
+with name @code{name} (throws an error if @code{name} is already
+registered.  @code{$unregister-library!} removes the library
+registered as @code{name} from the library register (throws an error
+if no such library was registered).
+
+NOTE: This is part of the low level API to libraries, users & writers
+of libraries are encouraged to use @code{$provide-library!} to create
+& register new libraries.
+@end deffn
+
+@deffn Operative $provide-library! ($provide-library! name exports . body)
+@deffnx Operative $import-library! ($import-library! . imports)
+@code{name} should be as for @code{register-library!} and not already
+registered.  @code{exports} should be a list of @code{(#:export
+<export-spec> ...)}. Where @code{<export spec>} is either:
+@itemize @bullet
+@item @code{symbol}
+@item @code{(#:rename internal-symbol external-symbol)}
+@end itemize
+
+A lone symbol has the same semantics as the pair with that symbol in
+both internal and external positions.  No symbol can appear more than once as external.
+@code{body} should be an acyclic list of expressions.  @code{exports}
+should be a list like @code{(<import-spec> ...)} where
+@code{<import-spec>} is either
+@itemize @bullet
+@item @code{<name>}
+@item @code{(#:only <import-spec> symbol ...)}
+@item @code{(#:except <import-spec> symbol ...)}
+@item @code{(#:prefix <import-spec> symbol)}
+@item @code{(#:rename <import-spec> (orig-symbol new-symbol) ...)}
+@end itemize
+
+These two operatives conform the higher level API for klisp
+libraries.  They are what most users of klisp (both writers and users
+of libraries) will use.
+
+Operative @code{$provide-library!} creates and register a library with
+name @code{name} and exported symbols obtained from the @code{exports} list and
+values prepared by the @code{body}.  First a child of the dynamic
+environment is created.  Then, @code{body} is evaluated sequentially
+as if by @code{$sequence} in that environment.  Next a new library is
+created with a list of exported bindings that use the external symbols
+in @code{exports} as names and the values bound by the corresponding
+internal symbols in the created environment, as values.  If a lone
+symbol is used in @code{exports} it is used both as internal and
+external symbol for that binding.  Lastly, the new library object is
+registered as @code{name}.  This mechanism more or less follows the
+idea of operative @code{$provide!} from the Kernel Report, but it also
+allows for renaming.
+
+Operative @code{$import-library!} imports to the current environment
+any combination of bindings from any number of named libraries, while
+allowing renaming of said bindings.  It can be used in any context, as
+any other Kernel expression.  @code{$import-library!} looks for the
+named libraries and then extracts & renames the specified bindings
+according to each @code{<import-spec>} and defines them (in the sense
+of @code{$define!}  and @code{$set!}) in the current dynamic
+environment.  The set of bindings to import are generated in a
+recursive manner.  This allows a great deal of control of the imported
+bindings and their names.  The semantics for the set of bindings
+generated by the various @code{<import-spec>}s are as follows:
+@itemize @bullet
+@item 
+@code{<name>}: All bindings from library @code{name}.
+@item 
+@code{(#:only <import-spec> symbol ...)}: Only the named bindings from
+the set of bindings in @code{<import-spec>}.
+@item
+@code{(#:except <import-spec> symbol ...)}: All bindings from the set
+in @code{<import-spec>} except those named in the list.
+@item 
+@code{(#:prefix <import-spec> symbol)}: All bindings from the set in
+@code{<import-spec>} but renamed by prefixing each one with the
+specified prefix @code{symbol}.
+@item @code{(#:rename <import-spec> (orig-symbol new-symbol) ...)}:
+All bindings from the set in @code{<import-spec>} but renaming all
+@code{orig-symbol} to the corresponding @code{new-symbol}.
+@end itemize
+
+If two values are tried to be imported with the same name, they are
+checked for @code{eq?}-ness, if they are deemed @code{eq?} to each
+other they are imported, otherwise @code{$import-library!} throws an
+error.  This helps catch name collisions while allowing to reexport
+bindings from used libraries without conflict.
+@end deffn

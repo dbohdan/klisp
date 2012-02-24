@@ -110,6 +110,7 @@ permission is granted to copy it in whole or in part without fee.
 * Strings::                 Strings module features.
 * Characters::              Characters module features.
 * Ports::                   Ports module features.
+* Libraries::               Libraries module features.
 * System::                  System module features.
 @c TODO add error objs to both klisp and the manual
 * Alphabetical Index::      Index including concepts, functions, variables,
@@ -138,6 +139,7 @@ permission is granted to copy it in whole or in part without fee.
 @include strings.texi
 @include characters.texi
 @include ports.texi
+@include libraries.texi
 @include system.texi
 
 @c appendices

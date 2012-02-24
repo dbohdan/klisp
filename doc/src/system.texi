@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/system
 
-@node System, Alphabetical Index, Ports, Top
+@node System, Alphabetical Index, Libraries, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter System

@@ -1,0 +1,220 @@
+<html lang="en">
+<head>
+<title>Libraries - klisp Reference Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="klisp Reference Manual">
+<meta name="generator" content="makeinfo 4.13">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Ports.html#Ports" title="Ports">
+<link rel="next" href="System.html#System" title="System">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<a name="Libraries"></a>
+<p>
+Next:&nbsp;<a rel="next" accesskey="n" href="System.html#System">System</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Ports.html#Ports">Ports</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<!-- node-name,  next,  previous,  up -->
+<h2 class="chapter">18 Libraries</h2>
+
+<p><a name="index-libraries-349"></a>
+Libraries provide a way to organize klisp code with a clean &amp; clear
+interface to the rest of the program.  They are first class objects
+(as all manipulable entities in Kernel, and according to the
+guidelines in the Kernel report). A library has list of exported
+symbols and values for those symbols (generally combiners but may be
+any object). The library type is encapsulated.
+
+   <p>In addition there's a mechanism to refer to library objects by name
+(where a name is actually a unique list of symbols and numbers), with
+the ability to register new libraries, get the library object from a
+name, unregister libraries, etc.
+
+   <p>These two ways of working with libraries conform the low level API to
+libraries and are orthogonal to each other.  They are provided to
+allow klisp programs to construct their own interface to library
+definition and use, and to respect the guidelines and spirit of the
+Kernel Report.
+
+   <p>There's also a higher level API that is a combination of the lower level
+APIs and behaves more like traditional module systems.  This is
+probably what most klisp programs will use.  This API consist of the
+<code>$provide-library!</code> operative to define (and register) new
+libraries and the <code>$import-library!</code> operative to extract
+bindings out of existing libraries.  This allows various forms of
+controlling which bindings are extracted from the libraries and allows
+various forms of renaming. It can be used both in the body of
+libraries or in the top level.
+
+   <p>No association is made by klisp between source files and libraries. 
+For a possible mechanism to handle this see <code>require</code> in the
+ports module. Also no special meaning is assigned to the library
+names.  This could be used by an even higher level API, for example to
+map to version numbers and/or to the underlying filesystem.
+
+   <p>SOURCE NOTE: This is mostly an adaptation from the r7rs draft of
+scheme.  There's no mention of libraries in the Kernel Report, but
+they were deemed important for klisp in order to share and distribute
+code with a common interface.  A number of adaptations were made to
+the scheme version to sit more comfortably with the Kernel way of
+doing things (first class status, exposing of the library register,
+etc).
+
+<div class="defun">
+&mdash; Applicative: <b>library?</b> (<var>library? . objects</var>)<var><a name="index-library_003f-350"></a></var><br>
+<blockquote><p>The primitive type predicate for type library. 
+<code>library?</code> returns true iff all the objects in <code>objects</code>
+are of type library.
+
+        <p>NOTE: This is part of the low level API to libraries. It won't be
+needed to writers or users of libraries that stick to the higher level
+API (i.e. <code>$provide-library!</code> &amp; <code>$import-library!</code>). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>make-library</b> (<var>make-library bindings</var>)<var><a name="index-make_002dlibrary-351"></a></var><br>
+<blockquote><p><code>bindings</code> should be an acyclic list of <code>(symbol . value)</code>
+pairs.  Each symbol may only occur once in the list.
+
+        <p>Constructs a new library object with the passed <code>bindings</code> as
+exported objects.
+
+        <p>NOTE: This is part of the low level API to libraries, writers of
+libraries are encouraged to use <code>$provide-library!</code> to define
+their libraries. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Applicative: <b>get-library-export-list</b> (<var>get-library-export-list library</var>)<var><a name="index-get_002dlibrary_002dexport_002dlist-352"></a></var><br>
+&mdash; Applicative: <b>get-library-environment</b> (<var>get-library-environment library</var>)<var><a name="index-get_002dlibrary_002denvironment-353"></a></var><br>
+<blockquote><p><code>get-library-export-list</code> returns the list of symbols exported
+from the passed library.  <code>get-library-environment</code> returns a
+fresh empty environment whose parent has all exported symbols of the
+library bound to the exported objects.
+
+        <p>NOTE: This is part of the low level API to libraries, users of
+libraries are encouraged to use <code>$import-library!</code> to get
+bindings out of libraries (and into the current environment). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$registered-library?</b> (<var>$registered-library? name</var>)<var><a name="index-g_t_0024registered_002dlibrary_003f-354"></a></var><br>
+&mdash; Operative: <b>$get-registered-library</b> (<var>$get-registered-library name</var>)<var><a name="index-g_t_0024get_002dregistered_002dlibrary-355"></a></var><br>
+&mdash; Operative: <b>$register-library!</b> (<var>$register-library! name library</var>)<var><a name="index-g_t_0024register_002dlibrary_0021-356"></a></var><br>
+&mdash; Operative: <b>$unregister-library!</b> (<var>$unregister-library! name</var>)<var><a name="index-g_t_0024unregister_002dlibrary_0021-357"></a></var><br>
+<blockquote><p><code>name</code> should a an acyclic list of symbols and exact non-negative
+integers.  Two registered libraries can't have the same name (in the
+sense of <code>equal?</code>).
+
+        <p>These operatives control the library registry that maps names to
+libraries.
+
+        <p>Predicate <code>$registered-library?</code> returns true iff a
+library named <code>name</code> is already registered. 
+<code>get-registered-library</code> returns the library object associated
+with <code>name</code> (or throws an error if no library named <code>name</code>
+is registered).  <code>$register-library!</code> registers <code>library</code>
+with name <code>name</code> (throws an error if <code>name</code> is already
+registered.  <code>$unregister-library!</code> removes the library
+registered as <code>name</code> from the library register (throws an error
+if no such library was registered).
+
+        <p>NOTE: This is part of the low level API to libraries, users &amp; writers
+of libraries are encouraged to use <code>$provide-library!</code> to create
+&amp; register new libraries. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Operative: <b>$provide-library!</b> (<var>$provide-library! name exports . body</var>)<var><a name="index-g_t_0024provide_002dlibrary_0021-358"></a></var><br>
+&mdash; Operative: <b>$import-library!</b> (<var>$import-library! . imports</var>)<var><a name="index-g_t_0024import_002dlibrary_0021-359"></a></var><br>
+<blockquote><p><code>name</code> should be as for <code>register-library!</code> and not already
+registered.  <code>exports</code> should be a list of <code>(#:export
+&lt;export-spec&gt; ...)</code>. Where <code>&lt;export spec&gt;</code> is either:
+          <ul>
+<li><code>symbol</code>
+<li><code>(#:rename internal-symbol external-symbol)</code>
+</ul>
+
+        <p>A lone symbol has the same semantics as the pair with that symbol in
+both internal and external positions.  No symbol can appear more than once as external. 
+<code>body</code> should be an acyclic list of expressions.  <code>exports</code>
+should be a list like <code>(&lt;import-spec&gt; ...)</code> where
+<code>&lt;import-spec&gt;</code> is either
+          <ul>
+<li><code>&lt;name&gt;</code>
+<li><code>(#:only &lt;import-spec&gt; symbol ...)</code>
+<li><code>(#:except &lt;import-spec&gt; symbol ...)</code>
+<li><code>(#:prefix &lt;import-spec&gt; symbol)</code>
+<li><code>(#:rename &lt;import-spec&gt; (orig-symbol new-symbol) ...)</code>
+</ul>
+
+        <p>These two operatives conform the higher level API for klisp
+libraries.  They are what most users of klisp (both writers and users
+of libraries) will use.
+
+        <p>Operative <code>$provide-library!</code> creates and register a library with
+name <code>name</code> and exported symbols obtained from the <code>exports</code> list and
+values prepared by the <code>body</code>.  First a child of the dynamic
+environment is created.  Then, <code>body</code> is evaluated sequentially
+as if by <code>$sequence</code> in that environment.  Next a new library is
+created with a list of exported bindings that use the external symbols
+in <code>exports</code> as names and the values bound by the corresponding
+internal symbols in the created environment, as values.  If a lone
+symbol is used in <code>exports</code> it is used both as internal and
+external symbol for that binding.  Lastly, the new library object is
+registered as <code>name</code>.  This mechanism more or less follows the
+idea of operative <code>$provide!</code> from the Kernel Report, but it also
+allows for renaming.
+
+        <p>Operative <code>$import-library!</code> imports to the current environment
+any combination of bindings from any number of named libraries, while
+allowing renaming of said bindings.  It can be used in any context, as
+any other Kernel expression.  <code>$import-library!</code> looks for the
+named libraries and then extracts &amp; renames the specified bindings
+according to each <code>&lt;import-spec&gt;</code> and defines them (in the sense
+of <code>$define!</code>  and <code>$set!</code>) in the current dynamic
+environment.  The set of bindings to import are generated in a
+recursive manner.  This allows a great deal of control of the imported
+bindings and their names.  The semantics for the set of bindings
+generated by the various <code>&lt;import-spec&gt;</code>s are as follows:
+          <ul>
+<li><code>&lt;name&gt;</code>: All bindings from library <code>name</code>. 
+<li><code>(#:only &lt;import-spec&gt; symbol ...)</code>: Only the named bindings from
+the set of bindings in <code>&lt;import-spec&gt;</code>. 
+<li><code>(#:except &lt;import-spec&gt; symbol ...)</code>: All bindings from the set
+in <code>&lt;import-spec&gt;</code> except those named in the list. 
+<li><code>(#:prefix &lt;import-spec&gt; symbol)</code>: All bindings from the set in
+<code>&lt;import-spec&gt;</code> but renamed by prefixing each one with the
+specified prefix <code>symbol</code>. 
+<li><code>(#:rename &lt;import-spec&gt; (orig-symbol new-symbol) ...)</code>:
+All bindings from the set in <code>&lt;import-spec&gt;</code> but renaming all
+<code>orig-symbol</code> to the corresponding <code>new-symbol</code>. 
+</ul>
+
+        <p>If two values are tried to be imported with the same name, they are
+checked for <code>eq?</code>-ness, if they are deemed <code>eq?</code> to each
+other they are imported, otherwise <code>$import-library!</code> throws an
+error.  This helps catch name collisions while allowing to reexport
+bindings from used libraries without conflict. 
+</p></blockquote></div>
+
+<!-- *-texinfo-*- -->
+   </body></html>
+

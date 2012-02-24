@@ -56,6 +56,7 @@ the header "Permission to copy this report", that reads:
 * Strings::                 Strings module features.
 * Characters::              Characters module features.
 * Ports::                   Ports module features.
+* Libraries::               Libraries module features.
 * System::                  System module features.
 * Alphabetical Index::      Index including concepts, functions, variables,
                               and other terms.
@@ -2519,7 +2520,7 @@ features defined here were taken mostly from r7rs.
      base argument.
 
 
-File: klisp.info,  Node: Ports,  Next: System,  Prev: Characters,  Up: Top
+File: klisp.info,  Node: Ports,  Next: Libraries,  Prev: Characters,  Up: Top
 
 17 Ports
 ********
@@ -3026,9 +3027,186 @@ klisp and was taken from r7rs.
      binding symbol `module-parameters' to the `environment' argument.
 
 
-File: klisp.info,  Node: System,  Next: Alphabetical Index,  Prev: Ports,  Up: Top
+File: klisp.info,  Node: Libraries,  Next: System,  Prev: Ports,  Up: Top
 
-18 System
+18 Libraries
+************
+
+Libraries provide a way to organize klisp code with a clean & clear
+interface to the rest of the program.  They are first class objects (as
+all manipulable entities in Kernel, and according to the guidelines in
+the Kernel report). A library has list of exported symbols and values
+for those symbols (generally combiners but may be any object). The
+library type is encapsulated.
+
+   In addition there's a mechanism to refer to library objects by name
+(where a name is actually a unique list of symbols and numbers), with
+the ability to register new libraries, get the library object from a
+name, unregister libraries, etc.
+
+   These two ways of working with libraries conform the low level API to
+libraries and are orthogonal to each other.  They are provided to allow
+klisp programs to construct their own interface to library definition
+and use, and to respect the guidelines and spirit of the Kernel Report.
+
+   There's also a higher level API that is a combination of the lower
+level APIs and behaves more like traditional module systems.  This is
+probably what most klisp programs will use.  This API consist of the
+`$provide-library!' operative to define (and register) new libraries
+and the `$import-library!' operative to extract bindings out of
+existing libraries.  This allows various forms of controlling which
+bindings are extracted from the libraries and allows various forms of
+renaming. It can be used both in the body of libraries or in the top
+level.
+
+   No association is made by klisp between source files and libraries.
+For a possible mechanism to handle this see `require' in the ports
+module. Also no special meaning is assigned to the library names.  This
+could be used by an even higher level API, for example to map to
+version numbers and/or to the underlying filesystem.
+
+   SOURCE NOTE: This is mostly an adaptation from the r7rs draft of
+scheme.  There's no mention of libraries in the Kernel Report, but they
+were deemed important for klisp in order to share and distribute code
+with a common interface.  A number of adaptations were made to the
+scheme version to sit more comfortably with the Kernel way of doing
+things (first class status, exposing of the library register, etc).
+
+ -- Applicative: library? (library? . objects)
+     The primitive type predicate for type library.  `library?' returns
+     true iff all the objects in `objects' are of type library.
+
+     NOTE: This is part of the low level API to libraries. It won't be
+     needed to writers or users of libraries that stick to the higher
+     level API (i.e. `$provide-library!' & `$import-library!').
+
+ -- Applicative: make-library (make-library bindings)
+     `bindings' should be an acyclic list of `(symbol . value)' pairs.
+     Each symbol may only occur once in the list.
+
+     Constructs a new library object with the passed `bindings' as
+     exported objects.
+
+     NOTE: This is part of the low level API to libraries, writers of
+     libraries are encouraged to use `$provide-library!' to define
+     their libraries.
+
+ -- Applicative: get-library-export-list (get-library-export-list
+          library)
+ -- Applicative: get-library-environment (get-library-environment
+          library)
+     `get-library-export-list' returns the list of symbols exported
+     from the passed library.  `get-library-environment' returns a
+     fresh empty environment whose parent has all exported symbols of
+     the library bound to the exported objects.
+
+     NOTE: This is part of the low level API to libraries, users of
+     libraries are encouraged to use `$import-library!' to get bindings
+     out of libraries (and into the current environment).
+
+ -- Operative: $registered-library? ($registered-library? name)
+ -- Operative: $get-registered-library ($get-registered-library name)
+ -- Operative: $register-library! ($register-library! name library)
+ -- Operative: $unregister-library! ($unregister-library! name)
+     `name' should a an acyclic list of symbols and exact non-negative
+     integers.  Two registered libraries can't have the same name (in
+     the sense of `equal?').
+
+     These operatives control the library registry that maps names to
+     libraries.
+
+     Predicate `$registered-library?' returns true iff a library named
+     `name' is already registered.  `get-registered-library' returns
+     the library object associated with `name' (or throws an error if
+     no library named `name' is registered).  `$register-library!'
+     registers `library' with name `name' (throws an error if `name' is
+     already registered.  `$unregister-library!' removes the library
+     registered as `name' from the library register (throws an error if
+     no such library was registered).
+
+     NOTE: This is part of the low level API to libraries, users &
+     writers of libraries are encouraged to use `$provide-library!' to
+     create & register new libraries.
+
+ -- Operative: $provide-library! ($provide-library! name exports . body)
+ -- Operative: $import-library! ($import-library! . imports)
+     `name' should be as for `register-library!' and not already
+     registered.  `exports' should be a list of `(#:export
+     <export-spec> ...)'. Where `<export spec>' is either:
+        * `symbol'
+
+        * `(#:rename internal-symbol external-symbol)'
+
+     A lone symbol has the same semantics as the pair with that symbol
+     in both internal and external positions.  No symbol can appear
+     more than once as external.  `body' should be an acyclic list of
+     expressions.  `exports' should be a list like `(<import-spec>
+     ...)' where `<import-spec>' is either
+        * `<name>'
+
+        * `(#:only <import-spec> symbol ...)'
+
+        * `(#:except <import-spec> symbol ...)'
+
+        * `(#:prefix <import-spec> symbol)'
+
+        * `(#:rename <import-spec> (orig-symbol new-symbol) ...)'
+
+     These two operatives conform the higher level API for klisp
+     libraries.  They are what most users of klisp (both writers and
+     users of libraries) will use.
+
+     Operative `$provide-library!' creates and register a library with
+     name `name' and exported symbols obtained from the `exports' list
+     and values prepared by the `body'.  First a child of the dynamic
+     environment is created.  Then, `body' is evaluated sequentially as
+     if by `$sequence' in that environment.  Next a new library is
+     created with a list of exported bindings that use the external
+     symbols in `exports' as names and the values bound by the
+     corresponding internal symbols in the created environment, as
+     values.  If a lone symbol is used in `exports' it is used both as
+     internal and external symbol for that binding.  Lastly, the new
+     library object is registered as `name'.  This mechanism more or
+     less follows the idea of operative `$provide!' from the Kernel
+     Report, but it also allows for renaming.
+
+     Operative `$import-library!' imports to the current environment
+     any combination of bindings from any number of named libraries,
+     while allowing renaming of said bindings.  It can be used in any
+     context, as any other Kernel expression.  `$import-library!' looks
+     for the named libraries and then extracts & renames the specified
+     bindings according to each `<import-spec>' and defines them (in
+     the sense of `$define!'  and `$set!') in the current dynamic
+     environment.  The set of bindings to import are generated in a
+     recursive manner.  This allows a great deal of control of the
+     imported bindings and their names.  The semantics for the set of
+     bindings generated by the various `<import-spec>'s are as follows:
+        * `<name>': All bindings from library `name'.
+
+        * `(#:only <import-spec> symbol ...)': Only the named bindings
+          from the set of bindings in `<import-spec>'.
+
+        * `(#:except <import-spec> symbol ...)': All bindings from the
+          set in `<import-spec>' except those named in the list.
+
+        * `(#:prefix <import-spec> symbol)': All bindings from the set
+          in `<import-spec>' but renamed by prefixing each one with the
+          specified prefix `symbol'.
+
+        * `(#:rename <import-spec> (orig-symbol new-symbol) ...)': All
+          bindings from the set in `<import-spec>' but renaming all
+          `orig-symbol' to the corresponding `new-symbol'.
+
+     If two values are tried to be imported with the same name, they are
+     checked for `eq?'-ness, if they are deemed `eq?' to each other
+     they are imported, otherwise `$import-library!' throws an error.
+     This helps catch name collisions while allowing to reexport
+     bindings from used libraries without conflict.
+
+
+File: klisp.info,  Node: System,  Next: Alphabetical Index,  Prev: Libraries,  Up: Top
+
+19 System
 *********
 
 Module System contains some useful features for interacting with the
@@ -3120,8 +3298,10 @@ Index
 * $cond:                                 Control.             (line  32)
 * $define!:                              Environments.        (line  49)
 * $delay:                                Promises.            (line  79)
+* $get-registered-library:               Libraries.           (line  80)
 * $if:                                   Control.             (line  15)
 * $import!:                              Environments.        (line 217)
+* $import-library!:                      Libraries.           (line 104)
 * $lambda:                               Combiners.           (line  76)
 * $lazy:                                 Promises.            (line  43)
 * $let:                                  Environments.        (line  89)
@@ -3133,10 +3313,14 @@ Index
 * $letrec*:                              Environments.        (line 144)
 * $or?:                                  Booleans.            (line  42)
 * $provide!:                             Environments.        (line 201)
+* $provide-library!:                     Libraries.           (line 103)
+* $register-library!:                    Libraries.           (line  81)
+* $registered-library?:                  Libraries.           (line  79)
 * $remote-eval:                          Environments.        (line 169)
 * $sequence:                             Control.             (line  23)
 * $set!:                                 Environments.        (line 192)
 * $unless:                               Control.             (line  68)
+* $unregister-library!:                  Libraries.           (line  82)
 * $vau:                                  Combiners.           (line  26)
 * $when:                                 Control.             (line  67)
 * *:                                     Numbers.             (line 136)
@@ -3303,6 +3487,8 @@ Index
 * get-environment-variables:             System.              (line  75)
 * get-interpreter-arguments:             System.              (line  55)
 * get-jiffies-per-second:                System.              (line  27)
+* get-library-environment:               Libraries.           (line  69)
+* get-library-export-list:               Libraries.           (line  67)
 * get-list-metrics:                      Pairs and lists.     (line 161)
 * get-module:                            Ports.               (line 498)
 * get-output-bytevector:                 Ports.               (line 195)
@@ -3332,6 +3518,8 @@ Index
 * keyed variables:                       Keyed Variables.     (line   6)
 * lcm:                                   Numbers.             (line 221)
 * length:                                Pairs and lists.     (line 229)
+* libraries:                             Libraries.           (line   6)
+* library?:                              Libraries.           (line  47)
 * list:                                  Pairs and lists.     (line  82)
 * list*:                                 Pairs and lists.     (line  88)
 * list->string:                          Strings.             (line 130)
@@ -3348,6 +3536,7 @@ Index
 * make-kernel-standard-environment:      Environments.        (line 119)
 * make-keyed-dynamic-variable:           Keyed Variables.     (line  21)
 * make-keyed-static-variable:            Keyed Variables.     (line  44)
+* make-library:                          Libraries.           (line  55)
 * make-list:                             Pairs and lists.     (line 133)
 * make-string:                           Strings.             (line  78)
 * map <1>:                               Combiners.           (line  96)
@@ -3484,37 +3673,38 @@ Index
 
 Tag Table:
 Node: Top703
-Node: License2715
-Node: Introduction4397
-Node: Caveats7330
-Node: Kernel History8116
-Node: Conventions9561
-Node: Some Terms10232
-Node: Evaluation Notation10903
-Node: Printing Notation11924
-Node: Error Messages12400
-Node: Format of Descriptions13048
-Node: A Sample Applicative Description13612
-Node: Acknowledgements15375
-Node: Interpreter15761
-Ref: Command Line Options18061
-Ref: Interpreter Exit Status18995
-Node: Booleans20223
-Node: Equivalence22900
-Node: Symbols23693
-Node: Control25323
-Node: Pairs and lists29414
-Node: Environments48294
-Node: Combiners58967
-Node: Continuations65621
-Node: Encapsulations74164
-Node: Promises75617
-Node: Keyed Variables79772
-Node: Numbers82543
-Node: Strings104997
-Node: Characters112258
-Node: Ports116904
-Node: System140602
-Node: Alphabetical Index144096
+Node: License2770
+Node: Introduction4452
+Node: Caveats7385
+Node: Kernel History8171
+Node: Conventions9616
+Node: Some Terms10287
+Node: Evaluation Notation10958
+Node: Printing Notation11979
+Node: Error Messages12455
+Node: Format of Descriptions13103
+Node: A Sample Applicative Description13667
+Node: Acknowledgements15430
+Node: Interpreter15816
+Ref: Command Line Options18116
+Ref: Interpreter Exit Status19050
+Node: Booleans20278
+Node: Equivalence22955
+Node: Symbols23748
+Node: Control25378
+Node: Pairs and lists29469
+Node: Environments48349
+Node: Combiners59022
+Node: Continuations65676
+Node: Encapsulations74219
+Node: Promises75672
+Node: Keyed Variables79827
+Node: Numbers82598
+Node: Strings105052
+Node: Characters112313
+Node: Ports116959
+Node: Libraries140660
+Node: System149419
+Node: Alphabetical Index152917
 
 End Tag Table
