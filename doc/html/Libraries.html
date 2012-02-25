@@ -5,7 +5,7 @@
 <meta name="description" content="klisp Reference Manual">
 <meta name="generator" content="makeinfo 4.13">
 <link title="Top" rel="start" href="index.html#Top">
-<link rel="prev" href="Ports.html#Ports" title="Ports">
+<link rel="prev" href="Vectors.html#Vectors" title="Vectors">
 <link rel="next" href="System.html#System" title="System">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <meta http-equiv="Content-Style-Type" content="text/css">
@@ -26,15 +26,15 @@
 <a name="Libraries"></a>
 <p>
 Next:&nbsp;<a rel="next" accesskey="n" href="System.html#System">System</a>,
-Previous:&nbsp;<a rel="previous" accesskey="p" href="Ports.html#Ports">Ports</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Vectors.html#Vectors">Vectors</a>,
 Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 <hr>
 </div>
 
 <!-- node-name,  next,  previous,  up -->
-<h2 class="chapter">18 Libraries</h2>
+<h2 class="chapter">19 Libraries</h2>
 
-<p><a name="index-libraries-349"></a>
+<p><a name="index-libraries-370"></a>
 Libraries provide a way to organize klisp code with a clean &amp; clear
 interface to the rest of the program.  They are first class objects
 (as all manipulable entities in Kernel, and according to the
@@ -78,7 +78,7 @@ doing things (first class status, exposing of the library register,
 etc).
 
 <div class="defun">
-&mdash; Applicative: <b>library?</b> (<var>library? . objects</var>)<var><a name="index-library_003f-350"></a></var><br>
+&mdash; Applicative: <b>library?</b> (<var>library? . objects</var>)<var><a name="index-library_003f-371"></a></var><br>
 <blockquote><p>The primitive type predicate for type library. 
 <code>library?</code> returns true iff all the objects in <code>objects</code>
 are of type library.
@@ -89,7 +89,7 @@ API (i.e. <code>$provide-library!</code> &amp; <code>$import-library!</code>).
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>make-library</b> (<var>make-library bindings</var>)<var><a name="index-make_002dlibrary-351"></a></var><br>
+&mdash; Applicative: <b>make-library</b> (<var>make-library bindings</var>)<var><a name="index-make_002dlibrary-372"></a></var><br>
 <blockquote><p><code>bindings</code> should be an acyclic list of <code>(symbol . value)</code>
 pairs.  Each symbol may only occur once in the list.
 
@@ -102,8 +102,8 @@ their libraries.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-library-export-list</b> (<var>get-library-export-list library</var>)<var><a name="index-get_002dlibrary_002dexport_002dlist-352"></a></var><br>
-&mdash; Applicative: <b>get-library-environment</b> (<var>get-library-environment library</var>)<var><a name="index-get_002dlibrary_002denvironment-353"></a></var><br>
+&mdash; Applicative: <b>get-library-export-list</b> (<var>get-library-export-list library</var>)<var><a name="index-get_002dlibrary_002dexport_002dlist-373"></a></var><br>
+&mdash; Applicative: <b>get-library-environment</b> (<var>get-library-environment library</var>)<var><a name="index-get_002dlibrary_002denvironment-374"></a></var><br>
 <blockquote><p><code>get-library-export-list</code> returns the list of symbols exported
 from the passed library.  <code>get-library-environment</code> returns a
 fresh empty environment whose parent has all exported symbols of the
@@ -115,10 +115,10 @@ bindings out of libraries (and into the current environment).
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$registered-library?</b> (<var>$registered-library? name</var>)<var><a name="index-g_t_0024registered_002dlibrary_003f-354"></a></var><br>
-&mdash; Operative: <b>$get-registered-library</b> (<var>$get-registered-library name</var>)<var><a name="index-g_t_0024get_002dregistered_002dlibrary-355"></a></var><br>
-&mdash; Operative: <b>$register-library!</b> (<var>$register-library! name library</var>)<var><a name="index-g_t_0024register_002dlibrary_0021-356"></a></var><br>
-&mdash; Operative: <b>$unregister-library!</b> (<var>$unregister-library! name</var>)<var><a name="index-g_t_0024unregister_002dlibrary_0021-357"></a></var><br>
+&mdash; Operative: <b>$registered-library?</b> (<var>$registered-library? name</var>)<var><a name="index-g_t_0024registered_002dlibrary_003f-375"></a></var><br>
+&mdash; Operative: <b>$get-registered-library</b> (<var>$get-registered-library name</var>)<var><a name="index-g_t_0024get_002dregistered_002dlibrary-376"></a></var><br>
+&mdash; Operative: <b>$register-library!</b> (<var>$register-library! name library</var>)<var><a name="index-g_t_0024register_002dlibrary_0021-377"></a></var><br>
+&mdash; Operative: <b>$unregister-library!</b> (<var>$unregister-library! name</var>)<var><a name="index-g_t_0024unregister_002dlibrary_0021-378"></a></var><br>
 <blockquote><p><code>name</code> should a an acyclic list of symbols and exact non-negative
 integers.  Two registered libraries can't have the same name (in the
 sense of <code>equal?</code>).
@@ -142,8 +142,8 @@ of libraries are encouraged to use <code>$provide-library!</code> to create
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Operative: <b>$provide-library!</b> (<var>$provide-library! name exports . body</var>)<var><a name="index-g_t_0024provide_002dlibrary_0021-358"></a></var><br>
-&mdash; Operative: <b>$import-library!</b> (<var>$import-library! . imports</var>)<var><a name="index-g_t_0024import_002dlibrary_0021-359"></a></var><br>
+&mdash; Operative: <b>$provide-library!</b> (<var>$provide-library! name exports . body</var>)<var><a name="index-g_t_0024provide_002dlibrary_0021-379"></a></var><br>
+&mdash; Operative: <b>$import-library!</b> (<var>$import-library! . imports</var>)<var><a name="index-g_t_0024import_002dlibrary_0021-380"></a></var><br>
 <blockquote><p><code>name</code> should be as for <code>register-library!</code> and not already
 registered.  <code>exports</code> should be a list of <code>(#:export
 &lt;export-spec&gt; ...)</code>. Where <code>&lt;export spec&gt;</code> is either:

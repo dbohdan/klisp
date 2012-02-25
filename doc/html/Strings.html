@@ -139,7 +139,7 @@ composed of the character arguments.
 &mdash; Applicative: <b>string-ref</b> (<var>string-ref string k</var>)<var><a name="index-string_002dref-249"></a></var><br>
 <blockquote><p>  Applicative <code>string-ref</code> returns the character of <code>string</code>
 at position <code>k</code>.  If <code>k</code> is out of bounds (i.e. less than
-<code>0</code> or greater or equal than <code>(length string)</code>) an error is
+<code>0</code> or greater or equal than <code>(string-length string)</code>) an error is
 signaled. 
 </p></blockquote></div>
 
@@ -159,10 +159,10 @@ immutable string, an error is signaled.
 
 <div class="defun">
 &mdash; Applicative: <b>substring</b> (<var>substring string k1 k2</var>)<var><a name="index-substring-252"></a></var><br>
-<blockquote><p>  Both <code>k1</code> &amp; <code>k2</code> should be valid indexes in
+<blockquote><p>  Both <code>k1</code> &amp; <code>k2-1</code> should be valid indexes in
 <code>string</code>.  Also it should be the case that <code>k1 &lt;= k2</code>.
 
-        <p>Applicative <code>substring</code> constructs and returns a new immutable
+        <p>Applicative <code>substring</code> constructs and returns a new mutable
 string with length <code>k2 - k1</code>, with the characters from
 <code>string</code>, starting at index <code>k1</code> (inclusive) and ending at
 index <code>k2</code> (exclusive). 

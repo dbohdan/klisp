@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/libraries
 
-@node Libraries, System, Ports, Top
+@node Libraries, System, Vectors, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Libraries

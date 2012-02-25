@@ -103,7 +103,7 @@ composed of the character arguments.
 @deffn Applicative string-ref (string-ref string k)
   Applicative @code{string-ref} returns the character of @code{string}
 at position @code{k}.  If @code{k} is out of bounds (i.e. less than
-@code{0} or greater or equal than @code{(length string)}) an error is
+@code{0} or greater or equal than @code{(string-length string)}) an error is
 signaled.
 @end deffn
 
@@ -120,10 +120,10 @@ immutable string, an error is signaled.
 @end deffn
 
 @deffn Applicative substring (substring string k1 k2)
-  Both @code{k1} & @code{k2} should be valid indexes in
+  Both @code{k1} & @code{k2-1} should be valid indexes in
 @code{string}.  Also it should be the case that @code{k1 <= k2}.
 
-  Applicative @code{substring} constructs and returns a new immutable
+  Applicative @code{substring} constructs and returns a new mutable
 string with length @code{k2 - k1}, with the characters from
 @code{string}, starting at index @code{k1} (inclusive) and ending at
 index @code{k2} (exclusive).

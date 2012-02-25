@@ -1,0 +1,145 @@
+@c -*-texinfo-*-
+@setfilename ../src/vectors
+
+@node Vectors, Libraries, Ports, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Vectors
+@cindex Vectors
+
+A vector is an object that contains a sequence of arbitrary klisp
+objects.  A vector has a length that is fixed at creation time, and as
+many objects, indexed from @code{0} to @code{length-1}.  Compared to
+lists, klisp vectors use less size and have constant access time for
+any element.
+
+Vectors may be mutable or immutable.  If an attempt is made to mutate
+an immutable vector, an error is signaled.  Two immutable vectors are
+``eq?'' iff they are ``equal?''.  Two mutable vectors are ``eq?'' if
+they were created by the same constructor call.  Two mutable vectors
+are ``equal?'' iff they have the same length and have ``equal?''
+objects in each position.  As is the case for lists, in order to
+handle possibly cyclic structures, the ``equal?'' algorithm considers
+vectors as FSMs where it position is a state change.  There is only one
+empty vector (that is, a vector of length 0) and that vector is
+immutable.  The vector type is encapsulated.
+
+SOURCE NOTE: The report doesn't currently include vectors. They are
+taken from r7rs scheme.
+
+@deffn Applicative vector? (vector? . objects)
+The primitive type predicate for type vector.  @code{vector?}
+returns true iff all the objects in @code{objects} are of type
+vector.
+@end deffn
+
+@deffn Applicative immutable-vector? (immutable-vector? objects)
+@deffnx Applicative mutable-vector? (mutable-vector? objects)
+The primitive type predicates for types immutable vector and mutable
+vector.  These return true iff all the objects in @code{objects} are of
+type immutable vector or mutable vector respectively.
+@end deffn
+
+@deffn Applicative make-vector (make-vector k [obj])
+Applicative @code{make-vector} constructs and returns a new mutable
+vector of length @code{k}.  If @code{obj} is specified, then all
+objects in the returned vector are @code{obj}, otherwise the
+content of the vector is unspecified.
+@end deffn
+
+@deffn Applicative vector-length (vector-length vector)
+Applicative @code{vector-length} returns the length of
+@code{vector}.
+@end deffn
+
+@deffn Applicative vector-ref (vector-ref vector k)
+Applicative @code{vector-ref} returns the object of @code{vector} at
+position @code{k}.  If @code{k} is out of bounds (i.e. less than
+@code{0} or greater or equal than @code{(vector-length vector)}) an
+error is signaled.
+@end deffn
+
+@deffn Applicative vector-set! (vector-set! vector k obj)
+Applicative @code{vector-set!} replaces the object with index @code{k}
+in @code{vector} with object @code{obj}.  If @code{k} is out of
+bounds, or @code{vector} is immutable, an error is signaled. The
+result returned by @code{vector-set!} is inert.
+@end deffn
+
+@deffn Applicative vector (vector . objs)
+Applicative @code{vector} contructs and return a new mutable vector
+composed of the object arguments.
+@end deffn
+
+@deffn Applicative vector->list (vector->list vector)
+@deffnx Applicative list->vector (list->vector objs)
+These applicatives convert between vectors and lists.  The objects
+returned by these applicatives are always mutable.
+@end deffn
+
+@deffn Applicative vector-copy (vector-copy vector)
+Applicative @code{vector-copy} constructs and returns a new mutable
+vector with the same length and objects as @code{vector}.
+@end deffn
+
+@deffn Applicative vector->bytevector (vector->bytevector vector)
+@deffnx Applicative bytevector->vector (bytevector->vector bytevector)
+These applicatives convert between vectors and bytevectors.  If a
+vector containing objects other than exact integers between 0 and 255
+inclusive are passed to @code{vector->bytevector}, an error is
+signaled.  The objects returned by these applicatives are always
+mutable.
+@end deffn
+
+@deffn Applicative vector->string (vector->string vector)
+@deffnx Applicative string->vector (string->vector string)
+These applicatives convert between vectors and strings.  If a vector
+containing objects other than characters is passed to
+@code{vector->string}, an error is signaled.  The objects returned by
+these applicatives are always mutable.
+@end deffn
+
+@deffn Applicative vector-copy! (vector-copy! vector1 vector2)
+vector2 should have a length greater than or equal to
+that of vector1.
+
+Copies the values in vector1 to the corresponding positions in
+vector2.  If vector2 is immutable, an error is signaled.  The result
+returned by @code{vector-copy!} is inert.
+@end deffn
+
+@deffn Applicative vector-copy-partial (vector-copy-partial vector k1 k2)
+Both @code{k1} & @code{k2} should be valid indexes in
+@code{vector}.  Also it should be the case that @code{k1 <= k2}.
+
+Applicative @code{vector-copy-partial} constructs and returns a new
+mutable vector with length @code{k2 - k1}, with the objects from
+@code{vector}, starting at index @code{k1} (inclusive) and ending at
+index @code{k2} (exclusive).
+@end deffn
+
+@deffn Applicative vector-copy-partial! (vector-copy-partial! vector1 k1 k2 vector2 k3)
+Both @code{k1} & @code{k2-1} should be valid indexes in
+@code{vector1}.  Also it should be the case that @code{k1 <= k2}.
+Both @code{k3} & @code{k3 + (k2-k1) - 1} should be valid indexes in
+@code{vector2}.
+
+Applicative @code{vector-copy-partial!} copies objects k1 (inclusive)
+through k2 (exclusive) from @code{vector1} to the @code{k2-k1}
+positions in @code{vector2} starting at @code{k3}.  If @code{vector2}
+is an immutable vector, an error is signaled.  The result returned by
+@code{vector-copy-partial!} is inert.
+@end deffn
+
+@deffn Applicative vector-fill! (vector-fill! vector obj)
+Applicative @code{vector-fill!} replaces all the objects in
+@code{vector} with object @code{obj}.  If @code{vector} is an
+immutable vector, an error is signaled.  The result
+returned by @code{vector-fill!} is inert.
+@end deffn
+
+@deffn Applicative vector->immutable-vector (vector->immutable-vector vector)
+Applicative @code{vector->immutable-vector} constructs and returns a
+new immutable vector with the same length and objects as
+@code{vector}.
+@end deffn
