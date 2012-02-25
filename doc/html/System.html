@@ -32,16 +32,16 @@ Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
 </div>
 
 <!-- node-name,  next,  previous,  up -->
-<h2 class="chapter">20 System</h2>
+<h2 class="chapter">21 System</h2>
 
-<p><a name="index-system-381"></a>
+<p><a name="index-system-400"></a>
 Module System contains some useful features for interacting with the
 host environment.
 
    <p>SOURCE NOTE: most of these come from r7rs.
 
 <div class="defun">
-&mdash; Applicative: <b>get-current-second</b> (<var>get-current-second</var>)<var><a name="index-get_002dcurrent_002dsecond-382"></a></var><br>
+&mdash; Applicative: <b>get-current-second</b> (<var>get-current-second</var>)<var><a name="index-get_002dcurrent_002dsecond-401"></a></var><br>
 <blockquote><p>Applicative <code>get-current-second</code> returns the number of seconds
 elapsed since the UNIX/POSIX epoch (that is midnight January 1st,
 1970, UTC).
@@ -51,7 +51,7 @@ here.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-current-jiffies</b> (<var>get-current-jiffies</var>)<var><a name="index-get_002dcurrent_002djiffies-383"></a></var><br>
+&mdash; Applicative: <b>get-current-jiffies</b> (<var>get-current-jiffies</var>)<var><a name="index-get_002dcurrent_002djiffies-402"></a></var><br>
 <blockquote><p>Applicative <code>get-current-jiffies</code> returns the number of jiffies
 (fractions of a second) elapsed since an arbitrary epoch that may
 change in each run of the klisp interpreter.  Applicative
@@ -60,19 +60,19 @@ of a second a jiffy represents.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-jiffies-per-second</b> (<var>get-jiffies-per-second</var>)<var><a name="index-get_002djiffies_002dper_002dsecond-384"></a></var><br>
+&mdash; Applicative: <b>get-jiffies-per-second</b> (<var>get-jiffies-per-second</var>)<var><a name="index-get_002djiffies_002dper_002dsecond-403"></a></var><br>
 <blockquote><p>Applicative <code>get-jiffies-per-second</code> returns a constant
 representing the number of jiffies that correspond to one second. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>file-exists</b> (<var>file-exists string</var>)<var><a name="index-file_002dexists-385"></a></var><br>
+&mdash; Applicative: <b>file-exists</b> (<var>file-exists string</var>)<var><a name="index-file_002dexists-404"></a></var><br>
 <blockquote><p>Predicate <code>file-exists?</code> checks to see if a file named
 <code>string</code> exists. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>delete-file</b> (<var>delete-file string</var>)<var><a name="index-delete_002dfile-386"></a></var><br>
+&mdash; Applicative: <b>delete-file</b> (<var>delete-file string</var>)<var><a name="index-delete_002dfile-405"></a></var><br>
 <blockquote><p><code>string</code> should be the name/path for an existing file.
 
         <p>Applicative <code>delete-file</code> deletes the file named <code>string</code>. 
@@ -81,7 +81,7 @@ result returned by <code>delete-file</code> is inert.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>rename-file</b> (<var>rename-file string1 string2</var>)<var><a name="index-rename_002dfile-387"></a></var><br>
+&mdash; Applicative: <b>rename-file</b> (<var>rename-file string1 string2</var>)<var><a name="index-rename_002dfile-406"></a></var><br>
 <blockquote><p><code>string1</code> should be the name/path for an existing file,
 <code>string2</code> should be the name/path for a non existing file.
 
@@ -95,8 +95,8 @@ quite similar to <code>delete-file</code>.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-script-arguments</b> (<var>get-script-arguments</var>)<var><a name="index-get_002dscript_002darguments-388"></a></var><br>
-&mdash; Applicative: <b>get-interpreter-arguments</b> (<var>get-interpreter-arguments</var>)<var><a name="index-get_002dinterpreter_002darguments-389"></a></var><br>
+&mdash; Applicative: <b>get-script-arguments</b> (<var>get-script-arguments</var>)<var><a name="index-get_002dscript_002darguments-407"></a></var><br>
+&mdash; Applicative: <b>get-interpreter-arguments</b> (<var>get-interpreter-arguments</var>)<var><a name="index-get_002dinterpreter_002darguments-408"></a></var><br>
 <blockquote><p>These applicatives return respectively the script and interpreter
 arguments.  The script arguments are a list of the arguments passed to
 the klisp interpreter starting from (and including) the script name. 
@@ -107,20 +107,20 @@ name and arguments.
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>defined-environment-variable?</b> (<var>defined-environment-variable? string</var>)<var><a name="index-defined_002denvironment_002dvariable_003f-390"></a></var><br>
+&mdash; Applicative: <b>defined-environment-variable?</b> (<var>defined-environment-variable? string</var>)<var><a name="index-defined_002denvironment_002dvariable_003f-409"></a></var><br>
 <blockquote><p>Predicate <code>defined-environment-variable?</code> returns true iff
 <code>string</code> represents a defined envrionment variable. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-environment-variable</b> (<var>get-environment-variable string</var>)<var><a name="index-get_002denvironment_002dvariable-391"></a></var><br>
+&mdash; Applicative: <b>get-environment-variable</b> (<var>get-environment-variable string</var>)<var><a name="index-get_002denvironment_002dvariable-410"></a></var><br>
 <blockquote><p>Applicative <code>get-environment-variable</code> returns the value of the
 environment variable represented by <code>string</code>.  If <code>string</code>
 doesn't represent a defined environment variable an error is signaled. 
 </p></blockquote></div>
 
 <div class="defun">
-&mdash; Applicative: <b>get-environment-variables</b> (<var>get-environment-variables</var>)<var><a name="index-get_002denvironment_002dvariables-392"></a></var><br>
+&mdash; Applicative: <b>get-environment-variables</b> (<var>get-environment-variables</var>)<var><a name="index-get_002denvironment_002dvariables-411"></a></var><br>
 <blockquote><!-- TODO xref to alist -->
         <p>Applicative <code>get-environment-variable</code> returns an alist
 representing the defined environment variables and their values.  The

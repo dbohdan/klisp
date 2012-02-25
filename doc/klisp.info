@@ -57,6 +57,7 @@ the header "Permission to copy this report", that reads:
 * Characters::              Characters module features.
 * Ports::                   Ports module features.
 * Vectors::                 Vectors module features.
+* Bytevectors::             Bytevectors module features.
 * Libraries::               Libraries module features.
 * System::                  System module features.
 * Alphabetical Index::      Index including concepts, functions, variables,
@@ -3029,7 +3030,7 @@ klisp and was taken from r7rs.
      binding symbol `module-parameters' to the `environment' argument.
 
 
-File: klisp.info,  Node: Vectors,  Next: Libraries,  Prev: Ports,  Up: Top
+File: klisp.info,  Node: Vectors,  Next: Bytevectors,  Prev: Ports,  Up: Top
 
 18 Vectors
 **********
@@ -3109,7 +3110,7 @@ taken from r7rs scheme.
  -- Applicative: vector->string (vector->string vector)
  -- Applicative: string->vector (string->vector string)
      These applicatives convert between vectors and strings.  If a
-     vector containing objects other than characters is poassed to
+     vector containing objects other than characters is passed to
      `vector->string', an error is signaled.  The objects returned by
      these applicatives are always mutable.
 
@@ -3153,9 +3154,132 @@ taken from r7rs scheme.
      new immutable vector with the same length and objects as `vector'.
 
 
-File: klisp.info,  Node: Libraries,  Next: System,  Prev: Vectors,  Up: Top
+File: klisp.info,  Node: Bytevectors,  Next: Libraries,  Prev: Vectors,  Up: Top
 
-19 Libraries
+19 Bytevectors
+**************
+
+A bytevector is an object that contains a sequence of bytes, that is,
+exact integers between 0 and 255 inclusive.  A bytevector has a length
+that is fixed at creation time, and as many bytes, indexed from `0' to
+`length-1'.  Compared to vectors, bytevectors use less size for each
+element.
+
+   Bytevectors may be mutable or immutable.  If an attempt is made to
+mutate an immutable bytevector, an error is signaled.  Two immutable
+bytevectors are "eq?" iff they are "equal?".  Two mutable bytevectors
+are "eq?" if they were created by the same constructor call.  Two
+mutable bytevectors are "equal?" iff they have the same length and have
+"equal?"  bytes in each position.  There is only one empty bytevector
+(that is, a bytevector of length 0) and that bytevector is immutable.
+The bytevector type is encapsulated.
+
+   SOURCE NOTE: The report doesn't currently include bytevectors. They
+are taken from r7rs scheme.
+
+ -- Applicative: bytevector? (bytevector? . obje)
+     The primitive type predicate for type bytevector.  `bytevector?'
+     returns true iff all the objects in `objects' are of type
+     bytevector.
+
+ -- Applicative: immutable-bytevector? (immutable-bytevector? objects)
+ -- Applicative: mutable-bytevector? (mutable-bytevector? objects)
+     The primitive type predicates for types immutable bytevector and
+     mutable bytevector.  These return true iff all the objects in
+     `objects' are of type immutable bytevector or mutable bytevector
+     respectively.
+
+ -- Applicative: make-bytevector (make-bytevector k [u8])
+     Applicative `make-bytevector' constructs and returns a new mutable
+     bytevector of length `k'.  If `u8' is specified, then all bytes in
+     the returned bytevector are `obj', otherwise the content of the
+     bytevector is unspecified.
+
+ -- Applicative: bytevector-length (bytevector-length bytevector)
+     Applicative `bytevector-length' returns the length of `bytevector'.
+
+ -- Applicative: bytevector-ref (bytevector-ref bytevector k)
+     Applicative `bytevector-ref' returns the byte of `bytevector' at
+     position `k'.  If `k' is out of bounds (i.e. less than `0' or
+     greater or equal than `(bytevector-length bytevector)') an error
+     is signaled.
+
+ -- Applicative: bytevector-set! (bytevector-set! bytevector k u8)
+     Applicative `bytevector-set!' replaces the byte with index `k' in
+     `bytevector' with byte `u8'.  If `k' is out of bounds, or
+     `bytevector' is immutable, an error is signaled. The result
+     returned by `bytevector-set!' is inert.
+
+ -- Applicative: bytevector (bytevector . u8s)
+     Applicative `bytevector' contructs and return a new mutable
+     bytevector composed of the byte arguments.
+
+ -- Applicative: bytevector->list (bytevector->list bytevector)
+ -- Applicative: list->bytevector (list->bytevector u8s)
+     These applicatives convert between bytevectors and lists of bytes.
+     If the list passed to `list->bytevector' contains an object that
+     isn't a byte, an error is signaled.  The objects returned by these
+     applicatives are always mutable.
+
+ -- Applicative: bytevector-copy (bytevector-copy bytevector)
+     Applicative `bytevector-copy' constructs and returns a new mutable
+     bytevector with the same length and bytes as `bytevector'.
+
+ -- Applicative: bytevector->vector (bytevector->vector bytevector)
+ -- Applicative: vector->bytevector (vector->bytevector vector)
+     These applicatives convert between bytevectors and vectors.  If a
+     vector containing objects other than bytes (exact integers between
+     0 and 255 inclusive) is passed to `vector->bytevector', an error is
+     signaled.  The objects returned by these applicatives are always
+     mutable.
+
+ -- Applicative: bytevector-copy! (bytevector-copy! bytevector1
+          bytevector2)
+     bytevector2 should have a length greater than or equal to that of
+     bytevector1.
+
+     Copies the bytes in bytevector1 to the corresponding positions in
+     bytevector2.  If bytevector2 is immutable, an error is signaled.
+     The result returned by `bytevector-copy!' is inert.
+
+ -- Applicative: bytevector-copy-partial (bytevector-copy-partial
+          bytevector k1 k2)
+     Both `k1' & `k2' should be valid indexes in `bytevector'.  Also it
+     should be the case that `k1 <= k2'.
+
+     Applicative `bytevector-copy-partial' constructs and returns a new
+     mutable bytevector with length `k2 - k1', with the bytes from
+     `bytevector', starting at index `k1' (inclusive) and ending at
+     index `k2' (exclusive).
+
+ -- Applicative: bytevector-copy-partial! (bytevector-copy-partial!
+          bytevector1 k1 k2 bytevector2 k3)
+     Both `k1' & `k2-1' should be valid indexes in `bytevector1'.  Also
+     it should be the case that `k1 <= k2'.  Both `k3' & `k3 + (k2-k1)
+     - 1' should be valid indexes in `bytevector2'.
+
+     Applicative `bytevector-copy-partial!' copies bytes k1 (inclusive)
+     through k2 (exclusive) from `bytevector1' to the `k2-k1' positions
+     in `bytevector2' starting at `k3'.  If `bytevector2' is an
+     immutable bytevector, an error is signaled.  The result returned
+     by `bytevector-copy-partial!' is inert.
+
+ -- Applicative: bytevector-fill! (bytevector-fill! bytevector u8)
+     Applicative `bytevector-fill!' replaces all the bytes in
+     `bytevector' with byte `u8'.  If `bytevector' is an immutable
+     bytevector, an error is signaled.  The result returned by
+     `bytevector-fill!' is inert.
+
+ -- Applicative: bytevector->immutable-bytevector
+          (bytevector->immutable-bytevector bytevector)
+     Applicative `bytevector->immutable-bytevector' constructs and
+     returns a new immutable bytevector with the same length and bytes
+     as `bytevector'.
+
+
+File: klisp.info,  Node: Libraries,  Next: System,  Prev: Bytevectors,  Up: Top
+
+20 Libraries
 ************
 
 Libraries provide a way to organize klisp code with a clean & clear
@@ -3332,7 +3456,7 @@ things (first class status, exposing of the library register, etc).
 
 File: klisp.info,  Node: System,  Next: Alphabetical Index,  Prev: Libraries,  Up: Top
 
-20 System
+21 System
 *********
 
 Module System contains some useful features for interacting with the
@@ -3476,11 +3600,25 @@ Index
 * binary-port?:                          Ports.               (line  43)
 * boolean?:                              Booleans.            (line  12)
 * booleans:                              Booleans.            (line   6)
+* bytevector:                            Bytevectors.         (line  58)
+* bytevector->immutable-bytevector:      Bytevectors.         (line 119)
+* bytevector->list:                      Bytevectors.         (line  62)
 * bytevector->string:                    Strings.             (line 135)
+* bytevector->vector <1>:                Bytevectors.         (line  73)
 * bytevector->vector:                    Vectors.             (line  72)
+* bytevector-copy:                       Bytevectors.         (line  69)
+* bytevector-copy!:                      Bytevectors.         (line  82)
+* bytevector-copy-partial:               Bytevectors.         (line  91)
+* bytevector-copy-partial!:              Bytevectors.         (line 101)
+* bytevector-fill!:                      Bytevectors.         (line 112)
 * bytevector-for-each:                   Control.             (line  56)
+* bytevector-length:                     Bytevectors.         (line  43)
 * bytevector-map:                        Combiners.           (line 123)
 * bytevector-port?:                      Ports.               (line  56)
+* bytevector-ref:                        Bytevectors.         (line  46)
+* bytevector-set!:                       Bytevectors.         (line  52)
+* bytevector?:                           Bytevectors.         (line  25)
+* Bytevectors:                           Bytevectors.         (line   6)
 * caaaar:                                Pairs and lists.     (line 111)
 * caaadr:                                Pairs and lists.     (line 112)
 * caaar:                                 Pairs and lists.     (line 103)
@@ -3630,6 +3768,7 @@ Index
 * guard-dynamic-extent:                  Continuations.       (line 156)
 * ignore:                                Environments.        (line   6)
 * ignore?:                               Environments.        (line  28)
+* immutable-bytevector?:                 Bytevectors.         (line  30)
 * immutable-pair?:                       Pairs and lists.     (line  35)
 * immutable-string?:                     Strings.             (line  51)
 * immutable-vector?:                     Vectors.             (line  30)
@@ -3650,6 +3789,7 @@ Index
 * library?:                              Libraries.           (line  47)
 * list:                                  Pairs and lists.     (line  82)
 * list*:                                 Pairs and lists.     (line  88)
+* list->bytevector:                      Bytevectors.         (line  63)
 * list->string:                          Strings.             (line 131)
 * list->vector:                          Vectors.             (line  63)
 * list-copy:                             Pairs and lists.     (line 142)
@@ -3659,6 +3799,7 @@ Index
 * lists:                                 Pairs and lists.     (line   6)
 * load:                                  Ports.               (line 417)
 * log:                                   Numbers.             (line 403)
+* make-bytevector:                       Bytevectors.         (line  37)
 * make-encapsulation-type:               Encapsulations.      (line  12)
 * make-environment:                      Environments.        (line  36)
 * make-inexact:                          Numbers.             (line 285)
@@ -3678,6 +3819,7 @@ Index
 * min:                                   Numbers.             (line 214)
 * mod:                                   Numbers.             (line 165)
 * mod0:                                  Numbers.             (line 179)
+* mutable-bytevector?:                   Bytevectors.         (line  31)
 * mutable-pair?:                         Pairs and lists.     (line  36)
 * mutable-string?:                       Strings.             (line  52)
 * mutable-vector?:                       Vectors.             (line  31)
@@ -3788,6 +3930,7 @@ Index
 * unregister-requirement!:               Ports.               (line 466)
 * unwrap:                                Combiners.           (line  72)
 * vector:                                Vectors.             (line  58)
+* vector->bytevector <1>:                Bytevectors.         (line  74)
 * vector->bytevector:                    Vectors.             (line  71)
 * vector->immutable-vector:              Vectors.             (line 121)
 * vector->list:                          Vectors.             (line  62)
@@ -3820,39 +3963,40 @@ Index
 
 Tag Table:
 Node: Top703
-Node: License2823
-Node: Introduction4505
-Node: Caveats7438
-Node: Kernel History8224
-Node: Conventions9669
-Node: Some Terms10340
-Node: Evaluation Notation11011
-Node: Printing Notation12032
-Node: Error Messages12508
-Node: Format of Descriptions13156
-Node: A Sample Applicative Description13720
-Node: Acknowledgements15483
-Node: Interpreter15869
-Ref: Command Line Options18169
-Ref: Interpreter Exit Status19103
-Node: Booleans20331
-Node: Equivalence23008
-Node: Symbols23801
-Node: Control25431
-Node: Pairs and lists29522
-Node: Environments48402
-Node: Combiners59075
-Node: Continuations65729
-Node: Encapsulations74272
-Node: Promises75725
-Node: Keyed Variables79880
-Node: Numbers82651
-Node: Strings105105
-Node: Characters112378
-Node: Ports117024
-Node: Vectors140723
-Node: Libraries146476
-Node: System155237
-Node: Alphabetical Index158735
+Node: License2880
+Node: Introduction4562
+Node: Caveats7495
+Node: Kernel History8281
+Node: Conventions9726
+Node: Some Terms10397
+Node: Evaluation Notation11068
+Node: Printing Notation12089
+Node: Error Messages12565
+Node: Format of Descriptions13213
+Node: A Sample Applicative Description13777
+Node: Acknowledgements15540
+Node: Interpreter15926
+Ref: Command Line Options18226
+Ref: Interpreter Exit Status19160
+Node: Booleans20388
+Node: Equivalence23065
+Node: Symbols23858
+Node: Control25488
+Node: Pairs and lists29579
+Node: Environments48459
+Node: Combiners59132
+Node: Continuations65786
+Node: Encapsulations74329
+Node: Promises75782
+Node: Keyed Variables79937
+Node: Numbers82708
+Node: Strings105162
+Node: Characters112435
+Node: Ports117081
+Node: Vectors140780
+Node: Bytevectors146534
+Node: Libraries152356
+Node: System161121
+Node: Alphabetical Index164619
 
 End Tag Table

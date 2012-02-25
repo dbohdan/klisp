@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/vectors
 
-@node Vectors, Libraries, Ports, Top
+@node Vectors, Bytevectors, Ports, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Vectors

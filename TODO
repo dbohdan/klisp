@@ -2,7 +2,6 @@
 ** Documentation:
 *** update the manual with the current features
 **** Add missing sections
-- bytevector
 - error
 ** Test
 *** Windows

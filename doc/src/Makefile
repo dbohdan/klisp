@@ -10,7 +10,7 @@ srcs = klisp.texi index.texi \
 	promises.texi keyed_vars.texi \
 	numbers.texi strings.texi \
 	characters.texi ports.texi \
-	vectors.texi \
+	vectors.texi bytevectors.texi \
 	libraries.texi system.texi
 
 #TODO add dvi/pdf output

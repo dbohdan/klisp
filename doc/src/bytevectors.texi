@@ -1,0 +1,140 @@
+@c -*-texinfo-*-
+@setfilename ../src/bytevectors
+
+@node Bytevectors, Libraries, Vectors, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Bytevectors
+@cindex Bytevectors
+
+A bytevector is an object that contains a sequence of bytes, that is,
+exact integers between 0 and 255 inclusive.  A bytevector has a length
+that is fixed at creation time, and as many bytes, indexed from
+@code{0} to @code{length-1}.  Compared to vectors, bytevectors use
+less size for each element.
+
+Bytevectors may be mutable or immutable.  If an attempt is made to
+mutate an immutable bytevector, an error is signaled.  Two immutable
+bytevectors are ``eq?'' iff they are ``equal?''.  Two mutable
+bytevectors are ``eq?'' if they were created by the same constructor
+call.  Two mutable bytevectors are ``equal?'' iff they have the same
+length and have ``equal?''  bytes in each position.  There is only one
+empty bytevector (that is, a bytevector of length 0) and that
+bytevector is immutable.  The bytevector type is encapsulated.
+
+SOURCE NOTE: The report doesn't currently include bytevectors. They
+are taken from r7rs scheme.
+
+@deffn Applicative bytevector? (bytevector? . obje)
+The primitive type predicate for type bytevector.  @code{bytevector?}
+returns true iff all the objects in @code{objects} are of type
+bytevector.
+@end deffn
+
+@deffn Applicative immutable-bytevector? (immutable-bytevector? objects)
+@deffnx Applicative mutable-bytevector? (mutable-bytevector? objects)
+The primitive type predicates for types immutable bytevector and
+mutable bytevector.  These return true iff all the objects in
+@code{objects} are of type immutable bytevector or mutable bytevector
+respectively.
+@end deffn
+
+@deffn Applicative make-bytevector (make-bytevector k [u8])
+Applicative @code{make-bytevector} constructs and returns a new
+mutable bytevector of length @code{k}.  If @code{u8} is specified,
+then all bytes in the returned bytevector are @code{obj}, otherwise
+the content of the bytevector is unspecified.
+@end deffn
+
+@deffn Applicative bytevector-length (bytevector-length bytevector)
+Applicative @code{bytevector-length} returns the length of
+@code{bytevector}.
+@end deffn
+
+@deffn Applicative bytevector-ref (bytevector-ref bytevector k)
+Applicative @code{bytevector-ref} returns the byte of
+@code{bytevector} at position @code{k}.  If @code{k} is out of bounds
+(i.e. less than @code{0} or greater or equal than
+@code{(bytevector-length bytevector)}) an error is signaled.
+@end deffn
+
+@deffn Applicative bytevector-set! (bytevector-set! bytevector k u8)
+Applicative @code{bytevector-set!} replaces the byte with index
+@code{k} in @code{bytevector} with byte @code{u8}.  If @code{k} is out
+of bounds, or @code{bytevector} is immutable, an error is
+signaled. The result returned by @code{bytevector-set!} is inert.
+@end deffn
+
+@deffn Applicative bytevector (bytevector . u8s)
+Applicative @code{bytevector} contructs and return a new mutable
+bytevector composed of the byte arguments.
+@end deffn
+
+@deffn Applicative bytevector->list (bytevector->list bytevector)
+@deffnx Applicative list->bytevector (list->bytevector u8s)
+These applicatives convert between bytevectors and lists of bytes.  If
+the list passed to @code{list->bytevector} contains an object that
+isn't a byte, an error is signaled.  The objects returned by these
+applicatives are always mutable.
+@end deffn
+
+@deffn Applicative bytevector-copy (bytevector-copy bytevector)
+Applicative @code{bytevector-copy} constructs and returns a new
+mutable bytevector with the same length and bytes as
+@code{bytevector}.
+@end deffn
+
+@deffn Applicative bytevector->vector (bytevector->vector bytevector)
+@deffnx Applicative vector->bytevector (vector->bytevector vector)
+These applicatives convert between bytevectors and vectors.  If a
+vector containing objects other than bytes (exact integers between 0
+and 255 inclusive) is passed to @code{vector->bytevector}, an error is
+signaled.  The objects returned by these applicatives are always
+mutable.
+@end deffn
+
+@deffn Applicative bytevector-copy! (bytevector-copy! bytevector1 bytevector2)
+bytevector2 should have a length greater than or equal to that of
+bytevector1.
+
+Copies the bytes in bytevector1 to the corresponding positions in
+bytevector2.  If bytevector2 is immutable, an error is signaled.  The
+result returned by @code{bytevector-copy!} is inert.
+@end deffn
+
+@deffn Applicative bytevector-copy-partial (bytevector-copy-partial bytevector k1 k2)
+Both @code{k1} & @code{k2} should be valid indexes in
+@code{bytevector}.  Also it should be the case that @code{k1 <= k2}.
+
+Applicative @code{bytevector-copy-partial} constructs and returns a
+new mutable bytevector with length @code{k2 - k1}, with the bytes from
+@code{bytevector}, starting at index @code{k1} (inclusive) and ending
+at index @code{k2} (exclusive).
+@end deffn
+
+@deffn Applicative bytevector-copy-partial! (bytevector-copy-partial! bytevector1 k1 k2 bytevector2 k3)
+Both @code{k1} & @code{k2-1} should be valid indexes in
+@code{bytevector1}.  Also it should be the case that @code{k1 <= k2}.
+Both @code{k3} & @code{k3 + (k2-k1) - 1} should be valid indexes in
+@code{bytevector2}.
+
+Applicative @code{bytevector-copy-partial!} copies bytes k1
+(inclusive) through k2 (exclusive) from @code{bytevector1} to the
+@code{k2-k1} positions in @code{bytevector2} starting at @code{k3}.
+If @code{bytevector2} is an immutable bytevector, an error is
+signaled.  The result returned by @code{bytevector-copy-partial!} is
+inert.
+@end deffn
+
+@deffn Applicative bytevector-fill! (bytevector-fill! bytevector u8)
+Applicative @code{bytevector-fill!} replaces all the bytes in
+@code{bytevector} with byte @code{u8}.  If @code{bytevector} is an
+immutable bytevector, an error is signaled.  The result
+returned by @code{bytevector-fill!} is inert.
+@end deffn
+
+@deffn Applicative bytevector->immutable-bytevector (bytevector->immutable-bytevector bytevector)
+Applicative @code{bytevector->immutable-bytevector} constructs and
+returns a new immutable bytevector with the same length and bytes as
+@code{bytevector}.
+@end deffn
