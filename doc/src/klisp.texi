@@ -112,6 +112,7 @@ permission is granted to copy it in whole or in part without fee.
 * Ports::                   Ports module features.
 * Vectors::                 Vectors module features.
 * Bytevectors::             Bytevectors module features.
+* Errors::                  Errors module features.
 * Libraries::               Libraries module features.
 * System::                  System module features.
 @c TODO add error objs to both klisp and the manual
@@ -143,6 +144,7 @@ permission is granted to copy it in whole or in part without fee.
 @include ports.texi
 @include vectors.texi
 @include bytevectors.texi
+@include errors.texi
 @include libraries.texi
 @include system.texi
 

@@ -1,7 +1,7 @@
 @c -*-texinfo-*-
 @setfilename ../src/bytevectors
 
-@node Bytevectors, Libraries, Vectors, Top
+@node Bytevectors, Errors, Vectors, Top
 @comment  node-name,  next,  previous,  up
 
 @chapter Bytevectors

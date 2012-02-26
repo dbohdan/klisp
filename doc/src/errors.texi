@@ -1,0 +1,58 @@
+@c -*-texinfo-*-
+@setfilename ../src/errors
+
+@node Errors, Libraries, Bytevectors, Top
+@comment  node-name,  next,  previous,  up
+
+@chapter Errors
+@cindex Errors
+
+An error object contains information that can be used to describe an
+error that occured in the klisp system.  The interpreter will pass an
+error object to an error continuation whenever it needs to signal that
+an error occured while executing a program or evaluating an
+expression.
+
+An error object contains a message describing the situation and a
+(possibly empty) list of objects, called its irritants, that provide
+some context or additional info depending on the error condition.  The
+error type is encapsulated.
+
+Notice that unlike in most other languages, the error object in klisp
+isn't used to classify the error in error handlers, the error
+continuation being passed the error object is used for that.  The
+error object is used only to convey additional info, not the type of
+error.
+
+SOURCE NOTE: The type of object passed to the error continuation is
+not specified in the Kernel Report.  This type was inspired by r7rs
+scheme.
+
+@deffn Applicative error-object? (error-object? . objs)
+The primitive type predicate for type error.  @code{error-object?}
+returns true iff all the objects in @code{objects} are of type
+error.
+@end deffn
+
+@deffn Applicative error (error msg . objs)
+Create an error object with message @code{msg} and irritants the list
+of objects @code{objs} and then send that error object to the error
+continuation.  This is the recommended way to signal an error in
+klisp.
+@end deffn
+
+@deffn Applicative raise (raise obj)
+Send @code{obj} to the error continuation.  @code{obj} needs not be an
+error object, any kind of object can be sent to the error continuation
+(but that's not recommended!).
+@end deffn
+
+@deffn Applicative error-object-message (error-object-message error)
+Applicative @code{error-object-message} extracts the message of
+@code{error}.
+@end deffn
+
+@deffn Applicative error-object-irritants (error-object-irritants error)
+Applicative @code{error-object-irritants} extracts the irritants of
+@code{error}.
+@end deffn

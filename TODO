@@ -1,8 +1,5 @@
 * Release 0.3
 ** Documentation:
-*** update the manual with the current features
-**** Add missing sections
-- error
 ** Test
 *** Windows
     - build
@@ -10,13 +7,14 @@
 *** Linux
     - build
     - test cases
+*** MacOS
+    - build
+    - test cases
 ** Fix
 *** Windows
  - delete-file problem in Windows (do GC and retry)
 ** Makefile
-- Add a couple of flags to turn debug on/off
-** Webpage
-- Have Maria Sol draw a simple logo
+  - Add a couple of flags to turn debug on/off
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter
@@ -72,6 +70,8 @@
 *** eager comprehensions (at least for check.k) see SRFIs 42 and 78 (srfi)
 *** restarts (r7rs/common lisp)
 *** check.k as a module
+** webpage
+- Have Maria Sol draw a simple logo
 ** other
 *** add restart support to the repl/interpreter (r7rs)
 *** complex numbers (Kernel report)

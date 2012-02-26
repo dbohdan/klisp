@@ -11,7 +11,9 @@ srcs = klisp.texi index.texi \
 	numbers.texi strings.texi \
 	characters.texi ports.texi \
 	vectors.texi bytevectors.texi \
-	libraries.texi system.texi
+	errors.texi \
+	libraries.texi system.texi \
+
 
 #TODO add dvi/pdf output
 #TODO check what happens with xrefs

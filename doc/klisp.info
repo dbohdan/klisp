@@ -58,6 +58,7 @@ the header "Permission to copy this report", that reads:
 * Ports::                   Ports module features.
 * Vectors::                 Vectors module features.
 * Bytevectors::             Bytevectors module features.
+* Errors::                  Errors module features.
 * Libraries::               Libraries module features.
 * System::                  System module features.
 * Alphabetical Index::      Index including concepts, functions, variables,
@@ -3154,7 +3155,7 @@ taken from r7rs scheme.
      new immutable vector with the same length and objects as `vector'.
 
 
-File: klisp.info,  Node: Bytevectors,  Next: Libraries,  Prev: Vectors,  Up: Top
+File: klisp.info,  Node: Bytevectors,  Next: Errors,  Prev: Vectors,  Up: Top
 
 19 Bytevectors
 **************
@@ -3277,9 +3278,56 @@ are taken from r7rs scheme.
      as `bytevector'.
 
 
-File: klisp.info,  Node: Libraries,  Next: System,  Prev: Bytevectors,  Up: Top
+File: klisp.info,  Node: Errors,  Next: Libraries,  Prev: Bytevectors,  Up: Top
 
-20 Libraries
+20 Errors
+*********
+
+An error object contains information that can be used to describe an
+error that occured in the klisp system.  The interpreter will pass an
+error object to an error continuation whenever it needs to signal that
+an error occured while executing a program or evaluating an expression.
+
+   An error object contains a message describing the situation and a
+(possibly empty) list of objects, called its irritants, that provide
+some context or additional info depending on the error condition.  The
+error type is encapsulated.
+
+   Notice that unlike in most other languages, the error object in klisp
+isn't used to classify the error in error handlers, the error
+continuation being passed the error object is used for that.  The error
+object is used only to convey additional info, not the type of error.
+
+   SOURCE NOTE: The type of object passed to the error continuation is
+not specified in the Kernel Report.  This type was inspired by r7rs
+scheme.
+
+ -- Applicative: error-object? (error-object? . objs)
+     The primitive type predicate for type error.  `error-object?'
+     returns true iff all the objects in `objects' are of type error.
+
+ -- Applicative: error (error msg . objs)
+     Create an error object with message `msg' and irritants the list
+     of objects `objs' and then send that error object to the error
+     continuation.  This is the recommended way to signal an error in
+     klisp.
+
+ -- Applicative: raise (raise obj)
+     Send `obj' to the error continuation.  `obj' needs not be an error
+     object, any kind of object can be sent to the error continuation
+     (but that's not recommended!).
+
+ -- Applicative: error-object-message (error-object-message error)
+     Applicative `error-object-message' extracts the message of `error'.
+
+ -- Applicative: error-object-irritants (error-object-irritants error)
+     Applicative `error-object-irritants' extracts the irritants of
+     `error'.
+
+
+File: klisp.info,  Node: Libraries,  Next: System,  Prev: Errors,  Up: Top
+
+21 Libraries
 ************
 
 Libraries provide a way to organize klisp code with a clean & clear
@@ -3456,7 +3504,7 @@ things (first class status, exposing of the library register, etc).
 
 File: klisp.info,  Node: System,  Next: Alphabetical Index,  Prev: Libraries,  Up: Top
 
-21 System
+22 System
 *********
 
 Module System contains some useful features for interacting with the
@@ -3716,8 +3764,13 @@ Index
 * eq?:                                   Equivalence.         (line  12)
 * equal?:                                Equivalence.         (line  16)
 * equivalence:                           Equivalence.         (line   6)
+* error:                                 Errors.              (line  30)
 * error message notation:                Error Messages.      (line   6)
 * error-continuation:                    Continuations.       (line 110)
+* error-object-irritants:                Errors.              (line  44)
+* error-object-message:                  Errors.              (line  41)
+* error-object?:                         Errors.              (line  26)
+* Errors:                                Errors.              (line   6)
 * eval:                                  Environments.        (line  32)
 * eval-string:                           Environments.        (line 183)
 * evaluation notation:                   Evaluation Notation. (line   6)
@@ -3860,6 +3913,7 @@ Index
 * printing notation:                     Printing Notation.   (line   6)
 * promise?:                              Promises.            (line  31)
 * promises:                              Promises.            (line   6)
+* raise:                                 Errors.              (line  36)
 * rational?:                             Numbers.             (line  81)
 * rationalize:                           Numbers.             (line 355)
 * read:                                  Ports.               (line 204)
@@ -3963,40 +4017,41 @@ Index
 
 Tag Table:
 Node: Top703
-Node: License2880
-Node: Introduction4562
-Node: Caveats7495
-Node: Kernel History8281
-Node: Conventions9726
-Node: Some Terms10397
-Node: Evaluation Notation11068
-Node: Printing Notation12089
-Node: Error Messages12565
-Node: Format of Descriptions13213
-Node: A Sample Applicative Description13777
-Node: Acknowledgements15540
-Node: Interpreter15926
-Ref: Command Line Options18226
-Ref: Interpreter Exit Status19160
-Node: Booleans20388
-Node: Equivalence23065
-Node: Symbols23858
-Node: Control25488
-Node: Pairs and lists29579
-Node: Environments48459
-Node: Combiners59132
-Node: Continuations65786
-Node: Encapsulations74329
-Node: Promises75782
-Node: Keyed Variables79937
-Node: Numbers82708
-Node: Strings105162
-Node: Characters112435
-Node: Ports117081
-Node: Vectors140780
-Node: Bytevectors146534
-Node: Libraries152356
-Node: System161121
-Node: Alphabetical Index164619
+Node: License2932
+Node: Introduction4614
+Node: Caveats7547
+Node: Kernel History8333
+Node: Conventions9778
+Node: Some Terms10449
+Node: Evaluation Notation11120
+Node: Printing Notation12141
+Node: Error Messages12617
+Node: Format of Descriptions13265
+Node: A Sample Applicative Description13829
+Node: Acknowledgements15592
+Node: Interpreter15978
+Ref: Command Line Options18278
+Ref: Interpreter Exit Status19212
+Node: Booleans20440
+Node: Equivalence23117
+Node: Symbols23910
+Node: Control25540
+Node: Pairs and lists29631
+Node: Environments48511
+Node: Combiners59184
+Node: Continuations65838
+Node: Encapsulations74381
+Node: Promises75834
+Node: Keyed Variables79989
+Node: Numbers82760
+Node: Strings105214
+Node: Characters112487
+Node: Ports117133
+Node: Vectors140832
+Node: Bytevectors146586
+Node: Errors152405
+Node: Libraries154420
+Node: System163180
+Node: Alphabetical Index166678
 
 End Tag Table

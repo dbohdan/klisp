@@ -114,7 +114,7 @@ void kinit_error_ground_env(klisp_State *K)
                     error_object_irritants, 0);
     /* TODO raise-continuable from r7rs doesn't make sense in the Kernel 
        system of handling continuations.
-       What we could have is a more sofisticated system
+       What we could have is a more sophisticated system
        of restarts, which would be added to an error object
        and would encapsulate continuations and descriptions of them. 
        It would be accessible with 
