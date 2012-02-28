@@ -392,11 +392,11 @@ int32_t simple_fixup(klisp_State *K, Bigint *f, Bigint *p, Bigint *r,
 bool dtoa(klisp_State *K, double d, char *buf, int32_t upoint, int32_t *out_h, 
           int32_t *out_k)
 {
-    assert(sizeof(mp_small) == 4);
+    klisp_assert(sizeof(mp_small) == 4);
     mp_result res;
     Bigint e, p, f;
 
-    assert(d > 0.0);
+    klisp_assert(d > 0.0);
 
     /* convert d to three bigints m: significand, e: exponent & p: precision */
     /* d = m^(e-p) & m < 2^p */
@@ -527,7 +527,7 @@ bool dtoa(klisp_State *K, double d, char *buf, int32_t upoint, int32_t *out_h,
     } else if (high) {
         ++digit;
     } else {
-        assert(0);
+        klisp_assert(0);
     }
     /* double check in case there was an increment */
     klisp_assert(digit >= 0 && digit <= 9);

@@ -9,7 +9,8 @@ PLAT= none
 CC=gcc
 # TEMP for now put in debug symbols
 # TEMP for now only 32 bit binaries (see kobject.h)
-CFLAGS=-O2 -g -std=c99 -Wall -m32 $(MYCFLAGS)
+CFLAGS=$(if $(DEBUG_NO_OPT),-O0,-O2) $(if $(DEBUG_SYMBOLS),-g) -std=gnu99 -Wall \
+$(if $(DEBUG_ASSERTS),-DKUSE_ASSERTS=1 )-m32 $(MYCFLAGS)
 AR= ar rcu
 RANLIB= ranlib
 RM= rm -f
@@ -20,6 +21,16 @@ LIBS=-lm $(MYLIBS)
 USE_LIBFFI=
 MINGW_LIBFFI_CFLAGS = -I/usr/local/lib/libffi-3.0.10/include
 MINGW_LIBFFI_LDFLAGS = -L/usr/local/lib/
+
+# Set DEBUG_SYMBOLS=1 to save debug symbols
+DEBUG_SYMBOLS=
+# Set DEBUG_ASSERTS=1 to turn on runtime asserts
+DEBUG_ASSERTS=
+# Set DEBUG_NO_OPT=1 to turn off optimization
+DEBUG_NO_OPT=
+# Set DEBUG_ALL=1 to turn all debug modes (symbols, asserts, optimizations off)
+# TODO
+DEBUG_ALL=
 
 MYCFLAGS=
 MYLDFLAGS=
@@ -108,7 +119,7 @@ mingw:
 #lisp_use_posix isn't used right now...
 posix:
 	$(MAKE) all \
-		"MYCFLAGS=-DKLISP_USE_POSIX -D_POSIX_SOURCE $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1)" \
+		"MYCFLAGS=-DKLISP_USE_POSIX -D_POSIX_SOURCE $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1 )" \
 		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi)"
 macosx:
 	$(MAKE) all \

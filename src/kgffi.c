@@ -459,7 +459,7 @@ static ffi_codec_t *tv2ffi_codec(klisp_State *K, TValue v)
     return NULL;
 }
 
-inline size_t align(size_t offset, size_t alignment)
+static inline size_t align(size_t offset, size_t alignment)
 {
     assert(alignment > 0);
     return offset + (alignment - offset % alignment) % alignment;

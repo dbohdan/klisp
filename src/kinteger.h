@@ -16,13 +16,13 @@
 #include "imath.h"
 
 /* Check to see if an int64_t fits in a int32_t */
-inline bool kfit_int32_t(int64_t n) {
+static inline bool kfit_int32_t(int64_t n) {
     return (n >= (int64_t) INT32_MIN && n <= (int64_t) INT32_MAX);
 }
 
 /* This tries to convert a bigint to a fixint */
 /* XXX this doesn't need K really */
-inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
+static inline TValue kbigint_try_fixint(klisp_State *K, TValue n)
 {
     UNUSED(K);
     Bigint *b = tv2bigint(n);

@@ -74,19 +74,19 @@ void enc_typep(klisp_State *K);
 bool kpositivep(TValue n);
 bool knegativep(TValue n);
 
-inline bool kfast_zerop(TValue n) 
+static inline bool kfast_zerop(TValue n) 
 { 
     return (ttisfixint(n) && ivalue(n) == 0) ||
         (ttisdouble(n) && dvalue(n) == 0.0); 
 }
 
-inline bool kfast_onep(TValue n) 
+static inline bool kfast_onep(TValue n) 
 { 
     return (ttisfixint(n) && ivalue(n) == 1) ||
         (ttisdouble(n) && dvalue(n) == 1.0); 
 }
 
-inline TValue kneg_inf(TValue i) 
+static inline TValue kneg_inf(TValue i) 
 { 
     if (ttiseinf(i))
         return tv_equal(i, KEPINF)? KEMINF : KEPINF; 
@@ -94,7 +94,7 @@ inline TValue kneg_inf(TValue i)
         return tv_equal(i, KIPINF)? KIMINF : KIPINF; 
 }
 
-inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2) 
+static inline bool knum_same_signp(klisp_State *K, TValue n1, TValue n2) 
 { 
     return kpositivep(n1) == kpositivep(n2); 
 }
@@ -434,12 +434,12 @@ TValue check_copy_guards(klisp_State *K, char *name, TValue obj);
 void guard_dynamic_extent(klisp_State *K);
 
 /* Some helpers for working with fixints (signed 32 bits) */
-inline int32_t kabs32(int32_t a) { return a < 0? -a : a; }
-inline int64_t kabs64(int64_t a) { return a < 0? -a : a; }
-inline int32_t kmin32(int32_t a, int32_t b) { return a < b? a : b; }
-inline int32_t kmax32(int32_t a, int32_t b) { return a > b? a : b; }
+static inline int32_t kabs32(int32_t a) { return a < 0? -a : a; }
+static inline int64_t kabs64(int64_t a) { return a < 0? -a : a; }
+static inline int32_t kmin32(int32_t a, int32_t b) { return a < b? a : b; }
+static inline int32_t kmax32(int32_t a, int32_t b) { return a > b? a : b; }
 
-inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i) 
+static inline int32_t kcheck32(klisp_State *K, char *msg, int64_t i) 
 {
     if (i > (int64_t) INT32_MAX || i < (int64_t) INT32_MIN) {
         klispE_throw_simple(K, msg);

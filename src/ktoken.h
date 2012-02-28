@@ -29,8 +29,8 @@ void clear_shared_dict(klisp_State *K);
 
 /* These are used in peek-char, peek-u8, read-char & read-u8 */
 int ktok_peekc_getc(klisp_State *K, bool peekp);
-inline int ktok_getc(klisp_State *K) { return ktok_peekc_getc(K, false); }
-inline int ktok_peekc(klisp_State *K) { return ktok_peekc_getc(K, true); }
+static inline int ktok_getc(klisp_State *K) { return ktok_peekc_getc(K, false); }
+static inline int ktok_peekc(klisp_State *K) { return ktok_peekc_getc(K, true); }
 
 /* needed by the repl */
 void ktok_ignore_whitespace(klisp_State *K);
@@ -65,14 +65,14 @@ extern kcharset ktok_subsequent, ktok_initial;
         kch_[KCHS_OCTANT(ch__)] & KCHS_BIT(ch__); })
 
 
-inline bool ktok_is_digit(char ch, int32_t radix)
+static inline bool ktok_is_digit(char ch, int32_t radix)
 {
     ch = tolower(ch);
     return (ktok_is_numeric(ch) && (ch - '0') < radix) ||
         (ktok_is_alphabetic(ch) && (10 + (ch - 'a')) < radix);
 }
 
-inline int32_t ktok_digit_value(char ch)
+static inline int32_t ktok_digit_value(char ch)
 {
     ch = tolower(ch);
     return (ch <= '9')? ch - '0' : 10 + (ch - 'a');

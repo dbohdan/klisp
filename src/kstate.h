@@ -200,14 +200,14 @@ struct klisp_State {
 void ks_sshrink(klisp_State *K, int32_t new_top);
 void ks_sgrow(klisp_State *K, int32_t new_top);
 
-inline void ks_spush(klisp_State *K, TValue obj);
-inline TValue ks_spop(klisp_State *K);
+static inline void ks_spush(klisp_State *K, TValue obj);
+static inline TValue ks_spop(klisp_State *K);
 /* this is for DISCARDING stack pop (value isn't used, avoid warning) */ 
 #define ks_sdpop(st_) (UNUSED(ks_spop(st_)))
-inline void ks_sdiscardn(klisp_State *K, int32_t n);
-inline TValue ks_sget(klisp_State *K);
-inline void ks_sclear(klisp_State *K);
-inline bool ks_sisempty(klisp_State *K);
+static inline void ks_sdiscardn(klisp_State *K, int32_t n);
+static inline TValue ks_sget(klisp_State *K);
+static inline void ks_sclear(klisp_State *K);
+static inline bool ks_sisempty(klisp_State *K);
 
 /* some stack manipulation macros */
 #define ks_ssize(st_) ((st_)->ssize)
@@ -215,7 +215,7 @@ inline bool ks_sisempty(klisp_State *K);
 #define ks_sbuf(st_) ((st_)->sbuf)
 #define ks_selem(st_, i_) ((ks_sbuf(st_))[i_])
 
-inline void ks_spush(klisp_State *K, TValue obj)
+static inline void ks_spush(klisp_State *K, TValue obj)
 {
     ks_selem(K, ks_stop(K)) = obj;
     ++ks_stop(K);
@@ -227,7 +227,7 @@ inline void ks_spush(klisp_State *K, TValue obj)
 }
 
 
-inline TValue ks_spop(klisp_State *K)
+static inline TValue ks_spop(klisp_State *K)
 {
     if (ks_ssize(K) != KS_ISSIZE && ks_stop(K)-1 < (ks_ssize(K) / 4))
         ks_sshrink(K, ks_stop(K)-1);
@@ -236,12 +236,12 @@ inline TValue ks_spop(klisp_State *K)
     return obj;
 }
 
-inline TValue ks_sget(klisp_State *K)
+static inline TValue ks_sget(klisp_State *K)
 {
     return ks_selem(K, ks_stop(K) - 1);
 }
 
-inline void ks_sdiscardn(klisp_State *K, int32_t n)
+static inline void ks_sdiscardn(klisp_State *K, int32_t n)
 {
     int32_t new_top = ks_stop(K) - n;
     ks_stop(K) = new_top;
@@ -250,14 +250,14 @@ inline void ks_sdiscardn(klisp_State *K, int32_t n)
     return;
 }
 
-inline void ks_sclear(klisp_State *K)
+static inline void ks_sclear(klisp_State *K)
 {
     if (ks_ssize(K) != KS_ISSIZE)
         ks_sshrink(K, 0);
     ks_stop(K) = 0;
 }
 
-inline bool ks_sisempty(klisp_State *K)
+static inline bool ks_sisempty(klisp_State *K)
 {
     return ks_stop(K) == 0;
 }
@@ -268,16 +268,16 @@ inline bool ks_sisempty(klisp_State *K)
 void ks_tbshrink(klisp_State *K, int32_t new_top);
 void ks_tbgrow(klisp_State *K, int32_t new_top);
 
-inline void ks_tbadd(klisp_State *K, char ch);
+static inline void ks_tbadd(klisp_State *K, char ch);
 #define ks_tbpush(K_, ch_) (ks_tbadd((K_), (ch_)))
-inline char ks_tbget(klisp_State *K);
-inline char ks_tbpop(klisp_State *K);
+static inline char ks_tbget(klisp_State *K);
+static inline char ks_tbpop(klisp_State *K);
 /* this is for DISCARDING stack pop (value isn't used, avoid warning) */ 
 #define ks_tbdpop(st_) (UNUSED(ks_tbpop(st_)))
 
-inline char *ks_tbget_buffer(klisp_State *K);
-inline void ks_tbclear(klisp_State *K);
-inline bool ks_tbisempty(klisp_State *K);
+static inline char *ks_tbget_buffer(klisp_State *K);
+static inline void ks_tbclear(klisp_State *K);
+static inline bool ks_tbisempty(klisp_State *K);
 
 /* some buf manipulation macros */
 #define ks_tbsize(st_) ((st_)->ktok_buffer_size)
@@ -285,7 +285,7 @@ inline bool ks_tbisempty(klisp_State *K);
 #define ks_tbuf(st_) ((st_)->ktok_buffer)
 #define ks_tbelem(st_, i_) ((ks_tbuf(st_))[i_])
 
-inline void ks_tbadd(klisp_State *K, char ch)
+static inline void ks_tbadd(klisp_State *K, char ch)
 {
     if (ks_tbidx(K) == ks_tbsize(K)) 
         ks_tbgrow(K, ks_tbidx(K)+1);
@@ -293,12 +293,12 @@ inline void ks_tbadd(klisp_State *K, char ch)
     ++ks_tbidx(K);
 }
 
-inline char ks_tbget(klisp_State *K)
+static inline char ks_tbget(klisp_State *K)
 {
     return ks_tbelem(K, ks_tbidx(K) - 1);
 }
 
-inline char ks_tbpop(klisp_State *K)
+static inline char ks_tbpop(klisp_State *K)
 {
     if (ks_tbsize(K) != KS_ITBSIZE && ks_tbidx(K)-1 < (ks_tbsize(K) / 4))
         ks_tbshrink(K, ks_tbidx(K)-1);
@@ -307,20 +307,20 @@ inline char ks_tbpop(klisp_State *K)
     return ch;
 }
 
-inline char *ks_tbget_buffer(klisp_State *K)
+static inline char *ks_tbget_buffer(klisp_State *K)
 {
     klisp_assert(ks_tbelem(K, ks_tbidx(K) - 1) == '\0');
     return ks_tbuf(K);
 }
 
-inline void ks_tbclear(klisp_State *K)
+static inline void ks_tbclear(klisp_State *K)
 {
     if (ks_tbsize(K) != KS_ITBSIZE)
         ks_tbshrink(K, 0);
     ks_tbidx(K) = 0;
 }
 
-inline bool ks_tbisempty(klisp_State *K)
+static inline bool ks_tbisempty(klisp_State *K)
 {
     return ks_tbidx(K) == 0;
 }
@@ -335,34 +335,34 @@ static inline void krooted_tvs_push(klisp_State *K, TValue tv)
     K->rooted_tvs_buf[K->rooted_tvs_top++] = tv;
 }
 
-inline void krooted_tvs_pop(klisp_State *K)
+static inline void krooted_tvs_pop(klisp_State *K)
 {
     klisp_assert(K->rooted_tvs_top > 0);
     --(K->rooted_tvs_top);
 }
 
-inline void krooted_tvs_clear(klisp_State *K) { K->rooted_tvs_top = 0; }
+static inline void krooted_tvs_clear(klisp_State *K) { K->rooted_tvs_top = 0; }
 
-inline void krooted_vars_push(klisp_State *K, TValue *v)
+static inline void krooted_vars_push(klisp_State *K, TValue *v)
 {
     klisp_assert(K->rooted_vars_top < GC_PROTECT_SIZE);
     K->rooted_vars_buf[K->rooted_vars_top++] = v;
 }
 
-inline void krooted_vars_pop(klisp_State *K)
+static inline void krooted_vars_pop(klisp_State *K)
 {
     klisp_assert(K->rooted_vars_top > 0);
     --(K->rooted_vars_top);
 }
 
-inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
+static inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; }
 
 /*
 ** Source code tracking
 ** MAYBE: add source code tracking to symbols
 */
 #if KTRACK_SI
-inline TValue kget_source_info(klisp_State *K, TValue obj)
+static inline TValue kget_source_info(klisp_State *K, TValue obj)
 {
     UNUSED(K);
     klisp_assert(khas_si(obj));
@@ -371,7 +371,7 @@ inline TValue kget_source_info(klisp_State *K, TValue obj)
     return gc2pair(si);
 }
 
-inline void kset_source_info(klisp_State *K, TValue obj, TValue si)
+static inline void kset_source_info(klisp_State *K, TValue obj, TValue si)
 {
     UNUSED(K);
     klisp_assert(kcan_have_si(obj));
@@ -385,13 +385,13 @@ inline void kset_source_info(klisp_State *K, TValue obj, TValue si)
     }
 }
 
-inline TValue ktry_get_si(klisp_State *K, TValue obj)
+static inline TValue ktry_get_si(klisp_State *K, TValue obj)
 {
     UNUSED(K);
     return (khas_si(obj))? gc2pair(gcvalue(obj)->gch.si) : KNIL;
 }
 
-inline TValue kget_csi(klisp_State *K)
+static inline TValue kget_csi(klisp_State *K)
 {
     return K->next_si;
 }
@@ -401,7 +401,7 @@ inline TValue kget_csi(klisp_State *K)
 ** Functions to manipulate the current continuation and calling 
 ** operatives
 */
-inline void klispS_apply_cc(klisp_State *K, TValue val)
+static inline void klispS_apply_cc(klisp_State *K, TValue val)
 {
     /* TODO write barriers */
 
@@ -423,21 +423,21 @@ inline void klispS_apply_cc(klisp_State *K, TValue val)
 
 #define kapply_cc(K_, val_) klispS_apply_cc((K_), (val_)); return
 
-inline TValue klispS_get_cc(klisp_State *K)
+static inline TValue klispS_get_cc(klisp_State *K)
 {
     return K->curr_cont;
 }
 
 #define kget_cc(K_) (klispS_get_cc(K_))
 
-inline void klispS_set_cc(klisp_State *K, TValue new_cont)
+static inline void klispS_set_cc(klisp_State *K, TValue new_cont)
 {
     K->curr_cont = new_cont;
 }
 
 #define kset_cc(K_, c_) (klispS_set_cc(K_, c_))
 
-inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
+static inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
                                 TValue env, TValue si)
 {
     /* TODO write barriers */

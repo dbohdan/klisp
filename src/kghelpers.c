@@ -1142,7 +1142,7 @@ TValue copy_es_immutable_h(klisp_State *K, TValue obj, bool mut_flag)
 ** The stack should contain only pairs, sym_ls should be
 ** as above 
 */    
-inline void ptree_clear_all(klisp_State *K, TValue sym_ls)
+static inline void ptree_clear_all(klisp_State *K, TValue sym_ls)
 {
     while(!ttisnil(sym_ls)) {
         TValue first = sym_ls;

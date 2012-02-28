@@ -4,4 +4,6 @@ syntax: glob
 *.a
 klisp
 TAGS
+.git
+
 

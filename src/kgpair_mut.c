@@ -227,7 +227,7 @@ void list_setB(klisp_State *K)
 }
 
 /* Helpers for append! */
-inline void appendB_clear_last_pairs(klisp_State *K, TValue ls)
+static inline void appendB_clear_last_pairs(klisp_State *K, TValue ls)
 {
     UNUSED(K);
     while(ttispair(ls) && kis_marked(ls)) {

@@ -14,11 +14,10 @@
 #include <limits.h>
 #include <stddef.h>
 
-/* this should be done outside of here, but for now */
+#ifdef KUSE_ASSERTS
 #include <assert.h>
-/* turn on assertions for internal checking */
 #define klisp_assert(c) (assert(c))
-
+#endif
 #include "klisp.h"
 
 /* internal assertions for in-house debugging */
@@ -28,7 +27,7 @@
 
 #else
 
-#define klisp_assert(c)		((void)0)
+#define klisp_assert(c)		((void)(c))
 #define check_exp(c,e)		(e)
 
 #endif

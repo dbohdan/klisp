@@ -23,6 +23,6 @@ TValue kwrap(klisp_State *K, TValue underlying);
         krooted_tvs_pop(K__);                           \
         (app); })
 
-inline TValue kunwrap(TValue app) { return (tv2app(app)->underlying); }
+static inline TValue kunwrap(TValue app) { return (tv2app(app)->underlying); }
 
 #endif

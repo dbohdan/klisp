@@ -49,7 +49,7 @@
 /* MAYBE: change to return -1, 0, 1 to indicate which type is bigger, and
    return min & max in two extra pointers passed in. Change name to
    classify_types */
-inline int32_t max_ttype(TValue obj1, TValue obj2)
+static inline int32_t max_ttype(TValue obj1, TValue obj2)
 {
     int32_t t1 = ttype(obj1);
     int32_t t2 = ttype(obj2);
@@ -57,7 +57,7 @@ inline int32_t max_ttype(TValue obj1, TValue obj2)
     return (t1 > t2? t1 : t2);
 }
 
-inline int32_t min_ttype(TValue obj1, TValue obj2)
+static inline int32_t min_ttype(TValue obj1, TValue obj2)
 {
     int32_t t1 = ttype(obj1);
     int32_t t2 = ttype(obj2);
@@ -2374,7 +2374,7 @@ void number_to_string(klisp_State *K)
         break;
     default:
         /* shouldn't happen */
-        klisp_assert(0);
+        abort();
     }
 
     TValue str = kstring_new_b(K, buf);

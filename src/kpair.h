@@ -61,13 +61,13 @@ static inline TValue kcdr(TValue p)
 #define kcdddar(p_) (kcdr(kcdr(kcdr(kcar(p_)))))
 #define kcddddr(p_) (kcdr(kcdr(kcdr(kcdr(p_)))))
 
-inline void kset_car(TValue p, TValue v)
+static inline void kset_car(TValue p, TValue v)
 {
     klisp_assert(kmutable_pairp(p));
     tv2pair(p)->car = v;
 }
 
-inline void kset_cdr(TValue p, TValue v)
+static inline void kset_cdr(TValue p, TValue v)
 {
     klisp_assert(kmutable_pairp(p));
     tv2pair(p)->cdr = v;
@@ -75,7 +75,7 @@ inline void kset_cdr(TValue p, TValue v)
 
 /* These two are the same but can write immutable pairs,
    use with care */
-inline void kset_car_unsafe(klisp_State *K, TValue p, TValue v)
+static inline void kset_car_unsafe(klisp_State *K, TValue p, TValue v)
 {
     klisp_assert(kpairp(p));
     UNUSED(K);
@@ -83,7 +83,7 @@ inline void kset_car_unsafe(klisp_State *K, TValue p, TValue v)
     tv2pair(p)->car = v;
 }
 
-inline void kset_cdr_unsafe(klisp_State *K, TValue p, TValue v)
+static inline void kset_cdr_unsafe(klisp_State *K, TValue p, TValue v)
 {
     klisp_assert(kpairp(p));
     UNUSED(K);

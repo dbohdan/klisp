@@ -1,5 +1,4 @@
 * Release 0.3
-** Documentation:
 ** Test
 *** Windows
     - build
@@ -13,8 +12,6 @@
 ** Fix
 *** Windows
  - delete-file problem in Windows (do GC and retry)
-** Makefile
-  - Add a couple of flags to turn debug on/off
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter
