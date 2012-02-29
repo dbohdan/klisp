@@ -12,7 +12,10 @@ CFLAGS=$(if $(DEBUG_NO_OPT),-O0,-O2) $(if $(DEBUG_SYMBOLS),-g) -std=gnu99 -Wall 
 $(if $(DEBUG_ASSERTS),-DKUSE_ASSERTS=1 )-m32 $(MYCFLAGS)
 AR= ar rcu
 RANLIB= ranlib
+
+# Use "RM= del /q /f" if you want to compile with MinGW without using MSYS
 RM= rm -f
+
 LIBS=-lm $(MYLIBS)
 
 # Set USE_LIBFFI=1 (or other nonempty string) to enable libffi-dependent
@@ -81,7 +84,7 @@ $(KRN_T): $(KRN_O) $(KRN_A)
 	$(CC) -o $@ $(MYLDFLAGS) $(KRN_O) $(KRN_A) $(LIBS)
 
 clean:
-	$(RM) $(ALL_T) $(ALL_O) kgffi.o TAGS
+	$(RM) $(ALL_T) $(ALL_O) kgffi.o klisp01.dll klisp.exe TAGS
 
 # XXX this fails if USE_LIBFFI is not defined
 depend:
