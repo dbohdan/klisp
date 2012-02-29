@@ -17,6 +17,7 @@
 #include "kerror.h"
 #include "ksystem.h"
 #include "kinteger.h"
+#include "kgc.h"
 
 #include "kghelpers.h"
 #include "kgsystem.h"
@@ -102,15 +103,17 @@ void delete_file(klisp_State *K)
 
     /* TEMP: this should probably be done in a operating system specific
        manner, but this will do for now */
-    /* XXX: this could fail if there's a dead (in the gc sense) port still 
-       open, should probably retry once after doing a complete GC */
     if (remove(kstring_buf(filename))) {
-        klispE_throw_errno_with_irritants(K, "remove", 1, filename);
-        return;
-    } else {
-        kapply_cc(K, KINERT);
-        return;
+        /* At least in Windows, this could have failed if there's a dead
+           (in the gc sense) port still open, should retry once after 
+           doing a complete GC. This isn't ideal but... */
+        klispC_fullgc(K);
+        if (remove(kstring_buf(filename))) {
+            klispE_throw_errno_with_irritants(K, "remove", 1, filename);
+            return;
+        }
     }
+    kapply_cc(K, KINERT);
 }
 
 /* 15.1.? rename-file */
