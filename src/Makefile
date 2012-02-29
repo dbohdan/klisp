@@ -7,7 +7,6 @@
 PLAT= none
 
 CC=gcc
-# TEMP for now put in debug symbols
 # TEMP for now only 32 bit binaries (see kobject.h)
 CFLAGS=$(if $(DEBUG_NO_OPT),-O0,-O2) $(if $(DEBUG_SYMBOLS),-g) -std=gnu99 -Wall \
 $(if $(DEBUG_ASSERTS),-DKUSE_ASSERTS=1 )-m32 $(MYCFLAGS)
@@ -131,7 +130,9 @@ macosx:
 tags:
 	rm -f TAGS; etags --declarations -o TAGS *.[ch]
 # list targets that do not create files (but not all makes understand .PHONY)
-.PHONY: all default o clean
+.PHONY: all $(PLATS) default o a clean depend echo none
+
+# DO NOT DELETE 
 
 kapplicative.o: kapplicative.c kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kapplicative.h koperative.h kgc.h
@@ -336,3 +337,5 @@ imath.o: imath.c imath.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kerror.h kpair.h kgc.h
 imrat.o: imrat.c imrat.h imath.h kobject.h klimits.h klisp.h klispconf.h \
  kstate.h ktoken.h kmem.h kerror.h kpair.h kgc.h
+
+# (end of Makefile)
