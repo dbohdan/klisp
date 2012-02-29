@@ -1,13 +1,8 @@
 * Release 0.3
 ** Test
-*** Windows
-    - build (clean)
 *** MacOS
     - build
     - test cases
-** Makefile
-*** Windows
-    - problem with clean
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter
