@@ -1,17 +1,13 @@
 * Release 0.3
 ** Test
 *** Windows
-    - build
-    - test cases
-*** Linux
-    - build
-    - test cases
+    - build (clean)
 *** MacOS
     - build
     - test cases
-** Fix
+** Makefile
 *** Windows
- - delete-file problem in Windows (do GC and retry)
+    - problem with clean
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter

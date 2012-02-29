@@ -356,6 +356,7 @@ void for_each(klisp_State *K)
     map_for_each_get_metrics(K, lss, &app_apairs, &app_cpairs,
                              &res_apairs, &res_cpairs);
     app_pairs = app_apairs + app_cpairs;
+    UNUSED(app_pairs);
     res_pairs = res_apairs + res_cpairs;
 
     /* create the list of parameters to app */

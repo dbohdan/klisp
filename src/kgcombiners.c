@@ -404,6 +404,8 @@ void map(klisp_State *K)
                              &res_apairs, &res_cpairs);
     app_pairs = app_apairs + app_cpairs;
     res_pairs = res_apairs + res_cpairs;
+    UNUSED(app_pairs);
+    UNUSED(res_pairs);
 
     /* create the list of parameters to app */
     lss = map_for_each_transpose(K, lss, app_apairs, app_cpairs, 

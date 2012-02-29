@@ -382,6 +382,8 @@ int32_t simple_fixup(klisp_State *K, Bigint *f, Bigint *p, Bigint *r,
     mp_int_clear(K, tmp);
     mp_int_clear(K, tmp2);
     mp_int_clear(K, one);
+
+    UNUSED(res);
     return k;
 }
 
