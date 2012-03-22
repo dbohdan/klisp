@@ -10,6 +10,7 @@ CC=gcc
 # TEMP for now only 32 bit binaries (see kobject.h)
 CFLAGS=$(if $(DEBUG_NO_OPT),-O0,-O2) $(if $(DEBUG_SYMBOLS),-g) -std=gnu99 -Wall \
 $(if $(DEBUG_ASSERTS),-DKUSE_ASSERTS=1 )-m32 $(MYCFLAGS)
+LDFLAGS=-m32 $(MYLDFLAGS)
 AR= ar rcu
 RANLIB= ranlib
 
@@ -81,7 +82,7 @@ $(KRN_A): $(CORE_O) $(LIB_O)
 	$(RANLIB) $@
 
 $(KRN_T): $(KRN_O) $(KRN_A)
-	$(CC) -o $@ $(MYLDFLAGS) $(KRN_O) $(KRN_A) $(LIBS)
+	$(CC) -o $@ $(LDFLAGS) $(KRN_O) $(KRN_A) $(LIBS)
 
 clean:
 	$(RM) $(ALL_T) $(ALL_O) kgffi.o klisp01.dll klisp.exe TAGS
@@ -94,6 +95,7 @@ echo:
 	@echo "PLAT = $(PLAT)"
 	@echo "CC = $(CC)"
 	@echo "CFLAGS = $(CFLAGS)"
+	@echo "LDFLAGS = $(LDFLAGS)"
 	@echo "AR = $(AR)"
 	@echo "RANLIB = $(RANLIB)"
 	@echo "RM = $(RM)"
@@ -127,7 +129,8 @@ macosx:
 	$(MAKE) all \
 		"MYCFLAGS=-DKLISP_USE_POSIX -D_POSIX_SOURCE $(if $(USE_LIBFFI),-DKUSE_LIBFFI=1) " \
 		"-arch i386" \
-		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi) -arch i386"
+		"MYLIBS=$(if $(USE_LIBFFI), -rdynamic -ldl -lffi)" \
+		"MYLDFLAGS=-arch i386"
 
 # for use in emacs
 tags:
