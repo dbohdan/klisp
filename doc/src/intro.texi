@@ -12,7 +12,7 @@ under the MIT license.
 
 @itemize @bullet
 @item 
-klisp Parts: Copyright @copyright{} 2011 Andres Navarro, Oto Havle.
+klisp Parts: Copyright @copyright{} 2011-2012 Andres Navarro, Oto Havle.
 @item 
 Lua Parts: Copyright @copyright{} 1994-2010 Lua.org, PUC-Rio.
 @item 
@@ -86,14 +86,14 @@ undergraduate at Buenos Aires University (UBA).  You can reach him at
 done by Oto Havle, his fork is at 
 @url{https://bitbucket.org/havleoto/klisp}.
 
-  This manual describes klisp version 0.2, presuming some familiarity
+  This manual describes klisp version 0.3, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel 
 Programming Language in particular.  There are frequent references to
 the Kernel Programming Language Report.  Unlike in the report, no
 rationale is provided for any feature, only a description of the
 implemented functionality. 
 
-  This is edition 0.2.
+  This is edition 0.3.
 
 @menu
 * Caveats::                Flaws and a request for help.

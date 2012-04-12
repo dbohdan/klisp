@@ -1,4 +1,4 @@
-README for klisp 0.2
+README for klisp 0.3
 
 * What is klisp?
   --------------
@@ -9,12 +9,14 @@ README for klisp 0.2
   the MIT license. It draws heavily from the Lua interpreter source
   code & file structure. It uses the IMath library for arbitrary sized
   integers and rationals. You can check the webpage at http://klisp.org
+  and the discussion group at http://groups.google.com/group/klisp
 
 * What is the Kernel Programming Language?
-  ----------------------------------------
-  Kernel is a conservative, Scheme-like dialect of Lisp in which
-  everything is a first-class object. It was created by John N. Shutt.
-  You can read all about it at
+  ---------------------------------------- 
+  Kernel is a Scheme-like dialect of Lisp in which everything is a
+  first-class object. It features first class environments and
+  statically scoped fexprs (called operatives). It was created by 
+  John N. Shutt.  You can read all about it at
   http://web.cs.wpi.edu/~jshutt/kernel.html
 
 * Availability
@@ -30,7 +32,7 @@ README for klisp 0.2
   and alignment. It was developed and tested in x86 under Linux. It
   should compile fine under other Operating Systems using gcc
   (MinGW in Windows also works). As time goes by, platform specific
-  code will have to be added (i.e. for char-ready?). Effort will be
+  code will have to be added (e.g. for char-ready?). Effort will be
   directed to minimize the ammount of platform specific code, and 
   testing will be conducted at least on Linux and Windows (the systems
   I have access to at the moment).

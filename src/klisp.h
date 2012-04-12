@@ -16,10 +16,10 @@
 ** SOURCE NOTE: This is mostly from Lua.
 */
 
-#define KLISP_VERSION	"klisp 0.2"
-#define KLISP_RELEASE	"klisp 0.2"
-#define KLISP_VERSION_NUM	02
-#define KLISP_COPYRIGHT	"Copyright (C) 2011 Andres Navarro, Oto Havle"
+#define KLISP_VERSION	"klisp 0.3"
+#define KLISP_RELEASE	"klisp 0.3"
+#define KLISP_VERSION_NUM	3
+#define KLISP_COPYRIGHT	"Copyright (C) 2011-2012 Andres Navarro, Oto Havle"
 #define KLISP_AUTHORS 	"Andres Navarro, Oto Havle"
 
 typedef struct klisp_State klisp_State;
@@ -44,7 +44,7 @@ klisp_State *klisp_newstate (klisp_Alloc f, void *ud);
 void klisp_close (klisp_State *K);
 
 /******************************************************************************
- * Copyright (C) 2011 Andres Navarro, Oto Havle.
+ * Copyright (C) 2011-2012 Andres Navarro, Oto Havle.
  * Lua parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
  * IMath Parts: Copyright (C) 2002-2007 Michael J. Fromberger.
  * srfi-78: Copyright (C) 2005-2006 Sebastian Egner.

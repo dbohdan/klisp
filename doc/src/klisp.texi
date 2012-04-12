@@ -19,10 +19,10 @@ This file documents klisp.
 
 @c The edition number appears in several places in this file
 @c and also in the file intro.texi.
-This is edition 0.2 of the klisp Reference Manual,  
-for klisp version 0.2.
+This is edition 0.3 of the klisp Reference Manual,  
+for klisp version 0.3.
 
-Copyright (C) 2011 Andres Navarro
+Copyright (C) 2011-2012 Andres Navarro
 
 Permission is granted to copy and distribute this manual, in whole or
 in part, without fee.  Please note that most text of this
@@ -40,20 +40,20 @@ permission is granted to copy it in whole or in part without fee.
 
 @titlepage
 @title klisp Reference Manual
-@subtitle klisp version 0.2
+@subtitle klisp version 0.3
 @c The edition number appears in several places in this file
 @c and also in the file intro.texi.
-@subtitle Edition 0.2, October 2011
+@subtitle Edition 0.3, April 2012
 
 @author by Andres Navarro
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2011 Andres Navarro
+Copyright @copyright{} 2011-2012 Andres Navarro
 
 @sp 2
-This is edition 0.2 of the @cite{klisp Reference Manual},
-for klisp Version 0.2,@*
-May 2011.@*
+This is edition 0.3 of the @cite{klisp Reference Manual},
+for klisp Version 0.3,@*
+April 2012.@*
 
 @sp 2
 
@@ -73,10 +73,10 @@ permission is granted to copy it in whole or in part without fee.
 @node Top, License, (dir), (dir)
 
 @ifinfo
-This Info file contains edition 0.2 of the klisp Reference Manual,
-corresponding to klisp version 0.2.
+This Info file contains edition 0.3 of the klisp Reference Manual,
+corresponding to klisp version 0.3.
 
-Copyright @copyright{} 2011 Andres Navarro
+Copyright @copyright{} 2011-2012 Andres Navarro
 
 Permission is granted to copy and distribute this manual, in whole or
 in part, without fee.  Please note that most text of this

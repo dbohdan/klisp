@@ -3,10 +3,10 @@ klisp.texi.
 
 This file documents klisp.
 
-   This is edition 0.2 of the klisp Reference Manual, for klisp version
-0.2.
+   This is edition 0.3 of the klisp Reference Manual, for klisp version
+0.3.
 
-   Copyright (C) 2011 Andres Navarro
+   Copyright (C) 2011-2012 Andres Navarro
 
    Permission is granted to copy and distribute this manual, in whole or
 in part, without fee.  Please note that most text of this manual is
@@ -21,10 +21,10 @@ the header "Permission to copy this report", that reads:
 
 File: klisp.info,  Node: Top,  Next: License,  Prev: (dir),  Up: (dir)
 
-   This Info file contains edition 0.2 of the klisp Reference Manual,
-corresponding to klisp version 0.2.
+   This Info file contains edition 0.3 of the klisp Reference Manual,
+corresponding to klisp version 0.3.
 
-   Copyright (C) 2011 Andres Navarro
+   Copyright (C) 2011-2012 Andres Navarro
 
    Permission is granted to copy and distribute this manual, in whole or
 in part, without fee.  Please note that most text of this manual is
@@ -73,7 +73,7 @@ academic and commercial purposes at absolutely no cost.  The two
 projects whose code klisp uses, Lua & IMath, are also distributed under
 the MIT license.
 
-   * klisp Parts: Copyright (C) 2011 Andres Navarro, Oto Havle.
+   * klisp Parts: Copyright (C) 2011-2012 Andres Navarro, Oto Havle.
 
    * Lua Parts: Copyright (C) 1994-2010 Lua.org, PUC-Rio.
 
@@ -149,14 +149,14 @@ undergraduate at Buenos Aires University (UBA).  You can reach him at
 <canavarro82@gmail.com>. Significant contributions are being done by
 Oto Havle, his fork is at `https://bitbucket.org/havleoto/klisp'.
 
-   This manual describes klisp version 0.2, presuming some familiarity
+   This manual describes klisp version 0.3, presuming some familiarity
 with the Lisp family of languages in general, and with the Kernel
 Programming Language in particular.  There are frequent references to
 the Kernel Programming Language Report.  Unlike in the report, no
 rationale is provided for any feature, only a description of the
 implemented functionality.
 
-   This is edition 0.2.
+   This is edition 0.3.
 
 * Menu:
 
@@ -4016,42 +4016,42 @@ Index
 
 
 Tag Table:
-Node: Top703
-Node: License2932
-Node: Introduction4614
-Node: Caveats7547
-Node: Kernel History8333
-Node: Conventions9778
-Node: Some Terms10449
-Node: Evaluation Notation11120
-Node: Printing Notation12141
-Node: Error Messages12617
-Node: Format of Descriptions13265
-Node: A Sample Applicative Description13829
-Node: Acknowledgements15592
-Node: Interpreter15978
-Ref: Command Line Options18278
-Ref: Interpreter Exit Status19212
-Node: Booleans20440
-Node: Equivalence23117
-Node: Symbols23910
-Node: Control25540
-Node: Pairs and lists29631
-Node: Environments48511
-Node: Combiners59184
-Node: Continuations65838
-Node: Encapsulations74381
-Node: Promises75834
-Node: Keyed Variables79989
-Node: Numbers82760
-Node: Strings105214
-Node: Characters112487
-Node: Ports117133
-Node: Vectors140832
-Node: Bytevectors146586
-Node: Errors152405
-Node: Libraries154420
-Node: System163180
-Node: Alphabetical Index166678
+Node: Top708
+Node: License2942
+Node: Introduction4629
+Node: Caveats7562
+Node: Kernel History8348
+Node: Conventions9793
+Node: Some Terms10464
+Node: Evaluation Notation11135
+Node: Printing Notation12156
+Node: Error Messages12632
+Node: Format of Descriptions13280
+Node: A Sample Applicative Description13844
+Node: Acknowledgements15607
+Node: Interpreter15993
+Ref: Command Line Options18293
+Ref: Interpreter Exit Status19227
+Node: Booleans20455
+Node: Equivalence23132
+Node: Symbols23925
+Node: Control25555
+Node: Pairs and lists29646
+Node: Environments48526
+Node: Combiners59199
+Node: Continuations65853
+Node: Encapsulations74396
+Node: Promises75849
+Node: Keyed Variables80004
+Node: Numbers82775
+Node: Strings105229
+Node: Characters112502
+Node: Ports117148
+Node: Vectors140847
+Node: Bytevectors146601
+Node: Errors152420
+Node: Libraries154435
+Node: System163195
+Node: Alphabetical Index166693
 
 End Tag Table
