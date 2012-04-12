@@ -121,7 +121,7 @@ registered.  @code{exports} should be a list of @code{(#:export
 
 A lone symbol has the same semantics as the pair with that symbol in
 both internal and external positions.  No symbol can appear more than once as external.
-@code{body} should be an acyclic list of expressions.  @code{exports}
+@code{body} should be an acyclic list of expressions.  @code{imports}
 should be a list like @code{(<import-spec> ...)} where
 @code{<import-spec>} is either
 @itemize @bullet

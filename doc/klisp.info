@@ -3438,7 +3438,7 @@ things (first class status, exposing of the library register, etc).
      A lone symbol has the same semantics as the pair with that symbol
      in both internal and external positions.  No symbol can appear
      more than once as external.  `body' should be an acyclic list of
-     expressions.  `exports' should be a list like `(<import-spec>
+     expressions.  `imports' should be a list like `(<import-spec>
      ...)' where `<import-spec>' is either
         * `<name>'
 

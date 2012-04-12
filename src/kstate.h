@@ -21,12 +21,6 @@
 #include "ktoken.h"
 #include "kmem.h"
 
-/*
-** prototype for underlying c functions of continuations &
-** operatives
-*/
-typedef void (*klisp_CFunction) (klisp_State *K);
-
 /* XXX: for now, lines and column names are fixints */
 /* MAYBE: this should be in tokenizer */
 typedef struct {

@@ -42,6 +42,13 @@
 typedef union GCObject GCObject;
 
 /*
+** prototype for underlying c functions of continuations &
+** operatives
+*/
+struct klisp_State; /* later defined in kstate.h */
+typedef void (*klisp_CFunction) (struct klisp_State *K);
+
+/*
 ** Common Header for all collectible objects (in macro form, to be
 ** included in other objects)
 */
@@ -429,14 +436,14 @@ typedef struct __attribute__ ((__packed__)) {
     TValue mark; /* for guarding continuation */
     TValue parent; /* may be () for root continuation */
     TValue comb; /* combiner that created the cont (or #inert) */
-    void *fn; /* the function that does the work */
+    klisp_CFunction fn; /* the function that does the work */
     int32_t extra_size;
     TValue extra[];
 } Continuation;
 
 typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
-    void *fn; /* the function that does the work */
+    klisp_CFunction fn; /* the function that does the work */
     int32_t extra_size;
     TValue extra[];
 } Operative;
