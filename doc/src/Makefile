@@ -26,7 +26,8 @@ info: $(srcs)
 	makeinfo -o ../klisp.info klisp.texi
 
 html: $(srcs)
-	makeinfo --html -o ../html klisp.texi
+	makeinfo --html --css-ref=css/style.css -o ../html klisp.texi
+	cp -r -f ./css ../html/
 
 clean:
 	rm -r -f ../klisp.info ../html
