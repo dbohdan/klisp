@@ -37,4 +37,7 @@ void klispH_free (klisp_State *K, Table *t);
 int32_t klispH_next (klisp_State *K, Table *t, TValue *key, TValue *data);
 int32_t klispH_getn (Table *t);
 
+int32_t klispH_numuse(Table *t);
+bool ktablep(TValue obj);
+
 #endif

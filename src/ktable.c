@@ -641,3 +641,24 @@ int32_t klispH_getn (Table *t) {
         return j;  /* that is easy... */
     else return unbound_search(t, j);
 }
+
+/* Return number of used elements in the hashtable. Code copied
+ * from rehash(). */
+
+int32_t klispH_numuse(Table *t)
+{
+    int32_t nasize;
+    int32_t nums[MAXBITS+1];  /* nums[i] = number of keys between 2^(i-1) and 2^i */
+    int32_t i;
+    int32_t totaluse;
+    for (i=0; i<=MAXBITS; i++) nums[i] = 0;  /* reset counts */
+    nasize = numusearray(t, nums);  /* count keys in array part */
+    totaluse = nasize;  /* all those keys are integer keys */
+    totaluse += numusehash(t, nums, &nasize);  /* count keys in hash part */
+    return totaluse;
+}
+
+bool ktablep(TValue obj)
+{
+    return ttistable(obj);
+}
