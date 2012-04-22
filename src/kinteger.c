@@ -42,8 +42,10 @@ TValue kbigint_new(klisp_State *K, bool sign, uint32_t digit)
 TValue kbigint_copy(klisp_State *K, TValue src)
 {
     TValue copy = kbigint_make_simple(K);
+    krooted_tvs_push(K, copy);
     /* arguments are in reverse order with respect to mp_int_copy */
     UNUSED(mp_int_init_copy(K, tv2bigint(copy), tv2bigint(src)));
+    krooted_tvs_pop(K);
     return copy;
 }
 
