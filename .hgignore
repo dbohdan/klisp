@@ -5,5 +5,7 @@ syntax: glob
 klisp
 TAGS
 .git
+*.db
+*.so
 
 
