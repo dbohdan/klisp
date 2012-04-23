@@ -702,6 +702,15 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 #endif
         kw_printf(K, "]");
         break;
+    case K_TTABLE:
+        kw_printf(K, "#[hash-table");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
     case K_TLIBRARY:
         kw_printf(K, "#[library");
 #if KTRACK_NAMES

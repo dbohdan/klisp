@@ -26,6 +26,7 @@
 (load "tests/error.k")
 (load "tests/bytevectors.k")
 (load "tests/vectors.k")
+(load "tests/tables.k")
 (load "tests/system.k")
 (load "tests/keywords.k")
 (load "tests/libraries.k")
