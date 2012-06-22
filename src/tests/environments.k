@@ -60,6 +60,52 @@
 ($let ((env ($bindings->environment (+ *))))
   ($check equal? (eval ($quote (+ 1 1)) env) 1))
 
+; eval semantics in the presence of continuation capturing and 
+; mutation
+
+; This check will try to mutate the list argument to eval
+; during the evaluation of the list to see if eval makes a 
+; copy of the list previous to start evaluating (this test
+; contemplates the two more usual cases of left-to-right and
+; right-to-left list evaluation)
+($check equal?
+  ($let* ((ls (list list 1 #ignore 3))
+          (mut-ls! ($lambda ()
+                     (set-car! (cdr ls) -1)
+                     (set-car! (cdddr ls) -3)
+                     2)))
+    (set-car! (cddr ls) (list mut-ls!))
+    (eval ls (get-current-environment)))
+  (list 1 2 3))
+
+; This check will capture the continuation in the middle of list
+; evaluation to see whether restarting the continuation later
+; works as expected
+($check equal?
+  ($let* ((cc ($lambda () ($let/cc cont cont)))
+          (ls (list list 1 (list cc) 3))
+          (res (eval ls (get-current-environment)))
+          (cont (cddr res)))
+    (set-car! res -1)
+    (set-car! (cddr res) -3)
+    (apply-continuation cont 2))
+  (list 1 2 3))
+
+; This check is a combination of the last two.
+; It will capture the continuation in the middle of list
+; evaluation and later mutate the result list to see whether restarting 
+; the continuation later works as expected
+($check equal?
+  ($let* ((cc ($lambda () ($let/cc cont cont)))
+          (ls (list list 1 (list cc) 3))
+          (cont (cadr (eval ls (get-current-environment)))))
+    (apply-continuation cont 2))
+  (list 1 2 3))
+
+;; TODO add checks to also test what happens when cyclic lists are
+;; mixed with continuation capturing and mutation
+
+
 ;; 4.8.4 make-environment
 
 ($check-predicate (applicative? make-environment))

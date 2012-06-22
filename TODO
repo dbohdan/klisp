@@ -25,6 +25,8 @@
 *** add static qualifiers (especially in all kg*.c files)
 *** add const qualifiers where sensible
 ** fix:
+- fix semantics of map, for-each, etc in the presence of continuation
+  capture and mutation of the underlying lists.  
 - fix char-ready? and u8-ready? (r7rs)
     - Probably need a thread per port
 ** reader/writer
