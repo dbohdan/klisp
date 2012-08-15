@@ -69,27 +69,30 @@
 ; contemplates the two more usual cases of left-to-right and
 ; right-to-left list evaluation)
 ($check equal?
-  ($let* ((ls (list list 1 #ignore 3))
-          (mut-ls! ($lambda ()
-                     (set-car! (cdr ls) -1)
-                     (set-car! (cdddr ls) -3)
+   ($let* ((ls (list list (list list 1) #ignore (list list 3)))
+           (mut-ls! ($lambda ()
+                     (set-car! (cdr ls) (list -1))
+                     (set-car! (cdddr ls) (list -3))
                      2)))
     (set-car! (cddr ls) (list mut-ls!))
     (eval ls (get-current-environment)))
-  (list 1 2 3))
+  (list (list 1) 2 (list 3)))
 
 ; This check will capture the continuation in the middle of list
 ; evaluation to see whether restarting the continuation later
 ; works as expected
 ($check equal?
   ($let* ((cc ($lambda () ($let/cc cont cont)))
-          (ls (list list 1 (list cc) 3))
+          (ls (list list (list list 1) (list cc) (list list 3)))
           (res (eval ls (get-current-environment)))
-          (cont (cddr res)))
-    (set-car! res -1)
-    (set-car! (cddr res) -3)
-    (apply-continuation cont 2))
-  (list 1 2 3))
+          (cont (cadr res)))
+    ;; in the first pass cont has the continuation
+    ;; in the second pass it has the 2 passed in 
+    ;; apply-continuation
+    ($if (continuation? cont)
+         (apply-continuation cont 2)
+         res))
+  (list (list 1) 2 (list 3)))
 
 ; This check is a combination of the last two.
 ; It will capture the continuation in the middle of list
@@ -98,9 +101,18 @@
 ($check equal?
   ($let* ((cc ($lambda () ($let/cc cont cont)))
           (ls (list list 1 (list cc) 3))
-          (cont (cadr (eval ls (get-current-environment)))))
-    (apply-continuation cont 2))
+          (res (eval ls (get-current-environment)))
+          (cont (cadr res)))
+    ;; in the first pass cont has the continuation
+    ;; in the second pass it has the 2 passed in 
+    ;; apply-continuation
+    ($if (continuation? cont)
+         ($sequence (set-car! res -1)
+                    (set-car! (cddr res) -3)
+                    (apply-continuation cont 2))
+         res))
   (list 1 2 3))
+
 
 ;; TODO add checks to also test what happens when cyclic lists are
 ;; mixed with continuation capturing and mutation
