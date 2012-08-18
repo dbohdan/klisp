@@ -235,6 +235,9 @@
                 (list 1 2 3))
         ())
 
+;; filter + continuation capturing and mutation
+;; TODO
+
 ;; assoc
 ($check equal? (assoc #inert ()) ())
 ($check equal? (assoc 3 (list (list 1 10) (list 2 20))) ())

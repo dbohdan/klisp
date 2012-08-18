@@ -510,6 +510,41 @@ TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy,
     }
 }
 
+/* GC: assumes ls is rooted */
+TValue reverse_copy_and_encycle(klisp_State *K, TValue ls, int32_t pairs, 
+				int32_t cpairs)
+{
+    if (pairs == 0)
+        return KNIL;
+    
+    int32_t apairs = pairs - cpairs;
+    TValue last = kcons(K, kcar(ls), KNIL);
+    ls = kcdr(ls);
+    krooted_vars_push(K, &last);
+
+    if (cpairs > 0) {
+        --cpairs;
+	TValue last_cycle = last;
+	while (cpairs > 0) {
+	    last = kcons(K, kcar(ls), last);
+	    ls = kcdr(ls);
+	    --cpairs;
+	}
+	kset_cdr(last_cycle, last);
+    } else {
+        --apairs;
+    }
+    
+    while (apairs > 0) {
+	last = kcons(K, kcar(ls), last);
+	ls = kcdr(ls);
+	--apairs;
+    }
+
+    krooted_vars_pop(K);
+    return last;
+}
+
 TValue check_copy_env_list(klisp_State *K, TValue obj)
 {
     TValue copy = kcons(K, KNIL, KNIL);

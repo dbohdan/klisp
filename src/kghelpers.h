@@ -350,7 +350,6 @@ void check_typed_list(klisp_State *K, bool (*typep)(TValue), bool allow_infp,
                       TValue obj, int32_t *pairs, int32_t *cpairs);
 
 /* check that obj is a list, returns the number of pairs */
-/* TODO change the return to void and add int32_t pairs obj */
 void check_list(klisp_State *K, bool allow_infp, TValue obj, 
                 int32_t *pairs, int32_t *cpairs);
 
@@ -361,6 +360,11 @@ void check_list(klisp_State *K, bool allow_infp, TValue obj,
 /* GC: assumes obj is rooted */
 TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy, 
                        int32_t *pairs, int32_t *cpairs);
+
+/* Reverse the ls list and encycle the result if needed */
+/* GC: assumes ls is rooted */
+TValue reverse_copy_and_encycle(klisp_State *K, TValue ls, int32_t pairs, 
+				int32_t cpairs);
 
 /* check that obj is a list of environments and make a copy but don't keep 
    the cycles */
