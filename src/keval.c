@@ -20,61 +20,9 @@ void do_eval_ls(klisp_State *K);
 void do_combine_operator(klisp_State *K);
 void do_combine_operands(klisp_State *K);
 
-
 /*
 ** Eval helpers 
 */
-
-TValue copy_and_encycle(klisp_State *K, TValue ls, 
-                        int32_t apairs, int32_t cpairs)
-{
-    /* apairs + cpairs > 0 */
-    TValue first = kcons(K, kcar(ls), KNIL);
-    TValue last = first;
-    krooted_tvs_push(K, first);
-    ls = kcdr(ls);
-    bool has_apairs = apairs > 0;
-
-    if (has_apairs) {
-        --apairs;
-        while (apairs > 0) {
-            TValue np = kcons(K, kcar(ls), KNIL);
-            kset_cdr(last, np);
-            last = np;
-            
-            ls = kcdr(ls);
-            --apairs;
-        }
-    }
-
-    if (cpairs > 0) {
-        TValue first_c;
-        if (has_apairs) {
-            first_c = kcons(K, kcar(ls), KNIL);
-            kset_cdr(last, first_c);
-            last = first_c;
-            ls = kcdr(ls);
-            --cpairs;
-        } else {
-            first_c = first; /* also == to last */
-            --cpairs; /* cdr was already done above */
-        }
-
-        while (cpairs > 0) {
-            TValue np = kcons(K, kcar(ls), KNIL);
-            kset_cdr(last, np);
-            last = np;
-            
-            ls = kcdr(ls);
-            --cpairs;
-        }
-        kset_cdr(last, first_c);
-    }
-
-    krooted_tvs_pop(K);
-    return first;
-}
-
 void do_eval_ls(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
@@ -82,89 +30,42 @@ void do_eval_ls(klisp_State *K)
     klisp_assert(ttisnil(K->next_env));
     /*
     ** xparams[0]: remaining list
-    ** xparams[1]: accumulated list
-    ** xparams[2]: dynamic environment
-    ** xparams[3]: apairs
-    ** xparams[4]: cpairs
+    ** xparams[1]: rem_pairs
+    ** xparams[2]: accumulated list
+    ** xparams[3]: dynamic environment
+    ** xparams[4]: apairs
+    ** xparams[5]: cpairs
     */
     TValue rest = xparams[0];
-    TValue acc = xparams[1];
-    TValue env = xparams[2];
-    TValue tv_apairs = xparams[3];
-    TValue tv_cpairs = xparams[4];
+    int32_t rem_pairs = ivalue(xparams[1]);
+    TValue acc = xparams[2];
+    TValue env = xparams[3];
+    TValue tv_apairs = xparams[4];
+    TValue tv_cpairs = xparams[5];
 
     acc = kcons(K, obj, acc);
     krooted_tvs_push(K, acc);
 
-    if (ttisnil(rest)) {
+    if (rem_pairs == 0) {
         /* argument evaluation complete, copy the list and encycle if 
-         needed (the list was reversed again during evaluation, so it
-         is now in the correct order */
-        TValue res = copy_and_encycle(K, acc, ivalue(tv_apairs), 
-                                      ivalue(tv_cpairs));
+         needed (the list was reversed during evaluation, so it should
+         be reversed first) */
+        TValue res = 
+	  reverse_copy_and_encycle(K, acc, ivalue(tv_apairs) + 
+				   ivalue(tv_cpairs), ivalue(tv_cpairs));
         krooted_tvs_pop(K); /* pop acc */
         kapply_cc(K, res);
     } else {
         /* more arguments need to be evaluated */
         /* GC: all objects are rooted at this point */
         TValue new_cont = 
-            kmake_continuation(K, kget_cc(K), do_eval_ls, 5, kcdr(rest), 
-                               acc, env, tv_apairs, tv_cpairs);
+            kmake_continuation(K, kget_cc(K), do_eval_ls, 6, kcdr(rest), 
+                               i2tv(rem_pairs - 1), acc, env, tv_apairs, 
+			       tv_cpairs);
         krooted_tvs_pop(K); /* pop acc */
         kset_cc(K, new_cont);
         ktail_eval(K, kcar(rest), env);
     }
-}
-
-/* TODO: move this to another file, to use it elsewhere */
-static inline void clear_ls_marks(TValue ls)
-{
-    while (ttispair(ls) && kis_marked(ls)) {
-        kunmark(ls);
-        ls = kcdr(ls);
-    }
-}
-
-
-/* operands should be a pair, and should be rooted (GC) */
-TValue check_reverse_copy_list(klisp_State *K, TValue operands, 
-                               int32_t *apairs, int32_t *cpairs)
-{
-    TValue ls = KNIL;
-    TValue rem_op = operands;
-    int32_t p = 0;
-    int32_t c = 0;
-
-    krooted_tvs_push(K, ls); /* put in stack to maintain while invariant */
-
-    while(ttispair(rem_op) && kis_unmarked(rem_op)) {
-        kset_mark(rem_op, i2tv(p)); /* remember index */
-        ls = kcons(K, kcar(rem_op), ls);
-        krooted_tvs_pop(K);
-        krooted_tvs_push(K, ls);
-        rem_op = kcdr(rem_op);
-        ++p;
-    }
-
-    krooted_tvs_pop(K);
-
-    if (ttispair(rem_op)) { /* cyclic list */
-        c = p - ivalue(kget_mark(rem_op));
-    } else if (ttisnil(rem_op)) { /* regular list */
-        /* do nothing */
-    } else { /* acyclic list - error */
-        clear_ls_marks(operands);
-        klispE_throw_simple(K, "Not a list in applicative combination");
-        return KINERT;
-    }
-    clear_ls_marks(operands);
-
-    if (apairs != NULL)
-        *apairs = p - c;
-    if (cpairs != NULL)
-        *cpairs = c;
-
-    return ls;
 }
 
 void do_combine_operands(klisp_State *K)
@@ -190,7 +91,7 @@ void do_combine_operands(klisp_State *K)
                 comb = tv2app(comb)->underlying;
             ktail_call_si(K, comb, operands, env, si);
         } else if (ttispair(operands)) {
-            int32_t apairs, cpairs;
+	  int32_t pairs, apairs, cpairs;
             TValue comb_cont = 
                 kmake_continuation(K, kget_cc(K), do_combine_operator, 
                                    3, tv2app(comb)->underlying, env, si);
@@ -200,12 +101,14 @@ void do_combine_operands(klisp_State *K)
                avoid mutation of the structure affecting evaluation;
                this also allows capturing continuations in the middle of
                argument evaluation with no additional overhead */
-            TValue arg_ls = check_reverse_copy_list(K, operands, 
-                                                    &apairs, &cpairs);
+            TValue arg_ls = check_copy_list(K, operands, false, 
+					    &pairs, &cpairs);
+	    apairs = pairs - cpairs;
             krooted_tvs_push(K, arg_ls);
             TValue els_cont = 
-                kmake_continuation(K, comb_cont, do_eval_ls, 5, kcdr(arg_ls), 
-                                   KNIL, env, i2tv(apairs), i2tv(cpairs));
+                kmake_continuation(K, comb_cont, do_eval_ls, 6, kcdr(arg_ls), 
+				   i2tv(pairs - 1), KNIL, env, i2tv(apairs), 
+				   i2tv(cpairs));
             krooted_tvs_pop(K);
             krooted_tvs_pop(K);
 
