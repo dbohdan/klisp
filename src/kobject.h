@@ -35,18 +35,12 @@
 
 #include "klimits.h"
 #include "klispconf.h"
+#include "klisp.h"
 
 /*
 ** Union of all collectible objects
 */
 typedef union GCObject GCObject;
-
-/*
-** prototype for underlying c functions of continuations &
-** operatives
-*/
-struct klisp_State; /* later defined in kstate.h */
-typedef void (*klisp_CFunction) (struct klisp_State *K);
 
 /*
 ** Common Header for all collectible objects (in macro form, to be
@@ -177,6 +171,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TVECTOR          44
 #define K_TKEYWORD	45
 #define K_TLIBRARY	46
+#define K_TTHREAD	47
 
 /* for tables */
 #define K_TDEADKEY           60
@@ -234,6 +229,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_VECTOR K_MAKE_VTAG(K_TVECTOR)
 #define K_TAG_KEYWORD K_MAKE_VTAG(K_TKEYWORD)
 #define K_TAG_LIBRARY K_MAKE_VTAG(K_TLIBRARY)
+#define K_TAG_THREAD K_MAKE_VTAG(K_TTHREAD)
 
 /*
 ** Macros to test types
@@ -336,6 +332,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisvector(o) (tbasetype_(o) == K_TAG_VECTOR)
 #define ttiskeyword(o)	(tbasetype_(o) == K_TAG_KEYWORD)
 #define ttislibrary(o)	(tbasetype_(o) == K_TAG_LIBRARY)
+#define ttisthread(o)	(tbasetype_(o) == K_TAG_THREAD)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -606,33 +603,6 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark;
 } MGCheader;
-
-/*
-** Union of all Kernel heap-allocated values
-*/
-/* LUA NOTE: In Lua the corresponding union is in lstate.h */
-union GCObject {
-    GCheader gch;
-    MGCheader mgch;
-    Pair pair;
-    Symbol sym;
-    String str;
-    Environment env;
-    Continuation cont;
-    Operative op;
-    Applicative app;
-    Encapsulation enc;
-    Promise prom;
-    Table table;
-    Bytevector bytevector;
-    Port port; /* common fields for all types of ports */
-    FPort fport;
-    MPort mport;
-    Vector vector;
-    Keyword keyw;
-    Library lib;
-};
-
 
 /*
 ** Some constants 

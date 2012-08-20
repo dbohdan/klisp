@@ -599,8 +599,7 @@ void klispC_callGCTM (lua_State *L) {
    arrays that aren't TValues */
 void klispC_freeall (klisp_State *K) {
     /* mask to collect all elements */
-    K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT); /* in klisp this may not be
-                                                         necessary */
+    K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT);
     sweepwholelist(K, &K->rootgc);
     /* free all keyword/symbol/string/bytevectors lists */
     for (int32_t i = 0; i < K->strt.size; i++)  
