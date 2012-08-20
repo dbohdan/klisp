@@ -689,7 +689,7 @@ static TValue ffi_callback_guard(ffi_callback_t *cb, klisp_CFunction fn)
 {
     TValue app = kmake_applicative(cb->K, fn, 1, p2tv(cb));
     krooted_tvs_push(cb->K, app);
-    TValue ls1 = kimm_list(cb->K, 2, cb->K->root_cont, app);
+    TValue ls1 = kimm_list(cb->K, 2, G(cb->K)->root_cont, app);
     krooted_tvs_push(cb->K, ls1);
     TValue ls2 = kimm_list(cb->K, 1, ls1);
     krooted_tvs_pop(cb->K);
@@ -1153,7 +1153,7 @@ void ffi_klisp_state(klisp_State *K)
 /* init ground */
 void kinit_ffi_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* create encapsulation keys */
@@ -1183,10 +1183,11 @@ void kinit_ffi_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "ffi-call-interface?", enc_typep, 1, cif_key);
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_ffi_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
 
     add_cont_name(K, t, do_ffi_callback_encode_result, 
                   "ffi-callback-encode-result");

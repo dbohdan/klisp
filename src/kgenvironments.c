@@ -259,7 +259,7 @@ void Slet(klisp_State *K)
                            bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
-    TValue expr = kcons(K, K->list_app, exprs);
+    TValue expr = kcons(K, G(K)->list_app, exprs);
 
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -349,8 +349,8 @@ void make_kernel_standard_environment(klisp_State *K)
     check_0p(K, ptree);
     
     /* std environments have hashtable for bindings */
-    TValue new_env = kmake_table_environment(K, K->ground_env);
-//    TValue new_env = kmake_environment(K, K->ground_env);
+    TValue new_env = kmake_table_environment(K, G(K)->ground_env);
+//    TValue new_env = kmake_environment(K, G(K)->ground_env);
     kapply_cc(K, new_env);
 }
 
@@ -385,7 +385,7 @@ void SletS(klisp_State *K)
                                bptree, KNIL, KNIL, new_env, b2tv(false), body);
         kset_cc(K, new_cont);
 
-        TValue expr = kcons(K, K->list_app, exprs);
+        TValue expr = kcons(K, G(K)->list_app, exprs);
         krooted_tvs_pop(K);
         krooted_tvs_pop(K);
         krooted_tvs_pop(K);
@@ -436,7 +436,7 @@ void Sletrec(klisp_State *K)
                            bptree, KNIL, KNIL, new_env, b2tv(true), body);
     kset_cc(K, new_cont);
     
-    TValue expr = kcons(K, K->list_app, exprs);
+    TValue expr = kcons(K, G(K)->list_app, exprs);
 
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -477,7 +477,7 @@ void SletrecS(klisp_State *K)
                                bptree, KNIL, KNIL, new_env, b2tv(true), body);
         kset_cc(K, new_cont);
 
-        TValue expr = kcons(K, K->list_app, exprs);
+        TValue expr = kcons(K, G(K)->list_app, exprs);
 
         krooted_tvs_pop(K);
         krooted_tvs_pop(K);
@@ -555,7 +555,7 @@ void Slet_redirect(klisp_State *K)
     body = copy_es_immutable_h(K, body, false);
     krooted_tvs_push(K, body);
 
-    TValue eexpr = kcons(K, K->list_app, exprs);
+    TValue eexpr = kcons(K, G(K)->list_app, exprs);
     krooted_tvs_push(K, eexpr);
 
     TValue new_cont = 
@@ -597,14 +597,14 @@ void Slet_safe(klisp_State *K)
 /* according to the definition of the report it should be a child
    of a child of the ground environment, but since this is a fresh
    environment, the semantics are the same */
-    TValue new_env = kmake_environment(K, K->ground_env);
+    TValue new_env = kmake_environment(K, G(K)->ground_env);
     krooted_tvs_push(K, new_env);
     TValue new_cont = 
         kmake_continuation(K, kget_cc(K), do_let, 7, sname, 
                            bptree, KNIL, KNIL, new_env, b2tv(false), body);
     kset_cc(K, new_cont);
 
-    TValue expr = kcons(K, K->list_app, exprs);
+    TValue expr = kcons(K, G(K)->list_app, exprs);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -684,7 +684,7 @@ void Sbindings_to_environment(klisp_State *K)
     TValue new_cont = kmake_continuation(K, kget_cc(K), 
                                          do_b_to_env, 2, bptree, new_env);
     kset_cc(K, new_cont);
-    TValue expr = kcons(K, K->list_app, exprs);
+    TValue expr = kcons(K, G(K)->list_app, exprs);
 
     krooted_tvs_pop(K);
     krooted_tvs_pop(K);
@@ -746,7 +746,7 @@ void eval_string(klisp_State *K)
 /* init ground */
 void kinit_environments_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* 4.8.1 environment? */
@@ -788,10 +788,11 @@ void kinit_environments_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "eval-string", eval_string, 0);
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_environments_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
     
     add_cont_name(K, t, do_let, "eval-let");
     add_cont_name(K, t, do_let_redirect, "eval-let-redirect");

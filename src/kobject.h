@@ -717,6 +717,7 @@ const TValue kfree;
 #define gc2vector(o_) (gc2tv(K_TAG_VECTOR, o_))
 #define gc2keyw(o_) (gc2tv(K_TAG_KEYWORD, o_))
 #define gc2lib(o_) (gc2tv(K_TAG_LIBRARY, o_))
+#define gc2th(o_) (gc2tv(K_TAG_THREAD, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -740,6 +741,7 @@ const TValue kfree;
 #define tv2port(v_) ((Port *) gcvalue(v_))
 #define tv2keyw(v_) ((Keyword *) gcvalue(v_))
 #define tv2lib(v_) ((Library *) gcvalue(v_))
+#define tv2th(v_) ((klisp_State *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
@@ -897,9 +899,9 @@ int32_t kmark_count;
 #define checkconsistency(obj)                                           \
     klisp_assert(!iscollectable(obj) || (ttype_(obj) == gcvalue(obj)->gch.tt))
 
-#define checkliveness(k,obj)                                            \
+#define checkliveness(g,obj)                                            \
     klisp_assert(!iscollectable(obj) ||                                 \
-                 ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(k, gcvalue(obj))))
+                 ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(g, gcvalue(obj))))
 
 
 #endif

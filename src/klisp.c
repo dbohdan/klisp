@@ -84,7 +84,7 @@ static void k_message (const char *pname, const char *msg)
    (like the repl) */
 static void show_error(klisp_State *K, TValue obj) {
     /* FOR NOW used only for irritant list */
-    TValue port = kcdr(K->kd_error_port_key);
+    TValue port = kcdr(G(K)->kd_error_port_key);
     klisp_assert(ttisfport(port) && kfport_file(port) == stderr);
 
     /* TEMP: obj should be an error obj */
@@ -212,7 +212,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
                                       1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -224,7 +224,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+    TValue outer_cont = kmake_continuation(K, G(K)->root_cont, 
                                            do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
@@ -260,8 +260,8 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     /* TODO factor this out into a get_ground_binding(K, char *) */
     TValue ev = ksymbol_new_b(K, "eval-string", KNIL);
     krooted_vars_push(K, &ev);
-    klisp_assert(kbinds(K, K->ground_env, ev));
-    ev = kunwrap(kget_binding(K, K->ground_env, ev));
+    klisp_assert(kbinds(K, G(K)->ground_env, ev));
+    ev = kunwrap(kget_binding(K, G(K)->ground_env, ev));
     krooted_vars_pop(K);
     krooted_tvs_pop(K);
 
@@ -317,7 +317,7 @@ static int dofile(klisp_State *K, const char *name)
 
     /* XXX better do this in a continuation */
     if (name == NULL) {
-        port = kcdr(K->kd_in_port_key);
+        port = kcdr(G(K)->kd_in_port_key);
     } else {
         FILE *file = fopen(name, "r");
         if (file == NULL) {
@@ -345,7 +345,7 @@ static int dofile(klisp_State *K, const char *name)
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
                                       1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -357,7 +357,7 @@ static int dofile(klisp_State *K, const char *name)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+    TValue outer_cont = kmake_continuation(K, G(K)->root_cont, 
                                            do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
@@ -428,7 +428,7 @@ static int dorfile(klisp_State *K, const char *name)
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
                                       1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -440,7 +440,7 @@ static int dorfile(klisp_State *K, const char *name)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+    TValue outer_cont = kmake_continuation(K, G(K)->root_cont, 
                                            do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
@@ -474,8 +474,8 @@ static int dorfile(klisp_State *K, const char *name)
     /* TODO factor this out into a get_ground_binding(K, char *) */
     TValue req = ksymbol_new_b(K, "require", KNIL);
     krooted_vars_push(K, &req);
-    klisp_assert(kbinds(K, K->ground_env, req));
-    req = kunwrap(kget_binding(K, K->ground_env, req));
+    klisp_assert(kbinds(K, G(K)->ground_env, req));
+    req = kunwrap(kget_binding(K, G(K)->ground_env, req));
     krooted_tvs_pop(K);
     krooted_vars_pop(K);
 
@@ -615,8 +615,8 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     }
     /* Store the script argument list */
     obj = ksymbol_new_b(K, "get-script-arguments", KNIL);
-    klisp_assert(kbinds(K, K->ground_env, obj));
-    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    klisp_assert(kbinds(K, G(K)->ground_env, obj));
+    obj = kunwrap(kget_binding(K, G(K)->ground_env, obj));
     tv2op(obj)->extra[0] = tail;
 
     while(argc > 0) {
@@ -626,8 +626,8 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     }
     /* Store the interpreter argument list */
     obj = ksymbol_new_b(K, "get-interpreter-arguments", KNIL);
-    klisp_assert(kbinds(K, K->ground_env, obj));
-    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    klisp_assert(kbinds(K, G(K)->ground_env, obj));
+    obj = kunwrap(kget_binding(K, G(K)->ground_env, obj));
     tv2op(obj)->extra[0] = tail;
 
     krooted_vars_pop(K);

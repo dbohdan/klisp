@@ -15,16 +15,17 @@
 #include "kmem.h"
 #include "kgc.h"
 
+/* XXX lock? */
 /* for immutable string/symbols/bytevector table */
 void klispS_resize (klisp_State *K, int32_t newsize)
 {
     GCObject **newhash;
     stringtable *tb;
     int32_t i;
-    if (K->gcstate == GCSsweepstring)
+    if (G(K)->gcstate == GCSsweepstring)
         return;  /* cannot resize during GC traverse */
     newhash = klispM_newvector(K, newsize, GCObject *);
-    tb = &K->strt;
+    tb = &G(K)->strt;
     for (i = 0; i < newsize; i++) newhash[i] = NULL;
     /* rehash */
     for (i = 0; i < tb->size; i++) {
@@ -76,6 +77,7 @@ TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf,
 ** Constructors for immutable strings
 */
 
+/* XXX lock? */
 /* main constructor for immutable strings */
 TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
 {
@@ -87,7 +89,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
         h = h ^ ((h<<5)+(h>>2)+ ((unsigned char) buf[size1-1]));
 
-    for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
+    for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)];
          o != NULL; o = o->gch.next) {
         klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
                      o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
@@ -97,7 +99,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
         String *ts = (String *) o;
         if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
             /* string may be dead */
-            if (isdead(K, o)) changewhite(o);
+            if (isdead(G(K), o)) changewhite(o);
             return gc2str(o);
         }
     } 
@@ -114,7 +116,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     /* header + gc_fields */
     /* can't use klispC_link, because strings use the next pointer
        differently */
-    new_str->gct = klispC_white(K);
+    new_str->gct = klispC_white(G(K));
     new_str->tt = K_TSTRING;
     new_str->kflags = K_FLAG_IMMUTABLE;
     new_str->si = NULL;
@@ -129,7 +131,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
 
     /* add to the string/symbol table (and link it) */
     stringtable *tb;
-    tb = &K->strt;
+    tb = &G(K)->strt;
     h = lmod(h, tb->size);
     new_str->next = tb->hash[h];  /* chain new entry */
     tb->hash[h] = (GCObject *)(new_str);
@@ -161,8 +163,8 @@ TValue kstring_new_s(klisp_State *K, uint32_t size)
     String *new_str;
 
     if (size == 0) {
-        klisp_assert(ttisstring(K->empty_string));
-        return K->empty_string;
+        klisp_assert(ttisstring(G(K)->empty_string));
+        return G(K)->empty_string;
     }
 
     new_str = klispM_malloc(K, sizeof(String) + size + 1);

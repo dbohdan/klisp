@@ -27,10 +27,11 @@
 #include "kencapsulation.h"
 #include "kpromise.h"
 
+/* XXX lock? */
 /* Initialization of continuation names */
 void kinit_kghelpers_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
     add_cont_name(K, t, do_seq, "eval-sequence");
     add_cont_name(K, t, do_pass_value, "pass-value");
     add_cont_name(K, t, do_return_value, "return-value");
@@ -589,7 +590,7 @@ TValue list_to_string_h(klisp_State *K, TValue ls, int32_t length)
     TValue new_str;
     /* the if isn't strictly necessary but it's clearer this way */
     if (length == 0) {
-        return K->empty_string; 
+        return G(K)->empty_string; 
     } else {
         new_str = kstring_new_s(K, length);
         char *buf = kstring_buf(new_str);
@@ -611,7 +612,7 @@ TValue list_to_vector_h(klisp_State *K, TValue ls, int32_t length)
 {
 
     if (length == 0) {
-        return K->empty_vector;
+        return G(K)->empty_vector;
     } else {
         TValue new_vec = kvector_new_sf(K, length, KINERT);
         TValue *buf = kvector_buf(new_vec);
@@ -628,7 +629,7 @@ TValue list_to_bytevector_h(klisp_State *K, TValue ls, int32_t length)
     TValue new_bb;
     /* the if isn't strictly necessary but it's clearer this way */
     if (length == 0) {
-        return K->empty_bytevector; 
+        return G(K)->empty_bytevector; 
     } else {
         new_bb = kbytevector_new_s(K, length);
         uint8_t *buf = kbytevector_buf(new_bb);
@@ -1775,7 +1776,7 @@ TValue make_bind_continuation(klisp_State *K, TValue key,
     TValue exit_int = kmake_operative(K, do_set_pass, 
                                       3, key, old_flag, old_value);
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->root_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->root_cont, exit_int);
     krooted_tvs_pop(K); /* already rooted in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -1785,7 +1786,7 @@ TValue make_bind_continuation(klisp_State *K, TValue key,
     TValue entry_int = kmake_operative(K, do_set_pass, 
                                        3, key, new_flag, new_value);
     krooted_tvs_push(K, entry_int);
-    TValue entry_guard = kcons(K, K->root_cont, entry_int);
+    TValue entry_guard = kcons(K, G(K)->root_cont, entry_int);
     krooted_tvs_pop(K); /* already rooted in guard */
     krooted_tvs_push(K, entry_guard);
     TValue entry_guards = kcons(K, entry_guard, KNIL);

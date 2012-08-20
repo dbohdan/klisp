@@ -53,6 +53,7 @@
 #include "keval.h"
 #include "krepl.h"
 
+/* XXX lock? */
 /*
 ** This is called once to save the names of the types of continuations
 ** used in the ground environment & repl
@@ -61,7 +62,7 @@
 void kinit_cont_names(klisp_State *K)
 {
     /* TEMP root and error continuations are set here (they are in kstate) */
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
     add_cont_name(K, t, do_root_exit, "exit");
     add_cont_name(K, t, do_error_exit, "error");
     /* TEMP this is also in kstate */

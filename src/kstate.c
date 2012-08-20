@@ -76,9 +76,9 @@ static void f_klispopen (klisp_State *K, void *ud) {
     }
 
     /* initialize temp stacks */
-    K->ssize = KS_ISSIZE;
-    K->stop = 0; /* stack is empty */
-    K->sbuf = (TValue *)s;
+    ks_ssize(K) = KS_ISSIZE;
+    ks_stop(K) = 0; /* stack is empty */
+    ks_sbuf(K) = (TValue *)s;
 
     ks_tbsize(K) = KS_ITBSIZE;
     ks_tbidx(K) = 0; /* buffer is empty */
@@ -131,6 +131,15 @@ static void preinit_state (klisp_State *K, global_State *g) {
 
     /* initialize writer */
     K->write_displayp = false; /* set on each call to write */
+
+    /* put zeroes first, in case alloc fails */
+    ks_stop(K) = 0;
+    ks_ssize(K) = 0; 
+    ks_sbuf(K) = NULL;
+
+    ks_tbidx(K) = 0;
+    ks_tbsize(K) = 0;
+    ks_tbuf(K) = NULL;
 }
 
 static void close_state(klisp_State *K)
@@ -393,6 +402,7 @@ klisp_State *klisp_newstate(klisp_Alloc f, void *ud)
     /* set the threshold for gc start now that we have allocated all mem */ 
     g->GCthreshold = 4*g->totalbytes;
 
+    /* luai_userstateopen(L); */
     return K;
 }
 
@@ -403,11 +413,35 @@ klisp_State *klisp_newthread(klisp_State *K)
     return K;
 }
 
-/* TODO */
-#if 0
-lua_State *luaE_newthread (lua_State *L) {
-void luaE_freethread (lua_State *L, lua_State *L1) {
-#endif
+/* XXX lock? */
+klisp_State *klispT_newthread(klisp_State *K)
+{
+    klisp_State *K1 = tostate(klispM_malloc(K, state_size(klisp_State)));
+    klispC_link(K, (GCObject *) K1, K_TTHREAD, 0);
+    preinit_state(K1, G(K));
+
+    /* initialize temp stacks */
+    ks_sbuf(K1) = (TValue *) klispM_malloc(K, KS_ISSIZE * sizeof(TValue));
+    ks_ssize(K1) = KS_ISSIZE;
+    ks_stop(K1) = 0; /* stack is empty */
+
+    ks_tbuf(K1) = (char *) klispM_malloc(K, KS_ITBSIZE);
+    ks_tbsize(K1) = KS_ITBSIZE;
+    ks_tbidx(K1) = 0; /* buffer is empty */
+  
+    klisp_assert(iswhite((GCObject *) (K1)));
+    return K1;
+}
+
+
+/* XXX lock? */
+void klispT_freethread (klisp_State *K, klisp_State *K1)
+{
+    klispM_freemem(K, ks_sbuf(K1), ks_ssize(K1) * sizeof(TValue));
+    klispM_freemem(K, ks_tbuf(K1), ks_tbsize(K1));
+    /* userstatefree() */
+    klispM_freemem(K, fromstate(K1), state_size(klisp_State));
+}
 
 void klisp_close (klisp_State *K)
 {
@@ -428,6 +462,7 @@ void klisp_close (klisp_State *K)
   luai_userstateclose(L);
 #endif
 
+  /* luai_userstateclose(L); */
     close_state(K);
 }
 

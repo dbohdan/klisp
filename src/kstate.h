@@ -229,6 +229,9 @@ union GCObject {
 #define KS_ISSIZE (1024)
 #define KS_ITBSIZE (1024)
 
+klisp_State *klispT_newthread(klisp_State *K);
+void klispT_freethread(klisp_State *K, klisp_State *K1);
+
 /*
 ** TEMP: for now use inlined functions, later check output in 
 **   different compilers and/or profile to see if it's worthy to 
@@ -512,7 +515,7 @@ static inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 #define ktail_eval(K_, p_, e_)                              \
     { klisp_State *K__ = (K_);                              \
         TValue p__ = (p_);                                  \
-        klispS_tail_call_si(K__, K__->eval_op, p__, (e_),   \
+        klispS_tail_call_si(K__, G(K__)->eval_op, p__, (e_),    \
                             ktry_get_si(K__, p__));			\
         return; }
 

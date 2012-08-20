@@ -14,6 +14,7 @@
 /* for immutable table */
 #include "kstring.h" 
 
+/* XXX lock? */
 /* No case folding is performed by these constructors */
 TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
 {
@@ -30,7 +31,7 @@ TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
        otherwise keywords and their respective immutable string
        would always fall in the same bucket */
     /* look for it in the table */
-    for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)]; o != NULL; 
+    for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)]; o != NULL; 
          o = o->gch.next) {
         klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
                      o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
@@ -40,8 +41,8 @@ TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
         String *ts = tv2str(((Keyword *) o)->str);
         if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
             /* keyword and/or string may be dead */
-            if (isdead(K, o)) changewhite(o);
-            if (isdead(K, (GCObject *) ts)) changewhite((GCObject *) ts);
+            if (isdead(G(K), o)) changewhite(o);
+            if (isdead(G(K), (GCObject *) ts)) changewhite((GCObject *) ts);
             return gc2keyw(o);
         }
     } 
@@ -57,7 +58,7 @@ TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
     /* header + gc_fields */
     /* can't use klispC_link, because strings use the next pointer
        differently */
-    new_keyw->gct = klispC_white(K);
+    new_keyw->gct = klispC_white(G(K));
     new_keyw->tt = K_TKEYWORD;
     new_keyw->kflags = 0;
     new_keyw->si = NULL;
@@ -68,7 +69,7 @@ TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
 
     /* add to the string/keyword table (and link it) */
     stringtable *tb;
-    tb = &K->strt;
+    tb = &G(K)->strt;
     h = lmod(h, tb->size);
     new_keyw->next = tb->hash[h];  /* chain new entry */
     tb->hash[h] = (GCObject *)(new_keyw);

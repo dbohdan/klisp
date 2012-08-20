@@ -127,7 +127,7 @@ static TValue libraries_registry_assoc(klisp_State *K, TValue name, TValue *last
 {
     TValue last = KNIL;
     TValue res = KNIL;
-    for (TValue ls = K->libraries_registry; !ttisnil(ls); last = ls, 
+    for (TValue ls = G(K)->libraries_registry; !ttisnil(ls); last = ls, 
              ls = kcdr(ls)) {
         if (equal2p(K, kcar(kcar(ls)), name)) {
             res = kcar(ls);
@@ -180,8 +180,8 @@ static void do_register_library(klisp_State *K)
     }
     TValue np = kcons(K, name, obj);
     krooted_tvs_push(K, np);
-    np = kcons(K, np, K->libraries_registry);
-    K->libraries_registry = np;
+    np = kcons(K, np, G(K)->libraries_registry);
+    G(K)->libraries_registry = np;
     krooted_tvs_pop(K);
     kapply_cc(K, KINERT);
 }
@@ -215,7 +215,7 @@ static void Sunregister_libraryB(klisp_State *K)
         return;
     }
     if (ttisnil(last)) { /* it's in the first pair */
-        K->libraries_registry = kcdr(K->libraries_registry);
+        G(K)->libraries_registry = kcdr(G(K)->libraries_registry);
     } else {
         kset_cdr(last, kcdr(kcdr(last)));
     }
@@ -331,8 +331,8 @@ static void do_provide_library(klisp_State *K)
     TValue np = kcons(K, name, library);
     krooted_tvs_pop(K); /* library */
     krooted_tvs_push(K, np);
-    np = kcons(K, np, K->libraries_registry);
-    K->libraries_registry = np;
+    np = kcons(K, np, G(K)->libraries_registry);
+    G(K)->libraries_registry = np;
     krooted_tvs_pop(K);
     kapply_cc(K, KINERT);
 }
@@ -728,7 +728,7 @@ static void Simport_libraryB(klisp_State *K)
 /* init ground */
 void kinit_libraries_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     add_applicative(K, ground_env, "library?", typep, 2, symbol, 
@@ -752,10 +752,11 @@ void kinit_libraries_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$import-library!", Simport_libraryB, 0);
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_libraries_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
 
     add_cont_name(K, t, do_register_library, "register-library"); 
     add_cont_name(K, t, do_provide_library, "provide-library"); 

@@ -59,7 +59,7 @@ void string_to_symbol(klisp_State *K)
 /* init ground */
 void kinit_symbols_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* 4.4.1 symbol? */

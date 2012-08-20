@@ -186,7 +186,7 @@ void digit_to_char(klisp_State *K)
 /* init ground */
 void kinit_chars_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /*

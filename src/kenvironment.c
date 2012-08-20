@@ -123,8 +123,9 @@ void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
            that if this object receives a name it can pass on that
            name to other objs, like applicatives to operatives & 
            some applicatives to objects */
+/* XXX lock? */
         gcvalue(obj)->gch.kflags |= K_FLAG_HAS_NAME;
-        TValue *node = klispH_set(K, tv2table(K->name_table), obj);
+        TValue *node = klispH_set(K, tv2table(G(K)->name_table), obj);
         *node = sym;
 
         /* TEMP: use this until we have a general mechanism to add
@@ -133,8 +134,9 @@ void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
             /* underlying is rooted by means of obj */
             TValue underlying = kunwrap(obj);
             while (kcan_have_name(underlying) && !khas_name(underlying)) {
+/* XXX lock? */
                 gcvalue(underlying)->gch.kflags |= K_FLAG_HAS_NAME;
-                node = klispH_set(K, tv2table(K->name_table), underlying);
+                node = klispH_set(K, tv2table(G(K)->name_table), underlying);
                 *node = sym;
                 if (ttisapplicative(underlying)) 
                     underlying = kunwrap(underlying);
@@ -148,7 +150,8 @@ void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
 /* Assumes obj has a name */
 TValue kget_name(klisp_State *K, TValue obj)
 {
-    const TValue *node = klispH_get(tv2table(K->name_table),
+/* XXX lock? */
+    const TValue *node = klispH_get(tv2table(G(K)->name_table),
                                     obj);
     klisp_assert(node != &kfree);
     return *node;

@@ -192,7 +192,8 @@ void keval_ofn(klisp_State *K)
 /* init continuation names */
 void kinit_eval_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+/* XXX lock? */
+    Table *t = tv2table(G(K)->cont_name_table);
     add_cont_name(K, t, do_eval_ls, "eval-argument-list");
     add_cont_name(K, t, do_combine_operator, "eval-combine-operator");
     add_cont_name(K, t, do_combine_operands, "eval-combine-operands");

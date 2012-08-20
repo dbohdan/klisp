@@ -87,7 +87,7 @@ void klispE_throw_simple(klisp_State *K, char *msg)
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
     /* call_cont protects error from gc */
-    kcall_cont(K, K->error_cont, error_obj);
+    kcall_cont(K, G(K)->error_cont, error_obj);
 }
 
 /*
@@ -112,7 +112,7 @@ void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
     /* call_cont protects error from gc */
-    kcall_cont(K, K->error_cont, error_obj);
+    kcall_cont(K, G(K)->error_cont, error_obj);
 }
 
 void klispE_throw_system_error_with_irritants(
@@ -122,7 +122,7 @@ void klispE_throw_system_error_with_irritants(
                                                        irritants);
     krooted_tvs_push(K, error_obj);
     clear_buffers(K);
-    kcall_cont(K, K->system_error_cont, error_obj);
+    kcall_cont(K, G(K)->system_error_cont, error_obj);
 }
 
 /* The array symbolic_error_codes[] assigns locale and target

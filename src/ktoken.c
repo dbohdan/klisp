@@ -354,10 +354,10 @@ TValue ktok_read_token(klisp_State *K)
             continue;
         case '(':
             ktok_getc(K);
-            return K->ktok_lparen;
+            return G(K)->ktok_lparen;
         case ')':
             ktok_getc(K);
-            return K->ktok_rparen;
+            return G(K)->ktok_rparen;
         case '"':
             return ktok_read_string(K);
         case '|':
@@ -382,7 +382,7 @@ TValue ktok_read_token(klisp_State *K)
                 continue;
             case ';': /* sexp comment */
                 ktok_getc(K); /* discard the ';' */
-                return K->ktok_sexp_comment;
+                return G(K)->ktok_sexp_comment;
             case ':': /* keyword */
                 ktok_getc(K); /* discard the ':' */
                 chi = ktok_peekc(K);
@@ -1122,7 +1122,7 @@ TValue ktok_read_identifier_or_dot(klisp_State *K, bool keywordp)
             return KINERT; /* avoid warning */
         } else {
             ks_tbclear(K);
-            return K->ktok_dot;
+            return G(K)->ktok_dot;
         }
     }
 

@@ -1662,7 +1662,7 @@ void kwith_strict_arithmetic(klisp_State *K)
     bind_2tp(K, ptree, "bool", ttisboolean, strictp,
              "combiner", ttiscombiner, comb);
 
-    TValue op = kmake_operative(K, do_bind, 1, K->kd_strict_arith_key);
+    TValue op = kmake_operative(K, do_bind, 1, G(K)->kd_strict_arith_key);
     krooted_tvs_push(K, op);
 
     TValue args = klist(K, 2, strictp, comb);
@@ -2288,7 +2288,7 @@ void number_to_string(klisp_State *K)
         radix = ivalue(maybe_radix); 
 
     char small_buf[64]; /* for fixints */
-    TValue buf_str = K->empty_string; /* for bigrats, bigints and doubles */
+    TValue buf_str = G(K)->empty_string; /* for bigrats, bigints and doubles */
     krooted_vars_push(K, &buf_str);
     char *buf;
 
@@ -2500,7 +2500,7 @@ void string_to_number(klisp_State *K)
 /* init ground */
 void kinit_numbers_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* No complex or bounded reals for now */

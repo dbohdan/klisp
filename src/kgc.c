@@ -52,12 +52,12 @@
 #define VALUEWEAK          bitmask(VALUEWEAKBIT)
 
 /* this one is klisp specific */
-#define markvaluearray(k, a, s) ({                              \
+#define markvaluearray(g, a, s) ({                              \
             TValue *array_ = (a);                               \
             int32_t size_ = (s);                                \
             for(int32_t i_ = 0; i_ < size_; i_++, array_++) {	\
                 TValue mva_obj_ = *array_;                      \
-                markvalue(k, mva_obj_);                         \
+                markvalue(g, mva_obj_);                         \
             }})
 
 #define markvalue(k,o) { checkconsistency(o);		    \
@@ -76,9 +76,9 @@ static void removeentry (Node *n) {
         gkey(n)->this = gc2deadkey(gcvalue(gkey(n)->this));
 }
 
-static void reallymarkobject (klisp_State *K, GCObject *o) 
+static void reallymarkobject (global_State *g, GCObject *o) 
 {
-    klisp_assert(iswhite(o) && !isdead(K, o));
+    klisp_assert(iswhite(o) && !isdead(g, o));
     white2gray(o);
     /* klisp: most of klisp have the same structure, but conserve the switch
        just in case. */
@@ -115,8 +115,9 @@ static void reallymarkobject (klisp_State *K, GCObject *o)
     case K_TFPORT:
     case K_TMPORT:
     case K_TLIBRARY:
-        o->gch.gclist = K->gray;
-        K->gray = o;
+    case K_TTHREAD:
+        o->gch.gclist = g->gray;
+        g->gray = o;
         break;
     default:
         /* shouldn't happen */
@@ -172,7 +173,7 @@ size_t klispC_separateudata (lua_State *L, int all) {
 
 #endif
 
-static int32_t traversetable (klisp_State *K, Table *h) {
+static int32_t traversetable (global_State *g, Table *h) {
     int32_t i;
     TValue tv = gc2table(h);
     int32_t weakkey = ktable_has_weak_keys(tv)? 1 : 0;
@@ -182,14 +183,14 @@ static int32_t traversetable (klisp_State *K, Table *h) {
         h->gct &= ~(KEYWEAK | VALUEWEAK);  /* clear bits */
         h->gct |= cast(uint16_t, (weakkey << KEYWEAKBIT) |
                        (weakvalue << VALUEWEAKBIT));
-        h->gclist = K->weak;  /* must be cleared after GC, ... */
-        K->weak = obj2gco(h);  /* ... so put in the appropriate list */
+        h->gclist = g->weak;  /* must be cleared after GC, ... */
+        g->weak = obj2gco(h);  /* ... so put in the appropriate list */
     }
     if (weakkey && weakvalue) return 1;
     if (!weakvalue) {
         i = h->sizearray;
         while (i--)
-            markvalue(K, h->array[i]);
+            markvalue(g, h->array[i]);
     }
     i = sizenode(h);
     while (i--) {
@@ -200,8 +201,8 @@ static int32_t traversetable (klisp_State *K, Table *h) {
             removeentry(n);  /* remove empty entries */
         else {
             klisp_assert(!ttisfree(gkey(n)->this));
-            if (!weakkey) markvalue(K, gkey(n)->this);
-            if (!weakvalue) markvalue(K, gval(n));
+            if (!weakkey) markvalue(g, gkey(n)->this);
+            if (!weakvalue) markvalue(g, gval(n));
         }
     }
     return weakkey || weakvalue;
@@ -237,14 +238,14 @@ static void traverseproto (global_State *g, Proto *f) {
 ** traverse one gray object, turning it to black.
 ** Returns `quantity' traversed.
 */
-static int32_t propagatemark (klisp_State *K) {
-    GCObject *o = K->gray;
-    K->gray = o->gch.gclist;
+static int32_t propagatemark (global_State *g) {
+    GCObject *o = g->gray;
+    g->gray = o->gch.gclist;
     klisp_assert(isgray(o));
     gray2black(o);
     /* all types have si pointers */
     if (o->gch.si != NULL) {
-        markobject(K, o->gch.si);
+        markobject(g, o->gch.si);
     }
     uint8_t type = o->gch.tt;
 
@@ -253,106 +254,131 @@ static int32_t propagatemark (klisp_State *K) {
       case K_TBIGINT: bigints & bigrats are never gray */
     case K_TPAIR: {
         Pair *p = cast(Pair *, o);
-        markvalue(K, p->mark);
-        markvalue(K, p->car);
-        markvalue(K, p->cdr);
+        markvalue(g, p->mark);
+        markvalue(g, p->car);
+        markvalue(g, p->cdr);
         return sizeof(Pair);
     }
     case K_TSYMBOL: {
         Symbol *s = cast(Symbol *, o);
-        markvalue(K, s->str);
+        markvalue(g, s->str);
         return sizeof(Symbol);
     }
     case K_TKEYWORD: {
         Keyword *k = cast(Keyword *, o);
-        markvalue(K, k->str);
+        markvalue(g, k->str);
         return sizeof(Keyword);
     }
     case K_TSTRING: {
         String *s = cast(String *, o);
-        markvalue(K, s->mark); 
+        markvalue(g, s->mark); 
         return sizeof(String) + (s->size + 1 * sizeof(char));
     }
     case K_TENVIRONMENT: {
         Environment *e = cast(Environment *, o);
-        markvalue(K, e->mark); 
-        markvalue(K, e->parents); 
-        markvalue(K, e->bindings); 
-        markvalue(K, e->keyed_node); 
-        markvalue(K, e->keyed_parents); 
+        markvalue(g, e->mark); 
+        markvalue(g, e->parents); 
+        markvalue(g, e->bindings); 
+        markvalue(g, e->keyed_node); 
+        markvalue(g, e->keyed_parents); 
         return sizeof(Environment);
     }
     case K_TCONTINUATION: {
         Continuation *c = cast(Continuation *, o);
-        markvalue(K, c->mark);
-        markvalue(K, c->parent);
-        markvalue(K, c->comb);
-        markvaluearray(K, c->extra, c->extra_size);
+        markvalue(g, c->mark);
+        markvalue(g, c->parent);
+        markvalue(g, c->comb);
+        markvaluearray(g, c->extra, c->extra_size);
         return sizeof(Continuation) + sizeof(TValue) * c->extra_size;
     }
     case K_TOPERATIVE: {
         Operative *op = cast(Operative *, o);
-        markvaluearray(K, op->extra, op->extra_size);
+        markvaluearray(g, op->extra, op->extra_size);
         return sizeof(Operative) + sizeof(TValue) * op->extra_size;
     }
     case K_TAPPLICATIVE: {
         Applicative *a = cast(Applicative *, o);
-        markvalue(K, a->underlying);
+        markvalue(g, a->underlying);
         return sizeof(Applicative);
     }
     case K_TENCAPSULATION: {
         Encapsulation *e = cast(Encapsulation *, o);
-        markvalue(K, e->key);
-        markvalue(K, e->value);
+        markvalue(g, e->key);
+        markvalue(g, e->value);
         return sizeof(Encapsulation);
     }
     case K_TPROMISE: {
         Promise *p = cast(Promise *, o);
-        markvalue(K, p->node);
+        markvalue(g, p->node);
         return sizeof(Promise);
     }
     case K_TTABLE: {
         Table *h = cast(Table *, o);
-        if (traversetable(K, h))  /* table is weak? */
+        if (traversetable(g, h))  /* table is weak? */
             black2gray(o);  /* keep it gray */
         return sizeof(Table) + sizeof(TValue) * h->sizearray +
             sizeof(Node) * sizenode(h);
     }
     case K_TERROR: {
         Error *e = cast(Error *, o);
-        markvalue(K, e->who);
-        markvalue(K, e->cont);
-        markvalue(K, e->msg);
-        markvalue(K, e->irritants);
+        markvalue(g, e->who);
+        markvalue(g, e->cont);
+        markvalue(g, e->msg);
+        markvalue(g, e->irritants);
         return sizeof(Error);
     }
     case K_TBYTEVECTOR: {
         Bytevector *b = cast(Bytevector *, o);
-        markvalue(K, b->mark); 
+        markvalue(g, b->mark); 
         return sizeof(Bytevector) + b->size * sizeof(uint8_t);
     }
     case K_TFPORT: {
         FPort *p = cast(FPort *, o);
-        markvalue(K, p->filename);
+        markvalue(g, p->filename);
         return sizeof(FPort);
     }
     case K_TMPORT: {
         MPort *p = cast(MPort *, o);
-        markvalue(K, p->filename);
-        markvalue(K, p->buf);
+        markvalue(g, p->filename);
+        markvalue(g, p->buf);
         return sizeof(MPort);
     }
     case K_TVECTOR: {
         Vector *v = cast(Vector *, o);
-        markvalue(K, v->mark);
-        markvaluearray(K, v->array, v->sizearray);
+        markvalue(g, v->mark);
+        markvaluearray(g, v->array, v->sizearray);
         return sizeof(Vector) + v->sizearray * sizeof(TValue);
     }
     case K_TLIBRARY: {
         Library *l = cast(Library *, o);
-        markvalue(K, l->env);
-        markvalue(K, l->exp_list);
+        markvalue(g, l->env);
+        markvalue(g, l->exp_list);
         return sizeof(Library);
+    }
+    case K_TTHREAD: {
+        klisp_State *K = cast(klisp_State *, o);
+
+        markvalue(g, K->curr_cont);
+        markvalue(g, K->next_obj);
+        markvalue(g, K->next_value);
+        markvalue(g, K->next_env);
+        markvalue(g, K->next_si);
+        /* NOTE: next_x_params is protected by next_obj */
+
+        markvalue(g, K->shared_dict);
+        markvalue(g, K->curr_port);
+
+        /* Mark all objects in the auxiliary stack,
+           (all valid indexes are below top) and all the objects in
+           the two protected areas */
+        markvaluearray(g, K->sbuf, K->stop);
+        markvaluearray(g, K->rooted_tvs_buf, K->rooted_tvs_top);
+        /* the area protecting variables is an array of type TValue *[] */
+        TValue **ptr = K->rooted_vars_buf;
+        for (int i = 0, top = K->rooted_vars_top; i < top; i++, ptr++) {
+            markvalue(g, **ptr);
+        }
+        return sizeof(klisp_State) + (sizeof(TValue) * K->stop);
     }
     default: 
         fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
@@ -362,9 +388,9 @@ static int32_t propagatemark (klisp_State *K) {
 }
 
 
-static size_t propagateall (klisp_State *K) {
+static size_t propagateall (global_State *g) {
     size_t m = 0;
-    while (K->gray) m += propagatemark(K);
+    while (g->gray) m += propagatemark(g);
     return m;
 }
 
@@ -442,19 +468,19 @@ static void freeobj (klisp_State *K, GCObject *o) {
         /* The string will be freed before/after */
         /* symbols with no source info are in the string/symbol table */
         if (ttisnil(ktry_get_si(K, gc2sym(o))))
-            K->strt.nuse--;
+            G(K)->strt.nuse--;
         klispM_free(K, (Symbol *)o);
         break;
     case K_TKEYWORD:
         /* keywords are in the string table */
         /* The string will be freed before/after */
-        K->strt.nuse--;
+        G(K)->strt.nuse--;
         klispM_free(K, (Keyword *)o);
         break;
     case K_TSTRING:
         /* immutable strings are in the string/symbol table */
         if (kstring_immutablep(gc2str(o)))
-            K->strt.nuse--;
+            G(K)->strt.nuse--;
         klispM_freemem(K, o, sizeof(String)+o->str.size+1);
         break;
     case K_TENVIRONMENT:
@@ -486,7 +512,7 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TBYTEVECTOR:
         /* immutable bytevectors are in the string/symbol table */
         if (kbytevector_immutablep(gc2str(o)))
-            K->strt.nuse--;
+            G(K)->strt.nuse--;
         klispM_freemem(K, o, sizeof(Bytevector)+o->bytevector.size);
         break;
     case K_TFPORT:
@@ -509,6 +535,12 @@ static void freeobj (klisp_State *K, GCObject *o) {
     case K_TLIBRARY:
         klispM_free(K, (Library *)o);
         break;
+    case K_TTHREAD: {
+        klisp_assert((klisp_State *) o != K && 
+                     (klisp_State *) o != G(K)->mainthread);
+        klispT_freethread(K, (klisp_State *) o);
+        break;
+    }
     default:
         /* shouldn't happen */
         fprintf(stderr, "Unknown GCObject type (in GC free): %d\n", 
@@ -525,17 +557,18 @@ static void freeobj (klisp_State *K, GCObject *o) {
 static GCObject **sweeplist (klisp_State *K, GCObject **p, uint32_t count) 
 {
     GCObject *curr;
-    int deadmask = otherwhite(K);
+    global_State *g = G(K);
+    int deadmask = otherwhite(g);
     while ((curr = *p) != NULL && count-- > 0) {
         if ((curr->gch.gct ^ WHITEBITS) & deadmask) {  /* not dead? */
-            klisp_assert(!isdead(K, curr) || testbit(curr->gch.gct, FIXEDBIT));
-            makewhite(K, curr);  /* make it white (for next cycle) */
+            klisp_assert(!isdead(g, curr) || testbit(curr->gch.gct, FIXEDBIT));
+            makewhite(g, curr);  /* make it white (for next cycle) */
             p = &curr->gch.next;
         } else {  /* must erase `curr' */
-            klisp_assert(isdead(K, curr) || deadmask == bitmask(SFIXEDBIT));
+            klisp_assert(isdead(g, curr) || deadmask == bitmask(SFIXEDBIT));
             *p = curr->gch.next;
-            if (curr == K->rootgc)  /* is the first element of the list? */
-                K->rootgc = curr->gch.next;  /* adjust first */
+            if (curr == g->rootgc)  /* is the first element of the list? */
+                g->rootgc = curr->gch.next;  /* adjust first */
             freeobj(K, curr);
         }
     }
@@ -543,10 +576,11 @@ static GCObject **sweeplist (klisp_State *K, GCObject **p, uint32_t count)
 }
 
 static void checkSizes (klisp_State *K) {
+    global_State *g = G(K);
     /* check size of string/symbol hash */
-    if (K->strt.nuse < cast(uint32_t , K->strt.size/4) &&
-	    K->strt.size > MINSTRTABSIZE*2)
-        klispS_resize(K, K->strt.size/2);  /* table is too big */
+    if (g->strt.nuse < cast(uint32_t , g->strt.size/4) &&
+	    g->strt.size > MINSTRTABSIZE*2)
+        klispS_resize(K, g->strt.size/2);  /* table is too big */
 #if 0 /* not used in klisp */
     /* check size of buffer */
     if (luaZ_sizebuffer(&g->buff) > LUA_MINBUFFER*2) {  /* buffer too big? */
@@ -598,89 +632,74 @@ void klispC_callGCTM (lua_State *L) {
 /* This still leaves allocated objs in K, namely the 
    arrays that aren't TValues */
 void klispC_freeall (klisp_State *K) {
+    global_State *g = G(K);
     /* mask to collect all elements */
-    K->currentwhite = WHITEBITS | bitmask(SFIXEDBIT);
-    sweepwholelist(K, &K->rootgc);
+    g->currentwhite = WHITEBITS | bitmask(SFIXEDBIT);
+    sweepwholelist(K, &g->rootgc);
     /* free all keyword/symbol/string/bytevectors lists */
-    for (int32_t i = 0; i < K->strt.size; i++)  
-        sweepwholelist(K, &K->strt.hash[i]);
+    for (int32_t i = 0; i < g->strt.size; i++)  
+        sweepwholelist(K, &g->strt.hash[i]);
 }
-
 
 /* mark root set */
 static void markroot (klisp_State *K) {
-    K->gray = NULL;
-    K->grayagain = NULL; 
-    K->weak = NULL; 
+    global_State *g = G(K);
+    g->gray = NULL;
+    g->grayagain = NULL; 
+    g->weak = NULL; 
 
     /* TEMP: this is quite awful, think of other way to do this */
     /* MAYBE: some of these could be FIXED */
-    markvalue(K, K->name_table);
-    markvalue(K, K->cont_name_table);
-    markvalue(K, K->curr_cont);
-    markvalue(K, K->next_obj);
-    markvalue(K, K->next_value);
-    markvalue(K, K->next_env);
-    markvalue(K, K->next_si);
-    /* NOTE: next_x_params is protected by next_obj */
-    markvalue(K, K->eval_op);
-    markvalue(K, K->list_app);
-    markvalue(K, K->memoize_app);
-    markvalue(K, K->ground_env);
-    markvalue(K, K->module_params_sym);
-    markvalue(K, K->root_cont);
-    markvalue(K, K->error_cont);
-    markvalue(K, K->system_error_cont);
+    markobject(g, g->mainthread);
 
-    markvalue(K, K->kd_in_port_key);
-    markvalue(K, K->kd_out_port_key);
-    markvalue(K, K->kd_error_port_key);
-    markvalue(K, K->kd_strict_arith_key);
-    markvalue(K, K->empty_string);
-    markvalue(K, K->empty_bytevector);
-    markvalue(K, K->empty_vector);
+    markvalue(g, g->name_table);
+    markvalue(g, g->cont_name_table);
 
-    markvalue(K, K->ktok_lparen);
-    markvalue(K, K->ktok_rparen);
-    markvalue(K, K->ktok_dot);
-    markvalue(K, K->ktok_sexp_comment);
-    markvalue(K, K->shared_dict);
+    markvalue(g, g->eval_op);
+    markvalue(g, g->list_app);
+    markvalue(g, g->memoize_app);
+    markvalue(g, g->ground_env);
+    markvalue(g, g->module_params_sym);
+    markvalue(g, g->root_cont);
+    markvalue(g, g->error_cont);
+    markvalue(g, g->system_error_cont);
 
-    markvalue(K, K->curr_port);
+    markvalue(g, g->kd_in_port_key);
+    markvalue(g, g->kd_out_port_key);
+    markvalue(g, g->kd_error_port_key);
+    markvalue(g, g->kd_strict_arith_key);
+    markvalue(g, g->empty_string);
+    markvalue(g, g->empty_bytevector);
+    markvalue(g, g->empty_vector);
 
-    markvalue(K, K->require_path);
-    markvalue(K, K->require_table);
+    markvalue(g, g->ktok_lparen);
+    markvalue(g, g->ktok_rparen);
+    markvalue(g, g->ktok_dot);
+    markvalue(g, g->ktok_sexp_comment);
 
-    markvalue(K, K->libraries_registry);
+    markvalue(g, g->require_path);
+    markvalue(g, g->require_table);
 
-    /* Mark all objects in the auxiliary stack,
-       (all valid indexes are below top) and all the objects in
-       the two protected areas */
-    markvaluearray(K, K->sbuf, K->stop);
-    markvaluearray(K, K->rooted_tvs_buf, K->rooted_tvs_top);
-    /* the area protecting variables is an array of type TValue *[] */
-    TValue **ptr = K->rooted_vars_buf;
-    for (int i = 0, top = K->rooted_vars_top; i < top; i++, ptr++) {
-        markvalue(K, **ptr);
-    }
-    
-    K->gcstate = GCSpropagate;
+    markvalue(g, g->libraries_registry);    
+
+    g->gcstate = GCSpropagate;
 }
 
 static void atomic (klisp_State *K) {
+    global_State *g = G(K);
     size_t udsize;  /* total size of userdata to be finalized */
     /* traverse objects caught by write barrier */
-    propagateall(K);
+    propagateall(g);
 
     /* remark weak tables */
-    K->gray = K->weak; 
-    K->weak = NULL;
-    propagateall(K);
+    g->gray = g->weak; 
+    g->weak = NULL;
+    propagateall(g);
 
     /* remark gray again */
-    K->gray = K->grayagain;
-    K->grayagain = NULL;
-    propagateall(K);
+    g->gray = g->grayagain;
+    g->grayagain = NULL;
+    propagateall(g);
 
     udsize = 0; /* to init var 'till we add user data */
 #if 0 /* keep around */
@@ -688,49 +707,50 @@ static void atomic (klisp_State *K) {
     marktmu(g);  /* mark `preserved' userdata */
     udsize += propagateall(g);  /* remark, to propagate `preserveness' */
 #endif
-    cleartable(K->weak);  /* remove collected objects from weak tables */
+    cleartable(g->weak);  /* remove collected objects from weak tables */
 
     /* flip current white */
-    K->currentwhite = cast(uint16_t, otherwhite(K));
-    K->sweepstrgc = 0;
-    K->sweepgc = &K->rootgc;
-    K->gcstate = GCSsweepstring;
-    K->estimate = K->totalbytes - udsize;  /* first estimate */
+    g->currentwhite = cast(uint16_t, otherwhite(g));
+    g->sweepstrgc = 0;
+    g->sweepgc = &g->rootgc;
+    g->gcstate = GCSsweepstring;
+    g->estimate = g->totalbytes - udsize;  /* first estimate */
 }
 
 
 static int32_t singlestep (klisp_State *K) {
-    switch (K->gcstate) {
+    global_State *g = G(K);
+    switch (g->gcstate) {
     case GCSpause: {
         markroot(K);  /* start a new collection */
         return 0;
     }
     case GCSpropagate: {
-        if (K->gray)
-            return propagatemark(K);
+        if (g->gray)
+            return propagatemark(g);
         else {  /* no more `gray' objects */
             atomic(K);  /* finish mark phase */
             return 0;
         }
     }
     case GCSsweepstring: {
-        uint32_t old = K->totalbytes;
-        sweepwholelist(K, &K->strt.hash[K->sweepstrgc++]);
-        if (K->sweepstrgc >= K->strt.size)  /* nothing more to sweep? */
-            K->gcstate = GCSsweep;  /* end sweep-string phase */
-        klisp_assert(old >= K->totalbytes);
-        K->estimate -= old - K->totalbytes;
+        uint32_t old = g->totalbytes;
+        sweepwholelist(K, &g->strt.hash[g->sweepstrgc++]);
+        if (g->sweepstrgc >= g->strt.size)  /* nothing more to sweep? */
+            g->gcstate = GCSsweep;  /* end sweep-string phase */
+        klisp_assert(old >= g->totalbytes);
+        g->estimate -= old - g->totalbytes;
         return GCSWEEPCOST;
     }
     case GCSsweep: {
-        uint32_t old = K->totalbytes;
-        K->sweepgc = sweeplist(K, K->sweepgc, GCSWEEPMAX);
-        if (*K->sweepgc == NULL) {  /* nothing more to sweep? */
+        uint32_t old = g->totalbytes;
+        g->sweepgc = sweeplist(K, g->sweepgc, GCSWEEPMAX);
+        if (*g->sweepgc == NULL) {  /* nothing more to sweep? */
             checkSizes(K);
-            K->gcstate = GCSfinalize;  /* end sweep phase */
+            g->gcstate = GCSfinalize;  /* end sweep phase */
         }
-        klisp_assert(old >= K->totalbytes);
-        K->estimate -= old - K->totalbytes;
+        klisp_assert(old >= g->totalbytes);
+        g->estimate -= old - g->totalbytes;
         return GCSWEEPMAX*GCSWEEPCOST;
     }
     case GCSfinalize: {
@@ -743,8 +763,8 @@ static int32_t singlestep (klisp_State *K) {
         }
         else {
 #endif
-            K->gcstate = GCSpause;  /* end collection */
-            K->gcdept = 0;
+            g->gcstate = GCSpause;  /* end collection */
+            g->gcdept = 0;
             return 0;
 #if 0
         }
@@ -756,55 +776,57 @@ static int32_t singlestep (klisp_State *K) {
 
 
 void klispC_step (klisp_State *K) {
-    int32_t lim = (GCSTEPSIZE/100) * K->gcstepmul;
+    global_State *g = G(K);
+    int32_t lim = (GCSTEPSIZE/100) * g->gcstepmul;
 
     if (lim == 0)
         lim = (UINT32_MAX-1)/2;  /* no limit */
 
-    K->gcdept += K->totalbytes - K->GCthreshold;
+    g->gcdept += g->totalbytes - g->GCthreshold;
 
     do {
         lim -= singlestep(K);
-        if (K->gcstate == GCSpause)
+        if (g->gcstate == GCSpause)
             break;
     } while (lim > 0);
 
-    if (K->gcstate != GCSpause) {
-        if (K->gcdept < GCSTEPSIZE) {
-            K->GCthreshold = K->totalbytes + GCSTEPSIZE; 
+    if (g->gcstate != GCSpause) {
+        if (g->gcdept < GCSTEPSIZE) {
+            g->GCthreshold = g->totalbytes + GCSTEPSIZE; 
             /* - lim/g->gcstepmul;*/        
         } else {
-            K->gcdept -= GCSTEPSIZE;
-            K->GCthreshold = K->totalbytes;
+            g->gcdept -= GCSTEPSIZE;
+            g->GCthreshold = g->totalbytes;
         }
     } else {
-        klisp_assert(K->totalbytes >= K->estimate);
-        setthreshold(K);
+        klisp_assert(g->totalbytes >= g->estimate);
+        setthreshold(g);
     }
 }
 
 void klispC_fullgc (klisp_State *K) {
-    if (K->gcstate <= GCSpropagate) {
+    global_State *g = G(K);
+    if (g->gcstate <= GCSpropagate) {
         /* reset sweep marks to sweep all elements (returning them to white) */
-        K->sweepstrgc = 0;
-        K->sweepgc = &K->rootgc;
+        g->sweepstrgc = 0;
+        g->sweepgc = &g->rootgc;
         /* reset other collector lists */
-        K->gray = NULL;
-        K->grayagain = NULL;
-        K->weak = NULL;
-        K->gcstate = GCSsweepstring;
+        g->gray = NULL;
+        g->grayagain = NULL;
+        g->weak = NULL;
+        g->gcstate = GCSsweepstring;
     }
-    klisp_assert(K->gcstate != GCSpause && K->gcstate != GCSpropagate);
+    klisp_assert(g->gcstate != GCSpause && g->gcstate != GCSpropagate);
     /* finish any pending sweep phase */
-    while (K->gcstate != GCSfinalize) {
-        klisp_assert(K->gcstate == GCSsweepstring || K->gcstate == GCSsweep);
+    while (g->gcstate != GCSfinalize) {
+        klisp_assert(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep);
         singlestep(K);
     }
     markroot(K);
-    while (K->gcstate != GCSpause) {
+    while (g->gcstate != GCSpause) {
         singlestep(K);
     }
-    setthreshold(K);
+    setthreshold(g);
 }
 
 /* TODO: make all code using mutation to call these,
@@ -814,32 +836,35 @@ void klispC_fullgc (klisp_State *K) {
    made before assigning to a GC guarded variable, or pushed in a GC
    guarded stack! */
 void klispC_barrierf (klisp_State *K, GCObject *o, GCObject *v) {
-    klisp_assert(isblack(o) && iswhite(v) && !isdead(K, v) && !isdead(K, o));
-    klisp_assert(K->gcstate != GCSfinalize && K->gcstate != GCSpause);
+    global_State *g = G(K);
+    klisp_assert(isblack(o) && iswhite(v) && !isdead(g, v) && !isdead(g, o));
+    klisp_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
     klisp_assert(o->gch.tt != K_TTABLE);
     /* must keep invariant? */
-    if (K->gcstate == GCSpropagate)
-        reallymarkobject(K, v);  /* restore invariant */
+    if (g->gcstate == GCSpropagate)
+        reallymarkobject(g, v);  /* restore invariant */
     else  /* don't mind */
-        makewhite(K, o);  /* mark as white just to avoid other barriers */
+        makewhite(g, o);  /* mark as white just to avoid other barriers */
 }
 
 void klispC_barrierback (klisp_State *K, Table *t) {
+    global_State *g = G(K);
     GCObject *o = obj2gco(t);
-    klisp_assert(isblack(o) && !isdead(K, o));
-    klisp_assert(K->gcstate != GCSfinalize && K->gcstate != GCSpause);
+    klisp_assert(isblack(o) && !isdead(g, o));
+    klisp_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
     black2gray(o);  /* make table gray (again) */
-    t->gclist = K->grayagain;
-    K->grayagain = o;
+    t->gclist = g->grayagain;
+    g->grayagain = o;
 }
 
 /* NOTE: kflags is added for klisp */
 /* NOTE: symbols, keywords, immutable strings and immutable bytevectors do 
    this "by hand", they don't call this */
 void klispC_link (klisp_State *K, GCObject *o, uint8_t tt, uint8_t kflags) {
-    o->gch.next = K->rootgc;
-    K->rootgc = o;
-    o->gch.gct = klispC_white(K);
+    global_State *g = G(K);
+    o->gch.next = g->rootgc;
+    g->rootgc = o;
+    o->gch.gct = klispC_white(g);
     o->gch.tt = tt;
     o->gch.kflags = kflags;
     o->gch.si = NULL;

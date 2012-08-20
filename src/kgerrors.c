@@ -44,7 +44,7 @@ void kgraise(klisp_State *K)
     UNUSED(denv);
 
     bind_1p(K, ptree, obj);
-    kcall_cont(K, K->error_cont, obj);
+    kcall_cont(K, G(K)->error_cont, obj);
 }
 
 void error_object_message(klisp_State *K)
@@ -90,17 +90,17 @@ void do_exception_cont(klisp_State *K)
 /* Create system-error-continuation. */
 void kinit_error_hierarchy(klisp_State *K)
 {
-    klisp_assert(ttiscontinuation(K->error_cont));
-    klisp_assert(ttisinert(K->system_error_cont));
+    klisp_assert(ttiscontinuation(G(K)->error_cont));
+    klisp_assert(ttisinert(G(K)->system_error_cont));
 
-    K->system_error_cont = kmake_continuation(K, K->error_cont, 
+    G(K)->system_error_cont = kmake_continuation(K, G(K)->error_cont, 
                                               do_exception_cont, 0);
 }
 
 /* init ground */
 void kinit_error_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     add_applicative(K, ground_env, "error-object?", typep, 2, symbol, 
@@ -122,6 +122,6 @@ void kinit_error_ground_env(klisp_State *K)
        See Common Lisp and mit scheme for examples
     */
 
-    klisp_assert(ttiscontinuation(K->system_error_cont));
-    add_value(K, ground_env, "system-error-continuation", K->system_error_cont);
+    klisp_assert(ttiscontinuation(G(K)->system_error_cont));
+    add_value(K, ground_env, "system-error-continuation", G(K)->system_error_cont);
 }

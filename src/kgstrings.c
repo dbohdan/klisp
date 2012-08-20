@@ -334,7 +334,7 @@ void substring(klisp_State *K)
     TValue new_str;
     /* the if isn't strictly necessary but it's clearer this way */
     if (size == 0) {
-        new_str = K->empty_string;
+        new_str = G(K)->empty_string;
     } else {
         /* always returns mutable strings */
         new_str = kstring_new_bs(K, kstring_buf(str)+start, size);
@@ -374,7 +374,7 @@ void string_append(klisp_State *K)
     int32_t size = (int32_t) total_size;
 
     if (size == 0) {
-        new_str = K->empty_string; 
+        new_str = G(K)->empty_string; 
     } else {
         new_str = kstring_new_s(K, size);
         char *buf = kstring_buf(new_str);
@@ -442,7 +442,7 @@ void string_to_vector(klisp_State *K)
     TValue res;
 
     if (kstring_emptyp(str)) {
-        res = K->empty_vector;
+        res = G(K)->empty_vector;
     } else {
         uint32_t size = kstring_size(str);
 
@@ -473,7 +473,7 @@ void vector_to_string(klisp_State *K)
     TValue res;
 
     if (kvector_emptyp(vec)) {
-        res = K->empty_string;
+        res = G(K)->empty_string;
     } else {
         uint32_t size = kvector_size(vec);
 
@@ -507,7 +507,7 @@ void string_to_bytevector(klisp_State *K)
     TValue res;
 
     if (kstring_emptyp(str)) {
-        res = K->empty_bytevector;
+        res = G(K)->empty_bytevector;
     } else {
         uint32_t size = kstring_size(str);
 
@@ -538,7 +538,7 @@ void bytevector_to_string(klisp_State *K)
     TValue res;
 
     if (kbytevector_emptyp(bb)) {
-        res = K->empty_string;
+        res = G(K)->empty_string;
     } else {
         uint32_t size = kbytevector_size(bb);
         res = kstring_new_s(K, size); /* no need to root this */
@@ -571,7 +571,7 @@ void string_copy(klisp_State *K)
 
     TValue new_str;
     /* the if isn't strictly necessary but it's clearer this way */
-    if (tv_equal(str, K->empty_string)) {
+    if (tv_equal(str, G(K)->empty_string)) {
         new_str = str; 
     } else {
         new_str = kstring_new_bs(K, kstring_buf(str), kstring_size(str));
@@ -623,7 +623,7 @@ void string_fillB(klisp_State *K)
 /* init ground */
 void kinit_strings_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /*

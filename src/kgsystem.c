@@ -254,7 +254,7 @@ TValue create_env_var_list(klisp_State *K)
 /* init ground */
 void kinit_system_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* ??.?.? get-current-second */

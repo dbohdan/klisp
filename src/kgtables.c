@@ -311,7 +311,7 @@ static void hash_table_to_list(klisp_State *K)
 /* init ground */
 void kinit_tables_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     add_applicative(K, ground_env, "hash-table?", typep, 2, symbol,

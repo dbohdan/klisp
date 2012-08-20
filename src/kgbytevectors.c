@@ -200,7 +200,7 @@ void bytevector_copy(klisp_State *K)
 
     TValue new_bytevector;
     /* the if isn't strictly necessary but it's clearer this way */
-    if (tv_equal(bytevector, K->empty_bytevector)) {
+    if (tv_equal(bytevector, G(K)->empty_bytevector)) {
         new_bytevector = bytevector; 
     } else {
         new_bytevector = kbytevector_new_bs(K, kbytevector_buf(bytevector),
@@ -230,7 +230,7 @@ void bytevector_copyB(klisp_State *K)
     }
 
     if (!tv_equal(bytevector1, bytevector2) && 
-        !tv_equal(bytevector1, K->empty_bytevector)) {
+        !tv_equal(bytevector1, G(K)->empty_bytevector)) {
         memcpy(kbytevector_buf(bytevector2),
                kbytevector_buf(bytevector1),
                kbytevector_size(bytevector1));
@@ -279,7 +279,7 @@ void bytevector_copy_partial(klisp_State *K)
     TValue new_bytevector;
     /* the if isn't strictly necessary but it's clearer this way */
     if (size == 0) {
-        new_bytevector = K->empty_bytevector;
+        new_bytevector = G(K)->empty_bytevector;
     } else {
         new_bytevector = kbytevector_new_bs(K, kbytevector_buf(bytevector) 
                                             + start, size);
@@ -409,7 +409,7 @@ void bytevector_to_immutable_bytevector(klisp_State *K)
 /* init ground */
 void kinit_bytevectors_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /*

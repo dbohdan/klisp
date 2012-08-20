@@ -86,4 +86,13 @@
 #define MINREADLINEBUFFER	80
 #endif
 
+#ifndef klisp_lock
+#define klisp_lock(K)     ((void) 0) 
+#define klisp_unlock(K)   ((void) 0)
+#endif
+
+#ifndef klispi_threadyield
+#define klispi_threadyield(K)     {klisp_unlock(K); klisp_lock(K);}
+#endif
+
 #endif

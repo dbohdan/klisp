@@ -1215,7 +1215,7 @@ void reduce(klisp_State *K)
 /* init ground */
 void kinit_pairs_lists_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* 4.6.1 pair? */
@@ -1324,10 +1324,11 @@ void kinit_pairs_lists_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "reduce", reduce, 0);
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_pairs_lists_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
     
     add_cont_name(K, t, do_memberp, "member?-search");
     add_cont_name(K, t, do_assoc, "assoc-search");

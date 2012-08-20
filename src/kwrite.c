@@ -441,7 +441,9 @@ void kw_print_cont_type(klisp_State *K, TValue obj)
     K->write_displayp = true; /* avoid "s and escapes */
 
     Continuation *cont = tv2cont(obj);
-    const TValue *node = klispH_get(tv2table(K->cont_name_table),
+
+    /* XXX lock? */
+    const TValue *node = klispH_get(tv2table(G(K)->cont_name_table),
                                     p2tv(cont->fn));
 
     char *type;

@@ -285,7 +285,7 @@ void gread(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(G(K)->kd_in_port_key); /* access directly */
     } 
 
     if (!kport_is_input(port)) {
@@ -318,7 +318,7 @@ void gwrite(klisp_State *K)
                port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(G(K)->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
@@ -351,7 +351,7 @@ void gwrite_simple(klisp_State *K)
                port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(G(K)->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
@@ -384,7 +384,7 @@ void newline(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(G(K)->kd_out_port_key); /* access directly */
     }
 
     if (!kport_is_output(port)) {
@@ -416,7 +416,7 @@ void write_char(klisp_State *K)
                port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(G(K)->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
@@ -450,7 +450,7 @@ void read_peek_char(klisp_State *K)
 
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(G(K)->kd_in_port_key); /* access directly */
     } 
     
     if (!kport_is_input(port)) {
@@ -491,7 +491,7 @@ void char_readyp(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(G(K)->kd_in_port_key); /* access directly */
     } 
 
     if (!kport_is_input(port)) {
@@ -522,7 +522,7 @@ void write_u8(klisp_State *K)
     bind_al1tp(K, ptree, "u8", ttisu8, u8, port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(G(K)->kd_out_port_key); /* access directly */
     } 
 
     if (!kport_is_output(port)) {
@@ -556,7 +556,7 @@ void read_peek_u8(klisp_State *K)
 
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(G(K)->kd_in_port_key); /* access directly */
     }
 
     if (!kport_is_input(port)) {
@@ -597,7 +597,7 @@ void u8_readyp(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(G(K)->kd_in_port_key); /* access directly */
     }
     
     if (!kport_is_input(port)) {
@@ -681,7 +681,7 @@ TValue make_guarded_read_cont(klisp_State *K, TValue parent, TValue port)
     TValue exit_int = kmake_operative(K, do_int_close_file, 
                                       1, port);
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, exit_int);
     krooted_tvs_pop(K); /* alread in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -833,7 +833,7 @@ static TValue find_file (klisp_State *K, TValue name, TValue pname) {
     /* lua_getfield(L, LUA_ENVIRONINDEX, pname); */
     klisp_assert(ttisstring(name) && !kstring_emptyp(name));
     const char *path = kstring_buf(pname);
-    TValue next = K->empty_string;
+    TValue next = G(K)->empty_string;
     krooted_vars_push(K, &next);
     TValue wild = kstring_new_b(K, KLISP_PATH_MARK);
     krooted_tvs_push(K, wild);
@@ -849,9 +849,10 @@ static TValue find_file (klisp_State *K, TValue name, TValue pname) {
     
     krooted_tvs_pop(K);
     krooted_vars_pop(K);
-    return K->empty_string;  /* return empty_string */
+    return G(K)->empty_string;  /* return empty_string */
 }
 
+/* XXX lock? */
 /* ?.? require */
 /*
 ** require is like load except that:
@@ -883,7 +884,7 @@ void require(klisp_State *K)
     TValue saved_name = kstring_immutablep(name)? name :
         kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
-    const TValue *node = klispH_getstr(tv2table(K->require_table), 
+    const TValue *node = klispH_getstr(tv2table(G(K)->require_table), 
                                        tv2str(saved_name));
     if (!ttisfree(*node)) {
         /* was required already, nothing to be done */
@@ -891,9 +892,9 @@ void require(klisp_State *K)
     }
 
     krooted_tvs_push(K, saved_name);
-    TValue filename = K->empty_string;
+    TValue filename = G(K)->empty_string;
     krooted_vars_push(K, &filename);
-    filename = find_file(K, name, K->require_path);
+    filename = find_file(K, name, G(K)->require_path);
     
     if (kstring_emptyp(filename)) {
         klispE_throw_simple_with_irritants(K, "Not found", 1, name);
@@ -906,7 +907,7 @@ void require(klisp_State *K)
        required recursively. A third option would be to record the 
        sate of the require in the table, so we could have: error, required,
        requiring, etc */
-    *(klispH_setstr(K, tv2table(K->require_table), tv2str(saved_name))) = 
+    *(klispH_setstr(K, tv2table(G(K)->require_table), tv2str(saved_name))) = 
         KTRUE;
     krooted_tvs_pop(K); /* saved_name no longer necessary */
 
@@ -941,7 +942,7 @@ void require(klisp_State *K)
     } else {
         TValue tail = kcdr(ls);
         /* std environments have hashtable for bindings */
-        TValue env = kmake_table_environment(K, K->ground_env);
+        TValue env = kmake_table_environment(K, G(K)->ground_env);
         if (ttispair(tail)) {
             krooted_tvs_push(K, ls);
             krooted_tvs_push(K, env);
@@ -961,6 +962,7 @@ void require(klisp_State *K)
     }
 }
 
+/* XXX lock? */
 /* ?.? registered-requirement? */
 void registered_requirementP(klisp_State *K)
 {
@@ -976,11 +978,12 @@ void registered_requirementP(klisp_State *K)
     TValue saved_name = kstring_immutablep(name)? name :
         kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
-    const TValue *node = klispH_getstr(tv2table(K->require_table), 
+    const TValue *node = klispH_getstr(tv2table(G(K)->require_table), 
                                        tv2str(saved_name));
     kapply_cc(K, ttisfree(*node)? KFALSE : KTRUE);
 }
 
+/* XXX lock? */
 void register_requirementB(klisp_State *K)
 {
     bind_1tp(K, K->next_value, "string", ttisstring, name);
@@ -991,7 +994,7 @@ void register_requirementB(klisp_State *K)
     TValue saved_name = kstring_immutablep(name)? name :
         kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
-    TValue *node = klispH_setstr(K, tv2table(K->require_table), 
+    TValue *node = klispH_setstr(K, tv2table(G(K)->require_table), 
                                  tv2str(saved_name));
     
     /* throw error if already registered */
@@ -1005,6 +1008,7 @@ void register_requirementB(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* XXX lock? */
 void unregister_requirementB(klisp_State *K)
 {
     bind_1tp(K, K->next_value, "string", ttisstring, name);
@@ -1015,7 +1019,7 @@ void unregister_requirementB(klisp_State *K)
     TValue saved_name = kstring_immutablep(name)? name :
         kstring_new_bs_imm(K, kstring_buf(name), kstring_size(name));
 
-    TValue *node = klispH_setstr(K, tv2table(K->require_table), 
+    TValue *node = klispH_setstr(K, tv2table(G(K)->require_table), 
                                  tv2str(saved_name));
 
     /* throw error if not registered */
@@ -1028,6 +1032,7 @@ void unregister_requirementB(klisp_State *K)
     kapply_cc(K, KINERT);
 }
 
+/* XXX lock? */
 /* will throw an error if not found */
 void find_required_filename(klisp_State *K)
 {
@@ -1036,7 +1041,7 @@ void find_required_filename(klisp_State *K)
         klispE_throw_simple(K, "Empty name");
         return;
     }
-    TValue filename = find_file(K, name, K->require_path);
+    TValue filename = find_file(K, name, G(K)->require_path);
     
     if (kstring_emptyp(filename)) {
         klispE_throw_simple_with_irritants(K, "Not found", 1, name);
@@ -1061,12 +1066,12 @@ void get_module(klisp_State *K)
     krooted_tvs_push(K, port);
 
     /* std environments have hashtable for bindings */
-    TValue env = kmake_table_environment(K, K->ground_env);
-//    TValue env = kmake_environment(K, K->ground_env);
+    TValue env = kmake_table_environment(K, G(K)->ground_env);
+//    TValue env = kmake_environment(K, G(K)->ground_env);
     krooted_tvs_push(K, env);
 
     if (get_opt_tpar(K, maybe_env, "environment", ttisenvironment)) {
-        kadd_binding(K, env, K->module_params_sym, maybe_env);
+        kadd_binding(K, env, G(K)->module_params_sym, maybe_env);
     }
 
     TValue ret_env_cont = kmake_continuation(K, kget_cc(K), do_return_value, 
@@ -1125,7 +1130,7 @@ void display(klisp_State *K)
                port);
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(G(K)->kd_out_port_key); /* access directly */
     }
 
     if (!kport_is_output(port)) {
@@ -1156,7 +1161,7 @@ void read_line(klisp_State *K)
     
     TValue port = ptree;
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_in_port_key); /* access directly */
+        port = kcdr(G(K)->kd_in_port_key); /* access directly */
     }
 
     if (!kport_is_input(port)) {
@@ -1187,7 +1192,7 @@ void flush(klisp_State *K)
     TValue port = ptree;
 
     if (!get_opt_tpar(K, port, "port", ttisport)) {
-        port = kcdr(K->kd_out_port_key); /* access directly */
+        port = kcdr(G(K)->kd_out_port_key); /* access directly */
     }
 
     if (!kport_is_output(port)) {
@@ -1211,7 +1216,7 @@ void kinit_ports_ground_env(klisp_State *K)
     ** Some of these are from r7rs scheme
     */
 
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* 15.1.1 port? */
@@ -1241,19 +1246,19 @@ void kinit_ports_ground_env(klisp_State *K)
     /* 15.1.3 with-input-from-file, with-ouput-to-file */
     /* 15.1.? with-error-to-file */
     add_applicative(K, ground_env, "with-input-from-file", with_file, 
-                    3, symbol, b2tv(false), K->kd_in_port_key);
+                    3, symbol, b2tv(false), G(K)->kd_in_port_key);
     add_applicative(K, ground_env, "with-output-to-file", with_file, 
-                    3, symbol, b2tv(true), K->kd_out_port_key);
+                    3, symbol, b2tv(true), G(K)->kd_out_port_key);
     add_applicative(K, ground_env, "with-error-to-file", with_file, 
-                    3, symbol, b2tv(true), K->kd_error_port_key);
+                    3, symbol, b2tv(true), G(K)->kd_error_port_key);
     /* 15.1.4 get-current-input-port, get-current-output-port */
     /* 15.1.? get-current-error-port */
     add_applicative(K, ground_env, "get-current-input-port", get_current_port, 
-                    2, symbol, K->kd_in_port_key);
+                    2, symbol, G(K)->kd_in_port_key);
     add_applicative(K, ground_env, "get-current-output-port", get_current_port, 
-                    2, symbol, K->kd_out_port_key);
+                    2, symbol, G(K)->kd_out_port_key);
     add_applicative(K, ground_env, "get-current-error-port", get_current_port, 
-                    2, symbol, K->kd_error_port_key);
+                    2, symbol, G(K)->kd_error_port_key);
     /* 15.1.5 open-input-file, open-output-file */
     add_applicative(K, ground_env, "open-input-file", open_file, 2, 
                     b2tv(false), b2tv(false));
@@ -1378,10 +1383,11 @@ void kinit_ports_ground_env(klisp_State *K)
      */
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_ports_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
 
     add_cont_name(K, t, do_close_file_ret, "close-file-and-ret");
 }
