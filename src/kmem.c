@@ -70,12 +70,13 @@ void *klispM_toobig (klisp_State *K) {
 /*
 ** generic allocation routine.
 */
-/* XXX lock? */
 void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) {
     klisp_assert((osize == 0) == (block == NULL));
 
     /* TEMP: for now only Stop the world GC */
     /* TEMP: prevent recursive call of klispC_fullgc() */
+
+    klisp_lock(K);
 #ifdef KUSE_GC
     if (nsize > 0 && G(K)->totalbytes - osize + nsize >= G(K)->GCthreshold) {
 #ifdef KDEBUG_GC
@@ -93,10 +94,12 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
     if (block == NULL && nsize > 0) {
         /* TEMP: try GC if there is no more mem */
         /* TODO: make this a catchable error */
+        klisp_unlock(K);
         fprintf(stderr, MEMERRMSG);
         abort();
     }
     klisp_assert((nsize == 0) == (block == NULL));
     G(K)->totalbytes = (G(K)->totalbytes - osize) + nsize;
+    klisp_unlock(K);
     return block;
 }
