@@ -872,7 +872,7 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
 
     /* Enter new "inner" trampoline loop. */
 
-    klispS_run(K);
+    klispT_run(K);
 
     /* restore longjump buffer of the outer trampoline loop */
 
@@ -895,7 +895,7 @@ static void ffi_callback_entry(ffi_cif *cif, void *ret, void **args, void *user_
         ** normal return from the exit guard.
         */
         (void) ffi_callback_pop(cb);
-        klispS_apply_cc(K, kcar(K->next_value));
+        klispT_apply_cc(K, kcar(K->next_value));
         longjmp(K->error_jb, 1);
     }
 }

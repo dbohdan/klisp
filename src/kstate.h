@@ -454,7 +454,7 @@ static inline TValue kget_csi(klisp_State *K)
 ** Functions to manipulate the current continuation and calling 
 ** operatives
 */
-static inline void klispS_apply_cc(klisp_State *K, TValue val)
+static inline void klispT_apply_cc(klisp_State *K, TValue val)
 {
     /* TODO write barriers */
 
@@ -474,23 +474,23 @@ static inline void klispS_apply_cc(klisp_State *K, TValue val)
     K->next_si = ktry_get_si(K, K->next_obj);
 }
 
-#define kapply_cc(K_, val_) klispS_apply_cc((K_), (val_)); return
+#define kapply_cc(K_, val_) klispT_apply_cc((K_), (val_)); return
 
-static inline TValue klispS_get_cc(klisp_State *K)
+static inline TValue klispT_get_cc(klisp_State *K)
 {
     return K->curr_cont;
 }
 
-#define kget_cc(K_) (klispS_get_cc(K_))
+#define kget_cc(K_) (klispT_get_cc(K_))
 
-static inline void klispS_set_cc(klisp_State *K, TValue new_cont)
+static inline void klispT_set_cc(klisp_State *K, TValue new_cont)
 {
     K->curr_cont = new_cont;
 }
 
-#define kset_cc(K_, c_) (klispS_set_cc(K_, c_))
+#define kset_cc(K_, c_) (klispT_set_cc(K_, c_))
 
-static inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
+static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
                                 TValue env, TValue si)
 {
     /* TODO write barriers */
@@ -511,7 +511,7 @@ static inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 }
 
 #define ktail_call_si(K_, op_, p_, e_, si_)                             \
-    { klispS_tail_call_si((K_), (op_), (p_), (e_), (si_)); return; }
+    { klispT_tail_call_si((K_), (op_), (p_), (e_), (si_)); return; }
 
 /* if no source info is needed */
 #define ktail_call(K_, op_, p_, e_)                                     \
@@ -522,15 +522,15 @@ static inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 #define ktail_eval(K_, p_, e_)                              \
     { klisp_State *K__ = (K_);                              \
         TValue p__ = (p_);                                  \
-        klispS_tail_call_si(K__, G(K__)->eval_op, p__, (e_),    \
+        klispT_tail_call_si(K__, G(K__)->eval_op, p__, (e_),    \
                             ktry_get_si(K__, p__));			\
         return; }
 
 /* helper for continuation->applicative & kcall_cont */
 void cont_app(klisp_State *K);
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
-void klispS_init_repl(klisp_State *K);
-void klispS_run(klisp_State *K);
+void klispT_init_repl(klisp_State *K);
+void klispT_run(klisp_State *K);
 void klisp_close (klisp_State *K);
 
 void do_interception(klisp_State *K);

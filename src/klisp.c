@@ -265,8 +265,8 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     krooted_vars_pop(K);
     krooted_tvs_pop(K);
 
-    klispS_tail_call_si(K, ev, ptree, env, KNIL);
-    klispS_run(K);
+    klispT_tail_call_si(K, ev, ptree, env, KNIL);
+    klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
         (rootp? STATUS_ROOT : STATUS_CONTINUE);
@@ -392,9 +392,9 @@ static int dofile(klisp_State *K, const char *name)
     krooted_tvs_pop(K); /* pop eval cont */
     krooted_tvs_pop(K); /* pop port */
     kset_cc(K, read_cont); /* this will protect all conts from gc */
-    klispS_apply_cc(K, KINERT);
+    klispT_apply_cc(K, KINERT);
 
-    klispS_run(K);
+    klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
         (rootp? STATUS_ROOT : STATUS_CONTINUE);
@@ -408,7 +408,7 @@ static void dotty(klisp_State *K)
 {
     TValue env = K->next_env;
     kinit_repl(K);
-    klispS_run(K);
+    klispT_run(K);
     /* get the standard environment again in K->next_env */
     K->next_env = env;
 }
@@ -479,8 +479,8 @@ static int dorfile(klisp_State *K, const char *name)
     krooted_tvs_pop(K);
     krooted_vars_pop(K);
 
-    klispS_tail_call_si(K, req, ptree, env, KNIL);
-    klispS_run(K);
+    klispT_tail_call_si(K, req, ptree, env, KNIL);
+    klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
         (rootp? STATUS_ROOT : STATUS_CONTINUE);

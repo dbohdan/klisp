@@ -793,17 +793,17 @@ void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj)
     ** TODO: do that
     */
     kset_cc(K, new_cont);
-    klispS_apply_cc(K, obj);
+    klispT_apply_cc(K, obj);
     longjmp(K->error_jb, 1);
 }
 
-void klispS_init_repl(klisp_State *K)
+void klispT_init_repl(klisp_State *K)
 {
     /* this is in krepl.c */
     kinit_repl(K);
 }
 
-void klispS_run(klisp_State *K)
+void klispT_run(klisp_State *K)
 {
     while(true) {
         if (setjmp(K->error_jb)) {
