@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "klisp.h"
 #include "klimits.h"
@@ -83,6 +84,10 @@ static void f_klispopen (klisp_State *K, void *ud) {
     ks_tbsize(K) = KS_ITBSIZE;
     ks_tbidx(K) = 0; /* buffer is empty */
     ks_tbuf(K) = (char *)b;
+    
+    /* (at least for now) we'll use a non recursive mutex for the GIL */
+    /* XXX/TODO check return code */
+    pthread_mutex_init(&g->gil, NULL);
 
 /* This is here in lua, but in klisp we still need to alloc
    a bunch of objects:
@@ -155,7 +160,10 @@ static void close_state(klisp_State *K)
     klispM_freemem(K, ks_sbuf(K), ks_ssize(K) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
     /* free string/symbol table */
-    klispM_freearray(K, G(K)->strt.hash, G(K)->strt.size, GCObject *);
+    klispM_freearray(K, g->strt.hash, G(K)->strt.size, GCObject *);
+
+    /* destroy the GIL */
+    pthread_mutex_destroy(&g->gil);
 
     /* only remaining mem should be of the state struct */
     klisp_assert(g->totalbytes == sizeof(KG));

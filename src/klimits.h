@@ -86,6 +86,14 @@
 #define MINREADLINEBUFFER	80
 #endif
 
+/* XXX for now ignore the return values */
+#ifndef klisp_lock
+#include <pthread.h>
+#define klisp_lock(K)     ((void) (pthread_mutex_lock(&G(K)->gil))) 
+#define klisp_unlock(K)   ((void) (pthread_mutex_unlock(&G(K)->gil)))
+#endif
+
+/* These were the original defines */
 #ifndef klisp_lock
 #define klisp_lock(K)     ((void) 0) 
 #define klisp_unlock(K)   ((void) 0)

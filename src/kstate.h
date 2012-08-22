@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <setjmp.h>
+#include <pthread.h>
 
 #include "klimits.h"
 #include "kobject.h"
@@ -129,6 +130,9 @@ typedef struct global_State {
     
     /* The main thread */
     klisp_State *mainthread;
+    /* The GIL (Global Interpreter Lock) */
+    /* (at least for now) we'll use a non recursive mutex */
+    pthread_mutex_t gil; 
 } global_State;
 
 struct klisp_State {
