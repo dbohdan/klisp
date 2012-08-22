@@ -86,6 +86,7 @@ void klispE_throw_simple(klisp_State *K, char *msg)
     /* clear buffer shouldn't cause GC, but just in case... */
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
+    klisp_unlock_all(K); /* is this thread holds the GIL release it */
     /* call_cont protects error from gc */
     kcall_cont(K, G(K)->error_cont, error_obj);
 }
@@ -111,6 +112,7 @@ void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
     /* clear buffer shouldn't cause GC, but just in case... */
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
+    klisp_unlock_all(K); /* is this thread holds the GIL release it */
     /* call_cont protects error from gc */
     kcall_cont(K, G(K)->error_cont, error_obj);
 }
@@ -122,6 +124,7 @@ void klispE_throw_system_error_with_irritants(
                                                        irritants);
     krooted_tvs_push(K, error_obj);
     clear_buffers(K);
+    klisp_unlock_all(K); /* is this thread holds the GIL release it */
     kcall_cont(K, G(K)->system_error_cont, error_obj);
 }
 
