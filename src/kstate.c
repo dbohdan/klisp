@@ -98,7 +98,8 @@ static void f_klispopen (klisp_State *K, void *ud) {
 
 static void preinit_state (klisp_State *K, global_State *g) {
     G(K) = g;
-    
+
+    K->gil_count = 0;
     K->curr_cont = KNIL;
     K->next_obj = KINERT;
     K->next_func = NULL;

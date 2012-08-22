@@ -89,8 +89,28 @@
 /* XXX for now ignore the return values */
 #ifndef klisp_lock
 #include <pthread.h>
-#define klisp_lock(K)     ((void) (pthread_mutex_lock(&G(K)->gil))) 
-#define klisp_unlock(K)   ((void) (pthread_mutex_unlock(&G(K)->gil)))
+#define klisp_lock(K) ({                                    \
+            if (K->gil_count == 0) {                        \
+                K->gil_count = 1;                           \
+                UNUSED(pthread_mutex_lock(&G(K)->gil));     \
+            } else {                                        \
+                ++K->gil_count;                             \
+            }})
+
+#define klisp_unlock(K) ({                                  \
+            if (K->gil_count <= 1) {                        \
+                K->gil_count = 0;                           \
+                UNUSED(pthread_mutex_unlock(&G(K)->gil));   \
+            } else {                                        \
+                --K->gil_count;                             \
+            }})
+
+#define klisp_unlock_all(K) ({                          \
+            if (K->gil_count > 0) {                     \
+                K->gil_count = 1;                       \
+                klisp_unlock(K);                        \
+            }})
+
 #endif
 
 /* These were the original defines */

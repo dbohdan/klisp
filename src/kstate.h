@@ -131,7 +131,9 @@ typedef struct global_State {
     /* The main thread */
     klisp_State *mainthread;
     /* The GIL (Global Interpreter Lock) */
-    /* (at least for now) we'll use a non recursive mutex */
+    /* This is a regular mutex, but we use it to emulate a recursive one.
+       The number of times the lock was acquired is maintained in the 
+       locking thread in gil_count */
     pthread_mutex_t gil; 
 } global_State;
 
@@ -139,6 +141,7 @@ struct klisp_State {
     CommonHeader; /* This represents a thread object */
     global_State *k_G;
     /* Current state of execution */
+    int32_t gil_count; /* the number of times the GIL was acquired */
     TValue curr_cont; /* the current continuation of this thread */
     /*
     ** If next_env is NIL, then the next_func is from a continuation
