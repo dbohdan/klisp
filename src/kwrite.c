@@ -722,6 +722,15 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 #endif
         kw_printf(K, "]");
         break;
+    case K_TTHREAD:
+        kw_printf(K, "#[thread");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
     default:
         /* shouldn't happen */
         kwrite_error(K, "unknown object type");
