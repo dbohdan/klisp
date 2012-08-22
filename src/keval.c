@@ -51,8 +51,8 @@ void do_eval_ls(klisp_State *K)
          needed (the list was reversed during evaluation, so it should
          be reversed first) */
         TValue res = 
-	  reverse_copy_and_encycle(K, acc, ivalue(tv_apairs) + 
-				   ivalue(tv_cpairs), ivalue(tv_cpairs));
+            reverse_copy_and_encycle(K, acc, ivalue(tv_apairs) + 
+                              ivalue(tv_cpairs), ivalue(tv_cpairs));
         krooted_tvs_pop(K); /* pop acc */
         kapply_cc(K, res);
     } else {
@@ -91,7 +91,7 @@ void do_combine_operands(klisp_State *K)
                 comb = tv2app(comb)->underlying;
             ktail_call_si(K, comb, operands, env, si);
         } else if (ttispair(operands)) {
-	  int32_t pairs, apairs, cpairs;
+            int32_t pairs, apairs, cpairs;
             TValue comb_cont = 
                 kmake_continuation(K, kget_cc(K), do_combine_operator, 
                                    3, tv2app(comb)->underlying, env, si);
@@ -101,9 +101,11 @@ void do_combine_operands(klisp_State *K)
                avoid mutation of the structure affecting evaluation;
                this also allows capturing continuations in the middle of
                argument evaluation with no additional overhead */
+            klisp_lock(K);
             TValue arg_ls = check_copy_list(K, operands, false, 
 					    &pairs, &cpairs);
-	    apairs = pairs - cpairs;
+            klisp_unlock(K);
+            apairs = pairs - cpairs;
             krooted_tvs_push(K, arg_ls);
             TValue els_cont = 
                 kmake_continuation(K, comb_cont, do_eval_ls, 6, kcdr(arg_ls), 
@@ -173,17 +175,24 @@ void keval_ofn(klisp_State *K)
 
     switch(ttype(obj)) {
     case K_TPAIR: {
+        klisp_lock(K);
+        TValue operator = kcar(obj);
+        TValue operands = kcdr(obj);
+        klisp_unlock(K);
         TValue new_cont = 
              kmake_continuation(K, kget_cc(K), do_combine_operands, 3, 
-                                kcdr(obj), denv, ktry_get_si(K, obj));
+                                operands, denv, ktry_get_si(K, obj));
         kset_cc(K, new_cont);
-        ktail_eval(K, kcar(obj), denv);
+        ktail_eval(K, operator, denv);
         break;
     }
-    case K_TSYMBOL:
-        /* error handling happens in kget_binding */
-        kapply_cc(K, kget_binding(K, denv, obj));
+    case K_TSYMBOL: {
+        klisp_lock(K);
+        TValue res = kget_binding(K, denv, obj);
+        klisp_unlock(K);
+        kapply_cc(K, res);
         break;
+    } 
     default:
         kapply_cc(K, obj);
     }
