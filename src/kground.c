@@ -62,13 +62,6 @@
 */
 void kinit_cont_names(klisp_State *K)
 {
-    /* TEMP root and error continuations are set here (they are in kstate) */
-    Table *t = tv2table(G(K)->cont_name_table);
-    add_cont_name(K, t, do_root_exit, "exit");
-    add_cont_name(K, t, do_error_exit, "error");
-    /* TEMP this is also in kstate */
-    add_cont_name(K, t, do_interception, "do-interception");
-
     /* TEMP repl ones should be done in the interpreter, and not in
        the init state */
     kinit_repl_cont_names(K); 
@@ -88,6 +81,7 @@ void kinit_cont_names(klisp_State *K)
 #if KUSE_LIBFFI
     kinit_ffi_cont_names(K);
 #endif
+    kinit_error_cont_names(K);
     kinit_libraries_cont_names(K);
 }
 

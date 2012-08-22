@@ -526,18 +526,11 @@ static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree,
                             ktry_get_si(K__, p__));			\
         return; }
 
-/* helper for continuation->applicative & kcall_cont */
-void cont_app(klisp_State *K);
+void do_interception(klisp_State *K);
 void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
 void klispT_init_repl(klisp_State *K);
 void klispT_run(klisp_State *K);
 void klisp_close (klisp_State *K);
-
-void do_interception(klisp_State *K);
-
-/* for root and error continuations */
-void do_root_exit(klisp_State *K);
-void do_error_exit(klisp_State *K);
 
 /* simple accessors for dynamic keys */
 

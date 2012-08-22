@@ -148,7 +148,8 @@ kbytevector.o: kbytevector.c kbytevector.h kobject.h klimits.h klisp.h \
  klispconf.h kstate.h ktoken.h kmem.h kgc.h kstring.h
 kchar.o: kchar.c kobject.h klimits.h klisp.h klispconf.h
 kcontinuation.o: kcontinuation.c kcontinuation.h kobject.h klimits.h \
- klisp.h klispconf.h kstate.h ktoken.h kmem.h kgc.h
+ klisp.h klispconf.h kstate.h ktoken.h kmem.h kpair.h kgc.h \
+ kapplicative.h koperative.h
 kencapsulation.o: kencapsulation.c kobject.h klimits.h klisp.h \
  klispconf.h kmem.h kstate.h ktoken.h kencapsulation.h kpair.h kgc.h
 kenvironment.o: kenvironment.c kenvironment.h kobject.h klimits.h klisp.h \

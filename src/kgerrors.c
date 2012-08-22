@@ -75,8 +75,19 @@ void error_object_irritants(klisp_State *K)
     kapply_cc(K, err_obj->irritants);
 }
 
+void do_error_exit(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    UNUSED(xparams);
+
+    /* TEMP Just pass the error to the root continuation */
+    kapply_cc(K, obj);
+}
+
 /* REFACTOR this is the same as do_pass_value */
-void do_exception_cont(klisp_State *K)
+static void do_exception_cont(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
     TValue obj = K->next_value;
@@ -88,13 +99,30 @@ void do_exception_cont(klisp_State *K)
 
 /* REFACTOR maybe this should be in kerror.c */
 /* Create system-error-continuation. */
-void kinit_error_hierarchy(klisp_State *K)
+static void kinit_error_hierarchy(klisp_State *K)
 {
-    klisp_assert(ttiscontinuation(G(K)->error_cont));
-    klisp_assert(ttisinert(G(K)->system_error_cont));
+    klisp_assert(ttisinert(G(K)->error_cont));
+    G(K)->error_cont = kmake_continuation(K, G(K)->root_cont, 
+                                              do_error_exit, 0);
 
+    TValue str, tail, si;
+    
+#if KTRACK_SI
+    str = kstring_new_b_imm(K, __FILE__);
+    tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    si = kcons(K, str, tail);
+    kset_source_info(K, G(K)->error_cont, si);
+#endif
+
+    klisp_assert(ttisinert(G(K)->system_error_cont));
     G(K)->system_error_cont = kmake_continuation(K, G(K)->error_cont, 
                                               do_exception_cont, 0);
+#if KTRACK_SI
+    str = kstring_new_b_imm(K, __FILE__);
+    tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    si = kcons(K, str, tail);
+    kset_source_info(K, G(K)->system_error_cont, si);
+#endif
 }
 
 /* init ground */
@@ -122,6 +150,16 @@ void kinit_error_ground_env(klisp_State *K)
        See Common Lisp and mit scheme for examples
     */
 
-    klisp_assert(ttiscontinuation(G(K)->system_error_cont));
+    /* 7.2.7 error-continuation */
+    kinit_error_hierarchy(K);
+    add_value(K, ground_env, "error-continuation", G(K)->error_cont);
     add_value(K, ground_env, "system-error-continuation", G(K)->system_error_cont);
+}
+
+void kinit_error_cont_names(klisp_State *K)
+{
+    Table *t = tv2table(G(K)->cont_name_table);
+    
+    add_cont_name(K, t, do_error_exit, "error");
+    add_cont_name(K, t, do_exception_cont, "system-error");
 }
