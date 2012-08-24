@@ -48,6 +48,8 @@ TValue klispE_new_with_errno_irritants(klisp_State *K, const char *service,
     return error_obj;
 }
 
+/* This is meant to be called by the GC */
+/* LOCK: GIL should be acquired */
 void klispE_free(klisp_State *K, Error *error)
 {
     klispM_free(K, error);

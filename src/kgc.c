@@ -9,6 +9,11 @@
 ** Parts that don't apply, or don't apply yet to klisp are in comments.
 */
 
+/* 
+** LOCK: no locks are explicitly acquired here.
+** Whoever calls the GC needs to have already acquired the GIL.
+*/
+
 #include <string.h>
 
 #include "kgc.h"

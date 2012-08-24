@@ -9,6 +9,10 @@
 ** SOURCE NOTE: This is from Lua, but greatly shortened
 */
 
+/*
+** LOCK: Whoever calls these should have already acquired the GIL.
+*/
+
 #include <stddef.h>
 #include <stdio.h>
 #include <assert.h>
@@ -75,7 +79,6 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
 
     /* TEMP: for now only Stop the world GC */
     /* TEMP: prevent recursive call of klispC_fullgc() */
-    klisp_lock(K);
 #ifdef KUSE_GC
     if (nsize > 0 && G(K)->totalbytes - osize + nsize >= G(K)->GCthreshold) {
 #ifdef KDEBUG_GC
@@ -99,6 +102,5 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
     }
     klisp_assert((nsize == 0) == (block == NULL));
     G(K)->totalbytes = (G(K)->totalbytes - osize) + nsize;
-    klisp_unlock(K);
     return block;
 }
