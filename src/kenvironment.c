@@ -290,7 +290,8 @@ static inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
     /* MAYBE: this could be optimized to mark environments to avoid
        repetition */
     /* assume the stack may be in use, keep track of pushed objs */
-    /* LOCK: the key info structure is immutable, so no need to lock */
+
+    klisp_lock(K);
     int pushed = 1;
     if (!env_is_keyed(env))
         env = env_keyed_parents(env);
@@ -319,6 +320,7 @@ static inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
             pushed += 2;
         }
     }
+    klisp_unlock(K);
     *value = KINERT;
     return false;
 }
