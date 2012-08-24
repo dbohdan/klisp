@@ -101,10 +101,8 @@ void do_combine_operands(klisp_State *K)
                avoid mutation of the structure affecting evaluation;
                this also allows capturing continuations in the middle of
                argument evaluation with no additional overhead */
-            klisp_lock(K);
             TValue arg_ls = check_copy_list(K, operands, false, 
 					    &pairs, &cpairs);
-            klisp_unlock(K);
             apairs = pairs - cpairs;
             krooted_tvs_push(K, arg_ls);
             TValue els_cont = 
@@ -187,9 +185,7 @@ void keval_ofn(klisp_State *K)
         break;
     }
     case K_TSYMBOL: {
-        klisp_lock(K);
         TValue res = kget_binding(K, denv, obj);
-        klisp_unlock(K);
         kapply_cc(K, res);
         break;
     } 
@@ -199,9 +195,9 @@ void keval_ofn(klisp_State *K)
 }
 
 /* init continuation names */
+/* LOCK: this is done before allowing multiple threads */
 void kinit_eval_cont_names(klisp_State *K)
 {
-/* XXX lock? */
     Table *t = tv2table(G(K)->cont_name_table);
     add_cont_name(K, t, do_eval_ls, "eval-argument-list");
     add_cont_name(K, t, do_combine_operator, "eval-combine-operator");
