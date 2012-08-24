@@ -151,7 +151,7 @@ static void preinit_state (klisp_State *K, global_State *g) {
 static void close_state(klisp_State *K)
 {
     global_State *g = G(K);
-
+/* XXX lock? */
     /* collect all objects */
     klispC_freeall(K);
     klisp_assert(g->rootgc == obj2gco(K));
@@ -431,6 +431,7 @@ void klispT_freethread (klisp_State *K, klisp_State *K1)
 
 void klisp_close (klisp_State *K)
 {
+/* XXX lock? */
     K = G(K)->mainthread;  /* only the main thread can be closed */
 
 /* XXX lua does the following */
