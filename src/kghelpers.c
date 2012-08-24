@@ -394,6 +394,8 @@ void check_typed_list(klisp_State *K, bool (*typep)(TValue), bool allow_infp,
     int32_t p = 0;
     bool type_errorp = false;
 
+    klisp_lock(K);
+
     while(ttispair(tail) && !kis_marked(tail)) {
         /* even if there is a type error continue checking the structure */
         type_errorp |= !(*typep)(kcar(tail));
@@ -407,6 +409,8 @@ void check_typed_list(klisp_State *K, bool (*typep)(TValue), bool allow_infp,
         *cpairs = ttispair(tail)? (p - ivalue(kget_mark(tail))) : 0;
 
     unmark_list(K, obj);
+    
+    klisp_unlock(K);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
         klispE_throw_simple(K, allow_infp? "expected list" :
@@ -429,6 +433,7 @@ void check_list(klisp_State *K, bool allow_infp, TValue obj,
     TValue tail = obj;
     int32_t p = 0;
 
+    klisp_lock(K);
     while(ttispair(tail) && !kis_marked(tail)) {
         kset_mark(tail, i2tv(p));
         tail = kcdr(tail);
@@ -440,6 +445,7 @@ void check_list(klisp_State *K, bool allow_infp, TValue obj,
         *cpairs = ttispair(tail)? (p - ivalue(kget_mark(tail))) : 0;
 
     unmark_list(K, obj);
+    klisp_unlock(K);
 
     if (!ttispair(tail) && !ttisnil(tail)) {
         klispE_throw_simple(K, allow_infp? "expected list" : 
@@ -472,6 +478,7 @@ TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy,
         TValue last_pair = copy;
         TValue tail = obj;
     
+        klisp_lock(K);
         while(ttispair(tail) && !kis_marked(tail)) {
             TValue new_pair = kcons(K, kcar(tail), KNIL);
             /* record the corresponding pair to simplify cycle handling */
@@ -501,7 +508,8 @@ TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy,
 
         unmark_list(K, obj);
         unmark_list(K, kcdr(copy));
-
+        klisp_unlock(K);
+        
         if (!ttispair(tail) && !ttisnil(tail)) {
             klispE_throw_simple(K, "expected list"); 
             return KINERT;
@@ -512,6 +520,8 @@ TValue check_copy_list(klisp_State *K, TValue obj, bool force_copy,
 }
 
 /* GC: assumes ls is rooted */
+/* LOCK: This assumes ls isn't mutated, so no lock is acquired
+ (except the needed for car, cdr & set-cdr) */
 TValue reverse_copy_and_encycle(klisp_State *K, TValue ls, int32_t pairs, 
 				int32_t cpairs)
 {
