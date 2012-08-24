@@ -18,6 +18,7 @@
 TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg, 
                   TValue irritants) 
 {
+    klisp_lock(K);
     Error *new_error = klispM_new(K, Error);
 
     /* header + gc_fields */
@@ -28,7 +29,7 @@ TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg,
     new_error->cont = cont;
     new_error->msg = msg;
     new_error->irritants = irritants;
-
+    klisp_unlock(K);
     return gc2error(new_error);
 }
 
