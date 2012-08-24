@@ -19,6 +19,7 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn,
 {
     va_list argp;
 
+    klisp_lock(K);
     Continuation *new_cont = (Continuation *)
         klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
 
@@ -50,6 +51,7 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn,
     /* TODO: find all the places where this should be changed (like $and?, 
        $sequence), and change it */
     kset_source_info(K, res, kget_csi(K));
+    klisp_unlock(K);
     return res;
 }
 
@@ -80,6 +82,7 @@ void cont_app(klisp_State *K)
 */
 
 /* TODO: maybe add some inlines here, profile first and check size difference */
+/* LOCK: GIL should be acquired */
 static void mark_iancestors(TValue cont) 
 {
     while(!ttisnil(cont)) {
@@ -88,6 +91,7 @@ static void mark_iancestors(TValue cont)
     }
 }
 
+/* LOCK: GIL should be acquired */
 static void unmark_iancestors(TValue cont) 
 {
     while(!ttisnil(cont)) {
@@ -101,6 +105,7 @@ static void unmark_iancestors(TValue cont)
 ** or nil if there isn't any. The cont is implicitly passed because
 ** all of its improper ancestors are marked.
 */   
+/* LOCK: GIL should be acquired */
 static TValue select_interceptor(TValue guard_ls)
 {
     /* the guard list can't be cyclic, that case is 
@@ -125,6 +130,7 @@ static TValue select_interceptor(TValue guard_ls)
 TValue create_interception_list(klisp_State *K, TValue src_cont, 
                                        TValue dst_cont)
 {
+    klisp_lock(K);
     mark_iancestors(dst_cont);
     TValue ilist = kcons(K, KNIL, KNIL);
     krooted_vars_push(K, &ilist);
@@ -195,9 +201,11 @@ TValue create_interception_list(klisp_State *K, TValue src_cont,
     }
 
     unmark_iancestors(src_cont);
-
+    
     /* all interceptions collected, append the two lists and return */
     kset_cdr(tail, entry_int);
+
+    klisp_unlock(K);
     krooted_vars_pop(K);
     krooted_vars_pop(K);
     return kcdr(ilist);
