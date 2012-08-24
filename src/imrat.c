@@ -59,11 +59,15 @@ mp_result mp_rat_init(klisp_State *K, mp_rat r)
 
 mp_rat mp_rat_alloc(klisp_State *K)
 {
+    klisp_lock(K);
     mp_rat out = klispM_new(K, mpq_t);
+    klisp_unlock(K);
     
     if(out != NULL) {
         if(mp_rat_init(K, out) != MP_OK) {
+            klisp_lock(K);
             klispM_free(K, out); 
+            klisp_unlock(K);
             return NULL;
         }
     }
@@ -146,7 +150,9 @@ void         mp_rat_free(klisp_State *K, mp_rat r)
     if(r->num.digits != NULL)
         mp_rat_clear(K, r);
 
+    klisp_lock(K);
     klispM_free(K, r);        
+    klisp_unlock(K);
 }
 
 /* }}} */
