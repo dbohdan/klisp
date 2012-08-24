@@ -1066,7 +1066,7 @@ bool equal2p(klisp_State *K, TValue obj1, TValue obj2)
                     }
                     break;
                 case K_TBYTEVECTOR:
-                    if (!kbytevector_equalp(obj1, obj2)) {
+                    if (!kbytevector_equalp(K, obj1, obj2)) {
                         result = false;
                         goto end;
                     }

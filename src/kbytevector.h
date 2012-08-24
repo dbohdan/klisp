@@ -38,7 +38,7 @@ TValue kbytevector_new_sf(klisp_State *K, uint32_t size, uint8_t fill);
 
 /* both obj1 and obj2 should be bytevectors, this compares byte by byte
    and doesn't differentiate immutable from mutable bytevectors */
-bool kbytevector_equalp(TValue obj1, TValue obj2);
+bool kbytevector_equalp(klisp_State *K, TValue obj1, TValue obj2);
 bool kbytevectorp(TValue obj);
 bool kimmutable_bytevectorp(TValue obj);
 bool kmutable_bytevectorp(TValue obj);
