@@ -44,6 +44,7 @@ bool kimmutable_bytevectorp(TValue obj);
 bool kmutable_bytevectorp(TValue obj);
 
 /* some macros to access the parts of the bytevectors */
+/* LOCK: these are immutable, so they don't need locking */
 #define kbytevector_buf(tv_) (tv2bytevector(tv_)->b)
 #define kbytevector_size(tv_) (tv2bytevector(tv_)->size)
 
