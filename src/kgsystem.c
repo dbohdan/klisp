@@ -104,11 +104,12 @@ void delete_file(klisp_State *K)
     /* TEMP: this should probably be done in a operating system specific
        manner, but this will do for now */
     if (remove(kstring_buf(filename))) {
-        /* XXX lock? */
         /* At least in Windows, this could have failed if there's a dead
            (in the gc sense) port still open, should retry once after 
            doing a complete GC. This isn't ideal but... */
+        klisp_lock(K);
         klispC_fullgc(K);
+        klisp_unlock(K);
         if (remove(kstring_buf(filename))) {
             klispE_throw_errno_with_irritants(K, "remove", 1, filename);
             return;
