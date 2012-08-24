@@ -268,6 +268,7 @@ static inline bool ks_sisempty(klisp_State *K);
 #define ks_sbuf(st_) ((st_)->sbuf)
 #define ks_selem(st_, i_) ((ks_sbuf(st_))[i_])
 
+/* LOCK: All these functions should be called with the GIL already acquired */
 static inline void ks_spush(klisp_State *K, TValue obj)
 {
     ks_selem(K, ks_stop(K)) = obj;
@@ -338,6 +339,7 @@ static inline bool ks_tbisempty(klisp_State *K);
 #define ks_tbuf(st_) ((st_)->ktok_buffer)
 #define ks_tbelem(st_, i_) ((ks_tbuf(st_))[i_])
 
+/* LOCK: All these functions should be called with the GIL already acquired */
 static inline void ks_tbadd(klisp_State *K, char ch)
 {
     if (ks_tbidx(K) == ks_tbsize(K)) 
@@ -414,6 +416,7 @@ static inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; 
 ** Source code tracking
 ** MAYBE: add source code tracking to symbols
 */
+/* LOCK: All these functions should be called with the GIL already acquired */
 #if KTRACK_SI
 static inline TValue kget_source_info(klisp_State *K, TValue obj)
 {
@@ -458,6 +461,7 @@ static inline void klispT_apply_cc(klisp_State *K, TValue val)
 {
     /* TODO write barriers */
 
+    klisp_lock(K);
     /* various assert to check the freeing of gc protection methods */
     /* TODO add marks assertions */
     klisp_assert(K->rooted_tvs_top == 0);
@@ -472,20 +476,26 @@ static inline void klispT_apply_cc(klisp_State *K, TValue val)
     K->next_xparams = cont->extra;
     K->curr_cont = cont->parent;
     K->next_si = ktry_get_si(K, K->next_obj);
+    klisp_unlock(K);
 }
 
 #define kapply_cc(K_, val_) klispT_apply_cc((K_), (val_)); return
 
 static inline TValue klispT_get_cc(klisp_State *K)
 {
-    return K->curr_cont;
+    klisp_lock(K);
+    TValue res = K->curr_cont;
+    klisp_unlock(K);
+    return res;
 }
 
 #define kget_cc(K_) (klispT_get_cc(K_))
 
 static inline void klispT_set_cc(klisp_State *K, TValue new_cont)
 {
+    klisp_lock(K);
     K->curr_cont = new_cont;
+    klisp_unlock(K);
 }
 
 #define kset_cc(K_, c_) (klispT_set_cc(K_, c_))
@@ -494,7 +504,7 @@ static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree,
                                 TValue env, TValue si)
 {
     /* TODO write barriers */
-    
+    klisp_lock(K);
     /* various assert to check the freeing of gc protection methods */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
@@ -508,6 +518,7 @@ static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree,
     K->next_env = env;
     K->next_xparams = op->extra;
     K->next_si = si;
+    klisp_unlock(K);
 }
 
 #define ktail_call_si(K_, op_, p_, e_, si_)                             \
@@ -517,13 +528,18 @@ static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 #define ktail_call(K_, op_, p_, e_)                                     \
     { klisp_State *K__ = (K_);                                          \
         TValue op__ = (op_);                                            \
-        (ktail_call_si(K__, op__, p_, e_, ktry_get_si(K__, op__))); }	\
+        klisp_lock(K);                                                  \
+        TValue si__ = ktry_get_si(K__, op__);                           \
+        klisp_unlock(K);                                                \
+        (ktail_call_si(K__, op__, p_, e_, si__)); }                     \
 
-#define ktail_eval(K_, p_, e_)                              \
-    { klisp_State *K__ = (K_);                              \
-        TValue p__ = (p_);                                  \
-        klispT_tail_call_si(K__, G(K__)->eval_op, p__, (e_),    \
-                            ktry_get_si(K__, p__));			\
+#define ktail_eval(K_, p_, e_)                                          \
+    { klisp_State *K__ = (K_);                                          \
+        TValue p__ = (p_);                                              \
+        klisp_lock(K);                                                  \
+        TValue si__ = ktry_get_si(K__, p__);                            \
+        klisp_unlock(K);                                                \
+        klispT_tail_call_si(K__, G(K__)->eval_op, p__, (e_), si__);     \
         return; }
 
 void do_interception(klisp_State *K);
@@ -537,6 +553,7 @@ void klisp_close (klisp_State *K);
 /* XXX: this is ugly but we can't include kpair.h here so... */
 /* MAYBE: move car & cdr to kobject.h */
 /* TODO: use these where appropriate */
+/* TODO LOCK, thread local */
 #define kcurr_input_port(K) (tv2pair(G(K)->kd_in_port_key)->cdr)
 #define kcurr_output_port(K) (tv2pair(G(K)->kd_out_port_key)->cdr)
 #define kcurr_error_port(K) (tv2pair(G(K)->kd_error_port_key)->cdr)

@@ -148,10 +148,11 @@ static void preinit_state (klisp_State *K, global_State *g) {
     ks_tbuf(K) = NULL;
 }
 
+/* LOCK: GIL should be acquired */
 static void close_state(klisp_State *K)
 {
     global_State *g = G(K);
-/* XXX lock? */
+
     /* collect all objects */
     klispC_freeall(K);
     klisp_assert(g->rootgc == obj2gco(K));
@@ -399,9 +400,9 @@ klisp_State *klisp_newthread(klisp_State *K)
     return K;
 }
 
-/* XXX lock? */
 klisp_State *klispT_newthread(klisp_State *K)
 {
+    klisp_lock(K);
     klisp_State *K1 = tostate(klispM_malloc(K, state_size(klisp_State)));
     klispC_link(K, (GCObject *) K1, K_TTHREAD, 0);
     preinit_state(K1, G(K));
@@ -416,24 +417,26 @@ klisp_State *klispT_newthread(klisp_State *K)
     ks_tbidx(K1) = 0; /* buffer is empty */
   
     klisp_assert(iswhite((GCObject *) (K1)));
+    klisp_unlock(K);
     return K1;
 }
 
 
-/* XXX lock? */
 void klispT_freethread (klisp_State *K, klisp_State *K1)
 {
+    klisp_lock(K);
     klispM_freemem(K, ks_sbuf(K1), ks_ssize(K1) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K1), ks_tbsize(K1));
     /* userstatefree() */
     klispM_freemem(K, fromstate(K1), state_size(klisp_State));
+    klisp_unlock(K);
 }
 
 void klisp_close (klisp_State *K)
 {
-/* XXX lock? */
     K = G(K)->mainthread;  /* only the main thread can be closed */
 
+    klisp_lock(K);
 /* XXX lua does the following */
 #if 0 
     lua_lock(L); 
@@ -457,6 +460,7 @@ void klisp_close (klisp_State *K)
 ** Stacks memory management
 */
 
+/* LOCK: All these functions should be called with the GIL already acquired */
 /* TODO test this */
 void ks_sgrow(klisp_State *K, int32_t new_top)
 {
@@ -498,7 +502,7 @@ void ks_tbgrow(klisp_State *K, int32_t new_top)
     size_t new_size = old_size * 2;
     while(new_top > new_size)
         new_size *= 2;
-
+    
     ks_tbuf(K) = klispM_realloc_(K, ks_tbuf(K), old_size*sizeof(TValue),
                                  new_size*sizeof(TValue));
     ks_tbsize(K) = new_size; 
