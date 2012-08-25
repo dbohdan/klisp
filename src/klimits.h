@@ -105,6 +105,7 @@
                 --K->gil_count;                             \
             }})
 
+/* this will work no matter how many times  (even 0) the lock was acquired */
 #define klisp_unlock_all(K) ({                          \
             if (K->gil_count > 0) {                     \
                 K->gil_count = 1;                       \

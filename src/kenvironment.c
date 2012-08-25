@@ -29,7 +29,6 @@
 /* GC: Assumes that parents is rooted */
 TValue kmake_environment(klisp_State *K, TValue parents)
 {
-    klisp_lock(K);
     Environment *new_env = klispM_new(K, Environment);
 
     /* header + gc_fields */
@@ -88,7 +87,6 @@ TValue kmake_environment(klisp_State *K, TValue parents)
             kparents = kcar(kparents);
     }
     new_env->keyed_parents = kparents; /* overwrite with the proper value */
-    klisp_unlock(K);
     return gc2env(new_env);
 }
 
@@ -124,7 +122,6 @@ TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 /* GC: Assumes that obj & sym are rooted. */
 void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
 {
-    klisp_lock(K);
     if (kcan_have_name(obj) && !khas_name(obj)) {
         /* TODO: maybe we could have some kind of inheritance so
            that if this object receives a name it can pass on that
@@ -150,7 +147,6 @@ void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
             }
         }
     }
-    klisp_unlock(K);
 }
 
 /* Assumes obj has a name */
@@ -176,7 +172,6 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 
     /* lock early because it is possible that even the environment
        type changes (from list to table) */
-    klisp_lock(K);
     TValue bindings = kenv_bindings(K, env);
     if (ttistable(bindings)) {
         TValue *cell = klispH_setsym(K, tv2table(bindings), tv2sym(sym));
@@ -193,7 +188,6 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
             kset_cdr(oldb, val);
         }
     }
-    klisp_unlock(K);
 }
 
 /* This works no matter if parents is a list or a single environment */
@@ -201,7 +195,6 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
 static inline bool try_get_binding(klisp_State *K, TValue env, TValue sym, 
                             TValue *value)
 {
-    klisp_lock(K);
     /* assume the stack may be in use, keep track of pushed objs */
     int pushed = 1;
     ks_spush(K, env);
@@ -243,7 +236,6 @@ static inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
 
     *value = KINERT;
 
-    klisp_unlock(K);
     return false;
 }
 
@@ -276,9 +268,7 @@ TValue kmake_keyed_static_env(klisp_State *K, TValue parent, TValue key,
 {
     TValue new_env = kmake_environment(K, parent);
     krooted_tvs_push(K, new_env); /* keep the env rooted */
-    klisp_lock(K);
     env_keyed_node(new_env) = kcons(K, key, val);
-    klisp_unlock(K);
     krooted_tvs_pop(K);
     return new_env;
 }
@@ -291,7 +281,6 @@ static inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
        repetition */
     /* assume the stack may be in use, keep track of pushed objs */
 
-    klisp_lock(K);
     int pushed = 1;
     if (!env_is_keyed(env))
         env = env_keyed_parents(env);
@@ -320,7 +309,6 @@ static inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
             pushed += 2;
         }
     }
-    klisp_unlock(K);
     *value = KINERT;
     return false;
 }
@@ -344,9 +332,7 @@ TValue kmake_table_environment(klisp_State *K, TValue parents)
     TValue new_env = kmake_environment(K, parents);
     krooted_tvs_push(K, new_env);
     TValue new_table = klispH_new(K, 0, ENVTABSIZE, K_FLAG_WEAK_NOTHING);
-    klisp_lock(K);
     tv2env(new_env)->bindings = new_table;
-    klisp_unlock(K);
     krooted_tvs_pop(K);
     return new_env;
 }

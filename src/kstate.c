@@ -402,7 +402,6 @@ klisp_State *klisp_newthread(klisp_State *K)
 
 klisp_State *klispT_newthread(klisp_State *K)
 {
-    klisp_lock(K);
     klisp_State *K1 = tostate(klispM_malloc(K, state_size(klisp_State)));
     klispC_link(K, (GCObject *) K1, K_TTHREAD, 0);
     preinit_state(K1, G(K));
@@ -417,19 +416,16 @@ klisp_State *klispT_newthread(klisp_State *K)
     ks_tbidx(K1) = 0; /* buffer is empty */
   
     klisp_assert(iswhite((GCObject *) (K1)));
-    klisp_unlock(K);
     return K1;
 }
 
 
 void klispT_freethread (klisp_State *K, klisp_State *K1)
 {
-    klisp_lock(K);
     klispM_freemem(K, ks_sbuf(K1), ks_ssize(K1) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K1), ks_tbsize(K1));
     /* userstatefree() */
     klispM_freemem(K, fromstate(K1), state_size(klisp_State));
-    klisp_unlock(K);
 }
 
 void klisp_close (klisp_State *K)
@@ -566,20 +562,31 @@ void klispT_init_repl(klisp_State *K)
     kinit_repl(K);
 }
 
+/* 
+** TEMP/LOCK: put lock here, until all operatives and continuations do locking directly
+** or a new interface (like lua api) does it for them.
+** This has the problem that nothing can be done in parallel (but still has the advantage
+** that (unlike coroutines) when one thread is blocked (e.g. waiting for IO) the others
+** may continue (provided that the blocked thread unlocks the GIL before blocking...)
+*/
 void klispT_run(klisp_State *K)
 {
     while(true) {
         if (setjmp(K->error_jb)) {
             /* continuation called */
             /* TEMP: do nothing, the loop will call the continuation */
+	    klisp_unlock_all(K);
         } else {
+	    klisp_lock(K);
             /* all ok, continue with next func */
             while (K->next_func) {
                 /* next_func is either operative or continuation
                    but in any case the call is the same */
                 (*(K->next_func))(K);
+		klispi_threadyield(K);
             }
             /* K->next_func is NULL, this means we should exit already */
+	    klisp_unlock(K);
             break;
         }
     }

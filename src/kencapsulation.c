@@ -19,7 +19,6 @@ bool kis_encapsulation_type(TValue enc, TValue key)
 /* GC: Assumes that key & val are rooted */
 TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val)
 {
-    klisp_lock(K);
     Encapsulation *new_enc = klispM_new(K, Encapsulation);
 
     /* header + gc_fields */
@@ -29,7 +28,6 @@ TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val)
     new_enc->key = key;
     new_enc->value = val;
 
-    klisp_unlock(K);
     return gc2enc(new_enc);
 }
 

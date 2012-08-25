@@ -173,10 +173,8 @@ void keval_ofn(klisp_State *K)
 
     switch(ttype(obj)) {
     case K_TPAIR: {
-        klisp_lock(K);
         TValue operator = kcar(obj);
         TValue operands = kcdr(obj);
-        klisp_unlock(K);
         TValue new_cont = 
              kmake_continuation(K, kget_cc(K), do_combine_operands, 3, 
                                 operands, denv, ktry_get_si(K, obj));

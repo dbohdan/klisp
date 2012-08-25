@@ -461,7 +461,6 @@ static inline void klispT_apply_cc(klisp_State *K, TValue val)
 {
     /* TODO write barriers */
 
-    klisp_lock(K);
     /* various assert to check the freeing of gc protection methods */
     /* TODO add marks assertions */
     klisp_assert(K->rooted_tvs_top == 0);
@@ -476,26 +475,20 @@ static inline void klispT_apply_cc(klisp_State *K, TValue val)
     K->next_xparams = cont->extra;
     K->curr_cont = cont->parent;
     K->next_si = ktry_get_si(K, K->next_obj);
-    klisp_unlock(K);
 }
 
 #define kapply_cc(K_, val_) klispT_apply_cc((K_), (val_)); return
 
 static inline TValue klispT_get_cc(klisp_State *K)
 {
-    klisp_lock(K);
-    TValue res = K->curr_cont;
-    klisp_unlock(K);
-    return res;
+    return K->curr_cont;
 }
 
 #define kget_cc(K_) (klispT_get_cc(K_))
 
 static inline void klispT_set_cc(klisp_State *K, TValue new_cont)
 {
-    klisp_lock(K);
     K->curr_cont = new_cont;
-    klisp_unlock(K);
 }
 
 #define kset_cc(K_, c_) (klispT_set_cc(K_, c_))
@@ -504,7 +497,6 @@ static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree,
                                 TValue env, TValue si)
 {
     /* TODO write barriers */
-    klisp_lock(K);
     /* various assert to check the freeing of gc protection methods */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
@@ -518,7 +510,6 @@ static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree,
     K->next_env = env;
     K->next_xparams = op->extra;
     K->next_si = si;
-    klisp_unlock(K);
 }
 
 #define ktail_call_si(K_, op_, p_, e_, si_)                             \
@@ -528,17 +519,13 @@ static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 #define ktail_call(K_, op_, p_, e_)                                     \
     { klisp_State *K__ = (K_);                                          \
         TValue op__ = (op_);                                            \
-        klisp_lock(K);                                                  \
         TValue si__ = ktry_get_si(K__, op__);                           \
-        klisp_unlock(K);                                                \
         (ktail_call_si(K__, op__, p_, e_, si__)); }                     \
 
 #define ktail_eval(K_, p_, e_)                                          \
     { klisp_State *K__ = (K_);                                          \
         TValue p__ = (p_);                                              \
-        klisp_lock(K);                                                  \
         TValue si__ = ktry_get_si(K__, p__);                            \
-        klisp_unlock(K);                                                \
         klispT_tail_call_si(K__, G(K__)->eval_op, p__, (e_), si__);     \
         return; }
 

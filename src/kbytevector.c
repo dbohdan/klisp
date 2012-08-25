@@ -70,12 +70,11 @@ static Bytevector *search_in_bb_table(klisp_State *K, const uint8_t *buf,
 TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
 {
     uint32_t h = get_bytevector_hash(buf, size);
-    klisp_lock(K);
+
     /* first check to see if it's in the stringtable */
     Bytevector *new_bb = search_in_bb_table(K, buf, size, h);
 
     if (new_bb != NULL) { /* found */
-        klisp_unlock(K);
         return gc2bytevector(new_bb);
     }
 
@@ -118,7 +117,6 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
         krooted_tvs_pop(K);
     }
 
-    klisp_unlock(K);
     return ret_tv;
 }
 
@@ -137,7 +135,6 @@ TValue kbytevector_new_s(klisp_State *K, uint32_t size)
         return G(K)->empty_bytevector;
     }
 
-    klisp_lock(K);
     new_bb = klispM_malloc(K, sizeof(Bytevector) + size);
 
     /* header + gc_fields */
@@ -148,7 +145,6 @@ TValue kbytevector_new_s(klisp_State *K, uint32_t size)
     new_bb->size = size;
 
     /* the buffer is initialized elsewhere */
-    klisp_unlock(K);
     return gc2bytevector(new_bb);
 }
 
@@ -187,12 +183,8 @@ bool kbytevector_equalp(klisp_State *K, TValue obj1, TValue obj2)
     Bytevector *bytevector2 = tv2bytevector(obj2);
 
     if (bytevector1->size == bytevector2->size) {
-        bool res;
-        klisp_lock(K);
-        res = (bytevector1->size == 0) ||
+        return (bytevector1->size == 0) ||
             (memcmp(bytevector1->b, bytevector2->b, bytevector1->size) == 0);
-        klisp_unlock(K);
-        return res;
     } else {
         return false;
     }

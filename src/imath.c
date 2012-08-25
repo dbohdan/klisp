@@ -374,9 +374,7 @@ mp_result mp_int_init(mp_int z)
 
 mp_int    mp_int_alloc(klisp_State *K)
 {
-    klisp_lock(K);
     mp_int out = klispM_new(K, mpz_t);
-    klisp_unlock(K);
   
     if(out != NULL) 
         mp_int_init(out);
@@ -490,9 +488,7 @@ void         mp_int_free(klisp_State *K, mp_int z)
     NRCHECK(z != NULL);
 
     mp_int_clear(K, z);
-    klisp_lock(K);
     klispM_free(K, z); /* note: NOT s_free() */
-    klisp_unlock(K);
 }
 
 /* }}} */
@@ -2212,9 +2208,7 @@ const char *mp_error_string(mp_result res)
 
 STATIC mp_digit *s_alloc(klisp_State *K, mp_size num)
 {
-    klisp_lock(K);
     mp_digit *out = klispM_malloc(K, num * sizeof(mp_digit));
-    klisp_unlock(K);
 
     assert(out != NULL); /* for debugging */
 #if DEBUG > 1
@@ -2246,10 +2240,8 @@ STATIC mp_digit *s_realloc(klisp_State *K, mp_digit *old, mp_size osize,
 
     memcpy(new, old, osize * sizeof(mp_digit));
 #else
-    klisp_lock(K);
     mp_digit *new = klispM_realloc_(K, old, osize * sizeof(mp_digit), 
                                     nsize * sizeof(mp_digit));
-    klisp_unlock(K);
     assert(new != NULL); /* for debugging */
 #endif
     return new;
@@ -2261,9 +2253,7 @@ STATIC mp_digit *s_realloc(klisp_State *K, mp_digit *old, mp_size osize,
 
 STATIC void s_free(klisp_State *K, void *ptr, mp_size size)
 {
-    klisp_lock(K);
     klispM_freemem(K, ptr, size * sizeof(mp_digit));
-    klisp_unlock(K);
 }
 
 /* }}} */

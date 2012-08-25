@@ -19,7 +19,6 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn,
 {
     va_list argp;
 
-    klisp_lock(K);
     Continuation *new_cont = (Continuation *)
         klispM_malloc(K, sizeof(Continuation) + sizeof(TValue) * xcount);
 
@@ -51,7 +50,6 @@ TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn,
     /* TODO: find all the places where this should be changed (like $and?, 
        $sequence), and change it */
     kset_source_info(K, res, kget_csi(K));
-    klisp_unlock(K);
     return res;
 }
 
@@ -130,7 +128,6 @@ static TValue select_interceptor(TValue guard_ls)
 TValue create_interception_list(klisp_State *K, TValue src_cont, 
                                        TValue dst_cont)
 {
-    klisp_lock(K);
     mark_iancestors(dst_cont);
     TValue ilist = kcons(K, KNIL, KNIL);
     krooted_vars_push(K, &ilist);
@@ -205,7 +202,6 @@ TValue create_interception_list(klisp_State *K, TValue src_cont,
     /* all interceptions collected, append the two lists and return */
     kset_cdr(tail, entry_int);
 
-    klisp_unlock(K);
     krooted_vars_pop(K);
     krooted_vars_pop(K);
     return kcdr(ilist);

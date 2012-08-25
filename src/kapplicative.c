@@ -13,7 +13,6 @@
 /* GC: Assumes underlying is rooted */
 TValue kwrap(klisp_State *K, TValue underlying)
 {
-    klisp_lock(K);
     Applicative *new_app = klispM_new(K, Applicative);
 
     /* header + gc_fields */
@@ -22,6 +21,5 @@ TValue kwrap(klisp_State *K, TValue underlying)
 
     /* applicative specific fields */
     new_app->underlying = underlying;
-    klisp_unlock(K);
     return gc2app(new_app);
 }

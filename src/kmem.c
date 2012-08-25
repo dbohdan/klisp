@@ -96,7 +96,7 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
     if (block == NULL && nsize > 0) {
         /* TEMP: try GC if there is no more mem */
         /* TODO: make this a catchable error */
-        klisp_unlock(K);
+        klisp_unlock_all(K);
         fprintf(stderr, MEMERRMSG);
         abort();
     }
