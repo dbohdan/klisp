@@ -15,7 +15,6 @@
 #include "kmem.h"
 #include "kgc.h"
 
-/* XXX lock? */
 /* for immutable string/symbols/bytevector table */
 void klispS_resize (klisp_State *K, int32_t newsize)
 {
@@ -77,11 +76,8 @@ TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf,
 ** Constructors for immutable strings
 */
 
-/* XXX lock? */
-/* main constructor for immutable strings */
-TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
+static uint32_t get_string_hash(const char *buf, uint32_t size)
 {
-    /* first check to see if it's in the stringtable */
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if string is too long, don't hash all 
                                   its chars */
@@ -89,6 +85,14 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
         h = h ^ ((h<<5)+(h>>2)+ ((unsigned char) buf[size1-1]));
 
+    return h;
+}
+
+/* Looks for a string in the stringtable and returns a pointer
+   to it if found or NULL otherwise.  */
+static String *search_in_string_table(klisp_State *K, const char *buf,
+				      uint32_t size, uint32_t h)
+{
     for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)];
          o != NULL; o = o->gch.next) {
         klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
@@ -100,13 +104,26 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
         if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
             /* string may be dead */
             if (isdead(G(K), o)) changewhite(o);
-            return gc2str(o);
+            return ts;
         }
     } 
 
-    /* If it exits the loop, it means it wasn't found, hash is still in h */
-    /* REFACTOR: move all of these to a new function */
-    String *new_str;
+    /* If it exits the loop, it means it wasn't found */
+    return NULL;
+}
+
+
+/* main constructor for immutable strings */
+TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
+{
+    uint32_t h = get_string_hash(buf, size);
+    
+    /* first check to see if it's in the stringtable */
+    String *new_str  = search_in_string_table(K, buf, size, h);
+
+    if (new_str != NULL) { /* found */
+      return gc2str(new_str);
+    }
 
     if (size > (SIZE_MAX - sizeof(String) - 1))
         klispM_toobig(K);

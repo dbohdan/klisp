@@ -19,15 +19,12 @@
 
 /* No case folding is performed by these constructors */
 
-
-/* XXX lock? */
-/* 
+/*
 ** Interned symbols are only the ones that don't have source info 
 ** (like those created with string->symbol) 
 */
-TValue ksymbol_new_bs(klisp_State *K, const char *buf, int32_t size, TValue si)
+static uint32_t get_symbol_hash(const char *buf, uint32_t size)
 {
-    /* First calculate the hash */
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if string is too long, don't hash all 
                                   its chars */
@@ -38,25 +35,47 @@ TValue ksymbol_new_bs(klisp_State *K, const char *buf, int32_t size, TValue si)
     h = ~h; /* symbol hash should be different from string hash
                otherwise symbols and their respective immutable string
                would always fall in the same bucket */
+    return h;
+}
+
+/* Looks for a symbol in the stringtable and returns a pointer
+   to it if found or NULL otherwise.  */
+static Symbol *search_in_symbol_table(klisp_State *K, const char *buf, 
+				      uint32_t size, uint32_t h)
+{
+    for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)];
+         o != NULL; o = o->gch.next) {
+        klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
+  	  	 o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
+
+        if (o->gch.tt != K_TSYMBOL) continue;
+
+	String *ts = tv2str(((Symbol *) o)->str);
+	if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
+	    /* symbol and/or string may be dead */
+	    if (isdead(G(K), o)) changewhite(o);
+	    if (isdead(G(K), (GCObject *) ts)) changewhite((GCObject *) ts);
+	    return (Symbol *) o;
+	}
+    }
+
+    /* If it exits the loop, it means it wasn't found */
+    return NULL;
+}
+
+TValue ksymbol_new_bs(klisp_State *K, const char *buf, uint32_t size, TValue si)
+{
+    /* First calculate the hash */
+    uint32_t h = get_symbol_hash(buf, size);
+  
     /* look for it in the table only if it doesn't have source info */
     if (ttisnil(si)) {
-        for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)];
-             o != NULL; o = o->gch.next) {
-            klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
-                         o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
-
-            if (o->gch.tt != K_TSYMBOL) continue;
-
-            String *ts = tv2str(((Symbol *) o)->str);
-            if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
-                /* symbol and/or string may be dead */
-                if (isdead(G(K), o)) changewhite(o);
-                if (isdead(G(K), (GCObject *) ts)) changewhite((GCObject *) ts);
-                return gc2sym(o);
-            }
-        } 
+        Symbol *new_sym = search_in_symbol_table(K, buf, size, h);
+	if (new_sym != NULL) {
+	    return gc2sym(new_sym);
+	}
     }
-    /* REFACTOR: move this to a new function */
+
     /* Didn't find it, alloc new immutable string and save in symbol table,
        note that the hash value remained in h */
     TValue new_str = kstring_new_bs_imm(K, buf, size);

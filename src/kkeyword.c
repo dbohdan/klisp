@@ -14,11 +14,8 @@
 /* for immutable table */
 #include "kstring.h" 
 
-/* XXX lock? */
-/* No case folding is performed by these constructors */
-TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
+static uint32_t get_keyword_hash(const char *buf, uint32_t size)
 {
-    /* First calculate the hash */
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if string is too long, don't hash all 
                                   its chars */
@@ -30,7 +27,14 @@ TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
     /* keyword hash should be different from string & symbol hash
        otherwise keywords and their respective immutable string
        would always fall in the same bucket */
-    /* look for it in the table */
+    return h;
+}
+
+/* Looks for a keyword in the stringtable and returns a pointer
+   to it if found or NULL otherwise.  */
+static Keyword *search_in_keyword_table(klisp_State *K, const char *buf, 
+					uint32_t size, uint32_t h)
+{
     for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)]; o != NULL; 
          o = o->gch.next) {
         klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
@@ -43,15 +47,30 @@ TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size)
             /* keyword and/or string may be dead */
             if (isdead(G(K), o)) changewhite(o);
             if (isdead(G(K), (GCObject *) ts)) changewhite((GCObject *) ts);
-            return gc2keyw(o);
+            return (Keyword *) o;
         }
     } 
-    /* REFACTOR: move this to a new function */
+    /* If it exits the loop, it means it wasn't found */
+    return NULL;
+}
+
+/* No case folding is performed by these constructors */
+TValue kkeyword_new_bs(klisp_State *K, const char *buf, uint32_t size)
+{
+    /* First calculate the hash */
+    uint32_t h = get_keyword_hash(buf, size);
+
+    /* look for it in the table */
+    Keyword *new_keyw = search_in_keyword_table(K, buf, size, h);
+
+    if (new_keyw != NULL) {
+        return gc2keyw(new_keyw);
+    }
     /* Didn't find it, alloc new immutable string and save in keyword table,
        note that the hash value remained in h */
     TValue new_str = kstring_new_bs_imm(K, buf, size);
     krooted_tvs_push(K, new_str);
-    Keyword *new_keyw = klispM_new(K, Keyword);
+    new_keyw = klispM_new(K, Keyword);
     TValue ret_tv = gc2keyw(new_keyw);
     krooted_tvs_pop(K); 
     

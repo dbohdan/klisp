@@ -24,9 +24,6 @@ TValue kbytevector_new_bs_g(klisp_State *K, bool m, const uint8_t *buf,
         kbytevector_new_bs_imm(K, buf, size);
 }
 
-/* Looks for a bytevector in the stringtable and returns a pointer
-   to it if found or NULL otherwise.  */
-
 /* LOCK: GIL should be acquired */
 static uint32_t get_bytevector_hash(const uint8_t *buf, uint32_t size)
 {
@@ -40,6 +37,8 @@ static uint32_t get_bytevector_hash(const uint8_t *buf, uint32_t size)
     return h;
 }
 
+/* Looks for a bytevector in the stringtable and returns a pointer
+   to it if found or NULL otherwise.  */
 static Bytevector *search_in_bb_table(klisp_State *K, const uint8_t *buf, 
                                       uint32_t size, uint32_t h)
 {
