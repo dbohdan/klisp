@@ -269,6 +269,11 @@ static inline bool ks_sisempty(klisp_State *K);
 #define ks_selem(st_, i_) ((ks_sbuf(st_))[i_])
 
 /* LOCK: All these functions should be called with the GIL already acquired */
+/* XXX/REFACTOR: the problem with these is that if the lock is acquired here
+   there's no way to protect the value just popped, it's no longer in the 
+   stack, but the calling function has no way to protect it.  One alternative
+   would be to take a ks_vars-protected TValue pointer and put the value there.
+   The other would be using a stack like lua for this... */
 static inline void ks_spush(klisp_State *K, TValue obj)
 {
     ks_selem(K, ks_stop(K)) = obj;

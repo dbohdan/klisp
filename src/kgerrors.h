@@ -11,7 +11,7 @@
 
 /* init ground */
 void kinit_error_ground_env(klisp_State *K);
-/* init cont names */
+/* init continuation names */
 void kinit_error_cont_names(klisp_State *K);
 
 #endif
