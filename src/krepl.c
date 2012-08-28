@@ -246,6 +246,7 @@ void do_repl_int_error(klisp_State *K)
 
 /* call this to init the repl in a newly created klisp state */
 /* the standard environment should be in K->next_env */
+/* LOCK: the GIL should be acquired */
 void kinit_repl(klisp_State *K)
 {
     TValue std_env = K->next_env;

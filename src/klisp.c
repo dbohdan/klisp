@@ -170,6 +170,8 @@ static void print_version(void)
 
 static int dostring (klisp_State *K, const char *s, const char *name) 
 {
+    klisp_lock(K);
+
     bool errorp = false; /* may be set to true in error handler */
     bool rootp = true; /* may be set to false in continuation */
 
@@ -233,6 +235,9 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     krooted_tvs_pop(K);
 
     klispT_tail_call_si(K, ev, ptree, env, KNIL);
+
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
     klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
@@ -276,6 +281,7 @@ void do_file_read(klisp_State *K)
 /* name = NULL means use stdin */
 static int dofile(klisp_State *K, const char *name) 
 {
+    klisp_lock(K);
     bool errorp = false; /* may be set to true in error handler */
     bool rootp = true; /* may be set to false in continuation */
 
@@ -361,6 +367,8 @@ static int dofile(klisp_State *K, const char *name)
     kset_cc(K, read_cont); /* this will protect all conts from gc */
     klispT_apply_cc(K, KINERT);
 
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
     klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
@@ -373,8 +381,11 @@ static int dofile(klisp_State *K, const char *name)
 
 static void dotty(klisp_State *K)
 {
+    klisp_lock(K);
     TValue env = K->next_env;
     kinit_repl(K);
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
     klispT_run(K);
     /* get the standard environment again in K->next_env */
     K->next_env = env;
@@ -383,6 +394,7 @@ static void dotty(klisp_State *K)
 /* name != NULL */
 static int dorfile(klisp_State *K, const char *name) 
 {
+    klisp_lock(K);
     bool errorp = false; /* may be set to true in error handler */
     bool rootp = true; /* may be set to false in continuation */
 
@@ -447,6 +459,8 @@ static int dorfile(klisp_State *K, const char *name)
     krooted_vars_pop(K);
 
     klispT_tail_call_si(K, req, ptree, env, KNIL);
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
     klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
@@ -567,6 +581,7 @@ static int runargs (klisp_State *K, char **argv, int n)
     return STATUS_CONTINUE;
 }
 
+/* LOCK: assume that the GIL is acquired */
 static void populate_argument_lists(klisp_State *K, char **argv, int argc, 
                                     int script)
 {
@@ -664,7 +679,9 @@ static void pmain(klisp_State *K)
 
     /* TEMP this could be either set before or after running the arguments,
        we'll do it before for now */
+    klisp_lock(K);
     populate_argument_lists(K, argv, s->argc, (script > 0) ? script : s->argc);
+    klisp_unlock(K);
     
     s->status = runargs(K, argv, (script > 0) ? script : s->argc);
 
