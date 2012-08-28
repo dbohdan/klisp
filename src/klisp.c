@@ -40,7 +40,7 @@
 #include "kerror.h"
 #include "krepl.h"
 #include "ksystem.h"
-#include "kghelpers.h" /* for do_pass_value and do_seq */
+#include "kghelpers.h" /* for do_pass_value and do_seq, mark_root & mark_error */
 
 static const char *progname = KLISP_PROGNAME;
 
@@ -166,39 +166,6 @@ static int report (klisp_State *K, int status)
 static void print_version(void) 
 {
     printf("%s\n", KLISP_RELEASE "  " KLISP_COPYRIGHT);
-}
-
-void do_int_mark_error(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    /*
-    ** xparams[0]: errorp pointer
-    */
-    UNUSED(denv);
-    bool *errorp = (bool *) pvalue(xparams[0]);
-    *errorp = true;
-    /* ptree is (object divert) */
-    TValue error_obj = kcar(ptree);
-    /* pass the error along after setting the flag */
-    kapply_cc(K, error_obj);
-}
-
-void do_int_mark_root(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue obj = K->next_value;
-    klisp_assert(ttisnil(K->next_env));
-    /*
-    ** xparams[0]: rootp pointer
-    */
-    UNUSED(obj); /* ignore obj */
-    bool *rootp = (bool *) pvalue(xparams[0]);
-    *rootp = false; /* mark that we didn't explicitly call the root cont */
-    /* pass #INERT to the root continuation */
-    kapply_cc(K, KINERT);
 }
 
 static int dostring (klisp_State *K, const char *s, const char *name) 
@@ -727,6 +694,9 @@ int main(int argc, char *argv[])
 {
     struct Smain s;
     klisp_State *K = klispL_newstate();
+    /* Set the main thread as the current thread */
+    /* XXX/TEMP this could be made in run... */
+    K->thread = pthread_self();
 
     if (K == NULL) {
         k_message(argv[0], "cannot create state: not enough memory");

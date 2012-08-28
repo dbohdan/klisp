@@ -513,6 +513,13 @@ TValue map_for_each_transpose(klisp_State *K, TValue lss,
                               int32_t res_apairs, int32_t res_cpairs);
 
 
+/* for thread continuation guarding */
+void do_int_mark_root(klisp_State *K);
+void do_int_mark_error(klisp_State *K);
+
+/* TODO add handler for entry guards to avoid 
+   continuations to cross threads */
+
 /*
 ** Macros for ground environment initialization
 */

@@ -1930,3 +1930,37 @@ void guard_dynamic_extent(klisp_State *K)
 
     ktail_eval(K, expr, denv);
 }
+
+
+void do_int_mark_error(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    /*
+    ** xparams[0]: errorp pointer
+    */
+    UNUSED(denv);
+    bool *errorp = (bool *) pvalue(xparams[0]);
+    *errorp = true;
+    /* ptree is (object divert) */
+    TValue error_obj = kcar(ptree);
+    /* pass the error along after setting the flag */
+    kapply_cc(K, error_obj);
+}
+
+void do_int_mark_root(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    /*
+    ** xparams[0]: rootp pointer
+    */
+    UNUSED(obj); /* ignore obj */
+    bool *rootp = (bool *) pvalue(xparams[0]);
+    *rootp = false; /* mark that we didn't explicitly call the root cont */
+    /* pass #INERT to the root continuation */
+    kapply_cc(K, KINERT);
+}

@@ -17,7 +17,7 @@ RANLIB= ranlib
 # Use "RM= del /q /f" if you want to compile with MinGW without using MSYS
 RM= rm -f
 
-LIBS=-lm $(MYLIBS)
+LIBS=-lm -lpthread $(MYLIBS)
 
 # Set USE_LIBFFI=1 (or other nonempty string) to enable libffi-dependent
 # code.

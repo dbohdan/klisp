@@ -35,7 +35,7 @@
 #define testbits(x,m)	((x) & (m))
 #define bitmask(b)	(1<<(b))
 #define bit2mask(b1,b2)	(bitmask(b1) | bitmask(b2))
-#define l_setbit(x,b)	setbits(x, bitmask(b))
+#define k_setbit(x,b)	setbits(x, bitmask(b))
 #define resetbit(x,b)	resetbits(x, bitmask(b))
 #define testbit(x,b)	testbits(x, bitmask(b))
 #define set2bits(x,b1,b2)	setbits(x, (bit2mask(b1, b2)))
@@ -77,7 +77,7 @@
 #define isdead(g,v)	((v)->gch.gct & otherwhite(g) & WHITEBITS)
 
 #define changewhite(x)	((x)->gch.gct ^= WHITEBITS)
-#define gray2black(x)	l_setbit((x)->gch.gct, BLACKBIT)
+#define gray2black(x)	k_setbit((x)->gch.gct, BLACKBIT)
 
 #define valiswhite(x)	(iscollectable(x) && iswhite(gcvalue(x)))
 

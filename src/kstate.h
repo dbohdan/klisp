@@ -140,6 +140,8 @@ typedef struct global_State {
 struct klisp_State {
     CommonHeader; /* This represents a thread object */
     global_State *k_G;
+    pthread_t thread;
+
     /* Current state of execution */
     int32_t gil_count; /* the number of times the GIL was acquired */
     TValue curr_cont; /* the current continuation of this thread */

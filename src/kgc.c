@@ -50,7 +50,7 @@
 
 /* klisp: NOT USED YET */
 #define isfinalized(u)		testbit((u)->gct, FINALIZEDBIT)
-#define markfinalized(u)	l_setbit((u)->gct, FINALIZEDBIT)
+#define markfinalized(u)	k_setbit((u)->gct, FINALIZEDBIT)
 
 /* klisp: NOT USED YET */
 #define KEYWEAK            bitmask(KEYWEAKBIT)
@@ -541,9 +541,13 @@ static void freeobj (klisp_State *K, GCObject *o) {
         klispM_free(K, (Library *)o);
         break;
     case K_TTHREAD: {
-        klisp_assert((klisp_State *) o != K && 
-                     (klisp_State *) o != G(K)->mainthread);
-        klispT_freethread(K, (klisp_State *) o);
+        klisp_State *K2 = (klisp_State *) o;
+        klisp_assert(K2 != K && K2 != G(K)->mainthread);
+        /* do join to avoid memory leak, thread is guaranteed to have
+         completed execution, so join should not block (but it can fail
+        if a join was performed already) */
+        UNUSED(pthread_join(K2->thread, NULL));
+        klispT_freethread(K, K2);
         break;
     }
     default:

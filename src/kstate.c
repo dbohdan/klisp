@@ -162,7 +162,7 @@ static void close_state(klisp_State *K)
     klispM_freemem(K, ks_sbuf(K), ks_ssize(K) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K), ks_tbsize(K));
     /* free string/symbol table */
-    klispM_freearray(K, g->strt.hash, G(K)->strt.size, GCObject *);
+    klispM_freearray(K, g->strt.hash, g->strt.size, GCObject *);
 
     /* destroy the GIL */
     pthread_mutex_destroy(&g->gil);
@@ -404,6 +404,12 @@ klisp_State *klispT_newthread(klisp_State *K)
 {
     klisp_State *K1 = tostate(klispM_malloc(K, state_size(klisp_State)));
     klispC_link(K, (GCObject *) K1, K_TTHREAD, 0);
+
+    /* This is added in klisp to avoid the collection
+       of running, thread objects, they are unfixed
+       when the native threads terminate */
+    k_setbit(K->gct, FIXEDBIT);
+
     preinit_state(K1, G(K));
 
     /* initialize temp stacks */
@@ -577,16 +583,16 @@ void klispT_run(klisp_State *K)
             /* TEMP: do nothing, the loop will call the continuation */
 	    klisp_unlock_all(K);
         } else {
-	    klisp_lock(K);
+            klisp_lock(K);
             /* all ok, continue with next func */
             while (K->next_func) {
                 /* next_func is either operative or continuation
                    but in any case the call is the same */
                 (*(K->next_func))(K);
-		klispi_threadyield(K);
+                klispi_threadyield(K);
             }
             /* K->next_func is NULL, this means we should exit already */
-	    klisp_unlock(K);
+            klisp_unlock(K);
             break;
         }
     }
