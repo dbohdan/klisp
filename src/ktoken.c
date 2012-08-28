@@ -176,7 +176,12 @@ int ktok_ggetc(klisp_State *K)
     if (ttisfport(port)) {
         /* fport */
         FILE *file = kfport_file(port);
+
+        /* LOCK: only a single lock should be acquired */
+        klisp_unlock(K);
         int chi = getc(file);
+        klisp_lock(K);
+
         if (chi == EOF) {
             /* NOTE: eof doesn't change source code location info */
             if (ferror(file) != 0) {

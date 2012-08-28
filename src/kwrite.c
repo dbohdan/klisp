@@ -54,7 +54,10 @@ void kw_printf(klisp_State *K, const char *format, ...)
     if (ttisfport(port)) {
         FILE *file = kfport_file(port);
         va_start(argp, format);
+        /* LOCK: only a single lock should be acquired */
+        klisp_unlock(K);
         int ret = vfprintf(file, format, argp);
+        klisp_lock(K);
         va_end(argp);
 
         if (ret < 0) {
@@ -907,7 +910,9 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 
     if (ttisfport(port)) {
         FILE *file = kfport_file(port);
+        klisp_unlock(K);
         int res = fputc(chvalue(ch), file);
+        klisp_lock(K);
 
         if (res == EOF) {
             clearerr(file); /* clear error for next time */
@@ -945,7 +950,9 @@ void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
                             i/o functions set it */
     if (ttisfport(port)) {
         FILE *file = kfport_file(port);
+        klisp_unlock(K);
         int res = fputc(ivalue(u8), file);
+        klisp_lock(K);
 
         if (res == EOF) {
             clearerr(file); /* clear error for next time */
@@ -985,7 +992,10 @@ void kwrite_flush_port(klisp_State *K, TValue port)
     if (ttisfport(port)) { /* only necessary for file ports */
         FILE *file = kfport_file(port);
         klisp_assert(file);
-        if ((fflush(file)) == EOF) {
+        klisp_unlock(K);
+        int res = fflush(file);
+        klisp_lock(K);
+        if (res == EOF) {
             clearerr(file); /* clear error for next time */
             kwrite_error(K, "error writing");
         }
