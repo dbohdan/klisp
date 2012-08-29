@@ -11,7 +11,7 @@
 
 #include "kstate.h"
 #include "kobject.h"
-
+#include "kmutex.h"
 #include "kghelpers.h"
 
 /* ?.1? thread? */
@@ -148,6 +148,23 @@ static void make_thread(klisp_State *K)
     kapply_cc(K, new_th);
 }
 
+
+/* make-mutex */
+static void make_mutex(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    check_0p(K, ptree);
+
+    TValue new_mutex = kmake_mutex(K);
+    kapply_cc(K, new_mutex);
+}
+
 /* init ground */
 void kinit_threads_ground_env(klisp_State *K)
 {
@@ -168,4 +185,12 @@ void kinit_threads_ground_env(klisp_State *K)
 
     /* ?.3? make-thread */
     add_applicative(K, ground_env, "make-thread", make_thread, 0);
+
+    /* Mutexes */
+    /* mutex? */
+    add_applicative(K, ground_env, "mutex?", typep, 2, symbol, 
+                    i2tv(K_TMUTEX));
+
+    /* make-mutex */
+    add_applicative(K, ground_env, "make-mutex", make_mutex, 0);
 }

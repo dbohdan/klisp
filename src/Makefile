@@ -56,7 +56,7 @@ CORE_O=	kobject.o ktoken.o kpair.o kstring.o ksymbol.o kread.o \
 	kgenvironments.o kgenv_mut.o kgcombiners.o kgcontinuations.o \
 	kgencapsulations.o kgpromises.o kgkd_vars.o kgks_vars.o kgports.o \
 	kgchars.o kgnumbers.o kgstrings.o kgbytevectors.o kgvectors.o \
-	kgtables.o kgsystem.o kgerrors.o kgkeywords.o kgthreads.o \
+	kgtables.o kgsystem.o kgerrors.o kgkeywords.o kgthreads.o kmutex.o \
 	$(if $(USE_LIBFFI),kgffi.o)
 
 # TEMP: in klisp there is no distinction between core & lib
@@ -171,7 +171,7 @@ kgbytevectors.o: kgbytevectors.c kstate.h klimits.h klisp.h kobject.h \
  kenvironment.h ksymbol.h kstring.h ktable.h kgbytevectors.h
 kgc.o: kgc.c kgc.h kobject.h klimits.h klisp.h klispconf.h kstate.h \
  ktoken.h kmem.h kport.h imath.h imrat.h ktable.h kstring.h kbytevector.h \
- kvector.h kerror.h kpair.h
+ kvector.h kerror.h kpair.h kmutex.h
 kgchars.o: kgchars.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  ktoken.h kmem.h kapplicative.h koperative.h kcontinuation.h kerror.h \
  kpair.h kgc.h kchar.h kghelpers.h kvector.h kenvironment.h ksymbol.h \
@@ -284,7 +284,7 @@ kgtables.o: kgtables.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
  kpair.h kgc.h kghelpers.h kvector.h kenvironment.h ksymbol.h kstring.h \
  ktable.h kgtables.h
 kgthreads.o: kgthreads.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
- ktoken.h kmem.h kghelpers.h kerror.h kpair.h kgc.h kvector.h \
+ ktoken.h kmem.h kmutex.h kghelpers.h kerror.h kpair.h kgc.h kvector.h \
  kapplicative.h koperative.h kcontinuation.h kenvironment.h ksymbol.h \
  kstring.h ktable.h
 kgvectors.o: kgvectors.c kstate.h klimits.h klisp.h kobject.h klispconf.h \
@@ -303,6 +303,8 @@ klisp.o: klisp.c klimits.h klisp.h kstate.h kobject.h klispconf.h \
  kerror.h kpair.h kgc.h krepl.h ksystem.h kghelpers.h kvector.h ktable.h
 kmem.o: kmem.c klisp.h kstate.h klimits.h kobject.h klispconf.h ktoken.h \
  kmem.h kerror.h kpair.h kgc.h
+kmutex.o: kmutex.c kobject.h klimits.h klisp.h klispconf.h kstate.h \
+ ktoken.h kmem.h kmutex.h kgc.h kerror.h kpair.h
 kobject.o: kobject.c kobject.h klimits.h klisp.h klispconf.h
 koperative.o: koperative.c koperative.h kobject.h klimits.h klisp.h \
  klispconf.h kstate.h ktoken.h kmem.h kgc.h
