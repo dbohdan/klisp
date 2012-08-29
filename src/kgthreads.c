@@ -39,6 +39,9 @@ static void *thread_run(void *data)
 routine somewhere */
     bool errorp = false; /* may be set to true in error handler */
     bool rootp = true; /* may be set to false in continuation */
+
+    /* ???/TODO should the fact that the thread thrown an exception
+       be reported to the error output??? */
     
     /* We have already the appropriate environment,
        operative and arguments in place, but we still need the 
@@ -165,6 +168,52 @@ static void make_mutex(klisp_State *K)
     kapply_cc(K, new_mutex);
 }
 
+/* mutex-lock */
+static void mutex_lock(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "mutex", ttismutex, mutex);
+    kmutex_lock(K, mutex);
+    kapply_cc(K, KINERT);
+}
+
+/* mutex-unlock */
+static void mutex_unlock(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "mutex", ttismutex, mutex);
+    kmutex_unlock(K, mutex);
+    kapply_cc(K, KINERT);
+}
+
+/* mutex-trylock */
+static void mutex_trylock(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "mutex", ttismutex, mutex);
+    bool res = kmutex_trylock(K, mutex);
+    kapply_cc(K, b2tv(res));
+}
+
+
 /* init ground */
 void kinit_threads_ground_env(klisp_State *K)
 {
@@ -193,4 +242,12 @@ void kinit_threads_ground_env(klisp_State *K)
 
     /* make-mutex */
     add_applicative(K, ground_env, "make-mutex", make_mutex, 0);
+    /* REFACTOR: should lock and unlock have an '!'?
+       What about try lock?? '!', '?', '!?', neither?
+    /* mutex-lock */
+    add_applicative(K, ground_env, "mutex-lock", mutex_lock, 0);
+    /* mutex-unlock */
+    add_applicative(K, ground_env, "mutex-unlock", mutex_unlock, 0);
+    /* mutex-trylock */
+    add_applicative(K, ground_env, "mutex-trylock", mutex_trylock, 0);
 }
