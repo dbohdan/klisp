@@ -28,6 +28,7 @@
 #include "kbytevector.h"
 #include "kvector.h"
 #include "kmutex.h"
+#include "kcondvar.h"
 #include "kerror.h"
 
 #define GCSTEPSIZE	1024u
@@ -123,6 +124,7 @@ static void reallymarkobject (global_State *g, GCObject *o)
     case K_TLIBRARY:
     case K_TTHREAD:
     case K_TMUTEX:
+    case K_TCONDVAR:
         o->gch.gclist = g->gray;
         g->gray = o;
         break;
@@ -393,6 +395,12 @@ static int32_t propagatemark (global_State *g) {
         markvalue(g, m->owner);
         return sizeof(Mutex);
     }
+    case K_TCONDVAR: {
+        Condvar *c = cast(Condvar *, o);
+
+        markvalue(g, c->mutex);
+        return sizeof(Condvar);
+    }
     default: 
         fprintf(stderr, "Unknown GCObject type (in GC propagate): %d\n", 
                 type);
@@ -559,7 +567,10 @@ static void freeobj (klisp_State *K, GCObject *o) {
         break;
     }
     case K_TMUTEX:
-        klispX_free(K, (Mutex *)o);
+        klispX_free(K, (Mutex *) o);
+        break;
+    case K_TCONDVAR:
+        klispV_free(K, (Condvar *) o);
         break;
     default:
         /* shouldn't happen */

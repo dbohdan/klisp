@@ -16,6 +16,7 @@ void klispX_free(klisp_State *K, Mutex *mutex);
 /* LOCK: these functions require that the calling code has 
    acquired the GIL exactly once previous to the call and
    they may temporarily release it to avoid deadlocks */
+/* All of these do the required checks of owernship */
 void kmutex_lock(klisp_State *K, TValue mutex);
 void kmutex_unlock(klisp_State *K, TValue mutex);
 bool kmutex_trylock(klisp_State *K, TValue mutex);

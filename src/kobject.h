@@ -174,6 +174,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TLIBRARY	46
 #define K_TTHREAD	47
 #define K_TMUTEX	48
+#define K_TCONDVAR	49
 
 /* for tables */
 #define K_TDEADKEY           60
@@ -233,6 +234,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_LIBRARY K_MAKE_VTAG(K_TLIBRARY)
 #define K_TAG_THREAD K_MAKE_VTAG(K_TTHREAD)
 #define K_TAG_MUTEX K_MAKE_VTAG(K_TMUTEX)
+#define K_TAG_CONDVAR K_MAKE_VTAG(K_TCONDVAR)
 
 /*
 ** Macros to test types
@@ -337,6 +339,7 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttislibrary(o)	(tbasetype_(o) == K_TAG_LIBRARY)
 #define ttisthread(o)	(tbasetype_(o) == K_TAG_THREAD)
 #define ttismutex(o)	(tbasetype_(o) == K_TAG_MUTEX)
+#define ttiscondvar(o)	(tbasetype_(o) == K_TAG_CONDVAR)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -577,6 +580,12 @@ typedef struct __attribute__ ((__packed__)) {
     uint32_t count; /* count for recursive mutex */
 } Mutex;
 
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader; /* symbols are marked via their strings */
+    TValue mutex;
+    pthread_cond_t cond;
+} Condvar;
+
 /*
 ** `module' operation for hashing (size is always a power of 2)
 */
@@ -732,6 +741,7 @@ const TValue kfree;
 #define gc2lib(o_) (gc2tv(K_TAG_LIBRARY, o_))
 #define gc2th(o_) (gc2tv(K_TAG_THREAD, o_))
 #define gc2mutex(o_) (gc2tv(K_TAG_MUTEX, o_))
+#define gc2condvar(o_) (gc2tv(K_TAG_CONDVAR, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -757,6 +767,7 @@ const TValue kfree;
 #define tv2lib(v_) ((Library *) gcvalue(v_))
 #define tv2th(v_) ((klisp_State *) gcvalue(v_))
 #define tv2mutex(v_) ((Mutex *) gcvalue(v_))
+#define tv2condvar(v_) ((Condvar *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))

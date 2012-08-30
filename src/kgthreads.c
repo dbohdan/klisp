@@ -12,6 +12,7 @@
 #include "kstate.h"
 #include "kobject.h"
 #include "kmutex.h"
+#include "kcondvar.h"
 #include "kghelpers.h"
 
 /* ?.1? thread? */
@@ -213,6 +214,54 @@ static void mutex_trylock(klisp_State *K)
     kapply_cc(K, b2tv(res));
 }
 
+/* make-mutex */
+static void make_condvar(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "mutex", ttismutex, mutex);
+
+    TValue new_condvar = kmake_condvar(K, mutex);
+    kapply_cc(K, new_condvar);
+}
+
+/* condition-variable-wait */
+static void condvar_wait(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "condition-variable", ttiscondvar, condvar);
+    kcondvar_wait(K, condvar);
+    kapply_cc(K, KINERT);
+}
+
+/* condition-variable-signal / condition-variable-broadcast */
+static void condvar_signal(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(denv);
+    /*
+    ** xparams[0]: broadcast?
+    */
+    bool broadcast = bvalue(xparams[0]);
+
+    bind_1tp(K, ptree, "condition-variable", ttiscondvar, condvar);
+    kcondvar_signal(K, condvar, broadcast);
+    kapply_cc(K, KINERT);
+}
 
 /* init ground */
 void kinit_threads_ground_env(klisp_State *K)
@@ -243,11 +292,30 @@ void kinit_threads_ground_env(klisp_State *K)
     /* make-mutex */
     add_applicative(K, ground_env, "make-mutex", make_mutex, 0);
     /* REFACTOR: should lock and unlock have an '!'?
-       What about try lock?? '!', '?', '!?', neither?
+       What about try lock?? '!', '?', '!?', neither? */
     /* mutex-lock */
     add_applicative(K, ground_env, "mutex-lock", mutex_lock, 0);
     /* mutex-unlock */
     add_applicative(K, ground_env, "mutex-unlock", mutex_unlock, 0);
     /* mutex-trylock */
     add_applicative(K, ground_env, "mutex-trylock", mutex_trylock, 0);
+
+    /* Condition variables */
+    /* condition-variable? */
+    add_applicative(K, ground_env, "condition-variable?", typep, 2, symbol, 
+                    i2tv(K_TCONDVAR));
+
+    /* make-condition-variable */
+    add_applicative(K, ground_env, "make-condition-variable", 
+                    make_condvar, 0);
+    /* REFACTOR: should signal have an '!'? */
+    /* condition-variable-wait */
+    add_applicative(K, ground_env, "condition-variable-wait", 
+                    condvar_wait, 0);
+    /* condition-variable-signal */
+    add_applicative(K, ground_env, "condition-variable-signal", 
+                    condvar_signal, 1, b2tv(false));
+    /* condition-variable-broadcast */
+    add_applicative(K, ground_env, "condition-variable-broadcast", 
+                    condvar_signal, 1, b2tv(true));
 }

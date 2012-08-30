@@ -743,6 +743,15 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 #endif
         kw_printf(K, "]");
         break;
+    case K_TCONDVAR:
+        kw_printf(K, "#[condvar");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
     default:
         /* shouldn't happen */
         kwrite_error(K, "unknown object type");

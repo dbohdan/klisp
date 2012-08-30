@@ -11,8 +11,6 @@
 #include "kgc.h"
 #include "kerror.h"
 
-/* GC: Assumes env & ext_list are roooted */
-/* ext_list should be immutable (and it may be empty) */
 TValue kmake_mutex(klisp_State *K) 
 {
     Mutex *new_mutex = klispM_new(K, Mutex);
