@@ -62,6 +62,7 @@ typedef struct KG {
 /*
 ** open parts that may cause memory-allocation errors
 */
+/* TODO move other stuff that cause allocs here */
 static void f_klispopen (klisp_State *K, void *ud) {
     global_State *g = G(K);
     UNUSED(ud);
@@ -99,6 +100,7 @@ static void f_klispopen (klisp_State *K, void *ud) {
 static void preinit_state (klisp_State *K, global_State *g) {
     G(K) = g;
 
+    K->status = KLISP_THREAD_CREATED;
     K->gil_count = 0;
     K->curr_cont = KNIL;
     K->next_obj = KINERT;
@@ -209,6 +211,7 @@ klisp_State *klisp_newstate(klisp_Alloc f, void *ud)
     g->strt.hash = NULL;
     g->name_table = KINERT;
     g->cont_name_table = KINERT;
+    g->thread_table = KINERT;
 
     g->empty_string = KINERT;
     g->empty_bytevector = KINERT;
@@ -291,6 +294,9 @@ klisp_State *klisp_newstate(klisp_Alloc f, void *ud)
     /* here the keys are uncollectable */
     g->cont_name_table = klispH_new(K, 0, MINCONTNAMETABSIZE, 
                                     K_FLAG_WEAK_NOTHING);
+    /* here the keys are uncollectable */
+    g->thread_table = klispH_new(K, 0, MINTHREADTABSIZE,
+                                 K_FLAG_WEAK_NOTHING);
 
     /* Empty string */
     /* MAYBE: fix it so we can remove empty_string from roots */
@@ -383,6 +389,10 @@ klisp_State *klisp_newstate(klisp_Alloc f, void *ud)
     kinit_ground_env(K);
     kinit_cont_names(K);
 
+    /* put the main thread in the thread table */
+    TValue *node = klispH_set(K, tv2table(g->thread_table), gc2th(K));
+    *node = KTRUE;
+
     /* create a std environment and leave it in g->next_env */
     K->next_env = kmake_table_environment(K, g->ground_env);
 
@@ -397,7 +407,7 @@ klisp_State *klisp_newstate(klisp_Alloc f, void *ud)
 klisp_State *klisp_newthread(klisp_State *K)
 {
     /* TODO */
-    return K;
+    return NULL;
 }
 
 klisp_State *klispT_newthread(klisp_State *K)
@@ -405,12 +415,10 @@ klisp_State *klispT_newthread(klisp_State *K)
     klisp_State *K1 = tostate(klispM_malloc(K, state_size(klisp_State)));
     klispC_link(K, (GCObject *) K1, K_TTHREAD, 0);
 
-    /* This is added in klisp to avoid the collection
-       of running, thread objects, they are unfixed
-       when the native threads terminate */
-    k_setbit(K->gct, FIXEDBIT);
-
     preinit_state(K1, G(K));
+
+    /* protect from gc */
+    krooted_tvs_push(K, gc2th(K1));
 
     /* initialize temp stacks */
     ks_sbuf(K1) = (TValue *) klispM_malloc(K, KS_ISSIZE * sizeof(TValue));
@@ -420,7 +428,21 @@ klisp_State *klispT_newthread(klisp_State *K)
     ks_tbuf(K1) = (char *) klispM_malloc(K, KS_ITBSIZE);
     ks_tbsize(K1) = KS_ITBSIZE;
     ks_tbidx(K1) = 0; /* buffer is empty */
-  
+
+    /* initialize condition variable for joining */
+    int32_t ret = pthread_cond_init(&K1->joincond, NULL);
+
+    if (ret != 0) {
+        klispE_throw_simple_with_irritants(K, "Error creating joincond for "
+                                           "new thread", 1, i2tv(ret));
+        return NULL;
+    }
+
+    /* everything went well, put the thread in the thread table */
+    TValue *node = klispH_set(K, tv2table(G(K)->thread_table), gc2th(K1));
+    *node = KTRUE;
+    krooted_tvs_pop(K);
+
     klisp_assert(iswhite((GCObject *) (K1)));
     return K1;
 }
@@ -428,6 +450,11 @@ klisp_State *klispT_newthread(klisp_State *K)
 
 void klispT_freethread (klisp_State *K, klisp_State *K1)
 {
+    /* main thread can't come here, so it's safe to remove the
+       condvar here */
+    int32_t ret = pthread_cond_destroy(&K1->joincond);
+    klisp_assert(ret == 0); /* shouldn't happen */
+
     klispM_freemem(K, ks_sbuf(K1), ks_ssize(K1) * sizeof(TValue));
     klispM_freemem(K, ks_tbuf(K1), ks_tbsize(K1));
     /* userstatefree() */

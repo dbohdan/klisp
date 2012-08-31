@@ -558,11 +558,11 @@ static void freeobj (klisp_State *K, GCObject *o) {
         break;
     case K_TTHREAD: {
         klisp_State *K2 = (klisp_State *) o;
-        klisp_assert(K2 != K && K2 != G(K)->mainthread);
-        /* do join to avoid memory leak, thread is guaranteed to have
-         completed execution, so join should not block (but it can fail
-        if a join was performed already) */
-        UNUSED(pthread_join(K2->thread, NULL));
+
+        klisp_assert(K2 != G(K)->mainthread);
+        klisp_assert(K2 != K);
+        /* threads are always created detached, so there's no 
+           need to do a join here */
         klispT_freethread(K, K2);
         break;
     }
@@ -679,12 +679,11 @@ static void markroot (klisp_State *K) {
     g->grayagain = NULL; 
     g->weak = NULL; 
 
-    /* TEMP: this is quite awful, think of other way to do this */
-    /* MAYBE: some of these could be FIXED */
-    markobject(g, g->mainthread);
+    markobject(g, g->mainthread); /* this is also in the thread table */
 
     markvalue(g, g->name_table);
     markvalue(g, g->cont_name_table);
+    markvalue(g, g->thread_table);
 
     markvalue(g, g->eval_op);
     markvalue(g, g->list_app);

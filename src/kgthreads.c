@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "kstate.h"
+#include "ktable.h"
 #include "kobject.h"
 #include "kmutex.h"
 #include "kcondvar.h"
@@ -49,6 +50,8 @@ routine somewhere */
        continuations/guards */
     /* LOCK: We need the GIL for allocating the objects */
     klisp_lock(K);
+
+    K->status = KLISP_THREAD_RUNNING;
     /* create the guard set error flag after errors */
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
                                       1, p2tv(&errorp));
@@ -91,24 +94,27 @@ routine somewhere */
 
     klisp_unlock(K);
 
-    /* LOCK: run will acquire the lock */
+    /* LOCK: run will acquire the lock, and release it when done */
     klispT_run(K);
 
-    /* TODO get the return value */
-/*    
-    int status = errorp? STATUS_ERROR : 
-        (rootp? STATUS_ROOT : STATUS_CONTINUE);
-*/
-
-/* /XXX     */
-
-
-    /* thread is done, we can remove the fixed bit */
-    /* XXX what happens if this threads terminates abnormally?? */
     klisp_lock(K);
-    resetbit(K->gct, FIXEDBIT);
+
+    /* thread is done, we can remove it from the thread table */
+    /* XXX what happens if this threads terminates abnormally?? */
+    TValue *node = klispH_set(K, tv2table(G(K)->thread_table),
+                              gc2th(K));
+    *node = KFREE;
+
+    K->status = errorp? KLISP_THREAD_ERROR : KLISP_THREAD_DONE;
+    /* the thrown object/return value remains in K->next_obj */
+    /* NOTICE that unless root continuation is explicitly invoked
+       the value returned by the function is discarded!!
+       This may change in the future */
+
+    /* signal all threads waiting to join */
+    int32_t ret = pthread_cond_broadcast(&K->joincond);
+    klisp_assert(ret == 0); /* shouldn't happen */
     klisp_unlock(K);
-    /* TODO return value */
     return NULL;
 }
 
@@ -138,7 +144,17 @@ static void make_thread(klisp_State *K)
     new_K->next_env = kmake_empty_environment(K);
     TValue si = ktry_get_si(new_K, top);
     klispT_tail_call_si(new_K, top, KNIL, new_K->next_env, si);
-    int32_t ret = pthread_create(&new_K->thread, NULL, thread_run, new_K);
+
+    pthread_attr_t attr;
+    int32_t ret = pthread_attr_init(&attr);
+    klisp_assert(ret == 0); /* this shouldn't really happen... */
+    /* make threads detached, the running state and return value
+       will be kept in the corresponding klisp_State struct */
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    klisp_assert(ret == 0); /* this shouldn't really happen... */
+
+    K->status = KLISP_THREAD_STARTING;
+    ret = pthread_create(&new_K->thread, &attr, thread_run, new_K);
 
     if (ret != 0) {
         /* let the GC collect the failed State */
@@ -148,10 +164,53 @@ static void make_thread(klisp_State *K)
         return;
     }
 
+    /* this shouldn't fail */
+    UNUSED(pthread_attr_destroy(&attr));
+
     /* thread created correctly, return it */
     kapply_cc(K, new_th);
 }
 
+static void thread_join(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue ptree = K->next_value;
+    TValue denv = K->next_env;
+    klisp_assert(ttisenvironment(K->next_env));
+    UNUSED(xparams);
+    UNUSED(denv);
+
+    bind_1tp(K, ptree, "thread", ttisthread, thread);
+
+    if (tv_equal(gc2th(K), thread)) {
+        klispE_throw_simple(K, "Thread can't join with itself");
+        return;
+    } else if (tv_equal(gc2th(G(K)->mainthread), thread)) {
+        klispE_throw_simple(K, "Can't join with main thread");
+        return;
+    }
+
+    klisp_State *K2 = tv2th(thread);
+    
+    while(true) {
+        fflush(stdout);
+        if (K2->status == KLISP_THREAD_DONE) {
+            /* NOTICE that unless root continuation was explicitly invoked
+               the value returned by the thread is discarded!!
+               This may change in the future */
+            kapply_cc(K, K2->next_value);
+        } else if (K2->status == KLISP_THREAD_ERROR) {
+            /* throw the same object, but in this thread */
+            kcall_cont(K, G(K)->error_cont, K2->next_value);
+            return;
+        } else {
+            /* must wait for this thread to end */
+            /* LOCK: the GIL should be acquired exactly once */
+            int32_t ret = pthread_cond_wait(&K2->joincond, &G(K)->gil);
+            klisp_assert(ret == 0); /* shouldn't happen */
+        }
+    }
+}
 
 /* make-mutex */
 static void make_mutex(klisp_State *K)
@@ -283,6 +342,9 @@ void kinit_threads_ground_env(klisp_State *K)
 
     /* ?.3? make-thread */
     add_applicative(K, ground_env, "make-thread", make_thread, 0);
+
+    /* ?.4? thread-join */
+    add_applicative(K, ground_env, "thread-join", thread_join, 0);
 
     /* Mutexes */
     /* mutex? */

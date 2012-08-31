@@ -62,6 +62,10 @@
 #define MINCONTNAMETABSIZE	32
 #endif
 
+#ifndef MINTHREADTABSIZE
+#define MINTHREADTABSIZE	32
+#endif
+
 /* minimum size for the require table (must be power of 2) */
 #ifndef MINREQUIRETABSIZE
 #define MINREQUIRETABSIZE	32

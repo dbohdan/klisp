@@ -56,6 +56,7 @@ typedef struct global_State {
     stringtable strt;  /* hash table for immutable strings & symbols */
     TValue name_table; /* hash tables for naming objects */
     TValue cont_name_table; /* hash tables for naming continuation functions */
+    TValue thread_table; /* hash table for all live (non done/error) threads */
 
     /* Memory allocator */
     klisp_Alloc frealloc;  /* function to reallocate memory */
@@ -137,11 +138,26 @@ typedef struct global_State {
     pthread_mutex_t gil; 
 } global_State;
 
+/* 
+** Possible states of a thread/klisp_State,
+** currently threads are started as soon as they are created, but
+** that may change in the future.  If the state is done, or error,
+** the returned/thrown object is kept in next_value 
+*/
+#define KLISP_THREAD_CREATED (0)
+#define KLISP_THREAD_STARTING (1)
+#define KLISP_THREAD_RUNNING (2)
+#define KLISP_THREAD_DONE (3)
+#define KLISP_THREAD_ERROR (4)
+
 struct klisp_State {
     CommonHeader; /* This represents a thread object */
     global_State *k_G;
     pthread_t thread;
-
+    int32_t status; /* the execution status of this thread */
+    /* The main thread doesn't have a condition variable here because
+       you can't join it.  This may be changed in the future */
+    pthread_cond_t joincond; /* the condition variable for joining */
     /* Current state of execution */
     int32_t gil_count; /* the number of times the GIL was acquired */
     TValue curr_cont; /* the current continuation of this thread */
