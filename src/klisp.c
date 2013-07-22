@@ -40,7 +40,7 @@
 #include "kerror.h"
 #include "krepl.h"
 #include "ksystem.h"
-#include "kghelpers.h" /* for do_pass_value and do_seq */
+#include "kghelpers.h" /* for do_pass_value and do_seq, mark_root & mark_error */
 
 static const char *progname = KLISP_PROGNAME;
 
@@ -84,7 +84,7 @@ static void k_message (const char *pname, const char *msg)
    (like the repl) */
 static void show_error(klisp_State *K, TValue obj) {
     /* FOR NOW used only for irritant list */
-    TValue port = kcdr(K->kd_error_port_key);
+    TValue port = kcdr(G(K)->kd_error_port_key);
     klisp_assert(ttisfport(port) && kfport_file(port) == stderr);
 
     /* TEMP: obj should be an error obj */
@@ -168,41 +168,10 @@ static void print_version(void)
     printf("%s\n", KLISP_RELEASE "  " KLISP_COPYRIGHT);
 }
 
-void do_int_mark_error(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue ptree = K->next_value;
-    TValue denv = K->next_env;
-    klisp_assert(ttisenvironment(K->next_env));
-    /*
-    ** xparams[0]: errorp pointer
-    */
-    UNUSED(denv);
-    bool *errorp = (bool *) pvalue(xparams[0]);
-    *errorp = true;
-    /* ptree is (object divert) */
-    TValue error_obj = kcar(ptree);
-    /* pass the error along after setting the flag */
-    kapply_cc(K, error_obj);
-}
-
-void do_int_mark_root(klisp_State *K)
-{
-    TValue *xparams = K->next_xparams;
-    TValue obj = K->next_value;
-    klisp_assert(ttisnil(K->next_env));
-    /*
-    ** xparams[0]: rootp pointer
-    */
-    UNUSED(obj); /* ignore obj */
-    bool *rootp = (bool *) pvalue(xparams[0]);
-    *rootp = false; /* mark that we didn't explicitly call the root cont */
-    /* pass #INERT to the root continuation */
-    kapply_cc(K, KINERT);
-}
-
 static int dostring (klisp_State *K, const char *s, const char *name) 
 {
+    klisp_lock(K);
+
     bool errorp = false; /* may be set to true in error handler */
     bool rootp = true; /* may be set to false in continuation */
 
@@ -212,7 +181,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
                                       1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -224,7 +193,7 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+    TValue outer_cont = kmake_continuation(K, G(K)->root_cont, 
                                            do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
@@ -260,13 +229,16 @@ static int dostring (klisp_State *K, const char *s, const char *name)
     /* TODO factor this out into a get_ground_binding(K, char *) */
     TValue ev = ksymbol_new_b(K, "eval-string", KNIL);
     krooted_vars_push(K, &ev);
-    klisp_assert(kbinds(K, K->ground_env, ev));
-    ev = kunwrap(kget_binding(K, K->ground_env, ev));
+    klisp_assert(kbinds(K, G(K)->ground_env, ev));
+    ev = kunwrap(kget_binding(K, G(K)->ground_env, ev));
     krooted_vars_pop(K);
     krooted_tvs_pop(K);
 
-    klispS_tail_call_si(K, ev, ptree, env, KNIL);
-    klispS_run(K);
+    klispT_tail_call_si(K, ev, ptree, env, KNIL);
+
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
+    klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
         (rootp? STATUS_ROOT : STATUS_CONTINUE);
@@ -309,6 +281,7 @@ void do_file_read(klisp_State *K)
 /* name = NULL means use stdin */
 static int dofile(klisp_State *K, const char *name) 
 {
+    klisp_lock(K);
     bool errorp = false; /* may be set to true in error handler */
     bool rootp = true; /* may be set to false in continuation */
 
@@ -317,7 +290,7 @@ static int dofile(klisp_State *K, const char *name)
 
     /* XXX better do this in a continuation */
     if (name == NULL) {
-        port = kcdr(K->kd_in_port_key);
+        port = kcdr(G(K)->kd_in_port_key);
     } else {
         FILE *file = fopen(name, "r");
         if (file == NULL) {
@@ -345,7 +318,7 @@ static int dofile(klisp_State *K, const char *name)
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
                                       1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -357,7 +330,7 @@ static int dofile(klisp_State *K, const char *name)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+    TValue outer_cont = kmake_continuation(K, G(K)->root_cont, 
                                            do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
@@ -392,9 +365,11 @@ static int dofile(klisp_State *K, const char *name)
     krooted_tvs_pop(K); /* pop eval cont */
     krooted_tvs_pop(K); /* pop port */
     kset_cc(K, read_cont); /* this will protect all conts from gc */
-    klispS_apply_cc(K, KINERT);
+    klispT_apply_cc(K, KINERT);
 
-    klispS_run(K);
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
+    klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
         (rootp? STATUS_ROOT : STATUS_CONTINUE);
@@ -406,9 +381,12 @@ static int dofile(klisp_State *K, const char *name)
 
 static void dotty(klisp_State *K)
 {
+    klisp_lock(K);
     TValue env = K->next_env;
     kinit_repl(K);
-    klispS_run(K);
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
+    klispT_run(K);
     /* get the standard environment again in K->next_env */
     K->next_env = env;
 }
@@ -416,6 +394,7 @@ static void dotty(klisp_State *K)
 /* name != NULL */
 static int dorfile(klisp_State *K, const char *name) 
 {
+    klisp_lock(K);
     bool errorp = false; /* may be set to true in error handler */
     bool rootp = true; /* may be set to false in continuation */
 
@@ -428,7 +407,7 @@ static int dorfile(klisp_State *K, const char *name)
     TValue exit_int = kmake_operative(K, do_int_mark_error, 
                                       1, p2tv(&errorp));
     krooted_tvs_push(K, exit_int);
-    TValue exit_guard = kcons(K, K->error_cont, exit_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, exit_int);
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -440,7 +419,7 @@ static int dorfile(klisp_State *K, const char *name)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+    TValue outer_cont = kmake_continuation(K, G(K)->root_cont, 
                                            do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
@@ -474,13 +453,15 @@ static int dorfile(klisp_State *K, const char *name)
     /* TODO factor this out into a get_ground_binding(K, char *) */
     TValue req = ksymbol_new_b(K, "require", KNIL);
     krooted_vars_push(K, &req);
-    klisp_assert(kbinds(K, K->ground_env, req));
-    req = kunwrap(kget_binding(K, K->ground_env, req));
+    klisp_assert(kbinds(K, G(K)->ground_env, req));
+    req = kunwrap(kget_binding(K, G(K)->ground_env, req));
     krooted_tvs_pop(K);
     krooted_vars_pop(K);
 
-    klispS_tail_call_si(K, req, ptree, env, KNIL);
-    klispS_run(K);
+    klispT_tail_call_si(K, req, ptree, env, KNIL);
+    klisp_unlock(K);
+    /* LOCK: run while acquire the GIL again */
+    klispT_run(K);
 
     int status = errorp? STATUS_ERROR : 
         (rootp? STATUS_ROOT : STATUS_CONTINUE);
@@ -600,6 +581,7 @@ static int runargs (klisp_State *K, char **argv, int n)
     return STATUS_CONTINUE;
 }
 
+/* LOCK: assume that the GIL is acquired */
 static void populate_argument_lists(klisp_State *K, char **argv, int argc, 
                                     int script)
 {
@@ -615,8 +597,8 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     }
     /* Store the script argument list */
     obj = ksymbol_new_b(K, "get-script-arguments", KNIL);
-    klisp_assert(kbinds(K, K->ground_env, obj));
-    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    klisp_assert(kbinds(K, G(K)->ground_env, obj));
+    obj = kunwrap(kget_binding(K, G(K)->ground_env, obj));
     tv2op(obj)->extra[0] = tail;
 
     while(argc > 0) {
@@ -626,8 +608,8 @@ static void populate_argument_lists(klisp_State *K, char **argv, int argc,
     }
     /* Store the interpreter argument list */
     obj = ksymbol_new_b(K, "get-interpreter-arguments", KNIL);
-    klisp_assert(kbinds(K, K->ground_env, obj));
-    obj = kunwrap(kget_binding(K, K->ground_env, obj));
+    klisp_assert(kbinds(K, G(K)->ground_env, obj));
+    obj = kunwrap(kget_binding(K, G(K)->ground_env, obj));
     tv2op(obj)->extra[0] = tail;
 
     krooted_vars_pop(K);
@@ -697,7 +679,9 @@ static void pmain(klisp_State *K)
 
     /* TEMP this could be either set before or after running the arguments,
        we'll do it before for now */
+    klisp_lock(K);
     populate_argument_lists(K, argv, s->argc, (script > 0) ? script : s->argc);
+    klisp_unlock(K);
     
     s->status = runargs(K, argv, (script > 0) ? script : s->argc);
 
@@ -727,6 +711,9 @@ int main(int argc, char *argv[])
 {
     struct Smain s;
     klisp_State *K = klispL_newstate();
+    /* Set the main thread as the current thread */
+    /* XXX/TEMP this could be made in run... */
+    K->thread = pthread_self();
 
     if (K == NULL) {
         k_message(argv[0], "cannot create state: not enough memory");

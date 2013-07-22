@@ -16,7 +16,7 @@
 /* No case folding is performed by these constructors */
 
 /* buffer + size, may contain nulls */
-TValue kkeyword_new_bs(klisp_State *K, const char *buf, int32_t size);
+TValue kkeyword_new_bs(klisp_State *K, const char *buf, uint32_t size);
 /* null terminated buffer */
 TValue kkeyword_new_b(klisp_State *K, const char *buf);
 /* copies str if not immutable */

@@ -2242,7 +2242,6 @@ STATIC mp_digit *s_realloc(klisp_State *K, mp_digit *old, mp_size osize,
 #else
     mp_digit *new = klispM_realloc_(K, old, osize * sizeof(mp_digit), 
                                     nsize * sizeof(mp_digit));
-
     assert(new != NULL); /* for debugging */
 #endif
     return new;

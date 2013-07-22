@@ -54,7 +54,10 @@ void kw_printf(klisp_State *K, const char *format, ...)
     if (ttisfport(port)) {
         FILE *file = kfport_file(port);
         va_start(argp, format);
+        /* LOCK: only a single lock should be acquired */
+        klisp_unlock(K);
         int ret = vfprintf(file, format, argp);
+        klisp_lock(K);
         va_end(argp);
 
         if (ret < 0) {
@@ -441,7 +444,9 @@ void kw_print_cont_type(klisp_State *K, TValue obj)
     K->write_displayp = true; /* avoid "s and escapes */
 
     Continuation *cont = tv2cont(obj);
-    const TValue *node = klispH_get(tv2table(K->cont_name_table),
+
+    /* XXX lock? */
+    const TValue *node = klispH_get(tv2table(G(K)->cont_name_table),
                                     p2tv(cont->fn));
 
     char *type;
@@ -720,6 +725,33 @@ void kwrite_scalar(klisp_State *K, TValue obj)
 #endif
         kw_printf(K, "]");
         break;
+    case K_TTHREAD:
+        kw_printf(K, "#[thread");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TMUTEX:
+        kw_printf(K, "#[mutex");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
+    case K_TCONDVAR:
+        kw_printf(K, "#[condvar");
+#if KTRACK_NAMES
+        if (khas_name(obj)) {
+            kw_print_name(K, obj);
+        }
+#endif
+        kw_printf(K, "]");
+        break;
     default:
         /* shouldn't happen */
         kwrite_error(K, "unknown object type");
@@ -896,7 +928,9 @@ void kwrite_char_to_port(klisp_State *K, TValue port, TValue ch)
 
     if (ttisfport(port)) {
         FILE *file = kfport_file(port);
+        klisp_unlock(K);
         int res = fputc(chvalue(ch), file);
+        klisp_lock(K);
 
         if (res == EOF) {
             clearerr(file); /* clear error for next time */
@@ -934,7 +968,9 @@ void kwrite_u8_to_port(klisp_State *K, TValue port, TValue u8)
                             i/o functions set it */
     if (ttisfport(port)) {
         FILE *file = kfport_file(port);
+        klisp_unlock(K);
         int res = fputc(ivalue(u8), file);
+        klisp_lock(K);
 
         if (res == EOF) {
             clearerr(file); /* clear error for next time */
@@ -974,7 +1010,10 @@ void kwrite_flush_port(klisp_State *K, TValue port)
     if (ttisfport(port)) { /* only necessary for file ports */
         FILE *file = kfport_file(port);
         klisp_assert(file);
-        if ((fflush(file)) == EOF) {
+        klisp_unlock(K);
+        int res = fflush(file);
+        klisp_lock(K);
+        if (res == EOF) {
             clearerr(file); /* clear error for next time */
             kwrite_error(K, "error writing");
         }

@@ -28,7 +28,6 @@ TValue klispE_new(klisp_State *K, TValue who, TValue cont, TValue msg,
     new_error->cont = cont;
     new_error->msg = msg;
     new_error->irritants = irritants;
-
     return gc2error(new_error);
 }
 
@@ -47,6 +46,8 @@ TValue klispE_new_with_errno_irritants(klisp_State *K, const char *service,
     return error_obj;
 }
 
+/* This is meant to be called by the GC */
+/* LOCK: GIL should be acquired */
 void klispE_free(klisp_State *K, Error *error)
 {
     klispM_free(K, error);
@@ -87,7 +88,7 @@ void klispE_throw_simple(klisp_State *K, char *msg)
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
     /* call_cont protects error from gc */
-    kcall_cont(K, K->error_cont, error_obj);
+    kcall_cont(K, G(K)->error_cont, error_obj);
 }
 
 /*
@@ -112,7 +113,7 @@ void klispE_throw_with_irritants(klisp_State *K, char *msg, TValue irritants)
     krooted_tvs_push(K, error_obj);
     clear_buffers(K); /* this pops both error_msg & error_obj */
     /* call_cont protects error from gc */
-    kcall_cont(K, K->error_cont, error_obj);
+    kcall_cont(K, G(K)->error_cont, error_obj);
 }
 
 void klispE_throw_system_error_with_irritants(
@@ -122,7 +123,7 @@ void klispE_throw_system_error_with_irritants(
                                                        irritants);
     krooted_tvs_push(K, error_obj);
     clear_buffers(K);
-    kcall_cont(K, K->system_error_cont, error_obj);
+    kcall_cont(K, G(K)->system_error_cont, error_obj);
 }
 
 /* The array symbolic_error_codes[] assigns locale and target

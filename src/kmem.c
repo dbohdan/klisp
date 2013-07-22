@@ -9,6 +9,10 @@
 ** SOURCE NOTE: This is from Lua, but greatly shortened
 */
 
+/*
+** LOCK: Whoever calls these should have already acquired the GIL.
+*/
+
 #include <stddef.h>
 #include <stdio.h>
 #include <assert.h>
@@ -76,26 +80,27 @@ void *klispM_realloc_ (klisp_State *K, void *block, size_t osize, size_t nsize) 
     /* TEMP: for now only Stop the world GC */
     /* TEMP: prevent recursive call of klispC_fullgc() */
 #ifdef KUSE_GC
-    if (nsize > 0 && K->totalbytes - osize + nsize >= K->GCthreshold) {
+    if (nsize > 0 && G(K)->totalbytes - osize + nsize >= G(K)->GCthreshold) {
 #ifdef KDEBUG_GC
-        printf("GC START, total_bytes: %d\n", K->totalbytes);
+        printf("GC START, total_bytes: %d\n", G(K)->totalbytes);
 #endif
         klispC_fullgc(K);
 #ifdef KDEBUG_GC
-        printf("GC END, total_bytes: %d\n", K->totalbytes);
+        printf("GC END, total_bytes: %d\n", G(K)->totalbytes);
 #endif
     }
 #endif
 
-    block = (*K->frealloc)(K->ud, block, osize, nsize);
+    block = (*G(K)->frealloc)(G(K)->ud, block, osize, nsize);
 
     if (block == NULL && nsize > 0) {
         /* TEMP: try GC if there is no more mem */
         /* TODO: make this a catchable error */
+        klisp_unlock_all(K);
         fprintf(stderr, MEMERRMSG);
         abort();
     }
     klisp_assert((nsize == 0) == (block == NULL));
-    K->totalbytes = (K->totalbytes - osize) + nsize;
+    G(K)->totalbytes = (G(K)->totalbytes - osize) + nsize;
     return block;
 }

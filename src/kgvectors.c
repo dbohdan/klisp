@@ -48,7 +48,7 @@ void make_vector(klisp_State *K)
         return;
     }
     TValue new_vector = (ivalue(tv_s) == 0)?
-        K->empty_vector
+        G(K)->empty_vector
         : kvector_new_sf(K, ivalue(tv_s), fill);
     kapply_cc(K, new_vector);
 }
@@ -185,7 +185,7 @@ void bytevector_to_vector(klisp_State *K)
     TValue res;
 
     if (kbytevector_emptyp(str)) {
-        res = K->empty_vector;
+        res = G(K)->empty_vector;
     } else {
         uint32_t size = kbytevector_size(str);
 
@@ -216,7 +216,7 @@ void vector_to_bytevector(klisp_State *K)
     TValue res;
 
     if (kvector_emptyp(vec)) {
-        res = K->empty_bytevector;
+        res = G(K)->empty_bytevector;
     } else {
         uint32_t size = kvector_size(vec);
 
@@ -257,7 +257,7 @@ void vector_copyB(klisp_State *K)
     }
 
     if (!tv_equal(vector1, vector2) && 
-        !tv_equal(vector1, K->empty_vector)) {
+        !tv_equal(vector1, G(K)->empty_vector)) {
         memcpy(kvector_buf(vector2),
                kvector_buf(vector1),
                kvector_size(vector1) * sizeof(TValue));
@@ -306,7 +306,7 @@ void vector_copy_partial(klisp_State *K)
     TValue new_vector;
     /* the if isn't strictly necessary but it's clearer this way */
     if (size == 0) {
-        new_vector = K->empty_vector;
+        new_vector = G(K)->empty_vector;
     } else {
         new_vector = kvector_new_bs_g(K, true, kvector_buf(vector) 
                                       + start, size);
@@ -428,7 +428,7 @@ void vector_to_immutable_vector(klisp_State *K)
 /* init ground */
 void kinit_vectors_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /*

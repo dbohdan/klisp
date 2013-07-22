@@ -146,7 +146,7 @@ TValue kmake_mport(klisp_State *K, TValue buffer, bool writep, bool binaryp)
 
     /* port specific fields */
     TValue tv_port = gc2mport(new_port);
-    kport_filename(tv_port) = K->empty_string; /* XXX for now no filename */
+    kport_filename(tv_port) = G(K)->empty_string; /* XXX for now no filename */
     /* line is 1-based and col is 0-based */
     kport_line(tv_port) = 1;
     kport_col(tv_port) = 0;

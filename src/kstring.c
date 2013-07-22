@@ -21,10 +21,10 @@ void klispS_resize (klisp_State *K, int32_t newsize)
     GCObject **newhash;
     stringtable *tb;
     int32_t i;
-    if (K->gcstate == GCSsweepstring)
+    if (G(K)->gcstate == GCSsweepstring)
         return;  /* cannot resize during GC traverse */
     newhash = klispM_newvector(K, newsize, GCObject *);
-    tb = &K->strt;
+    tb = &G(K)->strt;
     for (i = 0; i < newsize; i++) newhash[i] = NULL;
     /* rehash */
     for (i = 0; i < tb->size; i++) {
@@ -76,10 +76,8 @@ TValue kstring_new_bs_g(klisp_State *K, bool m, const char *buf,
 ** Constructors for immutable strings
 */
 
-/* main constructor for immutable strings */
-TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
+static uint32_t get_string_hash(const char *buf, uint32_t size)
 {
-    /* first check to see if it's in the stringtable */
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if string is too long, don't hash all 
                                   its chars */
@@ -87,7 +85,15 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
         h = h ^ ((h<<5)+(h>>2)+ ((unsigned char) buf[size1-1]));
 
-    for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
+    return h;
+}
+
+/* Looks for a string in the stringtable and returns a pointer
+   to it if found or NULL otherwise.  */
+static String *search_in_string_table(klisp_State *K, const char *buf,
+				      uint32_t size, uint32_t h)
+{
+    for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)];
          o != NULL; o = o->gch.next) {
         klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
                      o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
@@ -97,14 +103,27 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
         String *ts = (String *) o;
         if (ts->size == size && (memcmp(buf, ts->b, size) == 0)) {
             /* string may be dead */
-            if (isdead(K, o)) changewhite(o);
-            return gc2str(o);
+            if (isdead(G(K), o)) changewhite(o);
+            return ts;
         }
     } 
 
-    /* If it exits the loop, it means it wasn't found, hash is still in h */
-    /* REFACTOR: move all of these to a new function */
-    String *new_str;
+    /* If it exits the loop, it means it wasn't found */
+    return NULL;
+}
+
+
+/* main constructor for immutable strings */
+TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
+{
+    uint32_t h = get_string_hash(buf, size);
+    
+    /* first check to see if it's in the stringtable */
+    String *new_str  = search_in_string_table(K, buf, size, h);
+
+    if (new_str != NULL) { /* found */
+      return gc2str(new_str);
+    }
 
     if (size > (SIZE_MAX - sizeof(String) - 1))
         klispM_toobig(K);
@@ -114,7 +133,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
     /* header + gc_fields */
     /* can't use klispC_link, because strings use the next pointer
        differently */
-    new_str->gct = klispC_white(K);
+    new_str->gct = klispC_white(G(K));
     new_str->tt = K_TSTRING;
     new_str->kflags = K_FLAG_IMMUTABLE;
     new_str->si = NULL;
@@ -129,7 +148,7 @@ TValue kstring_new_bs_imm(klisp_State *K, const char *buf, uint32_t size)
 
     /* add to the string/symbol table (and link it) */
     stringtable *tb;
-    tb = &K->strt;
+    tb = &G(K)->strt;
     h = lmod(h, tb->size);
     new_str->next = tb->hash[h];  /* chain new entry */
     tb->hash[h] = (GCObject *)(new_str);
@@ -161,8 +180,8 @@ TValue kstring_new_s(klisp_State *K, uint32_t size)
     String *new_str;
 
     if (size == 0) {
-        klisp_assert(ttisstring(K->empty_string));
-        return K->empty_string;
+        klisp_assert(ttisstring(G(K)->empty_string));
+        return G(K)->empty_string;
     }
 
     new_str = klispM_malloc(K, sizeof(String) + size + 1);

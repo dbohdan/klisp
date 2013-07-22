@@ -9,9 +9,6 @@
 
 #include <stdlib.h>
 
-/* NOTE: this inclusion is reversed in lua */
-#include "kobject.h"
-
 /*
 ** SOURCE NOTE: This is mostly from Lua.
 */
@@ -31,17 +28,17 @@ typedef void * (*klisp_Alloc)
     (void *ud, void *ptr, size_t osize, size_t nsize);
 
 /*
-** prototype for callable c functions from the interpreter main loop:
-**
-** TEMP: for now it is defined in kobject.h
+** prototype for underlying c functions of continuations &
+** operatives
 */
-/* typedef void (*klisp_Ifunc) (TValue *ud, TValue val); */
+typedef void (*klisp_CFunction) (struct klisp_State *K);
 
 /*
 ** state manipulation
 */
-klisp_State *klisp_newstate (klisp_Alloc f, void *ud);
-void klisp_close (klisp_State *K);
+klisp_State *klisp_newstate(klisp_Alloc f, void *ud);
+void klisp_close(klisp_State *K);
+klisp_State *klisp_newthread(klisp_State *K);
 
 /******************************************************************************
  * Copyright (C) 2011-2012 Andres Navarro, Oto Havle.

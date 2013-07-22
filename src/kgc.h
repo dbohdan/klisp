@@ -35,7 +35,7 @@
 #define testbits(x,m)	((x) & (m))
 #define bitmask(b)	(1<<(b))
 #define bit2mask(b1,b2)	(bitmask(b1) | bitmask(b2))
-#define l_setbit(x,b)	setbits(x, bitmask(b))
+#define k_setbit(x,b)	setbits(x, bitmask(b))
 #define resetbit(x,b)	resetbits(x, bitmask(b))
 #define testbit(x,b)	testbits(x, bitmask(b))
 #define set2bits(x,b1,b2)	setbits(x, (bit2mask(b1, b2)))
@@ -71,22 +71,21 @@
 
 #define iswhite(x)         test2bits((x)->gch.gct, WHITE0BIT, WHITE1BIT)
 #define isblack(x)         testbit((x)->gch.gct, BLACKBIT)
-
 #define isgray(x)	(!isblack(x) && !iswhite(x))
 
-#define otherwhite(K)	(K->currentwhite ^ WHITEBITS)
-#define isdead(K,v)	((v)->gch.gct & otherwhite(K) & WHITEBITS)
+#define otherwhite(g)	(g->currentwhite ^ WHITEBITS)
+#define isdead(g,v)	((v)->gch.gct & otherwhite(g) & WHITEBITS)
 
 #define changewhite(x)	((x)->gch.gct ^= WHITEBITS)
-#define gray2black(x)	l_setbit((x)->gch.gct, BLACKBIT)
+#define gray2black(x)	k_setbit((x)->gch.gct, BLACKBIT)
 
 #define valiswhite(x)	(iscollectable(x) && iswhite(gcvalue(x)))
 
-#define klispC_white(K)	cast(uint16_t, (K)->currentwhite & WHITEBITS)
+#define klispC_white(g)	cast(uint16_t, (g)->currentwhite & WHITEBITS)
 
 
 #define klispC_checkGC(K) {                     \
-        if (K->totalbytes >= K->GCthreshold)	\
+        if (G(K)->totalbytes >= G(K)->GCthreshold)  \
             klispC_step(K); }
 
 

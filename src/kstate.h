@@ -5,8 +5,7 @@
 */
 
 /*
-** SOURCE NOTE: The main structure is from Lua, but because (for now)
-** klisp is single threaded, only global state is provided.
+** SOURCE NOTE: The main structure is from Lua.
 */
 
 #ifndef kstate_h
@@ -14,6 +13,7 @@
 
 #include <stdio.h>
 #include <setjmp.h>
+#include <pthread.h>
 
 #include "klimits.h"
 #include "kobject.h"
@@ -44,40 +44,21 @@ typedef struct stringtable {
 
 /* NOTE: when adding TValues here, remember to add them to
    markroot in kgc.c!! */
+
 /* TODO split this struct in substructs (e.g. run_context, tokenizer, 
    gc, etc) */
-struct klisp_State {
+
+/*
+** `global state', shared by all threads of this state
+*/
+typedef struct global_State {
+    /* Global tables */
     stringtable strt;  /* hash table for immutable strings & symbols */
     TValue name_table; /* hash tables for naming objects */
-    TValue cont_name_table; /* hash tables for naming continuation functions*/
+    TValue cont_name_table; /* hash tables for naming continuation functions */
+    TValue thread_table; /* hash table for all live (non done/error) threads */
 
-    TValue curr_cont;
-    /*
-    ** If next_env is NIL, then the next_func from a continuation
-    ** and otherwise next_func is from an operative
-    */
-    TValue next_obj; /* this is the operative or continuation to call
-                        must be here to protect it from gc */
-    klisp_CFunction next_func; /* the next function to call 
-                                  (operative or continuation) */
-    TValue next_value;        /* the value to be passed to the next function */
-    TValue next_env; /* either NIL or an environment for next operative */
-    TValue *next_xparams; 
-    /* TODO replace with GCObject *next_si */
-    TValue next_si; /* the source code info for this call */
-
-    TValue eval_op; /* the operative for evaluation */
-    TValue list_app; /* the applicative for list evaluation */
-    TValue memoize_app; /* the applicative for promise memoize */
-    TValue ground_env;  /* the environment with all the ground definitions */
-    /* standard environments are environments with no bindings and ground_env
-       as parent */
-    TValue module_params_sym; /* this is the symbol "module-parameters" */
-    /* it is used in get-module */
-    TValue root_cont; 
-    TValue error_cont;
-    TValue system_error_cont;  /* initialized by kinit_error_hierarchy() */
-
+    /* Memory allocator */
     klisp_Alloc frealloc;  /* function to reallocate memory */
     void *ud;            /* auxiliary data to `frealloc' */
 
@@ -99,19 +80,10 @@ struct klisp_State {
     int32_t gcpause;  /* size of pause between successive GCs */
     int32_t gcstepmul;  /* GC `granularity' */
 
-    /* TEMP: error handling */
-    jmp_buf error_jb;
-
-    /* input/output port in use (for read & write) */
-    TValue curr_port; /* save the port to update source info on errors */
-
-    /* for current-input-port, current-output-port, current-error-port */
-    TValue kd_in_port_key;
-    TValue kd_out_port_key;
-    TValue kd_error_port_key;
-
-    /* for strict-arithmetic */
-    TValue kd_strict_arith_key;
+    /* Basic Continuation objects */
+    TValue root_cont; 
+    TValue error_cont;
+    TValue system_error_cont;  /* initialized by kinit_error_hierarchy() */
 
     /* Strings */
     TValue empty_string;
@@ -129,10 +101,93 @@ struct klisp_State {
     TValue ktok_dot;
     TValue ktok_sexp_comment;
 
+    /* require */
+    TValue require_path;
+    TValue require_table;
+
+    /* libraries */
+    TValue libraries_registry; /* this is a list, because library names
+                                are list of symbols and numbers so 
+                                putting them in a table isn't easy */
+
+    /* XXX These should be changed to use thread specific storage */
+    /* for current-input-port, current-output-port, current-error-port */
+    TValue kd_in_port_key;
+    TValue kd_out_port_key;
+    TValue kd_error_port_key;
+
+    /* for strict-arithmetic */
+    TValue kd_strict_arith_key;
+
+    /* Misc objects that are convenient to have here for now */
+    TValue eval_op; /* the operative for evaluation */
+    TValue list_app; /* the applicative for list evaluation */
+    TValue memoize_app; /* the applicative for promise memoize */
+    TValue ground_env;  /* the environment with all the ground definitions */
+    /* NOTE standard environments are environments with no bindings and 
+       ground_env as parent */
+    TValue module_params_sym; /* this is the symbol "module-parameters" */
+    /* (it is used in get-module) */
+    
+    /* The main thread */
+    klisp_State *mainthread;
+    /* The GIL (Global Interpreter Lock) */
+    /* This is a regular mutex, but we use it to emulate a recursive one.
+       The number of times the lock was acquired is maintained in the 
+       locking thread in gil_count */
+    pthread_mutex_t gil; 
+} global_State;
+
+/* 
+** Possible states of a thread/klisp_State,
+** currently threads are started as soon as they are created, but
+** that may change in the future.  If the state is done, or error,
+** the returned/thrown object is kept in next_value 
+*/
+#define KLISP_THREAD_CREATED (0)
+#define KLISP_THREAD_STARTING (1)
+#define KLISP_THREAD_RUNNING (2)
+#define KLISP_THREAD_DONE (3)
+#define KLISP_THREAD_ERROR (4)
+
+struct klisp_State {
+    CommonHeader; /* This represents a thread object */
+    global_State *k_G;
+    pthread_t thread;
+    int32_t status; /* the execution status of this thread */
+    /* The main thread doesn't have a condition variable here because
+       you can't join it.  This may be changed in the future */
+    pthread_cond_t joincond; /* the condition variable for joining */
+    /* Current state of execution */
+    int32_t gil_count; /* the number of times the GIL was acquired */
+    TValue curr_cont; /* the current continuation of this thread */
+    /*
+    ** If next_env is NIL, then the next_func is from a continuation
+    ** and otherwise next_func is from an operative
+    */
+    TValue next_obj; /* this is the operative or continuation to call
+                        must be here to protect it from gc */
+    klisp_CFunction next_func; /* the next function to call 
+                                  (operative or continuation) */
+    TValue next_value;        /* the value to be passed to the next function */
+    TValue next_env; /* either NIL or an environment for next operative */
+    TValue *next_xparams; 
+    /* TODO replace with GCObject *next_si */
+    TValue next_si; /* the source code info for this call */
+
+    /* TEMP: error handling */
+    jmp_buf error_jb;
+
+    /* XXX all reader and writer info should be local to the current
+       continuation to allow user defined port types */
+    /* input/output port in use (for read & write) */
+    TValue curr_port; /* save the port to update source info on errors */
+
     /* WORKAROUND for repl */
     bool ktok_seen_eof; /* to keep track of eofs that later dissapear */
     /* source info tracking */
     ksource_info_t ktok_source_info;
+    /* TODO do this with a string or bytevector */
     /* tokenizer buffer (XXX this could be done with a string) */
     int32_t ktok_buffer_size;
     int32_t ktok_buffer_idx;
@@ -148,15 +203,7 @@ struct klisp_State {
     /* writer */
     bool write_displayp;
 
-    /* require */
-    TValue require_path;
-    TValue require_table;
-
-    /* libraries */
-    TValue libraries_registry; /* this is a list, because library names
-                                are list of symbols and numbers so 
-                                putting them in a table isn't easy */
-
+    /* TODO do this with a vector */
     /* auxiliary stack (XXX this could be a vector) */
     int32_t ssize; /* total size of array */
     int32_t stop; /* top of the stack (all elements are below this index) */
@@ -175,10 +222,40 @@ struct klisp_State {
     TValue *rooted_vars_buf[GC_PROTECT_SIZE];
 };
 
+#define G(K)	(K->k_G)
+
+/*
+** Union of all Kernel heap-allocated values
+*/
+union GCObject {
+    GCheader gch;
+    MGCheader mgch;
+    Pair pair;
+    Symbol sym;
+    String str;
+    Environment env;
+    Continuation cont;
+    Operative op;
+    Applicative app;
+    Encapsulation enc;
+    Promise prom;
+    Table table;
+    Bytevector bytevector;
+    Port port; /* common fields for all types of ports */
+    FPort fport;
+    MPort mport;
+    Vector vector;
+    Keyword keyw;
+    Library lib;
+    klisp_State th; /* thread */
+};
+
 /* some size related macros */
 #define KS_ISSIZE (1024)
 #define KS_ITBSIZE (1024)
-#define state_size() (sizeof(klisp_State))
+
+klisp_State *klispT_newthread(klisp_State *K);
+void klispT_freethread(klisp_State *K, klisp_State *K1);
 
 /*
 ** TEMP: for now use inlined functions, later check output in 
@@ -209,6 +286,12 @@ static inline bool ks_sisempty(klisp_State *K);
 #define ks_sbuf(st_) ((st_)->sbuf)
 #define ks_selem(st_, i_) ((ks_sbuf(st_))[i_])
 
+/* LOCK: All these functions should be called with the GIL already acquired */
+/* XXX/REFACTOR: the problem with these is that if the lock is acquired here
+   there's no way to protect the value just popped, it's no longer in the 
+   stack, but the calling function has no way to protect it.  One alternative
+   would be to take a ks_vars-protected TValue pointer and put the value there.
+   The other would be using a stack like lua for this... */
 static inline void ks_spush(klisp_State *K, TValue obj)
 {
     ks_selem(K, ks_stop(K)) = obj;
@@ -279,6 +362,7 @@ static inline bool ks_tbisempty(klisp_State *K);
 #define ks_tbuf(st_) ((st_)->ktok_buffer)
 #define ks_tbelem(st_, i_) ((ks_tbuf(st_))[i_])
 
+/* LOCK: All these functions should be called with the GIL already acquired */
 static inline void ks_tbadd(klisp_State *K, char ch)
 {
     if (ks_tbidx(K) == ks_tbsize(K)) 
@@ -355,6 +439,7 @@ static inline void krooted_vars_clear(klisp_State *K) { K->rooted_vars_top = 0; 
 ** Source code tracking
 ** MAYBE: add source code tracking to symbols
 */
+/* LOCK: All these functions should be called with the GIL already acquired */
 #if KTRACK_SI
 static inline TValue kget_source_info(klisp_State *K, TValue obj)
 {
@@ -395,7 +480,7 @@ static inline TValue kget_csi(klisp_State *K)
 ** Functions to manipulate the current continuation and calling 
 ** operatives
 */
-static inline void klispS_apply_cc(klisp_State *K, TValue val)
+static inline void klispT_apply_cc(klisp_State *K, TValue val)
 {
     /* TODO write barriers */
 
@@ -415,27 +500,26 @@ static inline void klispS_apply_cc(klisp_State *K, TValue val)
     K->next_si = ktry_get_si(K, K->next_obj);
 }
 
-#define kapply_cc(K_, val_) klispS_apply_cc((K_), (val_)); return
+#define kapply_cc(K_, val_) klispT_apply_cc((K_), (val_)); return
 
-static inline TValue klispS_get_cc(klisp_State *K)
+static inline TValue klispT_get_cc(klisp_State *K)
 {
     return K->curr_cont;
 }
 
-#define kget_cc(K_) (klispS_get_cc(K_))
+#define kget_cc(K_) (klispT_get_cc(K_))
 
-static inline void klispS_set_cc(klisp_State *K, TValue new_cont)
+static inline void klispT_set_cc(klisp_State *K, TValue new_cont)
 {
     K->curr_cont = new_cont;
 }
 
-#define kset_cc(K_, c_) (klispS_set_cc(K_, c_))
+#define kset_cc(K_, c_) (klispT_set_cc(K_, c_))
 
-static inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
+static inline void klispT_tail_call_si(klisp_State *K, TValue top, TValue ptree, 
                                 TValue env, TValue si)
 {
     /* TODO write barriers */
-    
     /* various assert to check the freeing of gc protection methods */
     klisp_assert(K->rooted_tvs_top == 0);
     klisp_assert(K->rooted_vars_top == 0);
@@ -452,43 +536,38 @@ static inline void klispS_tail_call_si(klisp_State *K, TValue top, TValue ptree,
 }
 
 #define ktail_call_si(K_, op_, p_, e_, si_)                             \
-    { klispS_tail_call_si((K_), (op_), (p_), (e_), (si_)); return; }
+    { klispT_tail_call_si((K_), (op_), (p_), (e_), (si_)); return; }
 
 /* if no source info is needed */
 #define ktail_call(K_, op_, p_, e_)                                     \
     { klisp_State *K__ = (K_);                                          \
         TValue op__ = (op_);                                            \
-        (ktail_call_si(K__, op__, p_, e_, ktry_get_si(K__, op__))); }	\
+        TValue si__ = ktry_get_si(K__, op__);                           \
+        (ktail_call_si(K__, op__, p_, e_, si__)); }                     \
 
-#define ktail_eval(K_, p_, e_)                              \
-    { klisp_State *K__ = (K_);                              \
-        TValue p__ = (p_);                                  \
-        klispS_tail_call_si(K__, K__->eval_op, p__, (e_),   \
-                            ktry_get_si(K__, p__));			\
+#define ktail_eval(K_, p_, e_)                                          \
+    { klisp_State *K__ = (K_);                                          \
+        TValue p__ = (p_);                                              \
+        TValue si__ = ktry_get_si(K__, p__);                            \
+        klispT_tail_call_si(K__, G(K__)->eval_op, p__, (e_), si__);     \
         return; }
 
-/* helper for continuation->applicative & kcall_cont */
-void cont_app(klisp_State *K);
-void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
-void klispS_init_repl(klisp_State *K);
-void klispS_run(klisp_State *K);
-void klisp_close (klisp_State *K);
-
 void do_interception(klisp_State *K);
-
-/* for root and error continuations */
-void do_root_exit(klisp_State *K);
-void do_error_exit(klisp_State *K);
+void kcall_cont(klisp_State *K, TValue dst_cont, TValue obj);
+void klispT_init_repl(klisp_State *K);
+void klispT_run(klisp_State *K);
+void klisp_close (klisp_State *K);
 
 /* simple accessors for dynamic keys */
 
 /* XXX: this is ugly but we can't include kpair.h here so... */
 /* MAYBE: move car & cdr to kobject.h */
 /* TODO: use these where appropriate */
-#define kcurr_input_port(K) (tv2pair((K)->kd_in_port_key)->cdr)
-#define kcurr_output_port(K) (tv2pair((K)->kd_out_port_key)->cdr)
-#define kcurr_error_port(K) (tv2pair((K)->kd_error_port_key)->cdr)
-#define kcurr_strict_arithp(K) bvalue(tv2pair((K)->kd_strict_arith_key)->cdr)
+/* TODO LOCK, thread local */
+#define kcurr_input_port(K) (tv2pair(G(K)->kd_in_port_key)->cdr)
+#define kcurr_output_port(K) (tv2pair(G(K)->kd_out_port_key)->cdr)
+#define kcurr_error_port(K) (tv2pair(G(K)->kd_error_port_key)->cdr)
+#define kcurr_strict_arithp(K) bvalue(tv2pair(G(K)->kd_strict_arith_key)->cdr)
 
 #endif
 

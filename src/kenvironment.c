@@ -45,6 +45,8 @@ TValue kmake_environment(klisp_State *K, TValue parents)
     new_env->keyed_parents = KNIL;
     new_env->keyed_node = KNIL;
 
+    /* keep the lock, to avoid problems if the list of parents is mutated */
+
     /* Contruct the list of keyed parents */
     /* MAYBE: this could be optimized to avoid repetition of parents */
     TValue kparents;
@@ -93,6 +95,8 @@ TValue kmake_environment(klisp_State *K, TValue parents)
 ** Only for list environments, table environments are handled elsewhere
 ** returns KNIL or a pair with sym as car.
 */
+
+/* LOCK: GIL should be acquired */
 TValue kfind_local_binding(klisp_State *K, TValue bindings, TValue sym)
 {
     UNUSED(K);
@@ -124,7 +128,7 @@ void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
            name to other objs, like applicatives to operatives & 
            some applicatives to objects */
         gcvalue(obj)->gch.kflags |= K_FLAG_HAS_NAME;
-        TValue *node = klispH_set(K, tv2table(K->name_table), obj);
+        TValue *node = klispH_set(K, tv2table(G(K)->name_table), obj);
         *node = sym;
 
         /* TEMP: use this until we have a general mechanism to add
@@ -134,7 +138,7 @@ void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
             TValue underlying = kunwrap(obj);
             while (kcan_have_name(underlying) && !khas_name(underlying)) {
                 gcvalue(underlying)->gch.kflags |= K_FLAG_HAS_NAME;
-                node = klispH_set(K, tv2table(K->name_table), underlying);
+                node = klispH_set(K, tv2table(G(K)->name_table), underlying);
                 *node = sym;
                 if (ttisapplicative(underlying)) 
                     underlying = kunwrap(underlying);
@@ -148,7 +152,8 @@ void ktry_set_name(klisp_State *K, TValue obj, TValue sym)
 /* Assumes obj has a name */
 TValue kget_name(klisp_State *K, TValue obj)
 {
-    const TValue *node = klispH_get(tv2table(K->name_table),
+    /* LOCK: klispH_get will acquire the GIL */
+    const TValue *node = klispH_get(tv2table(G(K)->name_table),
                                     obj);
     klisp_assert(node != &kfree);
     return *node;
@@ -165,6 +170,8 @@ void kadd_binding(klisp_State *K, TValue env, TValue sym, TValue val)
     ktry_set_name(K, val, sym);
 #endif
 
+    /* lock early because it is possible that even the environment
+       type changes (from list to table) */
     TValue bindings = kenv_bindings(K, env);
     if (ttistable(bindings)) {
         TValue *cell = klispH_setsym(K, tv2table(bindings), tv2sym(sym));
@@ -228,6 +235,7 @@ static inline bool try_get_binding(klisp_State *K, TValue env, TValue sym,
     }
 
     *value = KINERT;
+
     return false;
 }
 
@@ -272,6 +280,7 @@ static inline bool try_get_keyed(klisp_State *K, TValue env, TValue key,
     /* MAYBE: this could be optimized to mark environments to avoid
        repetition */
     /* assume the stack may be in use, keep track of pushed objs */
+
     int pushed = 1;
     if (!env_is_keyed(env))
         env = env_keyed_parents(env);

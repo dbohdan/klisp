@@ -212,7 +212,7 @@ void do_import(klisp_State *K)
             kmake_continuation(K, kget_cc(K), do_match, 3, 
                                symbols, denv, sname);
         kset_cc(K, new_cont);
-        ktail_eval(K, kcons(K, K->list_app, symbols), env);
+        ktail_eval(K, kcons(K, G(K)->list_app, symbols), env);
     }
 }
 
@@ -319,7 +319,7 @@ void SimportB(klisp_State *K)
 /* init ground */
 void kinit_env_mut_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* 4.9.1 $define! */
@@ -332,10 +332,11 @@ void kinit_env_mut_ground_env(klisp_State *K)
     add_operative(K, ground_env, "$import!", SimportB, 1, symbol);
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_env_mut_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
 
     add_cont_name(K, t, do_match, "match-ptree");
     add_cont_name(K, t, do_set_eval_obj, "set-eval-obj");

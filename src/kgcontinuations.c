@@ -124,7 +124,6 @@ void guard_continuation(klisp_State *K)
     kapply_cc(K, inner_cont);
 }
 
-
 /* 7.2.5 continuation->applicative */
 void continuation_applicative(klisp_State *K)
 {
@@ -138,17 +137,42 @@ void continuation_applicative(klisp_State *K)
 
     bind_1tp(K, ptree, "continuation",
              ttiscontinuation, cont);
-    /* cont_app is from kstate, it handles dynamic vars &
-       interceptions */
     TValue app = kmake_applicative(K, cont_app, 1, cont);
     kapply_cc(K, app);
 }
 
 /* 7.2.6 root-continuation */
-/* done in kground.c/krepl.c */
+static void do_root_exit(klisp_State *K)
+{
+    TValue *xparams = K->next_xparams;
+    TValue obj = K->next_value;
+    klisp_assert(ttisnil(K->next_env));
+    UNUSED(xparams);
+    
+    /* TODO/REFACTOR move this to a end_loop function in kstate.c */
+    /* Just save the value and end the loop */
+    K->next_value = obj;
+    K->next_func = NULL;        /* force the loop to terminate */
+    return;
+}
+
+
+static void kinit_root_cont(klisp_State *K)
+{
+    klisp_assert(ttisinert(G(K)->root_cont));
+    G(K)->root_cont = kmake_continuation(K, KNIL, do_root_exit, 0);
+    TValue str, tail, si;
+#if KTRACK_SI
+    /* Add source info to the cont */
+    str = kstring_new_b_imm(K, __FILE__);
+    tail = kcons(K, i2tv(__LINE__), i2tv(0));
+    si = kcons(K, str, tail);
+    kset_source_info(K, G(K)->root_cont, si);
+#endif
+}
 
 /* 7.2.7 error-continuation */
-/* done in kground.c/krepl.c */
+/* done in kgerrors.c */
 
 /* 
 ** 7.3 Library features
@@ -234,15 +258,14 @@ void kgexit(klisp_State *K)
     if (!get_opt_tpar(K, obj, "any", anytype))
         obj = KINERT;
 
-    /* TODO: look out for guards and dynamic variables */
-    /* should be probably handled in kcall_cont() */
-    kcall_cont(K, K->root_cont, obj);
+    /* guards and dynamic variables are handled in kcall_cont() */
+    kcall_cont(K, G(K)->root_cont, obj);
 }
 
 /* init ground */
 void kinit_continuations_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* 7.1.1 continuation? */
@@ -260,13 +283,12 @@ void kinit_continuations_ground_env(klisp_State *K)
     add_applicative(K, ground_env, "continuation->applicative",
                     continuation_applicative, 0);
     /* 7.2.6 root-continuation */
-    klisp_assert(ttiscontinuation(K->root_cont));
-    add_value(K, ground_env, "root-continuation",
-              K->root_cont);
+    kinit_root_cont(K);
+    add_value(K, ground_env, "root-continuation", G(K)->root_cont);
+
     /* 7.2.7 error-continuation */
-    klisp_assert(ttiscontinuation(K->error_cont));
-    add_value(K, ground_env, "error-continuation",
-              K->error_cont);
+    /* done in kgerrors.c */
+
     /* 7.3.1 apply-continuation */
     add_applicative(K, ground_env, "apply-continuation", apply_continuation, 
                     0);
@@ -281,10 +303,14 @@ void kinit_continuations_ground_env(klisp_State *K)
                     0);
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_continuations_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
     
     add_cont_name(K, t, do_extended_cont, "extended-cont");
+    add_cont_name(K, t, do_root_exit, "exit");
+    /* this is defined in kcontinuation.c */
+    add_cont_name(K, t, do_interception, "do-interception");
 }

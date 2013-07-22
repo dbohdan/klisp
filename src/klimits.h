@@ -62,6 +62,10 @@
 #define MINCONTNAMETABSIZE	32
 #endif
 
+#ifndef MINTHREADTABSIZE
+#define MINTHREADTABSIZE	32
+#endif
+
 /* minimum size for the require table (must be power of 2) */
 #ifndef MINREQUIRETABSIZE
 #define MINREQUIRETABSIZE	32
@@ -84,6 +88,44 @@
 /* starting size for readline buffer */
 #ifndef MINREADLINEBUFFER
 #define MINREADLINEBUFFER	80
+#endif
+
+/* XXX for now ignore the return values */
+#ifndef klisp_lock
+#include <pthread.h>
+#define klisp_lock(K) ({                                    \
+            if (K->gil_count == 0) {                        \
+                K->gil_count = 1;                           \
+                UNUSED(pthread_mutex_lock(&G(K)->gil));     \
+            } else {                                        \
+                ++K->gil_count;                             \
+            }})
+
+#define klisp_unlock(K) ({                                  \
+            if (K->gil_count <= 1) {                        \
+                K->gil_count = 0;                           \
+                UNUSED(pthread_mutex_unlock(&G(K)->gil));   \
+            } else {                                        \
+                --K->gil_count;                             \
+            }})
+
+/* this will work no matter how many times  (even 0) the lock was acquired */
+#define klisp_unlock_all(K) ({                          \
+            if (K->gil_count > 0) {                     \
+                K->gil_count = 1;                       \
+                klisp_unlock(K);                        \
+            }})
+
+#endif
+
+/* These were the original defines */
+#ifndef klisp_lock
+#define klisp_lock(K)     ((void) 0) 
+#define klisp_unlock(K)   ((void) 0)
+#endif
+
+#ifndef klispi_threadyield
+#define klispi_threadyield(K)     {klisp_unlock(K); klisp_lock(K);}
 #endif
 
 #endif

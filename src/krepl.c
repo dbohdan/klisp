@@ -43,7 +43,7 @@ void do_repl_read(klisp_State *K)
     /* show prompt */
     fprintf(stdout, KLISP_PROMPT);
 
-    TValue port = kcdr(K->kd_in_port_key);
+    TValue port = kcdr(G(K)->kd_in_port_key);
     klisp_assert(kfport_file(port) == stdin);
     /* Workaround to the problem of the dangling '\n' in repl 
        (from previous line) */
@@ -70,7 +70,7 @@ void do_repl_eval(klisp_State *K)
         /* print a newline to allow the shell a fresh line */
         printf("\n");
         /* This is ok because there is no interception possible */
-        kset_cc(K, K->root_cont);
+        kset_cc(K, G(K)->root_cont);
         kapply_cc(K, KINERT);
     } else {
         /* save the source code info of the object in loop_cont
@@ -93,7 +93,7 @@ void create_loop(klisp_State *K, TValue denv)
     TValue error_int = kmake_operative(K, do_repl_int_error, 1, denv);
     krooted_tvs_pop(K); /* already in cont */
     krooted_tvs_push(K, error_int);
-    TValue exit_guard = kcons(K, K->error_cont, error_int);
+    TValue exit_guard = kcons(K, G(K)->error_cont, error_int);
     krooted_tvs_pop(K); /* already in guard */
     krooted_tvs_push(K, exit_guard);
     TValue exit_guards = kcons(K, exit_guard, KNIL);
@@ -105,7 +105,7 @@ void create_loop(klisp_State *K, TValue denv)
     /* this is needed for interception code */
     TValue env = kmake_empty_environment(K);
     krooted_tvs_push(K, env);
-    TValue outer_cont = kmake_continuation(K, K->root_cont, 
+    TValue outer_cont = kmake_continuation(K, G(K)->root_cont, 
                                            do_pass_value, 2, entry_guards, env);
     kset_outer_cont(outer_cont);
     krooted_tvs_push(K, outer_cont);
@@ -140,7 +140,7 @@ void do_repl_loop(klisp_State *K)
     ** xparams[0]: dynamic environment
     */
 
-    TValue port = kcdr(K->kd_out_port_key);
+    TValue port = kcdr(G(K)->kd_out_port_key);
     klisp_assert(kfport_file(port) == stdout);
 
     /* false: quote strings, escape chars */
@@ -171,7 +171,7 @@ void do_repl_int_error(klisp_State *K)
     TValue divert = kcadr(ptree);
 
     /* FOR NOW used only for irritant list */
-    TValue port = kcdr(K->kd_error_port_key);
+    TValue port = kcdr(G(K)->kd_error_port_key);
     klisp_assert(ttisfport(port) && kfport_file(port) == stderr);
 
     /* TEMP: obj should be an error obj */
@@ -246,6 +246,7 @@ void do_repl_int_error(klisp_State *K)
 
 /* call this to init the repl in a newly created klisp state */
 /* the standard environment should be in K->next_env */
+/* LOCK: the GIL should be acquired */
 void kinit_repl(klisp_State *K)
 {
     TValue std_env = K->next_env;
@@ -254,7 +255,7 @@ void kinit_repl(klisp_State *K)
     /* save the root cont in next_si to let the loop continuations have 
        source info, this is hackish but works */
     
-    K->next_si = ktry_get_si(K, K->root_cont);
+    K->next_si = ktry_get_si(K, G(K)->root_cont);
 #endif
 
     /* GC: create_loop will root std_env */
@@ -264,7 +265,8 @@ void kinit_repl(klisp_State *K)
 /* init continuation names */
 void kinit_repl_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+/* XXX lock? */
+    Table *t = tv2table(G(K)->cont_name_table);
     add_cont_name(K, t, do_repl_read, "repl-read");
     add_cont_name(K, t, do_repl_eval, "repl-eval");
     add_cont_name(K, t, do_repl_loop, "repl-print-loop");

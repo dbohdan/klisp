@@ -42,6 +42,7 @@
 #include "kgerrors.h"
 #include "kgkeywords.h"
 #include "kglibraries.h"
+#include "kgthreads.h"
 
 #if KUSE_LIBFFI
 #  include "kgffi.h"
@@ -53,6 +54,7 @@
 #include "keval.h"
 #include "krepl.h"
 
+/* XXX lock? */
 /*
 ** This is called once to save the names of the types of continuations
 ** used in the ground environment & repl
@@ -60,13 +62,6 @@
 */
 void kinit_cont_names(klisp_State *K)
 {
-    /* TEMP root and error continuations are set here (they are in kstate) */
-    Table *t = tv2table(K->cont_name_table);
-    add_cont_name(K, t, do_root_exit, "exit");
-    add_cont_name(K, t, do_error_exit, "error");
-    /* TEMP this is also in kstate */
-    add_cont_name(K, t, do_interception, "do-interception");
-
     /* TEMP repl ones should be done in the interpreter, and not in
        the init state */
     kinit_repl_cont_names(K); 
@@ -86,6 +81,7 @@ void kinit_cont_names(klisp_State *K)
 #if KUSE_LIBFFI
     kinit_ffi_cont_names(K);
 #endif
+    kinit_error_cont_names(K);
     kinit_libraries_cont_names(K);
 }
 
@@ -123,6 +119,7 @@ void kinit_ground_env(klisp_State *K)
     kinit_error_ground_env(K);
     kinit_keywords_ground_env(K);
     kinit_libraries_ground_env(K);
+    kinit_threads_ground_env(K);
 #if KUSE_LIBFFI
     kinit_ffi_ground_env(K);
 #endif

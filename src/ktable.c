@@ -331,7 +331,7 @@ static void resize (klisp_State *K, Table *t, int32_t nasize, int32_t nhsize)
             if (!ttisfree(t->array[i])) {
                 TValue v = t->array[i];
                 *klispH_setfixint(K, t, i) = v;
-                checkliveness(K, v);
+                checkliveness(G(K), v);
             }
         }
         /* shrink array */
@@ -343,7 +343,7 @@ static void resize (klisp_State *K, Table *t, int32_t nasize, int32_t nhsize)
         if (!ttisfree(gval(old))) {
             TValue v = gval(old);
             *klispH_set(K, t, key2tval(old)) = v;
-            checkliveness(K, v);
+            checkliveness(G(K), v);
         }
     }
     if (nold != dummynode)

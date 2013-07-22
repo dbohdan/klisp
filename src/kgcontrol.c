@@ -551,7 +551,7 @@ void Swhen_Sunless(klisp_State *K)
 /* init ground */
 void kinit_control_ground_env(klisp_State *K)
 {
-    TValue ground_env = K->ground_env;
+    TValue ground_env = G(K)->ground_env;
     TValue symbol, value;
 
     /* 4.5.1 inert? */
@@ -579,10 +579,11 @@ void kinit_control_ground_env(klisp_State *K)
                   b2tv(false));
 }
 
+/* XXX lock? */
 /* init continuation names */
 void kinit_control_cont_names(klisp_State *K)
 {
-    Table *t = tv2table(K->cont_name_table);
+    Table *t = tv2table(G(K)->cont_name_table);
 
     add_cont_name(K, t, do_select_clause, "select-clause");
     add_cont_name(K, t, do_Swhen_Sunless, "conditional-eval-sequence");

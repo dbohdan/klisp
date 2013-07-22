@@ -24,14 +24,9 @@ TValue kbytevector_new_bs_g(klisp_State *K, bool m, const uint8_t *buf,
         kbytevector_new_bs_imm(K, buf, size);
 }
 
-/* 
-** Constructors for immutable bytevectors
-*/
-
-/* main constructor for immutable bytevectors */
-TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
+/* LOCK: GIL should be acquired */
+static uint32_t get_bytevector_hash(const uint8_t *buf, uint32_t size)
 {
-    /* first check to see if it's in the stringtable */
     uint32_t h = size; /* seed */
     size_t step = (size>>5)+1; /* if bytevector is too long, don't hash all 
                                   its bytes */
@@ -39,7 +34,16 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     for (size1 = size; size1 >= step; size1 -= step)  /* compute hash */
         h = h ^ ((h<<5)+(h>>2)+ buf[size1-1]);
 
-    for (GCObject *o = K->strt.hash[lmod(h, K->strt.size)];
+    return h;
+}
+
+/* Looks for a bytevector in the stringtable and returns a pointer
+   to it if found or NULL otherwise.  */
+static Bytevector *search_in_bb_table(klisp_State *K, const uint8_t *buf, 
+                                      uint32_t size, uint32_t h)
+{
+
+    for (GCObject *o = G(K)->strt.hash[lmod(h, G(K)->strt.size)];
          o != NULL; o = o->gch.next) {
         klisp_assert(o->gch.tt == K_TKEYWORD || o->gch.tt == K_TSYMBOL || 
                      o->gch.tt == K_TSTRING || o->gch.tt == K_TBYTEVECTOR);
@@ -49,14 +53,32 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
         Bytevector *tb = (Bytevector *) o;
         if (tb->size == size && (memcmp(buf, tb->b, size) == 0)) {
             /* bytevector may be dead */
-            if (isdead(K, o)) changewhite(o);
-            return gc2bytevector(o);
+            if (isdead(G(K), o)) changewhite(o);
+            return tb;
         }
-    } 
+    }
+    return NULL;
+}
+
+
+/* 
+** Constructors for immutable bytevectors
+*/
+
+/* main constructor for immutable bytevectors */
+TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
+{
+    uint32_t h = get_bytevector_hash(buf, size);
+
+    /* first check to see if it's in the stringtable */
+    Bytevector *new_bb = search_in_bb_table(K, buf, size, h);
+
+    if (new_bb != NULL) { /* found */
+        return gc2bytevector(new_bb);
+    }
 
     /* If it exits the loop, it means it wasn't found, hash is still in h */
     /* REFACTOR: move all of these to a new function */
-    Bytevector *new_bb;
 
     if (size > (SIZE_MAX - sizeof(Bytevector)))
         klispM_toobig(K);
@@ -66,7 +88,7 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     /* header + gc_fields */
     /* can't use klispC_link, because strings use the next pointer
        differently */
-    new_bb->gct = klispC_white(K);
+    new_bb->gct = klispC_white(G(K));
     new_bb->tt = K_TBYTEVECTOR;
     new_bb->kflags = K_FLAG_IMMUTABLE;
     new_bb->si = NULL;
@@ -82,7 +104,7 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
     
     /* add to the string/symbol table (and link it) */
     stringtable *tb;
-    tb = &K->strt;
+    tb = &G(K)->strt;
     h = lmod(h, tb->size);
     new_bb->next = tb->hash[h];  /* chain new entry */
     tb->hash[h] = (GCObject *)(new_bb);
@@ -93,7 +115,7 @@ TValue kbytevector_new_bs_imm(klisp_State *K, const uint8_t *buf, uint32_t size)
         klispS_resize(K, tb->size*2);  /* too crowded */
         krooted_tvs_pop(K);
     }
-    
+
     return ret_tv;
 }
 
@@ -108,8 +130,8 @@ TValue kbytevector_new_s(klisp_State *K, uint32_t size)
     Bytevector *new_bb;
 
     if (size == 0) {
-        klisp_assert(ttisbytevector(K->empty_bytevector));
-        return K->empty_bytevector;
+        klisp_assert(ttisbytevector(G(K)->empty_bytevector));
+        return G(K)->empty_bytevector;
     }
 
     new_bb = klispM_malloc(K, sizeof(Bytevector) + size);
@@ -122,7 +144,6 @@ TValue kbytevector_new_s(klisp_State *K, uint32_t size)
     new_bb->size = size;
 
     /* the buffer is initialized elsewhere */
-
     return gc2bytevector(new_bb);
 }
 
@@ -130,8 +151,8 @@ TValue kbytevector_new_s(klisp_State *K, uint32_t size)
 TValue kbytevector_new_bs(klisp_State *K, const uint8_t *buf, uint32_t size)
 {
     if (size == 0) {
-        klisp_assert(ttisbytevector(K->empty_bytevector));
-        return K->empty_bytevector;
+        klisp_assert(ttisbytevector(G(K)->empty_bytevector));
+        return G(K)->empty_bytevector;
     }
 
     TValue new_bb = kbytevector_new_s(K, size);
@@ -143,8 +164,8 @@ TValue kbytevector_new_bs(klisp_State *K, const uint8_t *buf, uint32_t size)
 TValue kbytevector_new_sf(klisp_State *K, uint32_t size, uint8_t fill)
 {
     if (size == 0) {
-        klisp_assert(ttisbytevector(K->empty_bytevector));
-        return K->empty_bytevector;
+        klisp_assert(ttisbytevector(G(K)->empty_bytevector));
+        return G(K)->empty_bytevector;
     }
 
     TValue new_bb = kbytevector_new_s(K, size);
@@ -153,7 +174,7 @@ TValue kbytevector_new_sf(klisp_State *K, uint32_t size, uint8_t fill)
 }
 
 /* both obj1 and obj2 should be bytevectors */
-bool kbytevector_equalp(TValue obj1, TValue obj2)
+bool kbytevector_equalp(klisp_State *K, TValue obj1, TValue obj2)
 {
     klisp_assert(ttisbytevector(obj1) && ttisbytevector(obj2));
 

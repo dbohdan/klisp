@@ -14,4 +14,10 @@
 TValue kmake_continuation(klisp_State *K, TValue parent, klisp_CFunction fn, 
                           int xcount, ...);
 
+/* Interceptions */
+void cont_app(klisp_State *K);
+TValue create_interception_list(klisp_State *K, TValue src_cont, 
+                                TValue dst_cont);
+void do_interception(klisp_State *K);
+
 #endif

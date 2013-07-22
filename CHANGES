@@ -3,3 +3,5 @@ v0.4
 - Added eq-hashtables (Oto Havle)
 - Fixed semantics of eval in the presence of continuation capturing
   and mutation of the argument or result list
+- Fixed semantics of other combiners in the presence of continuation capturing
+  and mutation (filter)

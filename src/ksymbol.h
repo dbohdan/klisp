@@ -20,7 +20,7 @@
 /* No case folding is performed by these constructors */
 
 /* buffer + size, may contain nulls */
-TValue ksymbol_new_bs(klisp_State *K, const char *buf, int32_t size,
+TValue ksymbol_new_bs(klisp_State *K, const char *buf, uint32_t size,
                       TValue si);
 /* null terminated buffer */
 TValue ksymbol_new_b(klisp_State *K, const char *buf, TValue si);

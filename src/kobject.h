@@ -32,21 +32,16 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <math.h>
+#include <pthread.h>
 
 #include "klimits.h"
 #include "klispconf.h"
+#include "klisp.h"
 
 /*
 ** Union of all collectible objects
 */
 typedef union GCObject GCObject;
-
-/*
-** prototype for underlying c functions of continuations &
-** operatives
-*/
-struct klisp_State; /* later defined in kstate.h */
-typedef void (*klisp_CFunction) (struct klisp_State *K);
 
 /*
 ** Common Header for all collectible objects (in macro form, to be
@@ -177,6 +172,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TVECTOR          44
 #define K_TKEYWORD	45
 #define K_TLIBRARY	46
+#define K_TTHREAD	47
+#define K_TMUTEX	48
+#define K_TCONDVAR	49
 
 /* for tables */
 #define K_TDEADKEY           60
@@ -234,6 +232,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define K_TAG_VECTOR K_MAKE_VTAG(K_TVECTOR)
 #define K_TAG_KEYWORD K_MAKE_VTAG(K_TKEYWORD)
 #define K_TAG_LIBRARY K_MAKE_VTAG(K_TLIBRARY)
+#define K_TAG_THREAD K_MAKE_VTAG(K_TTHREAD)
+#define K_TAG_MUTEX K_MAKE_VTAG(K_TMUTEX)
+#define K_TAG_CONDVAR K_MAKE_VTAG(K_TCONDVAR)
 
 /*
 ** Macros to test types
@@ -336,6 +337,9 @@ typedef struct __attribute__ ((__packed__)) GCheader {
 #define ttisvector(o) (tbasetype_(o) == K_TAG_VECTOR)
 #define ttiskeyword(o)	(tbasetype_(o) == K_TAG_KEYWORD)
 #define ttislibrary(o)	(tbasetype_(o) == K_TAG_LIBRARY)
+#define ttisthread(o)	(tbasetype_(o) == K_TAG_THREAD)
+#define ttismutex(o)	(tbasetype_(o) == K_TAG_MUTEX)
+#define ttiscondvar(o)	(tbasetype_(o) == K_TAG_CONDVAR)
 
 /* macros to easily check boolean values */
 #define kis_true(o_) (tv_equal((o_), KTRUE))
@@ -567,6 +571,21 @@ typedef struct __attribute__ ((__packed__)) {
     TValue exp_list; /* this is an immutable list of symbols */
 } Library;
 
+#define KMUTEX_NO_OWNER (KINERT)
+
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader; /* symbols are marked via their strings */
+    TValue owner; /* KINERT/thread currently holding this mutex */
+    pthread_mutex_t mutex;
+    uint32_t count; /* count for recursive mutex */
+} Mutex;
+
+typedef struct __attribute__ ((__packed__)) {
+    CommonHeader; /* symbols are marked via their strings */
+    TValue mutex;
+    pthread_cond_t cond;
+} Condvar;
+
 /*
 ** `module' operation for hashing (size is always a power of 2)
 */
@@ -606,33 +625,6 @@ typedef struct __attribute__ ((__packed__)) {
     CommonHeader;
     TValue mark;
 } MGCheader;
-
-/*
-** Union of all Kernel heap-allocated values
-*/
-/* LUA NOTE: In Lua the corresponding union is in lstate.h */
-union GCObject {
-    GCheader gch;
-    MGCheader mgch;
-    Pair pair;
-    Symbol sym;
-    String str;
-    Environment env;
-    Continuation cont;
-    Operative op;
-    Applicative app;
-    Encapsulation enc;
-    Promise prom;
-    Table table;
-    Bytevector bytevector;
-    Port port; /* common fields for all types of ports */
-    FPort fport;
-    MPort mport;
-    Vector vector;
-    Keyword keyw;
-    Library lib;
-};
-
 
 /*
 ** Some constants 
@@ -747,6 +739,9 @@ const TValue kfree;
 #define gc2vector(o_) (gc2tv(K_TAG_VECTOR, o_))
 #define gc2keyw(o_) (gc2tv(K_TAG_KEYWORD, o_))
 #define gc2lib(o_) (gc2tv(K_TAG_LIBRARY, o_))
+#define gc2th(o_) (gc2tv(K_TAG_THREAD, o_))
+#define gc2mutex(o_) (gc2tv(K_TAG_MUTEX, o_))
+#define gc2condvar(o_) (gc2tv(K_TAG_CONDVAR, o_))
 #define gc2deadkey(o_) (gc2tv(K_TAG_DEADKEY, o_))
 
 /* Macro to convert a TValue into a specific heap allocated object */
@@ -770,6 +765,9 @@ const TValue kfree;
 #define tv2port(v_) ((Port *) gcvalue(v_))
 #define tv2keyw(v_) ((Keyword *) gcvalue(v_))
 #define tv2lib(v_) ((Library *) gcvalue(v_))
+#define tv2th(v_) ((klisp_State *) gcvalue(v_))
+#define tv2mutex(v_) ((Mutex *) gcvalue(v_))
+#define tv2condvar(v_) ((Condvar *) gcvalue(v_))
 
 #define tv2gch(v_) ((GCheader *) gcvalue(v_))
 #define tv2mgch(v_) ((MGCheader *) gcvalue(v_))
@@ -927,9 +925,9 @@ int32_t kmark_count;
 #define checkconsistency(obj)                                           \
     klisp_assert(!iscollectable(obj) || (ttype_(obj) == gcvalue(obj)->gch.tt))
 
-#define checkliveness(k,obj)                                            \
+#define checkliveness(g,obj)                                            \
     klisp_assert(!iscollectable(obj) ||                                 \
-                 ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(k, gcvalue(obj))))
+                 ((ttype_(obj) == gcvalue(obj)->gch.tt) && !isdead(g, gcvalue(obj))))
 
 
 #endif

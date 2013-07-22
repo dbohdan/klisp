@@ -1,3 +1,8 @@
+- Check lambda for problems with continuation capturing
+- Check the let family for problems with continuation capturing
+- Check map for problems with continuation capturing
+
+
 * Release 0.4+
 ** refactor:
 *** clean stand alone interpreter

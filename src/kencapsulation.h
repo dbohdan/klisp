@@ -16,6 +16,7 @@ TValue kmake_encapsulation(klisp_State *K, TValue key, TValue val);
 TValue kmake_encapsulation_key(klisp_State *K);
 bool kis_encapsulation_type(TValue enc, TValue key);
 
+/* LOCK: these are immutable, so they don't need locking */
 #define kget_enc_val(e_)(tv2enc(e_)->value)
 #define kget_enc_key(e_)(tv2enc(e_)->key)
 
