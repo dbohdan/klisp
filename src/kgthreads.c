@@ -273,7 +273,7 @@ static void mutex_trylock(klisp_State *K)
     kapply_cc(K, b2tv(res));
 }
 
-/* make-mutex */
+/* make-condition-variable */
 static void make_condvar(klisp_State *K)
 {
     TValue *xparams = K->next_xparams;
