@@ -711,14 +711,15 @@ int main(int argc, char *argv[])
 {
     struct Smain s;
     klisp_State *K = klispL_newstate();
-    /* Set the main thread as the current thread */
-    /* XXX/TEMP this could be made in run... */
-    K->thread = pthread_self();
 
     if (K == NULL) {
         k_message(argv[0], "cannot create state: not enough memory");
         return EXIT_FAILURE;
     }
+
+    /* Set the main thread as the current thread */
+    /* XXX/TEMP this could be made in run... */
+    K->thread = pthread_self();
 
     /* This is weird but was done to follow lua scheme */
     s.argc = argc;
