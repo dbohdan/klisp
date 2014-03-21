@@ -6,6 +6,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <io.h>
 #include "kobject.h"
 #include "kstate.h"
 #include "kinteger.h"
@@ -58,6 +59,9 @@ bool ksystem_isatty(klisp_State *K, TValue port)
      *    - does not work in plain wine (works in wineconsole)
      *    - probably won't work if Windows Console is replaced
      *         a terminal emulator
+	 *
+     *  3) _isatty()
+     *    - calls GetFileType() internally (including MinGW version)
      *
      * TEMP: use GetConsoleMode()
      */

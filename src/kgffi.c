@@ -368,7 +368,7 @@ static TValue ffi_win32_error_message(klisp_State *K, DWORD dwMessageId)
                            NULL,
                            dwMessageId,
                            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                           &s, 0, NULL)) {
+                           (LPTSTR)&s, 0, NULL)) {
         return kstring_new_b_imm(K, "Unknown error");
     } else {
         TValue v = kstring_new_b_imm(K, s);

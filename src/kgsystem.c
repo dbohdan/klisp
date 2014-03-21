@@ -220,7 +220,14 @@ void get_environment_variables(klisp_State *K)
     kapply_cc(K, xparams[0]);
 }
 
-/* This should work in mingw as well as gcc */
+/* Redefining environ hides the definition
+   from <stdlib.h> on MinGW.
+ */
+#ifndef __MINGW32__
+
+/* Note, when building for Windows if there is
+   a link error try commenting out the following
+   declaration. */
 /* TODO test, if that doesn't work, try to find a way
    avoiding taking extra params in main */
 /* I think it's defined in unistd, but it needs to have __USE_GNU 
@@ -232,6 +239,8 @@ extern
 __declspec(dllimport)
 #endif
 char **environ;
+
+#endif
 
 /* Helper for get-environment-variables */
 TValue create_env_var_list(klisp_State *K)
